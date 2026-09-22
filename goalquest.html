@@ -1,0 +1,2926 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GoalQuest</title>
+<style>
+  :root,
+  [data-theme="dark"] {
+    --bg: #0e1016;
+    --surface: #161922;
+    --surface-2: #1d212d;
+    --surface-3: #262b3a;
+    --text: #e8eaf0;
+    --text-muted: #9aa1b4;
+    --border: #2a3040;
+    --accent: #7c5cff;
+    --accent-hover: #8f74ff;
+    --accent-contrast: #ffffff;
+    --accent-soft: rgba(124, 92, 255, 0.16);
+    --secondary: #22d3ee;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #3b82f6;
+    --progress: #7c5cff;
+    --xp: #fbbf24;
+    --selection: rgba(124, 92, 255, 0.35);
+    --overlay: rgba(5, 6, 10, 0.66);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    --glow: 0 0 0 1px rgba(124, 92, 255, 0.35), 0 0 22px rgba(124, 92, 255, 0.18);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font-scale: 1;
+    color-scheme: dark;
+  }
+  [data-theme="light"] {
+    --bg: #f3f4f8;
+    --surface: #ffffff;
+    --surface-2: #f6f7fb;
+    --surface-3: #eceef5;
+    --text: #1b1e27;
+    --text-muted: #5f6678;
+    --border: #dfe2ec;
+    --accent: #6645f0;
+    --accent-hover: #5534e0;
+    --accent-contrast: #ffffff;
+    --accent-soft: rgba(102, 69, 240, 0.1);
+    --secondary: #0891b2;
+    --success: #16a34a;
+    --warning: #d97706;
+    --danger: #dc2626;
+    --info: #2563eb;
+    --progress: #6645f0;
+    --xp: #d97706;
+    --selection: rgba(102, 69, 240, 0.22);
+    --overlay: rgba(20, 22, 30, 0.45);
+    --shadow: 0 10px 30px rgba(20, 24, 40, 0.12);
+    --glow: 0 0 0 1px rgba(102, 69, 240, 0.25), 0 0 18px rgba(102, 69, 240, 0.1);
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  ::selection { background: var(--selection); }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: calc(14px * var(--font-scale));
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 { margin: 0; line-height: 1.25; }
+  p { margin: 0; }
+  a { color: var(--accent); }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* ---------- Shell ---------- */
+  #app { display: grid; grid-template-columns: 248px minmax(0, 1fr); min-height: 100vh; }
+  .sidebar {
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 20px; padding: 20px 14px;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; }
+  .brand-logo {
+    width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--secondary)); color: #fff; font-weight: 800; font-size: 16px;
+    box-shadow: var(--glow);
+  }
+  .brand-name { font-weight: 800; font-size: 17px; letter-spacing: 0.2px; }
+  .brand-sub { font-size: 11px; color: var(--text-muted); }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 9px 12px; border-radius: var(--radius-sm);
+    background: transparent; border: 0; cursor: pointer; text-align: left; color: var(--text-muted); font-weight: 500;
+  }
+  .nav-item:hover { background: var(--surface-2); color: var(--text); }
+  .nav-item.active { background: var(--accent-soft); color: var(--text); box-shadow: inset 3px 0 0 var(--accent); }
+  .nav-icon { width: 20px; text-align: center; }
+  .sidebar-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); padding: 0 10px; margin-bottom: 6px; }
+  .player-mini { margin-top: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; }
+  .player-mini-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .player-mini-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .player-mini-level { font-size: 12px; color: var(--text-muted); }
+  .player-mini-foot { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+
+  .main { min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px;
+    padding: 14px 32px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--border);
+  }
+  .topbar-title { font-size: 18px; font-weight: 700; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .topbar-actions { display: flex; align-items: center; gap: 8px; }
+  .save-indicator { font-size: 12px; color: var(--text-muted); padding: 4px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); white-space: nowrap; }
+  .save-indicator.error { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+  .save-indicator.warn { color: var(--warning); }
+  .view { padding: 24px 32px 64px; width: 100%; max-width: 1440px; }
+
+  /* ---------- Componentes base ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px;
+    border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); color: var(--text);
+    cursor: pointer; font-weight: 500; white-space: nowrap; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  }
+  .btn:hover { background: var(--surface-3); }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn:focus-visible, .icon-btn:focus-visible, .nav-item:focus-visible, .check-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
+  .btn-primary:hover { background: var(--accent-hover); box-shadow: var(--glow); }
+  .btn-danger { background: transparent; color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+  .btn-danger:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .btn-danger-solid { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .btn-danger-solid:hover { background: color-mix(in srgb, var(--danger) 85%, #000); }
+  .btn-ghost { background: transparent; border-color: transparent; }
+  .btn-ghost:hover { background: var(--surface-2); }
+  .btn-sm { padding: 5px 10px; font-size: 13px; }
+  .icon-btn {
+    display: inline-grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radius-sm);
+    border: 1px solid transparent; background: transparent; cursor: pointer; color: var(--text-muted);
+  }
+  .icon-btn:hover { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+  .icon-btn:disabled { opacity: 0.35; cursor: not-allowed; background: transparent; border-color: transparent; }
+  .icon-btn.danger:hover { color: var(--danger); }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .card-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 14px; }
+  .card-title h3 { font-size: 15px; }
+  .muted { color: var(--text-muted); }
+  .small { font-size: 12px; }
+  .row { display: flex; align-items: center; gap: 8px; }
+  .row-wrap { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+  .section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .section-head h2 { font-size: 20px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600;
+    background: var(--surface-3); color: var(--text-muted); white-space: nowrap; border: 1px solid transparent;
+  }
+  .badge-status-todo { color: var(--text-muted); }
+  .badge-status-doing { color: var(--info); background: color-mix(in srgb, var(--info) 14%, transparent); }
+  .badge-status-paused { color: var(--warning); background: color-mix(in srgb, var(--warning) 14%, transparent); }
+  .badge-status-done { color: var(--success); background: color-mix(in srgb, var(--success) 14%, transparent); }
+  .badge-priority-low { color: var(--text-muted); }
+  .badge-priority-medium { color: var(--info); }
+  .badge-priority-high { color: var(--warning); }
+  .badge-priority-critical { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+  .badge-diff-easy { color: var(--success); }
+  .badge-diff-medium { color: var(--info); }
+  .badge-diff-hard { color: var(--warning); }
+  .badge-diff-epic { color: #c084fc; background: rgba(192, 132, 252, 0.14); }
+  .badge-xp { color: var(--xp); background: color-mix(in srgb, var(--xp) 14%, transparent); }
+  .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); }
+  .chip-danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+  .chip-warning { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 40%, var(--border)); }
+  .chip-success { color: var(--success); }
+  .tag { font-size: 11.5px; color: var(--secondary); }
+
+  .progress { height: 8px; background: var(--surface-3); border-radius: 999px; overflow: hidden; }
+  .progress > span { display: block; height: 100%; background: var(--progress); border-radius: 999px; transition: width 0.3s ease; }
+  .progress.done > span { background: var(--success); }
+  .progress.xp > span { background: linear-gradient(90deg, var(--xp), color-mix(in srgb, var(--xp) 60%, var(--accent))); }
+  .progress-lg { height: 10px; }
+
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--text-muted); }
+  .empty-state .empty-icon { font-size: 40px; margin-bottom: 8px; }
+  .empty-state h3 { color: var(--text); margin-bottom: 6px; font-size: 16px; }
+  .empty-state .btn { margin-top: 14px; }
+  .empty-inline { color: var(--text-muted); font-size: 13px; padding: 10px 0; }
+
+  /* ---------- Formulários ---------- */
+  .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px 16px; }
+  .field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .field > span, .field-label { font-size: 12.5px; font-weight: 600; color: var(--text-muted); }
+  .field .req { color: var(--danger); }
+  .input, .select, .textarea {
+    width: 100%; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--surface-2); color: var(--text); outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .input:focus, .select:focus, .textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .textarea { resize: vertical; min-height: 70px; }
+  .select-sm { padding: 4px 8px; font-size: 12.5px; width: auto; }
+  .field.invalid .input, .field.invalid .select, .field.invalid .textarea { border-color: var(--danger); }
+  .field-error { color: var(--danger); font-size: 12px; min-height: 0; }
+  .hint { font-size: 12px; color: var(--text-muted); }
+  .fieldset { border: 1px dashed var(--border); border-radius: var(--radius); padding: 14px; }
+  .fieldset-title { font-size: 12.5px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+  .icon-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+  .icon-option, .color-option {
+    width: 34px; height: 34px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2);
+    cursor: pointer; display: grid; place-items: center; font-size: 17px; padding: 0;
+  }
+  .icon-option.selected, .color-option.selected { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+  .color-option { border-radius: 50%; width: 28px; height: 28px; }
+  .color-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .color-input { width: 40px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: none; cursor: pointer; }
+  .cover-preview { width: 100%; height: 140px; border-radius: var(--radius-sm); border: 1px dashed var(--border); background: var(--surface-2) center / cover no-repeat; display: grid; place-items: center; color: var(--text-muted); font-size: 12.5px; overflow: hidden; }
+  .cover-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  /* ---------- Modais ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 100; background: var(--overlay); display: flex; align-items: flex-start; justify-content: center;
+    padding: 6vh 20px 20px; overflow-y: auto; opacity: 0; transition: opacity 0.15s ease;
+  }
+  .modal-backdrop.show { opacity: 1; }
+  .modal {
+    width: 100%; max-width: 560px; background: var(--surface); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px);
+    box-shadow: var(--shadow); transform: translateY(8px) scale(0.99); transition: transform 0.15s ease; display: flex; flex-direction: column; margin: 0;
+  }
+  .modal-backdrop.show .modal { transform: none; }
+  .modal-lg { max-width: 780px; }
+  .modal-sm { max-width: 440px; }
+  .modal-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .modal-header h2 { font-size: 17px; flex: 1; }
+  .modal-body { padding: 18px 20px; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 20px; border-top: 1px solid var(--border); }
+  .modal-message { color: var(--text-muted); white-space: pre-line; }
+
+  /* ---------- Toasts ---------- */
+  #toast-root { position: fixed; right: 20px; bottom: 20px; z-index: 200; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; pointer-events: none; }
+  .toast {
+    pointer-events: auto; display: flex; align-items: center; gap: 10px; min-width: 260px; max-width: 420px; padding: 10px 12px 10px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: var(--radius-sm);
+    box-shadow: var(--shadow); opacity: 0; transform: translateY(10px); transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast.show { opacity: 1; transform: none; }
+  .toast-success { border-left-color: var(--success); }
+  .toast-error { border-left-color: var(--danger); }
+  .toast-warning { border-left-color: var(--warning); }
+  .toast-xp { border-left-color: var(--xp); }
+  .toast-msg { flex: 1; font-size: 13.5px; }
+  .toast-action { background: none; border: 0; color: var(--accent); font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+  .toast-action:hover { background: var(--accent-soft); }
+  .toast-close { background: none; border: 0; color: var(--text-muted); cursor: pointer; padding: 2px 4px; }
+
+  /* ---------- Dashboard ---------- */
+  .hero { display: grid; grid-template-columns: auto 1fr auto; gap: 20px; align-items: center; padding: 22px; background: linear-gradient(135deg, var(--accent-soft), transparent 60%), var(--surface); margin-bottom: 18px; }
+  .avatar {
+    width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 22px; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--secondary)); box-shadow: var(--glow); flex-shrink: 0;
+  }
+  .avatar-sm { width: 36px; height: 36px; font-size: 14px; }
+  .hero-name { font-size: 20px; font-weight: 800; }
+  .hero-sub { color: var(--text-muted); margin-bottom: 10px; }
+  .hero-xp-line { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
+  .hero-level { text-align: center; padding: 0 10px; }
+  .hero-level-num { font-size: 36px; font-weight: 900; line-height: 1; background: linear-gradient(135deg, var(--accent), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .stat-card { padding: 14px 16px; }
+  .stat-label { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .stat-value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+  .stat-sub { font-size: 12px; color: var(--text-muted); }
+  .stat-card.danger .stat-value { color: var(--danger); }
+  .dash-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .list { display: flex; flex-direction: column; }
+  .list-item { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); min-width: 0; }
+  .list-item:last-child { border-bottom: 0; }
+  .list-item-main { flex: 1; min-width: 0; }
+  .list-item-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-item-sub { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .clickable { cursor: pointer; }
+  .clickable:hover .list-item-title { color: var(--accent); }
+  .activity-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; flex-shrink: 0; }
+  .recent-projects { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .mini-project { border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; background: var(--surface-2); cursor: pointer; border-top: 3px solid var(--project-color, var(--accent)); }
+  .mini-project:hover { border-color: var(--project-color, var(--accent)); }
+  .mini-project-title { font-weight: 600; margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* ---------- Projetos ---------- */
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+  .toolbar .input { width: 240px; }
+  .toolbar .select { width: auto; }
+  .project-list { display: flex; flex-direction: column; gap: 10px; }
+  .project-row {
+    display: grid; grid-template-columns: 64px minmax(0, 1fr) 180px auto; gap: 16px; align-items: center; padding: 12px 14px;
+    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--project-color, var(--accent)); border-radius: var(--radius); cursor: pointer;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  .project-row:hover { box-shadow: var(--glow); }
+  .project-thumb { width: 64px; height: 48px; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--project-color, var(--accent)) 18%, var(--surface-2)); display: grid; place-items: center; font-size: 24px; overflow: hidden; }
+  .project-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .project-row-title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 15px; }
+  .project-row-desc { color: var(--text-muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+  .project-row-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .project-row-progress .small { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .project-row-actions { display: flex; gap: 2px; }
+
+  .project-header { overflow: hidden; padding: 0; margin-bottom: 18px; border-top: 4px solid var(--project-color, var(--accent)); }
+  .project-cover { height: 170px; background: color-mix(in srgb, var(--project-color, var(--accent)) 20%, var(--surface-2)); }
+  .project-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .project-header-body { padding: 18px 22px 20px; display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; }
+  .project-title-line { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .project-title-icon { font-size: 30px; }
+  .project-title-line h2 { font-size: 22px; }
+  .motivation { margin-top: 10px; padding: 10px 14px; border-left: 3px solid var(--project-color, var(--accent)); background: var(--surface-2); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-style: italic; color: var(--text-muted); }
+  .project-side { display: flex; flex-direction: column; gap: 10px; }
+  .big-percent { font-size: 30px; font-weight: 900; }
+  .back-link { display: inline-flex; margin-bottom: 12px; }
+
+  .tabs { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--border); padding: 4px; border-radius: var(--radius); width: fit-content; }
+  .tab { border: 0; background: transparent; padding: 6px 12px; border-radius: var(--radius-sm); cursor: pointer; color: var(--text-muted); font-weight: 500; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--accent-soft); color: var(--text); }
+  .tab .count { font-size: 11px; margin-left: 4px; opacity: 0.8; }
+
+  /* ---------- Metas ---------- */
+  .goal-list { display: flex; flex-direction: column; gap: 10px; }
+  .goal-card { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 14px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .goal-card.is-done { opacity: 0.78; }
+  .goal-card.is-done .goal-title { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 40%, transparent); }
+  .goal-card.is-overdue { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); }
+  .goal-lead { display: flex; justify-content: center; padding-top: 2px; }
+  .check-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer;
+    color: #fff; font-weight: 900; display: grid; place-items: center; transition: all 0.15s;
+  }
+  .check-btn:hover { border-color: var(--success); }
+  .check-btn.checked { background: var(--success); border-color: var(--success); }
+  .goal-ring {
+    --p: 0; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+    background: conic-gradient(var(--progress) calc(var(--p) * 1%), var(--surface-3) 0);
+  }
+  .goal-ring.done { background: conic-gradient(var(--success) calc(var(--p) * 1%), var(--surface-3) 0); }
+  .goal-ring span { width: 34px; height: 34px; border-radius: 50%; background: var(--surface); display: grid; place-items: center; font-size: 10.5px; font-weight: 700; }
+  .goal-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .goal-title { font-weight: 600; font-size: 15px; }
+  .goal-desc { color: var(--text-muted); font-size: 13px; margin-top: 3px; }
+  .goal-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; align-items: center; }
+  .goal-progress { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .goal-progress .progress { flex: 1; max-width: 420px; }
+  .goal-value { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; }
+  .next-action { margin-top: 8px; font-size: 13px; padding: 6px 10px; background: var(--surface-2); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+  .next-action b { color: var(--secondary); font-weight: 600; }
+  .goal-side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .goal-side-actions { display: flex; gap: 2px; align-items: center; }
+  .goal-history { grid-column: 2 / -1; border-top: 1px dashed var(--border); padding-top: 10px; }
+  .history-item { display: grid; grid-template-columns: 110px 160px minmax(0, 1fr); gap: 10px; font-size: 12.5px; padding: 4px 0; color: var(--text-muted); }
+  .history-item b { color: var(--text); font-weight: 600; }
+  .project-link { background: none; border: 0; padding: 0; color: var(--text-muted); cursor: pointer; font-size: 12px; }
+  .project-link:hover { color: var(--accent); }
+
+  /* ---------- Configurações ---------- */
+  .settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+  .theme-options { display: flex; gap: 10px; }
+  .theme-option { flex: 1; padding: 14px; border-radius: var(--radius); border: 2px solid var(--border); background: var(--surface-2); cursor: pointer; text-align: left; }
+  .theme-option.selected { border-color: var(--accent); box-shadow: var(--glow); }
+  .theme-swatch { height: 40px; border-radius: var(--radius-sm); margin-bottom: 8px; border: 1px solid var(--border); }
+  .kv { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 6px 12px; font-size: 13px; }
+  .kv dt { color: var(--text-muted); }
+  .kv dd { margin: 0; }
+
+  .loading { padding: 60px; text-align: center; color: var(--text-muted); }
+
+  /* Responsividade básica (bônus, desktop é o foco) */
+  @media (max-width: 1200px) {
+    .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (max-width: 960px) {
+    #app { grid-template-columns: 1fr; }
+    .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; }
+    .nav { flex-direction: row; flex-wrap: wrap; }
+    .player-mini, .sidebar-section-title { display: none; }
+    .dash-grid, .settings-grid, .recent-projects { grid-template-columns: 1fr; }
+    .project-row { grid-template-columns: 48px minmax(0, 1fr); }
+    .project-row-progress, .project-row-actions { grid-column: 2; }
+    .project-header-body { grid-template-columns: 1fr; }
+    .form-grid, .form-grid-3 { grid-template-columns: 1fr; }
+    .view, .topbar { padding-left: 16px; padding-right: 16px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-logo">G</div>
+      <div>
+        <div class="brand-name">GoalQuest</div>
+        <div class="brand-sub">Metas gamificadas</div>
+      </div>
+    </div>
+    <div>
+      <div class="sidebar-section-title">Navegação</div>
+      <nav class="nav" id="nav"></nav>
+    </div>
+    <div class="player-mini" id="player-mini"></div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-title" id="page-title">GoalQuest</div>
+      <div class="topbar-actions">
+        <span class="save-indicator" id="save-indicator">Carregando…</span>
+        <button type="button" class="icon-btn" id="btn-undo" data-action="undo" title="Desfazer" aria-label="Desfazer">↶</button>
+        <button type="button" class="icon-btn" id="btn-redo" data-action="redo" title="Refazer" aria-label="Refazer">↷</button>
+        <button type="button" class="icon-btn" id="btn-theme" data-action="toggle-theme" title="Alternar tema" aria-label="Alternar tema">◐</button>
+        <button type="button" class="btn btn-primary btn-sm" data-action="new-project">+ Projeto</button>
+      </div>
+    </header>
+    <main class="view" id="view"><div class="loading">Carregando seus dados…</div></main>
+  </div>
+</div>
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+   * 1. CONSTANTES (todas declaradas aqui, antes de qualquer função)
+   * ===================================================================== */
+
+  const APP_VERSION = '0.1.0';
+  const CURRENT_SCHEMA_VERSION = 1;
+
+  const DB_NAME = 'goalquest';
+  const DB_VERSION = 1;
+  const STORE_STATE = 'state';
+  const STORE_MEDIA = 'media';
+  const STATE_KEY = 'main';
+  const BACKUP_KEY_PREFIX = 'backup-schema-v';
+
+  const SAVE_DEBOUNCE_MS = 400;
+  const UNDO_LIMIT = 60;
+  const ACTIVITY_LIMIT = 300;
+  const GOAL_LOG_LIMIT = 500;
+  const TOAST_DURATION_MS = 3800;
+  const TOAST_ACTION_DURATION_MS = 7000;
+  const TOAST_MAX = 5;
+  const IMAGE_MAX_SIDE = 1600;
+  const IMAGE_QUALITY = 0.8;
+  const UPCOMING_DAYS = 14;
+  const DASHBOARD_LIST_LIMIT = 6;
+  const HISTORY_PREVIEW_LIMIT = 12;
+  const DAY_MS = 86400000;
+
+  const XP_PER_PROGRESS_LOG = 2;
+  const XP_PROJECT_COMPLETE = 50;
+  const XP_LEVEL_BASE = 50;
+
+  const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+  const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+  const HTML_ESCAPE_REGEX = /[&<>"']/g;
+  const ROUTE_PREFIX_REGEX = /^#\/?/;
+  const WHITESPACE_REGEX = /\s+/;
+  const HTML_ESCAPE_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+  const MONTH_NAMES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const MONTH_SHORT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const WEEKDAY_NAMES = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+
+  // Mesmos ids das futuras colunas do Kanban (Fase 2).
+  const STATUSES = [
+    { id: 'todo', label: 'A fazer' },
+    { id: 'doing', label: 'Em andamento' },
+    { id: 'paused', label: 'Pausado' },
+    { id: 'done', label: 'Concluído' }
+  ];
+  const PRIORITIES = [
+    { id: 'low', label: 'Baixa', weight: 1 },
+    { id: 'medium', label: 'Média', weight: 2 },
+    { id: 'high', label: 'Alta', weight: 3 },
+    { id: 'critical', label: 'Crítica', weight: 4 }
+  ];
+  const DIFFICULTIES = [
+    { id: 'easy', label: 'Fácil', xp: 10 },
+    { id: 'medium', label: 'Média', xp: 25 },
+    { id: 'hard', label: 'Difícil', xp: 50 },
+    { id: 'epic', label: 'Épica', xp: 100 }
+  ];
+  const TRACKING_TYPES = [
+    { id: 'simple', label: 'Simples', hint: 'Feita ou não feita.' },
+    { id: 'numeric', label: 'Numérica', hint: 'Sai de um valor inicial e chega a um valor-alvo (ex.: peso 92 → 82 kg, R$ 0 → R$ 10.000). Funciona para subir ou descer.' },
+    { id: 'percentage', label: 'Percentual', hint: 'Você informa o percentual concluído (0–100%).' },
+    { id: 'frequency', label: 'Frequência', hint: 'Conta ocorrências até atingir um total (ex.: 40 treinos). O período de referência mostra quantas foram feitas no dia/semana/mês atual.' },
+    { id: 'duration', label: 'Duração', hint: 'Acumula tempo investido até atingir uma meta de horas (ex.: 120 h de estudo).' },
+    { id: 'scale', label: 'Escala', hint: 'Um valor dentro de uma escala (ex.: nível de inglês de 1 a 10, meta 8).' }
+  ];
+  const FREQUENCY_PERIODS = [
+    { id: 'day', label: 'Dia', current: 'hoje' },
+    { id: 'week', label: 'Semana', current: 'nesta semana' },
+    { id: 'month', label: 'Mês', current: 'neste mês' }
+  ];
+  const PROJECT_CATEGORIES = ['Estudos', 'Carreira', 'Negócios', 'Finanças', 'Saúde', 'Pessoal', 'Outro'];
+  const PROJECT_ICONS = ['🎯', '📚', '🎓', '💼', '📈', '💰', '🏦', '🧮', '🏋️', '🥗', '🧠', '🚀', '🌱', '🏆', '✍️', '⭐'];
+  const PROJECT_COLORS = ['#7c5cff', '#3b82f6', '#22d3ee', '#22c55e', '#84cc16', '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#a855f7', '#64748b'];
+  const DEFAULT_PROJECT_COLOR = '#7c5cff';
+  const DEFAULT_PROJECT_ICON = '🎯';
+
+  const NAV_ITEMS = [
+    { route: 'dashboard', label: 'Dashboard', icon: '🏠' },
+    { route: 'projects', label: 'Projetos', icon: '🗂️' },
+    { route: 'goals', label: 'Metas', icon: '🎯' },
+    { route: 'settings', label: 'Configurações', icon: '⚙️' }
+  ];
+  const THEMES = [
+    { id: 'dark', label: 'Escuro', swatch: 'linear-gradient(135deg, #0e1016 50%, #7c5cff 50%)' },
+    { id: 'light', label: 'Claro', swatch: 'linear-gradient(135deg, #f3f4f8 50%, #6645f0 50%)' }
+  ];
+  const ACTIVITY_ICONS = {
+    project_create: '🗂️', project_update: '✏️', project_delete: '🗑️', project_complete: '🏁',
+    goal_create: '🎯', goal_update: '✏️', goal_delete: '🗑️', goal_complete: '✅', goal_reopen: '↩️',
+    progress: '📈', level_up: '⬆️', profile: '👤', system: '⚙️'
+  };
+  const SAVE_STATUS_LABELS = {
+    loading: { text: 'Carregando…', cls: '' },
+    saved: { text: '✓ Salvo', cls: '' },
+    pending: { text: 'Alterações pendentes…', cls: '' },
+    saving: { text: 'Salvando…', cls: '' },
+    error: { text: '⚠ Erro ao salvar', cls: 'error' },
+    memory: { text: '⚠ Sem armazenamento — dados só nesta sessão', cls: 'warn' },
+    blocked: { text: '⚠ Salvamento desativado', cls: 'error' }
+  };
+  const PROJECT_SORTS = [
+    { id: 'updated', label: 'Atualizados recentemente' },
+    { id: 'deadline', label: 'Prazo mais próximo' },
+    { id: 'priority', label: 'Prioridade' },
+    { id: 'progress', label: 'Progresso' },
+    { id: 'name', label: 'Nome' }
+  ];
+  const GOAL_SORTS = [
+    { id: 'deadline', label: 'Prazo mais próximo' },
+    { id: 'priority', label: 'Prioridade' },
+    { id: 'progress', label: 'Progresso' },
+    { id: 'updated', label: 'Atualizadas recentemente' },
+    { id: 'title', label: 'Título' }
+  ];
+
+  // Migrações: a chave N transforma dados da versão N-1 na versão N.
+  const MIGRATIONS = {
+    1: function (data) {
+      // v0 → v1: dados sem versão (ou parciais) recebem a estrutura inicial.
+      const base = createDefaultState();
+      return {
+        schemaVersion: 1,
+        createdAt: Number(data.createdAt) || base.createdAt,
+        updatedAt: Number(data.updatedAt) || base.updatedAt,
+        profile: Object.assign({}, base.profile, data.profile || {}),
+        settings: Object.assign({}, base.settings, data.settings || {}),
+        player: Object.assign({}, base.player, data.player || {}),
+        projects: Array.isArray(data.projects) ? data.projects : [],
+        goals: Array.isArray(data.goals) ? data.goals : [],
+        activity: Array.isArray(data.activity) ? data.activity : []
+      };
+    }
+  };
+
+  /* =====================================================================
+   * 2. ESTADO MUTÁVEL DO MÓDULO
+   * ===================================================================== */
+
+  let state = null;
+  let dbPromise = null;
+  let storageAvailable = true;
+  let persistenceBlocked = false;
+  let saveTimer = null;
+  let saveStatus = 'loading';
+  let pendingToasts = [];
+  const undoHistory = { undo: [], redo: [] };
+  const mediaCache = new Map();
+  const modalStack = [];
+  const ui = {
+    route: { name: 'dashboard' },
+    detailStatus: 'all',
+    expandedGoals: new Set(),
+    projectFilters: { text: '', status: 'active', category: 'all', sort: 'updated' },
+    goalFilters: { text: '', status: 'open', project: 'all', difficulty: 'all', type: 'all', sort: 'deadline' }
+  };
+
+  /* =====================================================================
+   * 3. UTILITÁRIOS
+   * ===================================================================== */
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 9);
+  }
+
+  function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+    return String(value).replace(HTML_ESCAPE_REGEX, function (ch) { return HTML_ESCAPE_MAP[ch]; });
+  }
+
+  function clamp(n, min, max) {
+    return Math.min(max, Math.max(min, n));
+  }
+
+  function deepClone(obj) {
+    return JSON.parse(JSON.stringify(obj));
+  }
+
+  function parseNumber(value) {
+    if (typeof value === 'number') return value;
+    if (value === null || value === undefined) return NaN;
+    const s = String(value).trim().replace(',', '.');
+    if (s === '') return NaN;
+    return Number(s);
+  }
+
+  function isFiniteNumber(n) {
+    return typeof n === 'number' && isFinite(n);
+  }
+
+  function formatNumber(n) {
+    if (!isFiniteNumber(n)) return '—';
+    return n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  }
+
+  function formatPercent(fraction) {
+    return Math.round(clamp(fraction, 0, 1) * 100) + '%';
+  }
+
+  function formatMinutes(total) {
+    const min = Math.round(Math.max(0, total || 0));
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    if (!h) return m + 'min';
+    if (!m) return h + 'h';
+    return h + 'h ' + m + 'min';
+  }
+
+  function plural(n, singular, pluralForm) {
+    return n === 1 ? singular : pluralForm;
+  }
+
+  function normalizeHexColor(value, fallback) {
+    const v = String(value || '').trim();
+    if (!HEX_COLOR_REGEX.test(v)) return fallback;
+    if (v.length === 4) return ('#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3]).toLowerCase();
+    return v.toLowerCase();
+  }
+
+  function toISODate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+
+  function todayISO() {
+    return toISODate(new Date());
+  }
+
+  function isValidISODate(value) {
+    if (typeof value !== 'string' || !ISO_DATE_REGEX.test(value)) return false;
+    const parts = value.split('-').map(Number);
+    const d = new Date(parts[0], parts[1] - 1, parts[2]);
+    return d.getFullYear() === parts[0] && d.getMonth() === parts[1] - 1 && d.getDate() === parts[2];
+  }
+
+  function parseISODate(value) {
+    if (!isValidISODate(value)) return null;
+    const parts = value.split('-').map(Number);
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+  }
+
+  function addDaysISO(iso, n) {
+    const d = parseISODate(iso);
+    d.setDate(d.getDate() + n);
+    return toISODate(d);
+  }
+
+  function diffDays(fromIso, toIso) {
+    const a = parseISODate(fromIso);
+    const b = parseISODate(toIso);
+    if (!a || !b) return 0;
+    return Math.round((b.getTime() - a.getTime()) / DAY_MS);
+  }
+
+  function formatDate(iso) {
+    const d = parseISODate(iso);
+    if (!d) return '—';
+    return d.getDate() + ' ' + MONTH_SHORT[d.getMonth()] + ' ' + d.getFullYear();
+  }
+
+  function formatLongToday() {
+    const d = new Date();
+    return WEEKDAY_NAMES[d.getDay()] + ', ' + d.getDate() + ' de ' + MONTH_NAMES[d.getMonth()] + ' de ' + d.getFullYear();
+  }
+
+  function formatRelativeTime(ts) {
+    const diff = Date.now() - ts;
+    if (diff < 60000) return 'agora';
+    if (diff < 3600000) return 'há ' + Math.floor(diff / 60000) + ' min';
+    if (diff < DAY_MS) return 'há ' + Math.floor(diff / 3600000) + ' h';
+    const days = diffDays(toISODate(new Date(ts)), todayISO());
+    if (days === 1) return 'ontem';
+    if (days < 30) return 'há ' + days + ' dias';
+    return formatDate(toISODate(new Date(ts)));
+  }
+
+  function periodStartISO(period, iso) {
+    const d = parseISODate(iso);
+    if (period === 'week') {
+      d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+    } else if (period === 'month') {
+      d.setDate(1);
+    }
+    return toISODate(d);
+  }
+
+  function findById(list, id) {
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].id === id) return list[i];
+    }
+    return null;
+  }
+
+  function optionOf(list, id) {
+    return findById(list, id) || list[0];
+  }
+
+  function isOneOf(list, id) {
+    return list.some(function (item) { return item.id === id; });
+  }
+
+  function initials(name) {
+    const parts = String(name || '').trim().split(WHITESPACE_REGEX).filter(Boolean);
+    if (!parts.length) return '?';
+    const first = parts[0].charAt(0);
+    const last = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
+    return (first + last).toUpperCase();
+  }
+
+  function describeError(err) {
+    if (!err) return 'erro desconhecido';
+    if (err.name === 'QuotaExceededError') return 'espaço de armazenamento esgotado';
+    return err.message || String(err);
+  }
+
+  function parseTags(value) {
+    const seen = new Set();
+    return String(value || '').split(',').map(function (t) { return t.trim(); }).filter(function (t) {
+      const key = t.toLowerCase();
+      if (!t || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }
+
+  /* =====================================================================
+   * 4. ARMAZENAMENTO — wrapper Promise para IndexedDB
+   * ===================================================================== */
+
+  function openDatabase() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve, reject) {
+      if (!window.indexedDB) {
+        reject(new Error('IndexedDB não está disponível neste navegador.'));
+        return;
+      }
+      let request;
+      try {
+        request = window.indexedDB.open(DB_NAME, DB_VERSION);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+      request.addEventListener('upgradeneeded', function () {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(STORE_STATE)) db.createObjectStore(STORE_STATE, { keyPath: 'key' });
+        if (!db.objectStoreNames.contains(STORE_MEDIA)) db.createObjectStore(STORE_MEDIA, { keyPath: 'id' });
+      });
+      request.addEventListener('success', function () {
+        const db = request.result;
+        db.addEventListener('versionchange', function () {
+          db.close();
+          dbPromise = null;
+          showToast('O GoalQuest foi atualizado em outra aba. Recarregue esta página.', { type: 'warning' });
+        });
+        resolve(db);
+      });
+      request.addEventListener('error', function () {
+        reject(request.error || new Error('Falha ao abrir o IndexedDB.'));
+      });
+      request.addEventListener('blocked', function () {
+        showToast('Feche outras abas do GoalQuest para concluir a atualização do banco.', { type: 'warning' });
+      });
+    });
+    dbPromise.catch(function () { dbPromise = null; });
+    return dbPromise;
+  }
+
+  function idbTransaction(storeName, mode, operation) {
+    return openDatabase().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        let tx;
+        try {
+          tx = db.transaction(storeName, mode);
+        } catch (err) {
+          reject(err);
+          return;
+        }
+        const request = operation(tx.objectStore(storeName));
+        let result;
+        request.addEventListener('success', function () { result = request.result; });
+        tx.addEventListener('complete', function () { resolve(result); });
+        tx.addEventListener('error', function () { reject(tx.error || request.error); });
+        tx.addEventListener('abort', function () { reject(tx.error || new Error('Transação abortada.')); });
+      });
+    });
+  }
+
+  function idbGet(storeName, key) {
+    return idbTransaction(storeName, 'readonly', function (store) { return store.get(key); });
+  }
+
+  function idbPut(storeName, value) {
+    return idbTransaction(storeName, 'readwrite', function (store) { return store.put(value); });
+  }
+
+  function idbDelete(storeName, key) {
+    return idbTransaction(storeName, 'readwrite', function (store) { return store.delete(key); });
+  }
+
+  function idbGetAllKeys(storeName) {
+    return idbTransaction(storeName, 'readonly', function (store) { return store.getAllKeys(); });
+  }
+
+  /* =====================================================================
+   * 5. MODELO DE DADOS — fábricas, normalização e migração
+   * ===================================================================== */
+
+  function createDefaultState() {
+    const now = Date.now();
+    return {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      createdAt: now,
+      updatedAt: now,
+      profile: { name: 'Jogador', subtitle: 'Rumo ao próximo nível' },
+      settings: { theme: 'dark' },
+      player: { xpEarned: 0, xpSpent: 0, activeDays: [] },
+      projects: [],
+      goals: [],
+      activity: []
+    };
+  }
+
+  function defaultTracking(type) {
+    switch (type) {
+      case 'numeric': return { type: 'numeric', start: 0, current: 0, target: 100, unit: '' };
+      case 'percentage': return { type: 'percentage', current: 0 };
+      case 'frequency': return { type: 'frequency', count: 0, target: 10, period: 'week' };
+      case 'duration': return { type: 'duration', logged: 0, target: 600 };
+      case 'scale': return { type: 'scale', min: 1, max: 10, current: 1, target: 8 };
+      default: return { type: 'simple' };
+    }
+  }
+
+  function normalizeTracking(raw) {
+    const src = raw && typeof raw === 'object' ? raw : {};
+    const type = isOneOf(TRACKING_TYPES, src.type) ? src.type : 'simple';
+    const t = defaultTracking(type);
+    Object.keys(t).forEach(function (key) {
+      if (key === 'type') return;
+      if (typeof t[key] === 'number') {
+        const n = parseNumber(src[key]);
+        if (isFiniteNumber(n)) t[key] = n;
+      } else if (typeof src[key] === 'string') {
+        t[key] = src[key];
+      }
+    });
+    if (type === 'frequency' && !isOneOf(FREQUENCY_PERIODS, t.period)) t.period = 'week';
+    if (type === 'scale' && t.max <= t.min) t.max = t.min + 1;
+    return t;
+  }
+
+  function createProject(fields) {
+    const now = Date.now();
+    return normalizeProject(Object.assign({ id: uid(), createdAt: now, updatedAt: now }, fields || {}));
+  }
+
+  function normalizeProject(raw) {
+    const p = raw && typeof raw === 'object' ? raw : {};
+    const now = Date.now();
+    return {
+      id: p.id ? String(p.id) : uid(),
+      name: String(p.name || 'Projeto sem nome'),
+      icon: String(p.icon || DEFAULT_PROJECT_ICON),
+      description: String(p.description || ''),
+      category: PROJECT_CATEGORIES.indexOf(p.category) >= 0 ? p.category : 'Outro',
+      priority: isOneOf(PRIORITIES, p.priority) ? p.priority : 'medium',
+      color: normalizeHexColor(p.color, DEFAULT_PROJECT_COLOR),
+      status: isOneOf(STATUSES, p.status) ? p.status : 'todo',
+      deadline: isValidISODate(p.deadline) ? p.deadline : '',
+      motivation: String(p.motivation || ''),
+      coverId: p.coverId ? String(p.coverId) : null,
+      xpAwarded: Number(p.xpAwarded) || 0,
+      completedAt: Number(p.completedAt) || null,
+      createdAt: Number(p.createdAt) || now,
+      updatedAt: Number(p.updatedAt) || now
+    };
+  }
+
+  function createGoal(fields) {
+    const now = Date.now();
+    return normalizeGoal(Object.assign({ id: uid(), createdAt: now, updatedAt: now }, fields || {}));
+  }
+
+  function normalizeGoal(raw) {
+    const g = raw && typeof raw === 'object' ? raw : {};
+    const now = Date.now();
+    return {
+      id: g.id ? String(g.id) : uid(),
+      projectId: String(g.projectId || ''),
+      title: String(g.title || 'Meta sem título'),
+      description: String(g.description || ''),
+      tracking: normalizeTracking(g.tracking),
+      difficulty: isOneOf(DIFFICULTIES, g.difficulty) ? g.difficulty : 'medium',
+      priority: isOneOf(PRIORITIES, g.priority) ? g.priority : 'medium',
+      status: isOneOf(STATUSES, g.status) ? g.status : 'todo',
+      startDate: isValidISODate(g.startDate) ? g.startDate : '',
+      deadline: isValidISODate(g.deadline) ? g.deadline : '',
+      nextAction: String(g.nextAction || ''),
+      tags: Array.isArray(g.tags) ? g.tags.map(String).filter(Boolean) : [],
+      log: Array.isArray(g.log) ? g.log.filter(function (e) { return e && typeof e === 'object'; }) : [],
+      xpAwarded: Number(g.xpAwarded) || 0,
+      completedAt: Number(g.completedAt) || null,
+      createdAt: Number(g.createdAt) || now,
+      updatedAt: Number(g.updatedAt) || now
+    };
+  }
+
+  function normalizeState(raw) {
+    const base = createDefaultState();
+    const s = raw && typeof raw === 'object' ? raw : {};
+    const projects = (Array.isArray(s.projects) ? s.projects : []).map(normalizeProject);
+    const projectIds = new Set(projects.map(function (p) { return p.id; }));
+    const goals = (Array.isArray(s.goals) ? s.goals : []).map(normalizeGoal).filter(function (g) { return projectIds.has(g.projectId); });
+    const player = Object.assign({}, base.player, s.player || {});
+    player.xpEarned = Math.max(0, Number(player.xpEarned) || 0);
+    player.xpSpent = Math.max(0, Number(player.xpSpent) || 0);
+    player.activeDays = Array.isArray(player.activeDays) ? player.activeDays.filter(isValidISODate) : [];
+    const settings = Object.assign({}, base.settings, s.settings || {});
+    if (!isOneOf(THEMES, settings.theme)) settings.theme = 'dark';
+    return {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      createdAt: Number(s.createdAt) || base.createdAt,
+      updatedAt: Number(s.updatedAt) || base.updatedAt,
+      profile: {
+        name: String((s.profile && s.profile.name) || base.profile.name),
+        subtitle: String((s.profile && s.profile.subtitle) || '')
+      },
+      settings: settings,
+      player: player,
+      projects: projects,
+      goals: goals,
+      activity: (Array.isArray(s.activity) ? s.activity : []).filter(function (a) { return a && a.ts; }).slice(0, ACTIVITY_LIMIT)
+    };
+  }
+
+  function migrateState(raw) {
+    let data = raw && typeof raw === 'object' ? deepClone(raw) : {};
+    let version = Number(data.schemaVersion) || 0;
+    if (version > CURRENT_SCHEMA_VERSION) {
+      throw new Error('Os dados foram salvos por uma versão mais nova do GoalQuest (schema v' + version + ').');
+    }
+    while (version < CURRENT_SCHEMA_VERSION) {
+      const next = version + 1;
+      const migration = MIGRATIONS[next];
+      if (typeof migration !== 'function') throw new Error('Migração para o schema v' + next + ' não encontrada.');
+      data = migration(data);
+      data.schemaVersion = next;
+      version = next;
+    }
+    return normalizeState(data);
+  }
+
+  /* =====================================================================
+   * 6. CONSULTAS E REGRAS DO JOGO
+   * ===================================================================== */
+
+  function findProject(id) {
+    return findById(state.projects, id);
+  }
+
+  function findGoal(id) {
+    return findById(state.goals, id);
+  }
+
+  function goalsOfProject(projectId) {
+    return state.goals.filter(function (g) { return g.projectId === projectId; });
+  }
+
+  function goalMeasuredProgress(g) {
+    const t = g.tracking;
+    switch (t.type) {
+      case 'numeric':
+        if (t.target === t.start) return t.current === t.target ? 1 : 0;
+        return clamp((t.current - t.start) / (t.target - t.start), 0, 1);
+      case 'percentage':
+        return clamp(t.current / 100, 0, 1);
+      case 'frequency':
+        return t.target > 0 ? clamp(t.count / t.target, 0, 1) : 0;
+      case 'duration':
+        return t.target > 0 ? clamp(t.logged / t.target, 0, 1) : 0;
+      case 'scale':
+        if (t.target === t.min) return t.current >= t.target ? 1 : 0;
+        return clamp((t.current - t.min) / (t.target - t.min), 0, 1);
+      default:
+        return g.status === 'done' ? 1 : 0;
+    }
+  }
+
+  function goalProgress(g) {
+    return g.status === 'done' ? 1 : goalMeasuredProgress(g);
+  }
+
+  function projectProgress(p) {
+    const goals = goalsOfProject(p.id);
+    if (!goals.length) return p.status === 'done' ? 1 : 0;
+    const sum = goals.reduce(function (acc, g) { return acc + goalProgress(g); }, 0);
+    return sum / goals.length;
+  }
+
+  function isOverdue(deadline, status) {
+    return Boolean(deadline) && status !== 'done' && deadline < todayISO();
+  }
+
+  function frequencyCountInCurrentPeriod(g) {
+    const start = periodStartISO(g.tracking.period, todayISO());
+    return g.log.reduce(function (acc, e) {
+      return e.date && e.date >= start && e.date <= todayISO() ? acc + (Number(e.delta) || 0) : acc;
+    }, 0);
+  }
+
+  function goalValueText(g) {
+    const t = g.tracking;
+    switch (t.type) {
+      case 'numeric': {
+        const unit = t.unit ? ' ' + t.unit : '';
+        return formatNumber(t.current) + unit + ' → meta ' + formatNumber(t.target) + unit + (t.start !== 0 ? ' (início ' + formatNumber(t.start) + ')' : '');
+      }
+      case 'percentage':
+        return formatNumber(t.current) + '% concluído';
+      case 'frequency': {
+        const period = optionOf(FREQUENCY_PERIODS, t.period);
+        return t.count + ' / ' + t.target + ' ' + plural(t.target, 'vez', 'vezes') + ' · ' + frequencyCountInCurrentPeriod(g) + ' ' + period.current;
+      }
+      case 'duration':
+        return formatMinutes(t.logged) + ' / ' + formatMinutes(t.target);
+      case 'scale':
+        return 'Nível ' + formatNumber(t.current) + ' → meta ' + formatNumber(t.target) + ' (escala ' + formatNumber(t.min) + '–' + formatNumber(t.max) + ')';
+      default:
+        return g.status === 'done' ? 'Concluída' : 'Pendente';
+    }
+  }
+
+  function xpThreshold(level) {
+    return XP_LEVEL_BASE * level * (level - 1);
+  }
+
+  function levelFromXp(xp) {
+    let level = 1;
+    while (xpThreshold(level + 1) <= xp) level++;
+    return level;
+  }
+
+  function computeStreak(days) {
+    const set = new Set(days);
+    let cursor = todayISO();
+    if (!set.has(cursor)) cursor = addDaysISO(cursor, -1);
+    let count = 0;
+    while (set.has(cursor)) {
+      count++;
+      cursor = addDaysISO(cursor, -1);
+    }
+    return count;
+  }
+
+  function computeBestStreak(days) {
+    const sorted = Array.from(new Set(days)).sort();
+    let best = 0;
+    let run = 0;
+    for (let i = 0; i < sorted.length; i++) {
+      run = i > 0 && diffDays(sorted[i - 1], sorted[i]) === 1 ? run + 1 : 1;
+      if (run > best) best = run;
+    }
+    return best;
+  }
+
+  function getPlayerStats() {
+    const p = state.player;
+    const level = levelFromXp(p.xpEarned);
+    const levelStart = xpThreshold(level);
+    const levelEnd = xpThreshold(level + 1);
+    return {
+      earned: p.xpEarned,
+      spent: p.xpSpent,
+      available: Math.max(0, p.xpEarned - p.xpSpent),
+      level: level,
+      levelStart: levelStart,
+      levelEnd: levelEnd,
+      levelProgress: (p.xpEarned - levelStart) / (levelEnd - levelStart),
+      toNext: levelEnd - p.xpEarned,
+      streak: computeStreak(p.activeDays),
+      bestStreak: computeBestStreak(p.activeDays)
+    };
+  }
+
+  // --- Mutações (sempre chamadas dentro de commit, recebendo o estado s) ---
+
+  function queueToast(message, type) {
+    pendingToasts.push({ message: message, type: type || 'info' });
+  }
+
+  function addActivity(s, type, text, extra) {
+    s.activity.unshift(Object.assign({ id: uid(), ts: Date.now(), type: type, text: text }, extra || {}));
+    if (s.activity.length > ACTIVITY_LIMIT) s.activity.length = ACTIVITY_LIMIT;
+  }
+
+  function markActiveDay(s) {
+    const today = todayISO();
+    if (s.player.activeDays.indexOf(today) < 0) s.player.activeDays.push(today);
+  }
+
+  function awardXp(s, amount) {
+    if (!amount) return;
+    const before = levelFromXp(s.player.xpEarned);
+    s.player.xpEarned = Math.max(0, s.player.xpEarned + amount);
+    const after = levelFromXp(s.player.xpEarned);
+    if (after > before) {
+      addActivity(s, 'level_up', 'Subiu para o nível ' + after + '!');
+      queueToast('⬆️ Nível ' + after + ' alcançado!', 'xp');
+    }
+  }
+
+  function touchProject(s, projectId) {
+    const p = findById(s.projects, projectId);
+    if (p) p.updatedAt = Date.now();
+  }
+
+  function setGoalStatus(s, g, status) {
+    if (g.status === status) return;
+    const wasDone = g.status === 'done';
+    g.status = status;
+    g.updatedAt = Date.now();
+    touchProject(s, g.projectId);
+    if (status === 'done' && !wasDone) {
+      g.completedAt = Date.now();
+      const xp = optionOf(DIFFICULTIES, g.difficulty).xp;
+      if (!g.xpAwarded) {
+        g.xpAwarded = xp;
+        awardXp(s, xp);
+      }
+      markActiveDay(s);
+      addActivity(s, 'goal_complete', 'Meta concluída: "' + g.title + '"', { goalId: g.id, projectId: g.projectId, xp: xp });
+      queueToast('🎉 +' + xp + ' XP — meta concluída: ' + g.title, 'xp');
+    } else if (wasDone && status !== 'done') {
+      g.completedAt = null;
+      if (g.xpAwarded) {
+        awardXp(s, -g.xpAwarded);
+        g.xpAwarded = 0;
+      }
+      addActivity(s, 'goal_reopen', 'Meta reaberta: "' + g.title + '"', { goalId: g.id, projectId: g.projectId });
+    }
+  }
+
+  function setProjectStatus(s, p, status) {
+    if (p.status === status) return;
+    const wasDone = p.status === 'done';
+    p.status = status;
+    p.updatedAt = Date.now();
+    if (status === 'done' && !wasDone) {
+      p.completedAt = Date.now();
+      if (!p.xpAwarded) {
+        p.xpAwarded = XP_PROJECT_COMPLETE;
+        awardXp(s, XP_PROJECT_COMPLETE);
+      }
+      markActiveDay(s);
+      addActivity(s, 'project_complete', 'Projeto concluído: "' + p.name + '"', { projectId: p.id, xp: XP_PROJECT_COMPLETE });
+      queueToast('🏁 +' + XP_PROJECT_COMPLETE + ' XP — projeto concluído: ' + p.name, 'xp');
+    } else if (wasDone) {
+      p.completedAt = null;
+      if (p.xpAwarded) {
+        awardXp(s, -p.xpAwarded);
+        p.xpAwarded = 0;
+      }
+    }
+  }
+
+  function describeLogEntry(g, entry) {
+    const t = g.tracking;
+    const sign = entry.delta > 0 ? '+' : '';
+    switch (t.type) {
+      case 'numeric': return formatNumber(entry.value) + (t.unit ? ' ' + t.unit : '') + ' (' + sign + formatNumber(entry.delta) + ')';
+      case 'percentage': return formatNumber(entry.value) + '% (' + sign + formatNumber(entry.delta) + ' p.p.)';
+      case 'frequency': return sign + entry.delta + ' ' + plural(Math.abs(entry.delta), 'vez', 'vezes') + ' (total ' + entry.value + ')';
+      case 'duration': return '+' + formatMinutes(entry.delta) + ' (total ' + formatMinutes(entry.value) + ')';
+      case 'scale': return 'nível ' + formatNumber(entry.value) + ' (' + sign + formatNumber(entry.delta) + ')';
+      default: return '';
+    }
+  }
+
+  function applyProgressLog(s, g, input) {
+    const t = g.tracking;
+    let value = input.value;
+    let delta = 0;
+    switch (t.type) {
+      case 'numeric':
+        delta = value - t.current;
+        t.current = value;
+        break;
+      case 'percentage':
+        value = clamp(value, 0, 100);
+        delta = value - t.current;
+        t.current = value;
+        break;
+      case 'scale':
+        value = clamp(value, t.min, t.max);
+        delta = value - t.current;
+        t.current = value;
+        break;
+      case 'frequency':
+        delta = Math.round(value);
+        t.count = Math.max(0, t.count + delta);
+        value = t.count;
+        break;
+      case 'duration':
+        delta = value;
+        t.logged = Math.max(0, t.logged + delta);
+        value = t.logged;
+        break;
+      default:
+        return;
+    }
+    const entry = { id: uid(), ts: Date.now(), date: isValidISODate(input.date) ? input.date : todayISO(), value: value, delta: delta, note: input.note || '' };
+    g.log.push(entry);
+    if (g.log.length > GOAL_LOG_LIMIT) g.log.splice(0, g.log.length - GOAL_LOG_LIMIT);
+    g.updatedAt = Date.now();
+    touchProject(s, g.projectId);
+    markActiveDay(s);
+    awardXp(s, XP_PER_PROGRESS_LOG);
+    addActivity(s, 'progress', 'Progresso em "' + g.title + '": ' + describeLogEntry(g, entry), { goalId: g.id, projectId: g.projectId, xp: XP_PER_PROGRESS_LOG });
+    if (g.status === 'todo' || g.status === 'paused') g.status = 'doing';
+    if (g.status !== 'done' && goalMeasuredProgress(g) >= 1) setGoalStatus(s, g, 'done');
+  }
+
+  /* =====================================================================
+   * 7. COMMIT, UNDO/REDO E PERSISTÊNCIA
+   * ===================================================================== */
+
+  // Toda alteração de estado passa por aqui: snapshot → mutação → salvar → render.
+  function commit(label, mutator, options) {
+    const opts = options || {};
+    const snapshot = JSON.stringify(state);
+    pendingToasts = [];
+    try {
+      mutator(state);
+    } catch (err) {
+      console.error(err);
+      state = JSON.parse(snapshot);
+      pendingToasts = [];
+      showToast('Erro ao aplicar alteração: ' + describeError(err), { type: 'error' });
+      return false;
+    }
+    if (opts.undoable !== false) {
+      undoHistory.undo.push({ label: label, snapshot: snapshot });
+      if (undoHistory.undo.length > UNDO_LIMIT) undoHistory.undo.shift();
+      undoHistory.redo.length = 0;
+    }
+    state.updatedAt = Date.now();
+    scheduleSave();
+    renderApp();
+    flushPendingToasts();
+    return true;
+  }
+
+  function flushPendingToasts() {
+    const list = pendingToasts;
+    pendingToasts = [];
+    list.forEach(function (t) { showToast(t.message, { type: t.type }); });
+  }
+
+  function performUndo() {
+    const entry = undoHistory.undo.pop();
+    if (!entry) return;
+    undoHistory.redo.push({ label: entry.label, snapshot: JSON.stringify(state) });
+    state = JSON.parse(entry.snapshot);
+    applyTheme(state.settings.theme);
+    scheduleSave();
+    renderApp();
+    showToast('Desfeito: ' + entry.label, { type: 'info' });
+  }
+
+  function performRedo() {
+    const entry = undoHistory.redo.pop();
+    if (!entry) return;
+    undoHistory.undo.push({ label: entry.label, snapshot: JSON.stringify(state) });
+    state = JSON.parse(entry.snapshot);
+    applyTheme(state.settings.theme);
+    scheduleSave();
+    renderApp();
+    showToast('Refeito: ' + entry.label, { type: 'info' });
+  }
+
+  function setSaveStatus(status) {
+    saveStatus = status;
+    renderSaveIndicator();
+  }
+
+  function scheduleSave() {
+    if (persistenceBlocked) { setSaveStatus('blocked'); return; }
+    if (!storageAvailable) { setSaveStatus('memory'); return; }
+    setSaveStatus('pending');
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(persistNow, SAVE_DEBOUNCE_MS);
+  }
+
+  function persistNow() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (persistenceBlocked || !storageAvailable) return Promise.resolve();
+    setSaveStatus('saving');
+    return idbPut(STORE_STATE, { key: STATE_KEY, data: state, savedAt: Date.now() }).then(function () {
+      if (!saveTimer) setSaveStatus('saved');
+    }).catch(function (err) {
+      console.error(err);
+      setSaveStatus('error');
+      showToast('Falha ao salvar: ' + describeError(err), { type: 'error' });
+    });
+  }
+
+  function loadState() {
+    return idbGet(STORE_STATE, STATE_KEY).then(function (record) {
+      if (!record || !record.data) {
+        state = createDefaultState();
+        addActivity(state, 'system', 'Bem-vindo ao GoalQuest! Crie seu primeiro projeto.');
+        return persistNow();
+      }
+      const raw = record.data;
+      const fromVersion = Number(raw.schemaVersion) || 0;
+      try {
+        state = migrateState(raw);
+      } catch (err) {
+        console.error(err);
+        persistenceBlocked = true;
+        state = createDefaultState();
+        openModal({
+          title: 'Não foi possível carregar seus dados',
+          size: 'sm',
+          body: '<p class="modal-message">' + escapeHtml(describeError(err)) + '\n\nSeus dados originais continuam intactos no navegador. O salvamento foi desativado nesta sessão para não sobrescrevê-los.</p>',
+          actions: [{ id: 'ok', label: 'Entendi', variant: 'primary' }]
+        });
+        return null;
+      }
+      if (fromVersion < CURRENT_SCHEMA_VERSION) {
+        // Guarda uma cópia dos dados antigos antes de gravar o formato novo.
+        return idbPut(STORE_STATE, { key: BACKUP_KEY_PREFIX + fromVersion + '-' + Date.now(), data: raw, savedAt: Date.now() }).then(function () {
+          showToast('Dados atualizados para o formato v' + CURRENT_SCHEMA_VERSION + ' (cópia do formato antigo preservada).', { type: 'success' });
+          return persistNow();
+        });
+      }
+      return null;
+    }).then(function () {
+      return garbageCollectMedia();
+    }).catch(function (err) {
+      console.error(err);
+      if (!state) state = createDefaultState();
+      storageAvailable = false;
+      showToast('Armazenamento indisponível (' + describeError(err) + '). Os dados desta sessão não serão salvos.', { type: 'error' });
+    });
+  }
+
+  function requestPersistentStorage() {
+    try {
+      if (navigator.storage && navigator.storage.persist) {
+        navigator.storage.persist().catch(function () { return false; });
+      }
+    } catch (err) {
+      // Alguns navegadores bloqueiam a API em file://; não é crítico.
+    }
+  }
+
+  /* =====================================================================
+   * 8. IMAGENS (compressão + store de mídia)
+   * ===================================================================== */
+
+  function compressImage(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !file.type || file.type.indexOf('image/') !== 0) {
+        reject(new Error('O arquivo selecionado não é uma imagem.'));
+        return;
+      }
+      const reader = new FileReader();
+      reader.addEventListener('error', function () { reject(reader.error || new Error('Falha ao ler o arquivo.')); });
+      reader.addEventListener('load', function () {
+        const img = new Image();
+        img.addEventListener('error', function () { reject(new Error('Não foi possível abrir esta imagem.')); });
+        img.addEventListener('load', function () {
+          const scale = Math.min(1, IMAGE_MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+          const w = Math.max(1, Math.round(img.naturalWidth * scale));
+          const h = Math.max(1, Math.round(img.naturalHeight * scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', IMAGE_QUALITY));
+        });
+        img.src = reader.result;
+      });
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function saveMedia(dataUrl) {
+    const id = 'm-' + uid();
+    mediaCache.set(id, dataUrl);
+    if (!storageAvailable || persistenceBlocked) return Promise.resolve(id);
+    return idbPut(STORE_MEDIA, { id: id, dataUrl: dataUrl, createdAt: Date.now() }).then(function () { return id; });
+  }
+
+  function loadMedia(id) {
+    if (mediaCache.has(id)) return Promise.resolve(mediaCache.get(id));
+    if (!storageAvailable) return Promise.resolve(null);
+    return idbGet(STORE_MEDIA, id).then(function (rec) {
+      const url = rec ? rec.dataUrl : null;
+      if (url) mediaCache.set(id, url);
+      return url;
+    }).catch(function () { return null; });
+  }
+
+  function hydrateMedia(root) {
+    root.querySelectorAll('img[data-media-id]').forEach(function (img) {
+      loadMedia(img.getAttribute('data-media-id')).then(function (url) {
+        if (url) img.src = url;
+        else img.remove();
+      });
+    });
+  }
+
+  // Remove do banco imagens que nenhum projeto referencia mais (roda só no carregamento,
+  // assim um "desfazer" dentro da sessão sempre encontra a imagem).
+  function garbageCollectMedia() {
+    if (!storageAvailable || persistenceBlocked) return Promise.resolve();
+    const referenced = new Set();
+    state.projects.forEach(function (p) { if (p.coverId) referenced.add(p.coverId); });
+    return idbGetAllKeys(STORE_MEDIA).then(function (keys) {
+      const orphans = (keys || []).filter(function (k) { return !referenced.has(k); });
+      return Promise.all(orphans.map(function (k) { return idbDelete(STORE_MEDIA, k); }));
+    }).catch(function (err) { console.warn('GC de mídia falhou', err); });
+  }
+
+  /* =====================================================================
+   * 9. TOASTS
+   * ===================================================================== */
+
+  function showToast(message, options) {
+    const opts = options || {};
+    const root = document.getElementById('toast-root');
+    while (root.children.length >= TOAST_MAX) root.removeChild(root.firstChild);
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + (opts.type || 'info');
+    el.setAttribute('role', 'status');
+    el.innerHTML = '<span class="toast-msg">' + escapeHtml(message) + '</span>' +
+      (opts.action ? '<button type="button" class="toast-action">' + escapeHtml(opts.action.label) + '</button>' : '') +
+      '<button type="button" class="toast-close" aria-label="Fechar">✕</button>';
+    let timer = null;
+    function dismiss() {
+      clearTimeout(timer);
+      el.classList.remove('show');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 220);
+    }
+    el.querySelector('.toast-close').addEventListener('click', dismiss);
+    if (opts.action) {
+      el.querySelector('.toast-action').addEventListener('click', function () {
+        dismiss();
+        opts.action.onClick();
+      });
+    }
+    root.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    timer = setTimeout(dismiss, opts.duration || (opts.action ? TOAST_ACTION_DURATION_MS : TOAST_DURATION_MS));
+    el.addEventListener('mouseenter', function () { clearTimeout(timer); });
+    el.addEventListener('mouseleave', function () { timer = setTimeout(dismiss, TOAST_DURATION_MS); });
+  }
+
+  /* =====================================================================
+   * 10. MODAIS REUTILIZÁVEIS
+   * ===================================================================== */
+
+  // opts: { title, body (HTML), size: 'sm'|'md'|'lg', actions: [{id,label,variant,submit}],
+  //         onOpen(modal), onAction(id, modal) → false mantém aberto (aceita Promise), onClose(reason) }
+  function openModal(opts) {
+    const root = document.getElementById('modal-root');
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    const actions = (opts.actions || []).map(function (a) {
+      const cls = a.variant === 'primary' ? 'btn btn-primary' : a.variant === 'danger' ? 'btn btn-danger-solid' : 'btn';
+      return '<button type="' + (a.submit ? 'submit' : 'button') + '" class="' + cls + '" data-modal-action="' + escapeHtml(a.id) + '">' + escapeHtml(a.label) + '</button>';
+    }).join('');
+    backdrop.innerHTML =
+      '<form class="modal modal-' + (opts.size || 'md') + '" role="dialog" aria-modal="true" novalidate>' +
+      '<header class="modal-header"><h2>' + escapeHtml(opts.title || '') + '</h2>' +
+      '<button type="button" class="icon-btn" data-modal-close aria-label="Fechar">✕</button></header>' +
+      '<div class="modal-body">' + (opts.body || '') + '</div>' +
+      (actions ? '<footer class="modal-footer">' + actions + '</footer>' : '') +
+      '</form>';
+    const form = backdrop.querySelector('form');
+    const modal = { el: form, backdrop: backdrop, closed: false, busy: false, close: null };
+
+    function close(reason) {
+      if (modal.closed) return;
+      modal.closed = true;
+      const idx = modalStack.indexOf(modal);
+      if (idx >= 0) modalStack.splice(idx, 1);
+      backdrop.classList.remove('show');
+      setTimeout(function () { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }, 160);
+      if (opts.onClose) opts.onClose(reason || 'close');
+    }
+    modal.close = close;
+
+    function runAction(id) {
+      if (modal.busy || modal.closed) return;
+      if (!opts.onAction) { close(id); return; }
+      let result;
+      try {
+        result = opts.onAction(id, modal);
+      } catch (err) {
+        console.error(err);
+        showToast('Erro: ' + describeError(err), { type: 'error' });
+        return;
+      }
+      if (result && typeof result.then === 'function') {
+        modal.busy = true;
+        form.querySelectorAll('.modal-footer button').forEach(function (b) { b.disabled = true; });
+        result.then(function (r) {
+          modal.busy = false;
+          form.querySelectorAll('.modal-footer button').forEach(function (b) { b.disabled = false; });
+          if (r !== false) close(id);
+        }, function (err) {
+          modal.busy = false;
+          form.querySelectorAll('.modal-footer button').forEach(function (b) { b.disabled = false; });
+          showToast('Erro: ' + describeError(err), { type: 'error' });
+        });
+      } else if (result !== false) {
+        close(id);
+      }
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const primary = (opts.actions || []).filter(function (a) { return a.submit; })[0];
+      if (primary) runAction(primary.id);
+    });
+    form.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-modal-action]');
+      if (btn && btn.type !== 'submit') runAction(btn.getAttribute('data-modal-action'));
+      if (e.target.closest('[data-modal-close]')) close('dismiss');
+    });
+    let pressedOnBackdrop = false;
+    backdrop.addEventListener('mousedown', function (e) { pressedOnBackdrop = e.target === backdrop; });
+    backdrop.addEventListener('click', function (e) {
+      if (pressedOnBackdrop && e.target === backdrop) close('dismiss');
+      pressedOnBackdrop = false;
+    });
+
+    root.appendChild(backdrop);
+    modalStack.push(modal);
+    requestAnimationFrame(function () { backdrop.classList.add('show'); });
+    if (opts.onOpen) opts.onOpen(modal);
+    const focusTarget = form.querySelector('[autofocus]') || form.querySelector('.modal-body input:not([type=hidden]):not([type=file]), .modal-body select, .modal-body textarea') || form.querySelector('.modal-footer .btn-primary, .modal-footer .btn-danger-solid');
+    if (focusTarget) setTimeout(function () { focusTarget.focus(); }, 30);
+    return modal;
+  }
+
+  function confirmDialog(opts) {
+    return new Promise(function (resolve) {
+      let answered = false;
+      openModal({
+        title: opts.title || 'Confirmar',
+        size: 'sm',
+        body: '<p class="modal-message">' + escapeHtml(opts.message || '') + '</p>',
+        actions: [
+          { id: 'cancel', label: opts.cancelLabel || 'Cancelar' },
+          { id: 'confirm', label: opts.confirmLabel || 'Confirmar', variant: opts.danger ? 'danger' : 'primary' }
+        ],
+        onAction: function (id) {
+          answered = true;
+          resolve(id === 'confirm');
+          return true;
+        },
+        onClose: function () { if (!answered) resolve(false); }
+      });
+    });
+  }
+
+  function clearFormErrors(root) {
+    root.querySelectorAll('.field.invalid').forEach(function (f) { f.classList.remove('invalid'); });
+    root.querySelectorAll('.field-error').forEach(function (e) { e.textContent = ''; });
+  }
+
+  function showFormErrors(root, errors) {
+    clearFormErrors(root);
+    const names = Object.keys(errors);
+    names.forEach(function (name) {
+      const input = root.querySelector('[name="' + name + '"]');
+      const field = input ? input.closest('.field') : null;
+      if (!field) return;
+      field.classList.add('invalid');
+      let msg = field.querySelector('.field-error');
+      if (!msg) {
+        msg = document.createElement('div');
+        msg.className = 'field-error';
+        field.appendChild(msg);
+      }
+      msg.textContent = errors[name];
+    });
+    if (names.length) {
+      const first = root.querySelector('[name="' + names[0] + '"]');
+      if (first) first.focus();
+    }
+    return names.length === 0;
+  }
+
+  /* =====================================================================
+   * 11. HELPERS DE HTML
+   * ===================================================================== */
+
+  function optionsHtml(list, selected) {
+    return list.map(function (item) {
+      return '<option value="' + escapeHtml(item.id) + '"' + (item.id === selected ? ' selected' : '') + '>' + escapeHtml(item.label) + '</option>';
+    }).join('');
+  }
+
+  function statusBadge(status) {
+    return '<span class="badge badge-status-' + escapeHtml(status) + '">' + escapeHtml(optionOf(STATUSES, status).label) + '</span>';
+  }
+
+  function priorityBadge(priority) {
+    return '<span class="badge badge-priority-' + escapeHtml(priority) + '" title="Prioridade">⚑ ' + escapeHtml(optionOf(PRIORITIES, priority).label) + '</span>';
+  }
+
+  function difficultyBadge(difficulty) {
+    const d = optionOf(DIFFICULTIES, difficulty);
+    return '<span class="badge badge-diff-' + escapeHtml(d.id) + '" title="Dificuldade">' + escapeHtml(d.label) + ' · ' + d.xp + ' XP</span>';
+  }
+
+  function progressBarHtml(fraction, extraClass) {
+    const pct = Math.round(clamp(fraction, 0, 1) * 100);
+    return '<div class="progress ' + (extraClass || '') + (pct >= 100 ? ' done' : '') + '" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100"><span style="width:' + pct + '%"></span></div>';
+  }
+
+  function deadlineChip(deadline, status) {
+    if (!deadline) return '';
+    if (status === 'done') return '<span class="chip chip-success">📅 ' + formatDate(deadline) + '</span>';
+    const n = diffDays(todayISO(), deadline);
+    let text;
+    let cls = '';
+    if (n < 0) { text = 'Atrasado ' + (-n) + ' ' + plural(-n, 'dia', 'dias'); cls = 'chip-danger'; }
+    else if (n === 0) { text = 'Vence hoje'; cls = 'chip-warning'; }
+    else if (n === 1) { text = 'Vence amanhã'; cls = 'chip-warning'; }
+    else if (n <= 7) { text = 'Em ' + n + ' dias'; cls = 'chip-warning'; }
+    else { text = formatDate(deadline); }
+    return '<span class="chip ' + cls + '" title="Prazo: ' + formatDate(deadline) + '">📅 ' + text + '</span>';
+  }
+
+  function emptyStateHtml(icon, title, text, actionHtml) {
+    return '<div class="empty-state"><div class="empty-icon">' + icon + '</div><h3>' + escapeHtml(title) + '</h3><p>' + escapeHtml(text) + '</p>' + (actionHtml || '') + '</div>';
+  }
+
+  /* =====================================================================
+   * 12. RENDERIZAÇÃO — shell
+   * ===================================================================== */
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', isOneOf(THEMES, theme) ? theme : 'dark');
+  }
+
+  function renderApp() {
+    renderNav();
+    renderPlayerMini();
+    renderUndoButtons();
+    renderSaveIndicator();
+    renderView();
+  }
+
+  function renderNav() {
+    const current = ui.route.name === 'project' ? 'projects' : ui.route.name;
+    document.getElementById('nav').innerHTML = NAV_ITEMS.map(function (item) {
+      return '<button type="button" class="nav-item' + (item.route === current ? ' active' : '') + '" data-action="navigate" data-route="' + item.route + '">' +
+        '<span class="nav-icon">' + item.icon + '</span>' + escapeHtml(item.label) + '</button>';
+    }).join('');
+  }
+
+  function renderPlayerMini() {
+    const ps = getPlayerStats();
+    document.getElementById('player-mini').innerHTML =
+      '<div class="player-mini-top"><div class="avatar avatar-sm">' + escapeHtml(initials(state.profile.name)) + '</div>' +
+      '<div style="min-width:0"><div class="player-mini-name">' + escapeHtml(state.profile.name) + '</div>' +
+      '<div class="player-mini-level">Nível ' + ps.level + '</div></div></div>' +
+      progressBarHtml(ps.levelProgress, 'xp') +
+      '<div class="player-mini-foot"><span>' + ps.earned + ' XP</span><span>🔥 ' + ps.streak + ' ' + plural(ps.streak, 'dia', 'dias') + '</span></div>';
+  }
+
+  function renderUndoButtons() {
+    const undoBtn = document.getElementById('btn-undo');
+    const redoBtn = document.getElementById('btn-redo');
+    const lastUndo = undoHistory.undo[undoHistory.undo.length - 1];
+    const lastRedo = undoHistory.redo[undoHistory.redo.length - 1];
+    undoBtn.disabled = !lastUndo;
+    redoBtn.disabled = !lastRedo;
+    undoBtn.title = lastUndo ? 'Desfazer: ' + lastUndo.label : 'Nada para desfazer';
+    redoBtn.title = lastRedo ? 'Refazer: ' + lastRedo.label : 'Nada para refazer';
+  }
+
+  function renderSaveIndicator() {
+    const el = document.getElementById('save-indicator');
+    const info = SAVE_STATUS_LABELS[saveStatus] || SAVE_STATUS_LABELS.saved;
+    el.textContent = info.text;
+    el.className = 'save-indicator ' + info.cls;
+  }
+
+  function setPageTitle(title) {
+    document.getElementById('page-title').textContent = title;
+    document.title = title + ' · GoalQuest';
+  }
+
+  function renderView() {
+    const view = document.getElementById('view');
+    const route = ui.route;
+    switch (route.name) {
+      case 'projects':
+        setPageTitle('Projetos');
+        view.innerHTML = projectsViewHtml();
+        renderProjectsList();
+        break;
+      case 'project':
+        view.innerHTML = projectDetailHtml(route.id);
+        break;
+      case 'goals':
+        setPageTitle('Metas');
+        view.innerHTML = goalsViewHtml();
+        renderGoalsList();
+        break;
+      case 'settings':
+        setPageTitle('Configurações');
+        view.innerHTML = settingsViewHtml();
+        fillStorageEstimate();
+        break;
+      default:
+        setPageTitle('Dashboard');
+        view.innerHTML = dashboardHtml();
+    }
+    hydrateMedia(view);
+  }
+
+  /* =====================================================================
+   * 13. VIEW — Dashboard
+   * ===================================================================== */
+
+  function dashboardHtml() {
+    const ps = getPlayerStats();
+    const today = todayISO();
+    const goals = state.goals;
+    const projects = state.projects;
+    const doneGoals = goals.filter(function (g) { return g.status === 'done'; });
+    const openGoals = goals.filter(function (g) { return g.status !== 'done'; });
+    const doingGoals = goals.filter(function (g) { return g.status === 'doing'; });
+    const activeProjects = projects.filter(function (p) { return p.status !== 'done'; });
+    const avgProgress = goals.length ? goals.reduce(function (a, g) { return a + goalProgress(g); }, 0) / goals.length : 0;
+    const overdueGoals = openGoals.filter(function (g) { return isOverdue(g.deadline, g.status); });
+    const overdueProjects = activeProjects.filter(function (p) { return isOverdue(p.deadline, p.status); });
+    const monthAgo = addDaysISO(today, -29);
+    const activeDays30 = state.player.activeDays.filter(function (d) { return d >= monthAgo && d <= today; }).length;
+    const weekAgoTs = Date.now() - 7 * DAY_MS;
+    const xp7 = state.activity.reduce(function (a, e) { return e.ts >= weekAgoTs && e.xp > 0 ? a + e.xp : a; }, 0);
+
+    const hero =
+      '<section class="card hero">' +
+      '<div class="avatar">' + escapeHtml(initials(state.profile.name)) + '</div>' +
+      '<div><div class="hero-name">Olá, ' + escapeHtml(state.profile.name) + '</div>' +
+      '<div class="hero-sub">' + escapeHtml(state.profile.subtitle || formatLongToday()) + '</div>' +
+      progressBarHtml(ps.levelProgress, 'xp progress-lg') +
+      '<div class="hero-xp-line"><span>' + ps.earned + ' XP no total</span><span>' + ps.toNext + ' XP para o nível ' + (ps.level + 1) + '</span></div>' +
+      '<div class="hero-chips"><span class="chip">🔥 Streak: ' + ps.streak + ' ' + plural(ps.streak, 'dia', 'dias') + '</span>' +
+      '<span class="chip">🏅 Recorde: ' + ps.bestStreak + ' ' + plural(ps.bestStreak, 'dia', 'dias') + '</span>' +
+      '<span class="chip">💎 XP disponível: ' + ps.available + '</span></div></div>' +
+      '<div class="hero-level"><div class="small muted">NÍVEL</div><div class="hero-level-num">' + ps.level + '</div></div>' +
+      '</section>';
+
+    const stats = [
+      { label: '🗂️ Projetos ativos', value: activeProjects.length, sub: projects.length + ' no total' },
+      { label: '✅ Metas concluídas', value: doneGoals.length, sub: goals.length ? formatPercent(doneGoals.length / goals.length) + ' de ' + goals.length : 'nenhuma meta ainda' },
+      { label: '⚡ Em andamento', value: doingGoals.length, sub: openGoals.length + ' em aberto' },
+      { label: '📊 Progresso médio', value: formatPercent(avgProgress), sub: 'de todas as metas' },
+      { label: '⏰ Atrasados', value: overdueGoals.length + overdueProjects.length, sub: overdueGoals.length + ' metas · ' + overdueProjects.length + ' projetos', cls: overdueGoals.length + overdueProjects.length ? 'danger' : '' },
+      { label: '📅 Dias ativos (30d)', value: activeDays30, sub: '+' + xp7 + ' XP nos últimos 7 dias' }
+    ].map(function (s) {
+      return '<div class="card stat-card ' + (s.cls || '') + '"><div class="stat-label">' + s.label + '</div><div class="stat-value">' + s.value + '</div><div class="stat-sub">' + escapeHtml(s.sub) + '</div></div>';
+    }).join('');
+
+    if (!projects.length) {
+      return hero + '<div class="stats-grid">' + stats + '</div>' +
+        '<div class="card">' + emptyStateHtml('🚀', 'Comece sua jornada', 'Crie um projeto (ex.: "Formação em Economia" ou "Consultoria de investimentos") e adicione metas a ele.', '<button type="button" class="btn btn-primary" data-action="new-project">+ Criar primeiro projeto</button>') + '</div>';
+    }
+
+    return hero +
+      '<div class="stats-grid">' + stats + '</div>' +
+      '<div class="dash-grid">' +
+      dashCard('📅 Próximos prazos', 'Próximos ' + UPCOMING_DAYS + ' dias', upcomingListHtml(today)) +
+      dashCard('⏰ Atrasados', overdueGoals.length + overdueProjects.length + ' itens', overdueListHtml(overdueGoals, overdueProjects)) +
+      dashCard('➡️ Próximas ações', 'Metas em andamento', nextActionsHtml(openGoals)) +
+      dashCard('🗂️ Projetos recentes', '', recentProjectsHtml()) +
+      dashCard('🕘 Atividade recente', '', activityListHtml()) +
+      '</div>';
+  }
+
+  function dashCard(title, subtitle, body) {
+    return '<section class="card"><div class="card-title"><h3>' + escapeHtml(title) + '</h3><span class="small muted">' + escapeHtml(subtitle) + '</span></div>' + body + '</section>';
+  }
+
+  function deadlineItemHtml(kind, item) {
+    const isGoal = kind === 'goal';
+    const project = isGoal ? findProject(item.projectId) : item;
+    const title = isGoal ? item.title : item.name;
+    const sub = isGoal ? (project ? project.icon + ' ' + project.name : '') : 'Projeto · ' + item.category;
+    return '<div class="list-item clickable" data-action="open-project" data-id="' + escapeHtml(project ? project.id : '') + '">' +
+      '<div class="activity-icon">' + (isGoal ? '🎯' : escapeHtml(item.icon)) + '</div>' +
+      '<div class="list-item-main"><div class="list-item-title">' + escapeHtml(title) + '</div><div class="list-item-sub">' + escapeHtml(sub) + '</div></div>' +
+      deadlineChip(item.deadline, item.status) + '</div>';
+  }
+
+  function upcomingListHtml(today) {
+    const limit = addDaysISO(today, UPCOMING_DAYS);
+    const inWindow = function (x) { return x.deadline && x.status !== 'done' && x.deadline >= today && x.deadline <= limit; };
+    const items = state.goals.filter(inWindow).map(function (g) { return { kind: 'goal', item: g }; })
+      .concat(state.projects.filter(inWindow).map(function (p) { return { kind: 'project', item: p }; }))
+      .sort(function (a, b) { return a.item.deadline < b.item.deadline ? -1 : a.item.deadline > b.item.deadline ? 1 : 0; })
+      .slice(0, DASHBOARD_LIST_LIMIT);
+    if (!items.length) return '<div class="empty-inline">Nenhum prazo nos próximos ' + UPCOMING_DAYS + ' dias. 🎉</div>';
+    return '<div class="list">' + items.map(function (x) { return deadlineItemHtml(x.kind, x.item); }).join('') + '</div>';
+  }
+
+  function overdueListHtml(goals, projects) {
+    const items = goals.map(function (g) { return { kind: 'goal', item: g }; })
+      .concat(projects.map(function (p) { return { kind: 'project', item: p }; }))
+      .sort(function (a, b) { return a.item.deadline < b.item.deadline ? -1 : 1; })
+      .slice(0, DASHBOARD_LIST_LIMIT);
+    if (!items.length) return '<div class="empty-inline">Nada atrasado. Continue assim!</div>';
+    return '<div class="list">' + items.map(function (x) { return deadlineItemHtml(x.kind, x.item); }).join('') + '</div>';
+  }
+
+  function nextActionsHtml(openGoals) {
+    const items = openGoals.filter(function (g) { return g.nextAction && g.status !== 'paused'; })
+      .sort(function (a, b) {
+        const pa = optionOf(PRIORITIES, a.priority).weight;
+        const pb = optionOf(PRIORITIES, b.priority).weight;
+        if (pa !== pb) return pb - pa;
+        if (a.status !== b.status) return a.status === 'doing' ? -1 : 1;
+        return b.updatedAt - a.updatedAt;
+      }).slice(0, DASHBOARD_LIST_LIMIT);
+    if (!items.length) return '<div class="empty-inline">Defina uma "próxima ação" nas suas metas para vê-las aqui.</div>';
+    return '<div class="list">' + items.map(function (g) {
+      const project = findProject(g.projectId);
+      return '<div class="list-item clickable" data-action="open-project" data-id="' + escapeHtml(g.projectId) + '">' +
+        '<div class="activity-icon">➡️</div>' +
+        '<div class="list-item-main"><div class="list-item-title">' + escapeHtml(g.nextAction) + '</div>' +
+        '<div class="list-item-sub">' + escapeHtml(g.title) + (project ? ' · ' + escapeHtml(project.name) : '') + '</div></div>' +
+        priorityBadge(g.priority) + '</div>';
+    }).join('') + '</div>';
+  }
+
+  function recentProjectsHtml() {
+    const items = state.projects.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 4);
+    return '<div class="recent-projects">' + items.map(function (p) {
+      const prog = projectProgress(p);
+      return '<div class="mini-project" style="--project-color:' + p.color + '" data-action="open-project" data-id="' + escapeHtml(p.id) + '">' +
+        '<div class="mini-project-title">' + escapeHtml(p.icon) + ' ' + escapeHtml(p.name) + '</div>' +
+        progressBarHtml(prog) +
+        '<div class="row small muted" style="margin-top:6px"><span>' + formatPercent(prog) + '</span><span class="spacer"></span>' + statusBadge(p.status) + '</div></div>';
+    }).join('') + '</div>';
+  }
+
+  function activityListHtml() {
+    const items = state.activity.slice(0, DASHBOARD_LIST_LIMIT + 2);
+    if (!items.length) return '<div class="empty-inline">Nenhuma atividade ainda.</div>';
+    return '<div class="list">' + items.map(function (a) {
+      return '<div class="list-item"><div class="activity-icon">' + (ACTIVITY_ICONS[a.type] || '•') + '</div>' +
+        '<div class="list-item-main"><div class="list-item-title" title="' + escapeHtml(a.text) + '">' + escapeHtml(a.text) + '</div>' +
+        '<div class="list-item-sub">' + formatRelativeTime(a.ts) + '</div></div>' +
+        (a.xp > 0 ? '<span class="badge badge-xp">+' + a.xp + ' XP</span>' : '') + '</div>';
+    }).join('') + '</div>';
+  }
+
+  /* =====================================================================
+   * 14. VIEW — Projetos (lista) e detalhe do projeto
+   * ===================================================================== */
+
+  function projectsViewHtml() {
+    const f = ui.projectFilters;
+    const statusOptions = [{ id: 'active', label: 'Ativos (não concluídos)' }, { id: 'all', label: 'Todos os status' }].concat(STATUSES);
+    const categoryOptions = [{ id: 'all', label: 'Todas as categorias' }].concat(PROJECT_CATEGORIES.map(function (c) { return { id: c, label: c }; }));
+    return '<div class="section-head"><h2>Projetos</h2><span class="muted" id="projects-count"></span><span class="spacer"></span>' +
+      '<button type="button" class="btn btn-primary" data-action="new-project">+ Novo projeto</button></div>' +
+      '<div class="toolbar">' +
+      '<input class="input" type="search" placeholder="Filtrar por nome, descrição…" value="' + escapeHtml(f.text) + '" data-input="filter-projects" data-field="text">' +
+      '<select class="select" data-change="filter-projects" data-field="status">' + optionsHtml(statusOptions, f.status) + '</select>' +
+      '<select class="select" data-change="filter-projects" data-field="category">' + optionsHtml(categoryOptions, f.category) + '</select>' +
+      '<select class="select" data-change="filter-projects" data-field="sort">' + optionsHtml(PROJECT_SORTS, f.sort) + '</select>' +
+      '</div><div id="projects-list" class="project-list"></div>';
+  }
+
+  function filteredProjects() {
+    const f = ui.projectFilters;
+    const text = f.text.trim().toLowerCase();
+    const list = state.projects.filter(function (p) {
+      if (f.status === 'active' && p.status === 'done') return false;
+      if (f.status !== 'active' && f.status !== 'all' && p.status !== f.status) return false;
+      if (f.category !== 'all' && p.category !== f.category) return false;
+      if (text && (p.name + ' ' + p.description + ' ' + p.motivation).toLowerCase().indexOf(text) < 0) return false;
+      return true;
+    });
+    const cache = new Map(list.map(function (p) { return [p.id, projectProgress(p)]; }));
+    list.sort(function (a, b) {
+      switch (f.sort) {
+        case 'name': return a.name.localeCompare(b.name, 'pt-BR');
+        case 'priority': return optionOf(PRIORITIES, b.priority).weight - optionOf(PRIORITIES, a.priority).weight || b.updatedAt - a.updatedAt;
+        case 'progress': return cache.get(b.id) - cache.get(a.id);
+        case 'deadline':
+          if (!a.deadline && !b.deadline) return b.updatedAt - a.updatedAt;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0;
+        default: return b.updatedAt - a.updatedAt;
+      }
+    });
+    return list;
+  }
+
+  function renderProjectsList() {
+    const container = document.getElementById('projects-list');
+    if (!container) return;
+    const list = filteredProjects();
+    const count = document.getElementById('projects-count');
+    if (count) count.textContent = list.length + ' de ' + state.projects.length;
+    if (!state.projects.length) {
+      container.innerHTML = '<div class="card">' + emptyStateHtml('🗂️', 'Nenhum projeto ainda', 'Projetos agrupam suas metas: estudos, carreira, saúde, finanças…', '<button type="button" class="btn btn-primary" data-action="new-project">+ Criar projeto</button>') + '</div>';
+    } else if (!list.length) {
+      container.innerHTML = '<div class="card">' + emptyStateHtml('🔎', 'Nenhum projeto encontrado', 'Ajuste os filtros para ver mais resultados.', '<button type="button" class="btn" data-action="clear-project-filters">Limpar filtros</button>') + '</div>';
+    } else {
+      container.innerHTML = list.map(projectRowHtml).join('');
+    }
+    hydrateMedia(container);
+  }
+
+  function projectRowHtml(p) {
+    const goals = goalsOfProject(p.id);
+    const done = goals.filter(function (g) { return g.status === 'done'; }).length;
+    const prog = projectProgress(p);
+    const id = escapeHtml(p.id);
+    return '<article class="project-row" style="--project-color:' + p.color + '" data-action="open-project" data-id="' + id + '">' +
+      '<div class="project-thumb">' + (p.coverId ? '<img data-media-id="' + escapeHtml(p.coverId) + '" alt="">' : escapeHtml(p.icon)) + '</div>' +
+      '<div style="min-width:0"><div class="project-row-title">' + (p.coverId ? escapeHtml(p.icon) + ' ' : '') + escapeHtml(p.name) + ' ' + statusBadge(p.status) + '</div>' +
+      (p.description ? '<div class="project-row-desc">' + escapeHtml(p.description) + '</div>' : '') +
+      '<div class="project-row-meta"><span class="chip">' + escapeHtml(p.category) + '</span>' + priorityBadge(p.priority) + deadlineChip(p.deadline, p.status) + '</div></div>' +
+      '<div class="project-row-progress"><div class="small muted"><span>' + done + '/' + goals.length + ' ' + plural(goals.length, 'meta', 'metas') + '</span><span>' + formatPercent(prog) + '</span></div>' + progressBarHtml(prog) + '</div>' +
+      '<div class="project-row-actions">' +
+      '<button type="button" class="icon-btn" data-action="edit-project" data-id="' + id + '" title="Editar projeto" aria-label="Editar projeto">✏️</button>' +
+      '<button type="button" class="icon-btn danger" data-action="delete-project" data-id="' + id + '" title="Excluir projeto" aria-label="Excluir projeto">🗑️</button>' +
+      '</div></article>';
+  }
+
+  function projectDetailHtml(projectId) {
+    const p = findProject(projectId);
+    if (!p) {
+      setPageTitle('Projeto não encontrado');
+      return '<div class="card">' + emptyStateHtml('🔍', 'Projeto não encontrado', 'Ele pode ter sido excluído.', '<button type="button" class="btn" data-action="navigate" data-route="projects">← Voltar para projetos</button>') + '</div>';
+    }
+    setPageTitle(p.name);
+    const goals = goalsOfProject(p.id);
+    const prog = projectProgress(p);
+    const id = escapeHtml(p.id);
+    const counts = { all: goals.length };
+    STATUSES.forEach(function (s) { counts[s.id] = goals.filter(function (g) { return g.status === s.id; }).length; });
+    if (ui.detailStatus !== 'all' && !isOneOf(STATUSES, ui.detailStatus)) ui.detailStatus = 'all';
+    const tabs = [{ id: 'all', label: 'Todas' }].concat(STATUSES).map(function (t) {
+      return '<button type="button" class="tab' + (ui.detailStatus === t.id ? ' active' : '') + '" data-action="detail-status" data-status="' + t.id + '">' + escapeHtml(t.label) + '<span class="count">' + counts[t.id] + '</span></button>';
+    }).join('');
+    const visible = sortGoals(goals.filter(function (g) { return ui.detailStatus === 'all' || g.status === ui.detailStatus; }), 'deadline');
+    const xpEarnedHere = goals.reduce(function (a, g) { return a + g.xpAwarded; }, 0) + p.xpAwarded;
+
+    let list;
+    if (!goals.length) {
+      list = '<div class="card">' + emptyStateHtml('🎯', 'Nenhuma meta neste projeto', 'Quebre o projeto em metas mensuráveis para acompanhar o progresso.', '<button type="button" class="btn btn-primary" data-action="new-goal" data-project-id="' + id + '">+ Adicionar meta</button>') + '</div>';
+    } else if (!visible.length) {
+      list = '<div class="card"><div class="empty-inline">Nenhuma meta com este status.</div></div>';
+    } else {
+      list = '<div class="goal-list">' + visible.map(function (g) { return goalCardHtml(g, { showProject: false }); }).join('') + '</div>';
+    }
+
+    return '<button type="button" class="btn btn-ghost btn-sm back-link" data-action="navigate" data-route="projects">← Projetos</button>' +
+      '<section class="card project-header" style="--project-color:' + p.color + '">' +
+      (p.coverId ? '<div class="project-cover"><img data-media-id="' + escapeHtml(p.coverId) + '" alt=""></div>' : '') +
+      '<div class="project-header-body"><div>' +
+      '<div class="project-title-line"><span class="project-title-icon">' + escapeHtml(p.icon) + '</span><h2>' + escapeHtml(p.name) + '</h2></div>' +
+      '<div class="row-wrap">' + statusBadge(p.status) + priorityBadge(p.priority) + '<span class="chip">' + escapeHtml(p.category) + '</span>' + deadlineChip(p.deadline, p.status) + '</div>' +
+      (p.description ? '<p style="margin-top:12px">' + escapeHtml(p.description) + '</p>' : '') +
+      (p.motivation ? '<div class="motivation">“' + escapeHtml(p.motivation) + '”</div>' : '') +
+      '</div><div class="project-side">' +
+      '<div class="row"><span class="big-percent">' + formatPercent(prog) + '</span><span class="spacer"></span><span class="small muted">' + counts.done + '/' + goals.length + ' metas</span></div>' +
+      progressBarHtml(prog, 'progress-lg') +
+      '<div class="small muted">' + xpEarnedHere + ' XP conquistados neste projeto</div>' +
+      '<label class="field"><span>Status do projeto</span><select class="select" data-change="project-status" data-id="' + id + '">' + optionsHtml(STATUSES, p.status) + '</select></label>' +
+      '<div class="row"><button type="button" class="btn btn-sm" data-action="edit-project" data-id="' + id + '">✏️ Editar</button>' +
+      '<button type="button" class="btn btn-sm btn-danger" data-action="delete-project" data-id="' + id + '">🗑️ Excluir</button></div>' +
+      '</div></div></section>' +
+      '<div class="section-head"><h2>Metas</h2><div class="tabs">' + tabs + '</div><span class="spacer"></span>' +
+      '<button type="button" class="btn btn-primary" data-action="new-goal" data-project-id="' + id + '">+ Nova meta</button></div>' +
+      list;
+  }
+
+  /* =====================================================================
+   * 15. VIEW — Metas (todas) e cartão de meta
+   * ===================================================================== */
+
+  function goalsViewHtml() {
+    const f = ui.goalFilters;
+    const statusOptions = [{ id: 'open', label: 'Em aberto' }, { id: 'all', label: 'Todos os status' }].concat(STATUSES);
+    const projectOptions = [{ id: 'all', label: 'Todos os projetos' }].concat(state.projects.map(function (p) { return { id: p.id, label: p.icon + ' ' + p.name }; }));
+    if (f.project !== 'all' && !findProject(f.project)) f.project = 'all';
+    return '<div class="section-head"><h2>Metas</h2><span class="muted" id="goals-count"></span><span class="spacer"></span>' +
+      '<button type="button" class="btn btn-primary" data-action="new-goal">+ Nova meta</button></div>' +
+      '<div class="toolbar">' +
+      '<input class="input" type="search" placeholder="Filtrar por título, tag…" value="' + escapeHtml(f.text) + '" data-input="filter-goals" data-field="text">' +
+      '<select class="select" data-change="filter-goals" data-field="status">' + optionsHtml(statusOptions, f.status) + '</select>' +
+      '<select class="select" data-change="filter-goals" data-field="project">' + optionsHtml(projectOptions, f.project) + '</select>' +
+      '<select class="select" data-change="filter-goals" data-field="difficulty">' + optionsHtml([{ id: 'all', label: 'Todas as dificuldades' }].concat(DIFFICULTIES), f.difficulty) + '</select>' +
+      '<select class="select" data-change="filter-goals" data-field="type">' + optionsHtml([{ id: 'all', label: 'Todos os tipos' }].concat(TRACKING_TYPES), f.type) + '</select>' +
+      '<select class="select" data-change="filter-goals" data-field="sort">' + optionsHtml(GOAL_SORTS, f.sort) + '</select>' +
+      '</div><div id="goals-list"></div>';
+  }
+
+  function sortGoals(list, sort) {
+    return list.sort(function (a, b) {
+      switch (sort) {
+        case 'title': return a.title.localeCompare(b.title, 'pt-BR');
+        case 'priority': return optionOf(PRIORITIES, b.priority).weight - optionOf(PRIORITIES, a.priority).weight || b.updatedAt - a.updatedAt;
+        case 'progress': return goalProgress(b) - goalProgress(a);
+        case 'updated': return b.updatedAt - a.updatedAt;
+        default: {
+          const ad = a.status === 'done';
+          const bd = b.status === 'done';
+          if (ad !== bd) return ad ? 1 : -1;
+          if (!a.deadline && !b.deadline) return optionOf(PRIORITIES, b.priority).weight - optionOf(PRIORITIES, a.priority).weight;
+          if (!a.deadline) return 1;
+          if (!b.deadline) return -1;
+          return a.deadline < b.deadline ? -1 : a.deadline > b.deadline ? 1 : 0;
+        }
+      }
+    });
+  }
+
+  function filteredGoals() {
+    const f = ui.goalFilters;
+    const text = f.text.trim().toLowerCase();
+    return sortGoals(state.goals.filter(function (g) {
+      if (f.status === 'open' && g.status === 'done') return false;
+      if (f.status !== 'open' && f.status !== 'all' && g.status !== f.status) return false;
+      if (f.project !== 'all' && g.projectId !== f.project) return false;
+      if (f.difficulty !== 'all' && g.difficulty !== f.difficulty) return false;
+      if (f.type !== 'all' && g.tracking.type !== f.type) return false;
+      if (text && (g.title + ' ' + g.description + ' ' + g.nextAction + ' ' + g.tags.join(' ')).toLowerCase().indexOf(text) < 0) return false;
+      return true;
+    }), f.sort);
+  }
+
+  function renderGoalsList() {
+    const container = document.getElementById('goals-list');
+    if (!container) return;
+    const list = filteredGoals();
+    const count = document.getElementById('goals-count');
+    if (count) count.textContent = list.length + ' de ' + state.goals.length;
+    if (!state.projects.length) {
+      container.innerHTML = '<div class="card">' + emptyStateHtml('🗂️', 'Crie um projeto primeiro', 'Toda meta pertence a um projeto.', '<button type="button" class="btn btn-primary" data-action="new-project">+ Criar projeto</button>') + '</div>';
+    } else if (!state.goals.length) {
+      container.innerHTML = '<div class="card">' + emptyStateHtml('🎯', 'Nenhuma meta ainda', 'Adicione metas mensuráveis aos seus projetos.', '<button type="button" class="btn btn-primary" data-action="new-goal">+ Nova meta</button>') + '</div>';
+    } else if (!list.length) {
+      container.innerHTML = '<div class="card">' + emptyStateHtml('🔎', 'Nenhuma meta encontrada', 'Ajuste os filtros para ver mais resultados.', '<button type="button" class="btn" data-action="clear-goal-filters">Limpar filtros</button>') + '</div>';
+    } else {
+      container.innerHTML = '<div class="goal-list">' + list.map(function (g) { return goalCardHtml(g, { showProject: true }); }).join('') + '</div>';
+    }
+  }
+
+  function goalCardHtml(g, opts) {
+    const id = escapeHtml(g.id);
+    const t = g.tracking;
+    const done = g.status === 'done';
+    const prog = goalProgress(g);
+    const pct = Math.round(prog * 100);
+    const overdue = isOverdue(g.deadline, g.status);
+    const project = findProject(g.projectId);
+    const expanded = ui.expandedGoals.has(g.id);
+
+    let lead;
+    if (t.type === 'simple') {
+      lead = '<button type="button" class="check-btn' + (done ? ' checked' : '') + '" data-action="goal-toggle-done" data-id="' + id + '" title="' + (done ? 'Reabrir meta' : 'Concluir meta') + '" aria-label="' + (done ? 'Reabrir meta' : 'Concluir meta') + '">' + (done ? '✓' : '') + '</button>';
+    } else {
+      lead = '<div class="goal-ring' + (pct >= 100 ? ' done' : '') + '" style="--p:' + pct + '"><span>' + pct + '%</span></div>';
+    }
+
+    let quick = '';
+    if (t.type === 'frequency') {
+      quick = '<button type="button" class="btn btn-sm" data-action="goal-freq-inc" data-id="' + id + '" title="Registrar 1 ocorrência hoje">+1</button>' +
+        '<button type="button" class="btn btn-sm btn-ghost" data-action="goal-log" data-id="' + id + '">Registrar…</button>';
+    } else if (t.type !== 'simple') {
+      quick = '<button type="button" class="btn btn-sm" data-action="goal-log" data-id="' + id + '">📈 Registrar</button>';
+    }
+
+    const meta = [];
+    if (opts.showProject && project) {
+      meta.push('<button type="button" class="project-link" data-action="open-project" data-id="' + escapeHtml(project.id) + '">' + escapeHtml(project.icon) + ' ' + escapeHtml(project.name) + '</button>');
+    }
+    meta.push(difficultyBadge(g.difficulty));
+    meta.push(priorityBadge(g.priority));
+    meta.push('<span class="chip" title="Tipo de acompanhamento">' + escapeHtml(optionOf(TRACKING_TYPES, t.type).label) + '</span>');
+    if (g.startDate) meta.push('<span class="chip" title="Data de início">▶ ' + formatDate(g.startDate) + '</span>');
+    if (g.deadline) meta.push(deadlineChip(g.deadline, g.status));
+    g.tags.forEach(function (tag) { meta.push('<span class="tag">#' + escapeHtml(tag) + '</span>'); });
+
+    const logCount = g.log.length;
+    let history = '';
+    if (expanded) {
+      const entries = g.log.slice(-HISTORY_PREVIEW_LIMIT).reverse();
+      history = '<div class="goal-history">' + (entries.length ? entries.map(function (e) {
+        return '<div class="history-item"><span>' + formatDate(e.date) + '</span><b>' + escapeHtml(describeLogEntry(g, e)) + '</b><span>' + escapeHtml(e.note || '') + '</span></div>';
+      }).join('') + (logCount > HISTORY_PREVIEW_LIMIT ? '<div class="small muted">Mostrando os ' + HISTORY_PREVIEW_LIMIT + ' registros mais recentes de ' + logCount + '.</div>' : '') : '<div class="small muted">Nenhum registro de progresso ainda.</div>') + '</div>';
+    }
+
+    return '<article class="goal-card' + (done ? ' is-done' : '') + (overdue ? ' is-overdue' : '') + '">' +
+      '<div class="goal-lead">' + lead + '</div>' +
+      '<div style="min-width:0"><div class="goal-head"><span class="goal-title">' + escapeHtml(g.title) + '</span>' + statusBadge(g.status) +
+      (g.xpAwarded ? '<span class="badge badge-xp">+' + g.xpAwarded + ' XP</span>' : '') + '</div>' +
+      (g.description ? '<div class="goal-desc">' + escapeHtml(g.description) + '</div>' : '') +
+      '<div class="goal-meta">' + meta.join('') + '</div>' +
+      (g.nextAction && !done ? '<div class="next-action"><b>Próxima ação:</b> ' + escapeHtml(g.nextAction) + '</div>' : '') +
+      (t.type !== 'simple' ? '<div class="goal-progress">' + progressBarHtml(prog) + '<span class="goal-value">' + escapeHtml(goalValueText(g)) + '</span></div>' : '') +
+      '</div>' +
+      '<div class="goal-side"><div class="goal-side-actions">' + quick + '</div>' +
+      '<select class="select select-sm" data-change="goal-status" data-id="' + id + '" aria-label="Status da meta">' + optionsHtml(STATUSES, g.status) + '</select>' +
+      '<div class="goal-side-actions">' +
+      (t.type !== 'simple' ? '<button type="button" class="icon-btn" data-action="goal-toggle-history" data-id="' + id + '" title="Histórico de progresso (' + logCount + ')" aria-label="Histórico">' + (expanded ? '▴' : '🕘') + '</button>' : '') +
+      '<button type="button" class="icon-btn" data-action="edit-goal" data-id="' + id + '" title="Editar meta" aria-label="Editar meta">✏️</button>' +
+      '<button type="button" class="icon-btn danger" data-action="delete-goal" data-id="' + id + '" title="Excluir meta" aria-label="Excluir meta">🗑️</button>' +
+      '</div></div>' + history + '</article>';
+  }
+
+  /* =====================================================================
+   * 16. VIEW — Configurações (básicas)
+   * ===================================================================== */
+
+  function settingsViewHtml() {
+    const themeCards = THEMES.map(function (t) {
+      return '<button type="button" class="theme-option' + (state.settings.theme === t.id ? ' selected' : '') + '" data-action="set-theme" data-theme="' + t.id + '">' +
+        '<div class="theme-swatch" style="background:' + t.swatch + '"></div><b>' + escapeHtml(t.label) + '</b></button>';
+    }).join('');
+    const storageLabel = persistenceBlocked ? 'Bloqueado (dados de versão incompatível)' : storageAvailable ? 'IndexedDB (neste navegador)' : 'Indisponível — somente memória';
+    return '<div class="settings-grid">' +
+      '<section class="card"><div class="card-title"><h3>👤 Perfil</h3></div>' +
+      '<div class="form-grid" id="profile-form">' +
+      '<label class="field full"><span>Nome</span><input class="input" name="profile-name" maxlength="60" value="' + escapeHtml(state.profile.name) + '"></label>' +
+      '<label class="field full"><span>Subtítulo</span><input class="input" name="profile-subtitle" maxlength="100" value="' + escapeHtml(state.profile.subtitle) + '" placeholder="Ex.: Rumo à gestora de recursos"></label>' +
+      '<div class="full"><button type="button" class="btn btn-primary" data-action="save-profile">Salvar perfil</button></div>' +
+      '</div></section>' +
+      '<section class="card"><div class="card-title"><h3>🎨 Tema</h3></div><div class="theme-options">' + themeCards + '</div>' +
+      '<p class="hint" style="margin-top:12px">Personalização completa de cores, fonte e espaçamento chega numa próxima fase.</p></section>' +
+      '<section class="card"><div class="card-title"><h3>💾 Armazenamento</h3></div><dl class="kv">' +
+      '<dt>Local</dt><dd>' + escapeHtml(storageLabel) + '</dd>' +
+      '<dt>Uso estimado</dt><dd id="storage-estimate">—</dd>' +
+      '<dt>Projetos / metas</dt><dd>' + state.projects.length + ' / ' + state.goals.length + '</dd>' +
+      '<dt>Registros de atividade</dt><dd>' + state.activity.length + '</dd>' +
+      '<dt>Formato dos dados</dt><dd>schema v' + state.schemaVersion + '</dd>' +
+      '<dt>Versão do app</dt><dd>' + APP_VERSION + '</dd>' +
+      '</dl><p class="hint" style="margin-top:12px">Os dados ficam só neste navegador. Exportação/backup em JSON chega numa próxima fase.</p></section>' +
+      '<section class="card"><div class="card-title"><h3>🎮 Regras de XP</h3></div><dl class="kv">' +
+      DIFFICULTIES.map(function (d) { return '<dt>Meta ' + escapeHtml(d.label.toLowerCase()) + '</dt><dd>+' + d.xp + ' XP ao concluir</dd>'; }).join('') +
+      '<dt>Registro de progresso</dt><dd>+' + XP_PER_PROGRESS_LOG + ' XP</dd>' +
+      '<dt>Projeto concluído</dt><dd>+' + XP_PROJECT_COMPLETE + ' XP</dd>' +
+      '<dt>Níveis</dt><dd>Nível 2 com ' + xpThreshold(2) + ' XP, 3 com ' + xpThreshold(3) + ', 4 com ' + xpThreshold(4) + ', 5 com ' + xpThreshold(5) + '…</dd>' +
+      '<dt>Reabrir meta</dt><dd>Devolve o XP ganho na conclusão</dd>' +
+      '</dl></section></div>';
+  }
+
+  function fillStorageEstimate() {
+    const el = document.getElementById('storage-estimate');
+    if (!el || !navigator.storage || !navigator.storage.estimate) return;
+    navigator.storage.estimate().then(function (est) {
+      const mb = function (b) { return (b / 1048576).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + ' MB'; };
+      const target = document.getElementById('storage-estimate');
+      if (target) target.textContent = mb(est.usage || 0) + (est.quota ? ' de ~' + mb(est.quota) + ' disponíveis' : '');
+    }).catch(function () { return null; });
+  }
+
+  /* =====================================================================
+   * 17. FORMULÁRIO DE PROJETO
+   * ===================================================================== */
+
+  function projectFormHtml(p) {
+    const categoryOptions = PROJECT_CATEGORIES.map(function (c) { return { id: c, label: c }; });
+    const icons = PROJECT_ICONS.map(function (ic) {
+      return '<button type="button" class="icon-option' + (ic === p.icon ? ' selected' : '') + '" data-pick-icon="' + escapeHtml(ic) + '">' + escapeHtml(ic) + '</button>';
+    }).join('');
+    const colors = PROJECT_COLORS.map(function (c) {
+      return '<button type="button" class="color-option' + (c === p.color ? ' selected' : '') + '" data-pick-color="' + c + '" style="background:' + c + '" aria-label="Cor ' + c + '"></button>';
+    }).join('');
+    return '<div class="form-grid">' +
+      '<label class="field full"><span>Nome <span class="req">*</span></span><input class="input" name="name" maxlength="80" value="' + escapeHtml(p.name) + '" placeholder="Ex.: Certificação CFP" autofocus></label>' +
+      '<div class="field full"><span class="field-label">Ícone</span><div class="row"><div class="icon-picker">' + icons + '</div>' +
+      '<input class="input" name="icon" maxlength="8" value="' + escapeHtml(p.icon) + '" style="width:64px;text-align:center" title="Ou digite/cole outro emoji"></div></div>' +
+      '<label class="field full"><span>Descrição</span><textarea class="textarea" name="description" maxlength="600" placeholder="O que é este projeto?">' + escapeHtml(p.description) + '</textarea></label>' +
+      '<label class="field"><span>Categoria</span><select class="select" name="category">' + optionsHtml(categoryOptions, p.category) + '</select></label>' +
+      '<label class="field"><span>Prioridade</span><select class="select" name="priority">' + optionsHtml(PRIORITIES, p.priority) + '</select></label>' +
+      '<label class="field"><span>Status</span><select class="select" name="status">' + optionsHtml(STATUSES, p.status) + '</select></label>' +
+      '<label class="field"><span>Prazo</span><input class="input" type="date" name="deadline" value="' + escapeHtml(p.deadline) + '"></label>' +
+      '<div class="field full"><span class="field-label">Cor</span><div class="color-row">' + colors +
+      '<input type="color" class="color-input" name="color" value="' + p.color + '" title="Cor personalizada"></div></div>' +
+      '<label class="field full"><span>Motivação</span><textarea class="textarea" name="motivation" maxlength="400" placeholder="Por que isso importa para você?">' + escapeHtml(p.motivation) + '</textarea></label>' +
+      '<div class="field full"><span class="field-label">Capa</span><div class="cover-preview" data-cover-preview>' +
+      (p.coverId ? '<img data-media-id="' + escapeHtml(p.coverId) + '" alt="">' : 'Sem capa') + '</div>' +
+      '<div class="row" style="margin-top:6px"><input type="file" accept="image/*" name="cover-file" hidden>' +
+      '<button type="button" class="btn btn-sm" data-cover-choose>🖼️ Escolher imagem</button>' +
+      '<button type="button" class="btn btn-sm btn-ghost" data-cover-remove' + (p.coverId ? '' : ' hidden') + '>Remover capa</button>' +
+      '<span class="hint">A imagem é redimensionada (máx. ' + IMAGE_MAX_SIDE + 'px) e comprimida antes de salvar.</span></div></div>' +
+      '</div>';
+  }
+
+  function bindProjectForm(modal, coverState) {
+    const root = modal.el;
+    const iconInput = root.querySelector('[name="icon"]');
+    const colorInput = root.querySelector('[name="color"]');
+    const fileInput = root.querySelector('[name="cover-file"]');
+    const preview = root.querySelector('[data-cover-preview]');
+    const removeBtn = root.querySelector('[data-cover-remove]');
+
+    function syncSelected(attr, value) {
+      root.querySelectorAll('[' + attr + ']').forEach(function (b) {
+        b.classList.toggle('selected', b.getAttribute(attr) === value);
+      });
+    }
+
+    root.addEventListener('click', function (e) {
+      const iconBtn = e.target.closest('[data-pick-icon]');
+      if (iconBtn) {
+        iconInput.value = iconBtn.getAttribute('data-pick-icon');
+        syncSelected('data-pick-icon', iconInput.value);
+      }
+      const colorBtn = e.target.closest('[data-pick-color]');
+      if (colorBtn) {
+        colorInput.value = colorBtn.getAttribute('data-pick-color');
+        syncSelected('data-pick-color', colorInput.value);
+      }
+      if (e.target.closest('[data-cover-choose]')) fileInput.click();
+      if (e.target.closest('[data-cover-remove]')) {
+        coverState.newDataUrl = null;
+        coverState.removed = true;
+        preview.innerHTML = 'Sem capa';
+        removeBtn.hidden = true;
+        fileInput.value = '';
+      }
+    });
+    iconInput.addEventListener('input', function () { syncSelected('data-pick-icon', iconInput.value.trim()); });
+    colorInput.addEventListener('input', function () { syncSelected('data-pick-color', colorInput.value.toLowerCase()); });
+    fileInput.addEventListener('change', function () {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      preview.innerHTML = 'Processando imagem…';
+      compressImage(file).then(function (dataUrl) {
+        coverState.newDataUrl = dataUrl;
+        coverState.removed = false;
+        preview.innerHTML = '<img alt="" src="' + dataUrl + '">';
+        removeBtn.hidden = false;
+      }).catch(function (err) {
+        preview.innerHTML = 'Sem capa';
+        showToast(describeError(err), { type: 'error' });
+      });
+    });
+    hydrateMedia(root);
+  }
+
+  function readProjectForm(root) {
+    const get = function (name) { return root.querySelector('[name="' + name + '"]').value; };
+    const errors = {};
+    const data = {
+      name: get('name').trim(),
+      icon: get('icon').trim() || DEFAULT_PROJECT_ICON,
+      description: get('description').trim(),
+      category: get('category'),
+      priority: get('priority'),
+      status: get('status'),
+      deadline: get('deadline'),
+      color: normalizeHexColor(get('color'), DEFAULT_PROJECT_COLOR),
+      motivation: get('motivation').trim()
+    };
+    if (!data.name) errors.name = 'Informe um nome para o projeto.';
+    if (data.deadline && !isValidISODate(data.deadline)) errors.deadline = 'Data inválida.';
+    return showFormErrors(root, errors) ? data : null;
+  }
+
+  function openProjectForm(projectId) {
+    const existing = projectId ? findProject(projectId) : null;
+    if (projectId && !existing) {
+      showToast('Projeto não encontrado.', { type: 'error' });
+      return;
+    }
+    const draft = existing ? deepClone(existing) : createProject({ name: '', color: PROJECT_COLORS[state.projects.length % PROJECT_COLORS.length] });
+    const coverState = { newDataUrl: null, removed: false };
+    openModal({
+      title: existing ? 'Editar projeto' : 'Novo projeto',
+      size: 'lg',
+      body: projectFormHtml(draft),
+      actions: [
+        { id: 'cancel', label: 'Cancelar' },
+        { id: 'save', label: existing ? 'Salvar alterações' : 'Criar projeto', variant: 'primary', submit: true }
+      ],
+      onOpen: function (modal) { bindProjectForm(modal, coverState); },
+      onAction: function (action, modal) {
+        if (action !== 'save') return true;
+        const data = readProjectForm(modal.el);
+        if (!data) return false;
+        let coverPromise = Promise.resolve(draft.coverId);
+        if (coverState.newDataUrl) coverPromise = saveMedia(coverState.newDataUrl);
+        else if (coverState.removed) coverPromise = Promise.resolve(null);
+        return coverPromise.then(function (coverId) {
+          data.coverId = coverId;
+          const status = data.status;
+          delete data.status;
+          if (existing) {
+            commit('Editar projeto', function (s) {
+              const p = findById(s.projects, existing.id);
+              if (!p) throw new Error('Projeto não encontrado.');
+              Object.assign(p, data);
+              p.updatedAt = Date.now();
+              setProjectStatus(s, p, status);
+              addActivity(s, 'project_update', 'Projeto editado: "' + p.name + '"', { projectId: p.id });
+            });
+            showToast('Projeto atualizado.', { type: 'success' });
+          } else {
+            const created = createProject(data);
+            commit('Criar projeto', function (s) {
+              s.projects.push(created);
+              setProjectStatus(s, created, status);
+              markActiveDay(s);
+              addActivity(s, 'project_create', 'Projeto criado: "' + created.name + '"', { projectId: created.id });
+            });
+            showToast('Projeto "' + created.name + '" criado.', {
+              type: 'success',
+              action: { label: 'Abrir', onClick: function () { navigate('project/' + encodeURIComponent(created.id)); } }
+            });
+          }
+          return true;
+        });
+      }
+    });
+  }
+
+  function deleteProject(projectId) {
+    const p = findProject(projectId);
+    if (!p) return;
+    const goalCount = goalsOfProject(p.id).length;
+    confirmDialog({
+      title: 'Excluir projeto',
+      message: 'Excluir "' + p.name + '"' + (goalCount ? ' e suas ' + goalCount + ' ' + plural(goalCount, 'meta', 'metas') : '') + '?\nO XP já conquistado é mantido. Você pode desfazer logo em seguida.',
+      confirmLabel: 'Excluir',
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      const name = p.name;
+      const done = commit('Excluir projeto', function (s) {
+        s.projects = s.projects.filter(function (x) { return x.id !== projectId; });
+        s.goals = s.goals.filter(function (g) { return g.projectId !== projectId; });
+        addActivity(s, 'project_delete', 'Projeto excluído: "' + name + '"');
+      });
+      if (!done) return;
+      if (ui.route.name === 'project' && ui.route.id === projectId) navigate('projects');
+      showToast('Projeto "' + name + '" excluído.', { type: 'info', action: { label: 'Desfazer', onClick: performUndo } });
+    });
+  }
+
+  /* =====================================================================
+   * 18. FORMULÁRIO DE META E REGISTRO DE PROGRESSO
+   * ===================================================================== */
+
+  function numberField(label, name, value, attrs) {
+    return '<label class="field"><span>' + label + '</span><input class="input" type="number" step="any" name="' + name + '" value="' + escapeHtml(isFiniteNumber(value) ? String(value) : '') + '" ' + (attrs || '') + '></label>';
+  }
+
+  function trackingFieldsHtml(t) {
+    const hint = '<p class="hint full" style="grid-column:1/-1">' + escapeHtml(optionOf(TRACKING_TYPES, t.type).hint) + '</p>';
+    switch (t.type) {
+      case 'numeric':
+        return '<div class="form-grid">' + hint +
+          numberField('Valor inicial', 't_start', t.start) + numberField('Valor-alvo <span class="req">*</span>', 't_target', t.target) +
+          numberField('Valor atual', 't_current', t.current) +
+          '<label class="field"><span>Unidade</span><input class="input" name="t_unit" maxlength="16" value="' + escapeHtml(t.unit) + '" placeholder="kg, R$, páginas…"></label></div>';
+      case 'percentage':
+        return '<div class="form-grid">' + hint + numberField('Percentual atual (0–100)', 't_current', t.current, 'min="0" max="100"') + '</div>';
+      case 'frequency':
+        return '<div class="form-grid-3">' + hint +
+          numberField('Total de vezes (meta) <span class="req">*</span>', 't_target', t.target, 'min="1" step="1"') +
+          numberField('Já realizadas', 't_count', t.count, 'min="0" step="1"') +
+          '<label class="field"><span>Período de referência</span><select class="select" name="t_period">' + optionsHtml(FREQUENCY_PERIODS, t.period) + '</select></label></div>';
+      case 'duration':
+        return '<div class="form-grid">' + hint +
+          numberField('Meta em horas <span class="req">*</span>', 't_target_h', Math.round(t.target / 6) / 10, 'min="0" step="0.5"') +
+          numberField('Horas já registradas', 't_logged_h', Math.round(t.logged / 6) / 10, 'min="0" step="0.5"') + '</div>';
+      case 'scale':
+        return '<div class="form-grid">' + hint +
+          numberField('Mínimo da escala', 't_min', t.min) + numberField('Máximo da escala', 't_max', t.max) +
+          numberField('Valor atual', 't_current', t.current) + numberField('Valor-alvo <span class="req">*</span>', 't_target', t.target) + '</div>';
+      default:
+        return '<div class="form-grid">' + hint + '</div>';
+    }
+  }
+
+  function readTrackingFields(root, type, errors) {
+    const num = function (name) {
+      const el = root.querySelector('[name="' + name + '"]');
+      return el ? parseNumber(el.value) : NaN;
+    };
+    const t = defaultTracking(type);
+    switch (type) {
+      case 'numeric': {
+        t.start = num('t_start');
+        t.target = num('t_target');
+        t.current = num('t_current');
+        t.unit = root.querySelector('[name="t_unit"]').value.trim();
+        if (!isFiniteNumber(t.start)) t.start = 0;
+        if (!isFiniteNumber(t.current)) t.current = t.start;
+        if (!isFiniteNumber(t.target)) errors.t_target = 'Informe o valor-alvo.';
+        else if (t.target === t.start) errors.t_target = 'O alvo precisa ser diferente do valor inicial.';
+        break;
+      }
+      case 'percentage': {
+        t.current = num('t_current');
+        if (!isFiniteNumber(t.current)) t.current = 0;
+        if (t.current < 0 || t.current > 100) errors.t_current = 'Use um valor entre 0 e 100.';
+        break;
+      }
+      case 'frequency': {
+        t.target = num('t_target');
+        t.count = num('t_count');
+        t.period = root.querySelector('[name="t_period"]').value;
+        if (!isFiniteNumber(t.count) || t.count < 0) t.count = 0;
+        t.count = Math.round(t.count);
+        if (!isFiniteNumber(t.target) || t.target < 1 || Math.round(t.target) !== t.target) errors.t_target = 'Informe um número inteiro maior que zero.';
+        break;
+      }
+      case 'duration': {
+        const target = num('t_target_h');
+        const logged = num('t_logged_h');
+        if (!isFiniteNumber(target) || target <= 0) errors.t_target_h = 'Informe uma meta de horas maior que zero.';
+        t.target = Math.round((target || 0) * 60);
+        t.logged = Math.round((isFiniteNumber(logged) && logged > 0 ? logged : 0) * 60);
+        break;
+      }
+      case 'scale': {
+        t.min = num('t_min');
+        t.max = num('t_max');
+        t.current = num('t_current');
+        t.target = num('t_target');
+        if (!isFiniteNumber(t.min)) errors.t_min = 'Informe o mínimo.';
+        if (!isFiniteNumber(t.max)) errors.t_max = 'Informe o máximo.';
+        else if (isFiniteNumber(t.min) && t.max <= t.min) errors.t_max = 'O máximo precisa ser maior que o mínimo.';
+        if (!isFiniteNumber(t.current)) t.current = t.min;
+        if (!isFiniteNumber(t.target)) errors.t_target = 'Informe o valor-alvo.';
+        else if (t.target < t.min || t.target > t.max) errors.t_target = 'O alvo precisa estar dentro da escala.';
+        if (isFiniteNumber(t.current) && (t.current < t.min || t.current > t.max)) errors.t_current = 'O valor atual precisa estar dentro da escala.';
+        break;
+      }
+      default:
+        break;
+    }
+    return t;
+  }
+
+  function goalFormHtml(g) {
+    const projectOptions = state.projects.map(function (p) { return { id: p.id, label: p.icon + ' ' + p.name }; });
+    return '<div class="form-grid">' +
+      '<label class="field full"><span>Título <span class="req">*</span></span><input class="input" name="title" maxlength="120" value="' + escapeHtml(g.title) + '" placeholder="Ex.: Ler 12 livros de finanças" autofocus></label>' +
+      '<label class="field"><span>Projeto <span class="req">*</span></span><select class="select" name="projectId">' + optionsHtml(projectOptions, g.projectId) + '</select></label>' +
+      '<label class="field"><span>Status</span><select class="select" name="status">' + optionsHtml(STATUSES, g.status) + '</select></label>' +
+      '<label class="field full"><span>Descrição</span><textarea class="textarea" name="description" maxlength="600">' + escapeHtml(g.description) + '</textarea></label>' +
+      '<label class="field"><span>Dificuldade</span><select class="select" name="difficulty">' +
+      DIFFICULTIES.map(function (d) { return '<option value="' + d.id + '"' + (d.id === g.difficulty ? ' selected' : '') + '>' + d.label + ' (' + d.xp + ' XP)</option>'; }).join('') + '</select></label>' +
+      '<label class="field"><span>Prioridade</span><select class="select" name="priority">' + optionsHtml(PRIORITIES, g.priority) + '</select></label>' +
+      '<label class="field"><span>Data de início</span><input class="input" type="date" name="startDate" value="' + escapeHtml(g.startDate) + '"></label>' +
+      '<label class="field"><span>Prazo</span><input class="input" type="date" name="deadline" value="' + escapeHtml(g.deadline) + '"></label>' +
+      '<label class="field full"><span>Próxima ação sugerida</span><input class="input" name="nextAction" maxlength="160" value="' + escapeHtml(g.nextAction) + '" placeholder="Ex.: Assistir aula 3 do módulo de renda fixa"></label>' +
+      '<label class="field full"><span>Tags (separadas por vírgula)</span><input class="input" name="tags" maxlength="200" value="' + escapeHtml(g.tags.join(', ')) + '" placeholder="finanças, certificação"></label>' +
+      '<div class="field full"><div class="fieldset"><div class="row" style="margin-bottom:10px"><span class="fieldset-title" style="margin:0">Acompanhamento</span><span class="spacer"></span>' +
+      '<select class="select select-sm" name="trackingType">' + optionsHtml(TRACKING_TYPES, g.tracking.type) + '</select></div>' +
+      '<div data-tracking-fields>' + trackingFieldsHtml(g.tracking) + '</div></div></div>' +
+      '</div>';
+  }
+
+  function openGoalForm(goalId, presetProjectId) {
+    if (!state.projects.length) {
+      showToast('Crie um projeto antes de adicionar metas.', { type: 'warning', action: { label: 'Criar projeto', onClick: function () { openProjectForm(null); } } });
+      return;
+    }
+    const existing = goalId ? findGoal(goalId) : null;
+    if (goalId && !existing) {
+      showToast('Meta não encontrada.', { type: 'error' });
+      return;
+    }
+    let defaultProject = presetProjectId && findProject(presetProjectId) ? presetProjectId : null;
+    if (!defaultProject && ui.route.name === 'project' && findProject(ui.route.id)) defaultProject = ui.route.id;
+    if (!defaultProject && ui.goalFilters.project !== 'all' && findProject(ui.goalFilters.project)) defaultProject = ui.goalFilters.project;
+    if (!defaultProject) defaultProject = state.projects.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; })[0].id;
+    const draft = existing ? deepClone(existing) : createGoal({ title: '', projectId: defaultProject });
+    // Guarda valores digitados por tipo para não perdê-los ao alternar o tipo de acompanhamento.
+    const trackingDrafts = {};
+    trackingDrafts[draft.tracking.type] = draft.tracking;
+
+    openModal({
+      title: existing ? 'Editar meta' : 'Nova meta',
+      size: 'lg',
+      body: goalFormHtml(draft),
+      actions: [
+        { id: 'cancel', label: 'Cancelar' },
+        { id: 'save', label: existing ? 'Salvar alterações' : 'Criar meta', variant: 'primary', submit: true }
+      ],
+      onOpen: function (modal) {
+        const typeSelect = modal.el.querySelector('[name="trackingType"]');
+        const container = modal.el.querySelector('[data-tracking-fields]');
+        let currentType = typeSelect.value;
+        typeSelect.addEventListener('change', function () {
+          trackingDrafts[currentType] = readTrackingFields(container, currentType, {});
+          currentType = typeSelect.value;
+          container.innerHTML = trackingFieldsHtml(trackingDrafts[currentType] || defaultTracking(currentType));
+        });
+      },
+      onAction: function (action, modal) {
+        if (action !== 'save') return true;
+        const root = modal.el;
+        const get = function (name) { return root.querySelector('[name="' + name + '"]').value; };
+        const errors = {};
+        const type = get('trackingType');
+        const tracking = readTrackingFields(root, type, errors);
+        const data = {
+          title: get('title').trim(),
+          projectId: get('projectId'),
+          description: get('description').trim(),
+          difficulty: get('difficulty'),
+          priority: get('priority'),
+          startDate: get('startDate'),
+          deadline: get('deadline'),
+          nextAction: get('nextAction').trim(),
+          tags: parseTags(get('tags'))
+        };
+        const status = get('status');
+        if (!data.title) errors.title = 'Informe um título para a meta.';
+        if (!findProject(data.projectId)) errors.projectId = 'Escolha um projeto.';
+        if (data.startDate && !isValidISODate(data.startDate)) errors.startDate = 'Data inválida.';
+        if (data.deadline && !isValidISODate(data.deadline)) errors.deadline = 'Data inválida.';
+        if (data.startDate && data.deadline && data.deadline < data.startDate) errors.deadline = 'O prazo não pode ser anterior ao início.';
+        if (!showFormErrors(root, errors)) return false;
+
+        if (existing) {
+          commit('Editar meta', function (s) {
+            const g = findById(s.goals, existing.id);
+            if (!g) throw new Error('Meta não encontrada.');
+            const oldProject = g.projectId;
+            Object.assign(g, data);
+            g.tracking = normalizeTracking(tracking);
+            g.updatedAt = Date.now();
+            touchProject(s, oldProject);
+            touchProject(s, g.projectId);
+            setGoalStatus(s, g, status);
+            addActivity(s, 'goal_update', 'Meta editada: "' + g.title + '"', { goalId: g.id, projectId: g.projectId });
+          });
+          showToast('Meta atualizada.', { type: 'success' });
+        } else {
+          commit('Criar meta', function (s) {
+            const g = createGoal(Object.assign({}, data, { tracking: tracking }));
+            s.goals.push(g);
+            touchProject(s, g.projectId);
+            markActiveDay(s);
+            addActivity(s, 'goal_create', 'Meta criada: "' + g.title + '"', { goalId: g.id, projectId: g.projectId });
+            setGoalStatus(s, g, status);
+          });
+          showToast('Meta criada.', { type: 'success' });
+        }
+        return true;
+      }
+    });
+  }
+
+  function deleteGoal(goalId) {
+    const g = findGoal(goalId);
+    if (!g) return;
+    confirmDialog({
+      title: 'Excluir meta',
+      message: 'Excluir a meta "' + g.title + '"' + (g.log.length ? ' e seus ' + g.log.length + ' registros de progresso' : '') + '?\nO XP já conquistado é mantido.',
+      confirmLabel: 'Excluir',
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      const title = g.title;
+      const done = commit('Excluir meta', function (s) {
+        const target = findById(s.goals, goalId);
+        s.goals = s.goals.filter(function (x) { return x.id !== goalId; });
+        if (target) touchProject(s, target.projectId);
+        addActivity(s, 'goal_delete', 'Meta excluída: "' + title + '"');
+      });
+      if (done) showToast('Meta "' + title + '" excluída.', { type: 'info', action: { label: 'Desfazer', onClick: performUndo } });
+    });
+  }
+
+  function toggleGoalDone(goalId) {
+    const g = findGoal(goalId);
+    if (!g) return;
+    const next = g.status === 'done' ? 'todo' : 'done';
+    commit(next === 'done' ? 'Concluir meta' : 'Reabrir meta', function (s) {
+      const target = findById(s.goals, goalId);
+      if (target) setGoalStatus(s, target, next);
+    });
+  }
+
+  function changeGoalStatus(goalId, status) {
+    if (!isOneOf(STATUSES, status)) return;
+    commit('Alterar status da meta', function (s) {
+      const g = findById(s.goals, goalId);
+      if (g) setGoalStatus(s, g, status);
+    });
+  }
+
+  function changeProjectStatus(projectId, status) {
+    if (!isOneOf(STATUSES, status)) return;
+    commit('Alterar status do projeto', function (s) {
+      const p = findById(s.projects, projectId);
+      if (p) setProjectStatus(s, p, status);
+    });
+  }
+
+  function quickFrequencyIncrement(goalId) {
+    const g = findGoal(goalId);
+    if (!g || g.tracking.type !== 'frequency') return;
+    commit('Registrar ocorrência', function (s) {
+      const target = findById(s.goals, goalId);
+      if (target) applyProgressLog(s, target, { value: 1, date: todayISO(), note: '' });
+    });
+    showToast('+1 registrado em "' + g.title + '" (+' + XP_PER_PROGRESS_LOG + ' XP)', { type: 'xp' });
+  }
+
+  function progressLogFieldsHtml(g) {
+    const t = g.tracking;
+    switch (t.type) {
+      case 'numeric':
+        return numberField('Novo valor atual' + (t.unit ? ' (' + escapeHtml(t.unit) + ')' : '') + ' <span class="req">*</span>', 'value', t.current, 'autofocus') +
+          '<p class="hint" style="align-self:end">Atual: ' + formatNumber(t.current) + ' · Meta: ' + formatNumber(t.target) + '</p>';
+      case 'percentage':
+        return numberField('Novo percentual (0–100) <span class="req">*</span>', 'value', t.current, 'min="0" max="100" autofocus') +
+          '<p class="hint" style="align-self:end">Atual: ' + formatNumber(t.current) + '%</p>';
+      case 'frequency':
+        return numberField('Quantas ocorrências registrar <span class="req">*</span>', 'value', 1, 'step="1" autofocus') +
+          '<p class="hint" style="align-self:end">Total: ' + t.count + ' de ' + t.target + '. Use número negativo para corrigir.</p>';
+      case 'duration':
+        return '<div class="field"><span class="field-label">Tempo investido <span class="req">*</span></span><div class="row">' +
+          '<input class="input" type="number" name="hours" min="0" step="1" value="0" aria-label="Horas" autofocus><span class="muted">h</span>' +
+          '<input class="input" type="number" name="value" min="0" step="1" value="30" aria-label="Minutos"><span class="muted">min</span></div></div>' +
+          '<p class="hint" style="align-self:end">Total: ' + formatMinutes(t.logged) + ' de ' + formatMinutes(t.target) + '</p>';
+      case 'scale':
+        return numberField('Novo valor (' + formatNumber(t.min) + '–' + formatNumber(t.max) + ') <span class="req">*</span>', 'value', t.current, 'min="' + t.min + '" max="' + t.max + '" autofocus') +
+          '<p class="hint" style="align-self:end">Atual: ' + formatNumber(t.current) + ' · Meta: ' + formatNumber(t.target) + '</p>';
+      default:
+        return '';
+    }
+  }
+
+  function openProgressLog(goalId) {
+    const g = findGoal(goalId);
+    if (!g) return;
+    if (g.tracking.type === 'simple') {
+      toggleGoalDone(goalId);
+      return;
+    }
+    openModal({
+      title: 'Registrar progresso — ' + g.title,
+      size: 'md',
+      body: '<div class="form-grid">' + progressLogFieldsHtml(g) +
+        '<label class="field"><span>Data</span><input class="input" type="date" name="date" value="' + todayISO() + '" max="' + todayISO() + '"></label>' +
+        '<label class="field full"><span>Comentário</span><textarea class="textarea" name="note" maxlength="300" placeholder="Opcional"></textarea></label></div>',
+      actions: [
+        { id: 'cancel', label: 'Cancelar' },
+        { id: 'save', label: 'Registrar (+' + XP_PER_PROGRESS_LOG + ' XP)', variant: 'primary', submit: true }
+      ],
+      onAction: function (action, modal) {
+        if (action !== 'save') return true;
+        const root = modal.el;
+        const t = g.tracking;
+        const errors = {};
+        let value = parseNumber(root.querySelector('[name="value"]').value);
+        if (t.type === 'duration') {
+          const hours = parseNumber(root.querySelector('[name="hours"]').value);
+          value = (isFiniteNumber(hours) ? hours : 0) * 60 + (isFiniteNumber(value) ? value : 0);
+          if (value <= 0) errors.value = 'Informe um tempo maior que zero.';
+        } else if (!isFiniteNumber(value)) {
+          errors.value = 'Informe um valor.';
+        } else if (t.type === 'percentage' && (value < 0 || value > 100)) {
+          errors.value = 'Use um valor entre 0 e 100.';
+        } else if (t.type === 'scale' && (value < t.min || value > t.max)) {
+          errors.value = 'O valor precisa estar dentro da escala.';
+        } else if (t.type === 'frequency' && (value === 0 || Math.round(value) !== value)) {
+          errors.value = 'Informe um número inteiro diferente de zero.';
+        }
+        const date = root.querySelector('[name="date"]').value || todayISO();
+        if (!isValidISODate(date)) errors.date = 'Data inválida.';
+        if (!showFormErrors(root, errors)) return false;
+        const note = root.querySelector('[name="note"]').value.trim();
+        commit('Registrar progresso', function (s) {
+          const target = findById(s.goals, goalId);
+          if (!target) throw new Error('Meta não encontrada.');
+          applyProgressLog(s, target, { value: value, date: date, note: note });
+        });
+        showToast('Progresso registrado (+' + XP_PER_PROGRESS_LOG + ' XP)', { type: 'xp' });
+        return true;
+      }
+    });
+  }
+
+  /* =====================================================================
+   * 19. PERFIL E TEMA
+   * ===================================================================== */
+
+  function setTheme(theme) {
+    if (!isOneOf(THEMES, theme) || state.settings.theme === theme) return;
+    applyTheme(theme);
+    commit('Alterar tema', function (s) { s.settings.theme = theme; }, { undoable: false });
+  }
+
+  function toggleTheme() {
+    setTheme(state.settings.theme === 'dark' ? 'light' : 'dark');
+  }
+
+  function saveProfile() {
+    const root = document.getElementById('profile-form');
+    if (!root) return;
+    const name = root.querySelector('[name="profile-name"]').value.trim();
+    const subtitle = root.querySelector('[name="profile-subtitle"]').value.trim();
+    if (!name) {
+      showFormErrors(root, { 'profile-name': 'Informe um nome.' });
+      return;
+    }
+    commit('Editar perfil', function (s) {
+      s.profile.name = name;
+      s.profile.subtitle = subtitle;
+      addActivity(s, 'profile', 'Perfil atualizado');
+    });
+    showToast('Perfil salvo.', { type: 'success' });
+  }
+
+  /* =====================================================================
+   * 20. ROTEAMENTO E EVENTOS GLOBAIS (delegação via addEventListener)
+   * ===================================================================== */
+
+  function parseRoute() {
+    const hash = (window.location.hash || '').replace(ROUTE_PREFIX_REGEX, '');
+    const parts = hash.split('/').filter(Boolean);
+    const name = parts[0] || 'dashboard';
+    if (name === 'project' && parts[1]) return { name: 'project', id: decodeURIComponent(parts[1]) };
+    if (NAV_ITEMS.some(function (i) { return i.route === name; })) return { name: name };
+    return { name: 'dashboard' };
+  }
+
+  function navigate(path) {
+    const target = '#/' + path;
+    if (window.location.hash === target) {
+      handleRouteChange();
+    } else {
+      window.location.hash = target;
+    }
+  }
+
+  function handleRouteChange() {
+    const prev = ui.route;
+    ui.route = parseRoute();
+    if (ui.route.name === 'project' && (prev.name !== 'project' || prev.id !== ui.route.id)) ui.detailStatus = 'all';
+    closeAllModals();
+    renderApp();
+    window.scrollTo(0, 0);
+  }
+
+  function closeAllModals() {
+    modalStack.slice().forEach(function (m) { m.close('navigate'); });
+  }
+
+  function handleAction(action, el) {
+    const id = el.getAttribute('data-id');
+    switch (action) {
+      case 'navigate': navigate(el.getAttribute('data-route')); break;
+      case 'undo': performUndo(); break;
+      case 'redo': performRedo(); break;
+      case 'toggle-theme': toggleTheme(); break;
+      case 'set-theme': setTheme(el.getAttribute('data-theme')); break;
+      case 'new-project': openProjectForm(null); break;
+      case 'edit-project': openProjectForm(id); break;
+      case 'delete-project': deleteProject(id); break;
+      case 'open-project': if (id) navigate('project/' + encodeURIComponent(id)); break;
+      case 'new-goal': openGoalForm(null, el.getAttribute('data-project-id')); break;
+      case 'edit-goal': openGoalForm(id, null); break;
+      case 'delete-goal': deleteGoal(id); break;
+      case 'goal-toggle-done': toggleGoalDone(id); break;
+      case 'goal-log': openProgressLog(id); break;
+      case 'goal-freq-inc': quickFrequencyIncrement(id); break;
+      case 'goal-toggle-history':
+        if (ui.expandedGoals.has(id)) ui.expandedGoals.delete(id);
+        else ui.expandedGoals.add(id);
+        renderView();
+        break;
+      case 'detail-status':
+        ui.detailStatus = el.getAttribute('data-status');
+        renderView();
+        break;
+      case 'clear-project-filters':
+        ui.projectFilters = { text: '', status: 'all', category: 'all', sort: ui.projectFilters.sort };
+        renderView();
+        break;
+      case 'clear-goal-filters':
+        ui.goalFilters = { text: '', status: 'all', project: 'all', difficulty: 'all', type: 'all', sort: ui.goalFilters.sort };
+        renderView();
+        break;
+      case 'save-profile': saveProfile(); break;
+      default: console.warn('Ação desconhecida:', action);
+    }
+  }
+
+  function handleChange(kind, el) {
+    const id = el.getAttribute('data-id');
+    switch (kind) {
+      case 'goal-status': changeGoalStatus(id, el.value); break;
+      case 'project-status': changeProjectStatus(id, el.value); break;
+      case 'filter-projects':
+        ui.projectFilters[el.getAttribute('data-field')] = el.value;
+        renderProjectsList();
+        break;
+      case 'filter-goals':
+        ui.goalFilters[el.getAttribute('data-field')] = el.value;
+        renderGoalsList();
+        break;
+      default: break;
+    }
+  }
+
+  function bindGlobalEvents() {
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.modal-backdrop, #toast-root')) return;
+      const el = e.target.closest('[data-action]');
+      if (!el || el.disabled) return;
+      handleAction(el.getAttribute('data-action'), el);
+    });
+    document.addEventListener('change', function (e) {
+      const el = e.target.closest('[data-change]');
+      if (el) handleChange(el.getAttribute('data-change'), el);
+    });
+    document.addEventListener('input', function (e) {
+      const el = e.target.closest('[data-input]');
+      if (el) handleChange(el.getAttribute('data-input'), el);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && modalStack.length) {
+        e.preventDefault();
+        modalStack[modalStack.length - 1].close('dismiss');
+      }
+    });
+    window.addEventListener('hashchange', handleRouteChange);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'hidden' && saveTimer) persistNow();
+    });
+    window.addEventListener('pagehide', function () {
+      if (saveTimer) persistNow();
+    });
+  }
+
+  /* =====================================================================
+   * 21. INICIALIZAÇÃO (ponto único, chamado uma vez)
+   * ===================================================================== */
+
+  function init() {
+    applyTheme('dark');
+    bindGlobalEvents();
+    requestPersistentStorage();
+    loadState().then(function () {
+      applyTheme(state.settings.theme);
+      ui.route = parseRoute();
+      if (persistenceBlocked) setSaveStatus('blocked');
+      else if (!storageAvailable) setSaveStatus('memory');
+      else if (saveStatus === 'loading') setSaveStatus('saved');
+      renderApp();
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
