@@ -83,13 +83,27 @@ Vindas da análise comparativa com Habitica, Duolingo, Way of Life, Notion/Click
 
 Todos os números do jogo são constantes no topo do arquivo (`HP_*`, `FREEZE_*`, `STREAK_*`, `DIFFICULTIES`); a tela Configurações mostra as regras vigentes.
 
+### Fase 1.6 — Melhorias de prioridade média e baixa ✅ entregue (v0.3.0, schema v3)
+
+- **Modelos de meta** no formulário de nova meta (leitura, certificação, curso, horas de estudo, idioma, peso, treinos, reserva financeira, clientes, hábito, tarefa única). Os sugeridos para a categoria do projeto vêm primeiro; trocar de modelo não apaga o que o usuário digitou.
+- **Reflexão ao concluir**: humor (1–5) + "o que funcionou" + "o que faria diferente", salva em `goal.reflection`, exibida no cartão e exportada no CSV. Pode ser desligada (Configurações ou "não perguntar mais").
+- **Modo foco (Pomodoro)** vinculado a uma meta: pílula no topo com contagem, pausar/retomar, concluir antes (credita o tempo feito), descartar, pausa de 5 min, som via WebAudio. +1 XP a cada 5 min e +1 HP; em metas de duração o tempo entra no progresso. A sessão sobrevive a recarregar a página.
+- **Placar semanal/mensal** (período atual até hoje vs. o mesmo trecho do período anterior) + **melhor dia da semana** (média de XP das últimas 12 semanas).
+- **Exportação**: CSV de metas, histórico de progresso e atividade diária (";" + vírgula decimal + BOM, abre no Excel pt-BR) e backup JSON (só dados ou completo com imagens). Importação continua na Fase 6.
+- **Atalhos**: G→D/P/M/C, N (nova meta), Shift+N (novo projeto), F (foco), / (busca), ? (lista de atalhos).
+- **Temas extras**: Floresta, Sépia e Retrô (C64). **Moldura do avatar** evolui com o nível (Bronze 3, Prata 5, Ouro 8, Esmeralda 12, Diamante 16, Lendária 20) — só visual, sem títulos temáticos.
+- Pendente desta lista: **grupos do Canvas com cor e progresso agregado** — depende do Quadro Visual (Fase 3).
+
 ### Regras do motor de jogo (não quebrar)
 
 - Toda mutação passa por `commit()`; XP positivo usa `gainXp()` (aplica multiplicador) e estornos usam `awardXp()` com o valor bruto salvo em `xpAwarded`. Cura de conclusão fica em `hpAwarded` e é estornada ao reabrir.
 - `markActiveDay()` deve rodar **antes** de `gainXp()` para o multiplicador já contar o dia de hoje.
 - `processDailyTick()` avalia dias completos de `player.lastTickDate` até ontem (máx. 30), roda na abertura (antes do 1º render, fora do undo), a cada 60 s e ao voltar para a aba. Usa o status **atual** de metas/projetos.
 - `player.daily[iso] = { xp, actions }` alimenta o heatmap (o log de atividades é truncado em 300 itens, não usar para histórico longo).
-- Salvamento com debounce curto (50 ms) de propósito: fechar a aba logo após uma ação não pode perder dados.
+- Salvamento sem debounce de tempo: `scheduleSave()` agenda `persistNow()` numa microtask (várias alterações na mesma rodada viram uma gravação). Fechar/recarregar logo após uma ação não pode perder dados — não reintroduzir `setTimeout` aqui.
+- `state.focus` (sessão de foco em andamento) fica **fora** do undo/redo: `performUndo/Redo` preservam o valor atual, senão desfazer um crédito ressuscitaria um timer vencido.
+- Conclusões de meta entram em `pendingReflections` dentro do `commit`; o prompt de reflexão abre depois do render (`maybePromptReflection`).
+- Formulários de criação zeram título/nome do rascunho (a normalização troca vazio por "Meta sem título").
 
 ### Validação antes de entregar
 
@@ -105,16 +119,9 @@ Além do `node --check` (regra 7): teste E2E com Playwright abrindo o `.html` vi
 
 ## Melhorias da análise comparativa ainda pendentes
 
-Prioridade média (encaixar nas fases indicadas):
-- **Modo foco / Pomodoro vinculado a uma meta** (Forest, Finch) — registra tempo em metas de duração. Fase 3 ou 4.
-- **Scoreboard semanal/mensal** no Dashboard (esta semana vs. anterior: XP, metas, dias ativos) (Way of Life). Fase 5.
-- **Export CSV** além do JSON (por meta/checkpoint, para abrir no Excel). Fase 6.
-- **Templates de meta** prontos por categoria (leitura, peso, certificação…) com o tipo de acompanhamento certo. Fase 2.
-- **Reflexão na conclusão** ("o que funcionou / o que faria diferente") gravada no histórico. Fase 2 ou 4.
-- **Grupos do Canvas com cor e progresso agregado** dentro do retângulo (Miro/Milanote). Fase 3.
-- **Atalhos "G depois X"** para navegação (G→D Dashboard, G→P Projetos…) (Linear). Fase 6.
+- **Grupos do Canvas com cor e progresso agregado** dentro do retângulo (Miro/Milanote). Entra junto com o Quadro Visual (Fase 3).
 
-Baixa prioridade: temas extras (ex.: retrô), avatar que evolui com o nível, "melhor dia da semana" nas estatísticas.
+Todo o resto da análise comparativa (prioridades alta, média e baixa) já foi entregue nas Fases 1.5 e 1.6.
 
 Fora de escopo por decisão de arquitetura (arquivo único 100% local): contas/sync em nuvem, multiplayer/festas do Habitica, notificações push do SO, IA integrada.
 

@@ -32,6 +32,7 @@
     --radius: 12px;
     --radius-sm: 8px;
     --font-scale: 1;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color-scheme: dark;
   }
   [data-theme="light"] {
@@ -60,6 +61,85 @@
     color-scheme: light;
   }
 
+  [data-theme="retro"] {
+    --bg: #352879;
+    --surface: #40318d;
+    --surface-2: #4a3a9e;
+    --surface-3: #5646b0;
+    --text: #d6d0ff;
+    --text-muted: #a79ce8;
+    --border: #6c5eb5;
+    --accent: #9ad284;
+    --accent-hover: #b0e39b;
+    --accent-contrast: #1b1540;
+    --accent-soft: rgba(154, 210, 132, 0.18);
+    --secondary: #70c8d8;
+    --success: #9ad284;
+    --warning: #edf171;
+    --danger: #ff8b7b;
+    --info: #8fb4ff;
+    --progress: #9ad284;
+    --xp: #edf171;
+    --selection: rgba(154, 210, 132, 0.35);
+    --overlay: rgba(20, 14, 50, 0.7);
+    --shadow: 0 0 0 2px #6c5eb5;
+    --glow: 0 0 0 2px #9ad284;
+    --radius: 3px;
+    --radius-sm: 2px;
+    --font: ui-monospace, "Cascadia Mono", Consolas, "Courier New", monospace;
+    color-scheme: dark;
+  }
+  [data-theme="forest"] {
+    --bg: #0d1512;
+    --surface: #131f1a;
+    --surface-2: #192923;
+    --surface-3: #21352d;
+    --text: #e3efe8;
+    --text-muted: #97ad9f;
+    --border: #26392f;
+    --accent: #34d399;
+    --accent-hover: #4ee3a8;
+    --accent-contrast: #06231a;
+    --accent-soft: rgba(52, 211, 153, 0.15);
+    --secondary: #a3e635;
+    --success: #22c55e;
+    --warning: #f59e0b;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --progress: #34d399;
+    --xp: #facc15;
+    --selection: rgba(52, 211, 153, 0.3);
+    --overlay: rgba(3, 8, 6, 0.66);
+    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+    --glow: 0 0 0 1px rgba(52, 211, 153, 0.35), 0 0 22px rgba(52, 211, 153, 0.15);
+    color-scheme: dark;
+  }
+  [data-theme="sepia"] {
+    --bg: #f4ecdf;
+    --surface: #fbf6ee;
+    --surface-2: #f3eadb;
+    --surface-3: #e9ddc9;
+    --text: #3b2f22;
+    --text-muted: #7a6853;
+    --border: #dccfb9;
+    --accent: #0f766e;
+    --accent-hover: #115e59;
+    --accent-contrast: #ffffff;
+    --accent-soft: rgba(15, 118, 110, 0.12);
+    --secondary: #b45309;
+    --success: #15803d;
+    --warning: #c2410c;
+    --danger: #b91c1c;
+    --info: #1d4ed8;
+    --progress: #0f766e;
+    --xp: #b45309;
+    --selection: rgba(15, 118, 110, 0.2);
+    --overlay: rgba(40, 30, 20, 0.4);
+    --shadow: 0 10px 30px rgba(60, 40, 20, 0.12);
+    --glow: 0 0 0 1px rgba(15, 118, 110, 0.25), 0 0 18px rgba(15, 118, 110, 0.1);
+    color-scheme: light;
+  }
+
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
   ::selection { background: var(--selection); }
@@ -67,7 +147,7 @@
   body {
     background: var(--bg);
     color: var(--text);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: var(--font);
     font-size: calc(14px * var(--font-scale));
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
@@ -174,6 +254,7 @@
   .badge-diff-medium { color: var(--info); }
   .badge-diff-hard { color: var(--warning); }
   .badge-diff-epic { color: #c084fc; background: rgba(192, 132, 252, 0.14); }
+  [data-theme="light"] .badge-diff-epic, [data-theme="sepia"] .badge-diff-epic { color: #7e22ce; background: rgba(126, 34, 206, 0.1); }
   .badge-xp { color: var(--xp); background: color-mix(in srgb, var(--xp) 14%, transparent); }
   .chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px; font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); color: var(--text-muted); }
   .chip-danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
@@ -455,6 +536,86 @@
   @keyframes goal-flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--accent), var(--glow); } }
   .goal-card.flash { animation: goal-flash 1.6s ease 2; }
 
+  /* ---------- Modelos de meta ---------- */
+  .template-box { border: 1px dashed var(--border); border-radius: var(--radius); padding: 12px; background: var(--surface-2); }
+  .template-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .template-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 13px; color: var(--text); }
+  .template-chip:hover { border-color: var(--accent); }
+  .template-chip.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .template-chip.suggested { font-weight: 600; }
+
+  /* ---------- Reflexão ---------- */
+  .reflection { margin-top: 10px; padding: 8px 12px; border-radius: var(--radius-sm); background: var(--surface-2); border-left: 3px solid var(--secondary); font-size: 13px; }
+  .reflection p + p { margin-top: 4px; }
+  .reflection b { color: var(--text-muted); font-weight: 600; }
+  .mood-picker { display: flex; gap: 8px; }
+  .mood-option { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--border); background: var(--surface-2); font-size: 22px; cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .mood-option:hover { border-color: var(--accent); }
+  .mood-option.selected { border-color: var(--accent); background: var(--accent-soft); transform: scale(1.08); }
+  .check-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); cursor: pointer; }
+
+  /* ---------- Modo foco ---------- */
+  .focus-pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 4px 3px 12px; border-radius: 999px; border: 1px solid color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); max-width: 340px; }
+  .focus-pill.is-break { border-color: color-mix(in srgb, var(--secondary) 45%, var(--border)); background: color-mix(in srgb, var(--secondary) 10%, var(--surface)); }
+  .focus-pill.is-paused { opacity: 0.75; }
+  .focus-time { font-variant-numeric: tabular-nums; font-weight: 800; }
+  .focus-goal { font-size: 12.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+  .focus-pill .icon-btn { width: 26px; height: 26px; }
+  .duration-options { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .duration-option { padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; font-weight: 600; }
+  .duration-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+
+  /* ---------- Placar e melhor dia ---------- */
+  .score-tabs { margin-bottom: 12px; }
+  .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 8px; }
+  .score-item { background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; min-width: 0; }
+  .score-label { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .score-value { font-size: 20px; font-weight: 800; margin: 2px 0; }
+  .score-prev { font-size: 11.5px; color: var(--text-muted); }
+  .delta { font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+  .delta.up { color: var(--success); }
+  .delta.down { color: var(--danger); }
+  .delta.flat { color: var(--text-muted); }
+  .weekday-block { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); }
+  .wd-headline { font-size: 13px; margin-bottom: 10px; }
+  .wd-bars { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; align-items: end; height: 76px; }
+  .wd-bar-col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 3px; }
+  .wd-bar { width: 60%; max-width: 34px; min-height: 2px; border-radius: 4px 4px 0 0; background: color-mix(in srgb, var(--accent) 35%, var(--surface-3)); }
+  .wd-bar.best { background: var(--accent); }
+  .wd-value { font-size: 11px; font-weight: 700; color: var(--text); min-height: 14px; }
+  .wd-labels { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; margin-top: 4px; font-size: 11.5px; color: var(--text-muted); text-align: center; }
+
+  /* ---------- Avatar com moldura por nível ---------- */
+  .avatar-wrap { position: relative; display: inline-grid; place-items: center; border-radius: 50%; flex-shrink: 0; }
+  .avatar-wrap .avatar { box-shadow: none; }
+  .avatar-wrap[data-frame="bronze"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px #cd7f32; }
+  .avatar-wrap[data-frame="silver"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px #c3cad6; }
+  .avatar-wrap[data-frame="gold"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px #f5c542, 0 0 18px rgba(245, 197, 66, 0.45); }
+  .avatar-wrap[data-frame="emerald"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px #10b981, 0 0 20px rgba(16, 185, 129, 0.45); }
+  .avatar-wrap[data-frame="diamond"] { box-shadow: 0 0 0 3px var(--surface), 0 0 0 6px #67e8f9, 0 0 24px rgba(103, 232, 249, 0.55); }
+  .avatar-wrap[data-frame="legend"]::before { content: ""; position: absolute; inset: -6px; border-radius: 50%; background: conic-gradient(#f5c542, #ec4899, #7c5cff, #22d3ee, #f5c542); animation: frame-spin 6s linear infinite; z-index: 0; }
+  .avatar-wrap[data-frame="legend"]::after { content: ""; position: absolute; inset: -3px; border-radius: 50%; background: var(--surface); z-index: 0; }
+  .avatar-wrap[data-frame="legend"] .avatar { position: relative; z-index: 1; }
+  .avatar-badge { position: absolute; right: -6px; bottom: -6px; z-index: 2; font-size: 18px; line-height: 1; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35)); }
+  .avatar-wrap.sm .avatar-badge { font-size: 12px; right: -5px; bottom: -5px; }
+  .avatar-wrap.sm[data-frame] { box-shadow: none; }
+  .avatar-wrap.sm[data-frame]:not([data-frame="basic"]) .avatar { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--frame-color, var(--accent)); }
+  @keyframes frame-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .avatar-wrap[data-frame="legend"]::before { animation: none; } }
+  .frame-list { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+  .frame-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); }
+  .frame-item.locked { opacity: 0.5; }
+
+  /* ---------- Atalhos ---------- */
+  #key-hint { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(10px); z-index: 250; padding: 8px 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity 0.12s, transform 0.12s; white-space: nowrap; }
+  #key-hint.show { opacity: 1; transform: translateX(-50%); }
+  .shortcut-table { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 8px 14px; align-items: center; font-size: 13.5px; }
+  .shortcut-group { grid-column: 1 / -1; font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); margin-top: 8px; }
+  .export-actions { display: flex; flex-direction: column; gap: 8px; }
+  .export-actions .btn { justify-content: flex-start; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .setting-row:last-child { border-bottom: 0; }
+
   /* Responsividade básica (bônus, desktop é o foco) */
   @media (max-width: 1200px) {
     .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -493,6 +654,7 @@
     <header class="topbar">
       <div class="topbar-title" id="page-title">GoalQuest</div>
       <div class="topbar-actions">
+        <div id="focus-slot"></div>
         <button type="button" class="search-btn" data-action="open-palette" title="Buscar projetos, metas e ações">🔍 Buscar ou executar…<span class="spacer"></span><kbd id="palette-kbd">Ctrl K</kbd></button>
         <span class="save-indicator" id="save-indicator">Carregando…</span>
         <button type="button" class="icon-btn" id="btn-undo" data-action="undo" title="Desfazer" aria-label="Desfazer">↶</button>
@@ -507,6 +669,7 @@
 <div id="modal-root"></div>
 <div id="toast-root" aria-live="polite"></div>
 <div id="tooltip" role="tooltip"></div>
+<div id="key-hint" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -516,8 +679,8 @@
    * 1. CONSTANTES (todas declaradas aqui, antes de qualquer função)
    * ===================================================================== */
 
-  const APP_VERSION = '0.2.0';
-  const CURRENT_SCHEMA_VERSION = 2;
+  const APP_VERSION = '0.3.0';
+  const CURRENT_SCHEMA_VERSION = 3;
 
   const DB_NAME = 'goalquest';
   const DB_VERSION = 1;
@@ -526,8 +689,6 @@
   const STATE_KEY = 'main';
   const BACKUP_KEY_PREFIX = 'backup-schema-v';
 
-  // Curto de propósito: fechar/recarregar logo após uma ação não pode perder dados.
-  const SAVE_DEBOUNCE_MS = 50;
   const UNDO_LIMIT = 60;
   const ACTIVITY_LIMIT = 300;
   const GOAL_LOG_LIMIT = 500;
@@ -573,12 +734,27 @@
     { min: 3, mult: 1.1, label: 'Embalado' }
   ];
 
+  // Modo foco (Pomodoro): XP por minuto focado, cura por sessão, durações sugeridas.
+  const FOCUS_DURATIONS = [15, 25, 45, 60];
+  const FOCUS_DEFAULT_MINUTES = 25;
+  const FOCUS_MAX_MINUTES = 180;
+  const FOCUS_BREAK_MINUTES = 5;
+  const FOCUS_MIN_CREDIT_MINUTES = 1;
+  const XP_FOCUS_PER_MINUTE = 0.2;
+  const HP_HEAL_FOCUS = 1;
+  const FOCUS_TICK_MS = 1000;
+
   const HEATMAP_WEEKS = 53;
+  const BEST_WEEKDAY_WEEKS = 12;
+  const G_SHORTCUT_TIMEOUT_MS = 1500;
+  const CSV_SEPARATOR = ';';
   const PALETTE_LIMIT_PER_GROUP = 8;
   const COUNTED_ACTIVITY_TYPES = ['project_create', 'project_complete', 'goal_create', 'goal_complete', 'progress'];
 
   const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
-  const DIACRITICS_REGEX = /[̀-ͯ]/g;
+  const DIACRITICS_REGEX = /[\u0300-\u036f]/g;
+  const CSV_NEEDS_QUOTE_REGEX = /[;"\n\r]/;
+  const CSV_QUOTE_REGEX = /"/g;
   const MAC_PLATFORM_REGEX = /mac|iphone|ipad/i;
   const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const HTML_ESCAPE_REGEX = /[&<>"']/g;
@@ -640,14 +816,75 @@
   ];
   const THEMES = [
     { id: 'dark', label: 'Escuro', swatch: 'linear-gradient(135deg, #0e1016 50%, #7c5cff 50%)' },
-    { id: 'light', label: 'Claro', swatch: 'linear-gradient(135deg, #f3f4f8 50%, #6645f0 50%)' }
+    { id: 'light', label: 'Claro', swatch: 'linear-gradient(135deg, #f3f4f8 50%, #6645f0 50%)' },
+    { id: 'forest', label: 'Floresta', swatch: 'linear-gradient(135deg, #0d1512 50%, #34d399 50%)' },
+    { id: 'sepia', label: 'Sépia', swatch: 'linear-gradient(135deg, #f4ecdf 50%, #0f766e 50%)' },
+    { id: 'retro', label: 'Retrô (C64)', swatch: 'linear-gradient(135deg, #352879 50%, #9ad284 50%)' }
+  ];
+  const LIGHT_THEMES = ['light', 'sepia'];
+  // Moldura do avatar evolui com o nível (só visual).
+  const AVATAR_FRAMES = [
+    { min: 1, id: 'basic', label: 'Sem moldura', badge: '', color: '' },
+    { min: 3, id: 'bronze', label: 'Bronze', badge: '🥉', color: '#cd7f32' },
+    { min: 5, id: 'silver', label: 'Prata', badge: '🥈', color: '#c3cad6' },
+    { min: 8, id: 'gold', label: 'Ouro', badge: '🥇', color: '#f5c542' },
+    { min: 12, id: 'emerald', label: 'Esmeralda', badge: '💚', color: '#10b981' },
+    { min: 16, id: 'diamond', label: 'Diamante', badge: '💎', color: '#67e8f9' },
+    { min: 20, id: 'legend', label: 'Lendária', badge: '👑', color: '#f5c542' }
+  ];
+  const MOODS = [
+    { value: 1, icon: '😣', label: 'Muito difícil' },
+    { value: 2, icon: '😕', label: 'Difícil' },
+    { value: 3, icon: '😐', label: 'Ok' },
+    { value: 4, icon: '🙂', label: 'Bom' },
+    { value: 5, icon: '🤩', label: 'Excelente' }
+  ];
+  // Modelos de meta: tracking já no formato salvo (duração em minutos).
+  const GOAL_TEMPLATES = [
+    { id: 'reading', icon: '📚', label: 'Leitura de livros', categories: ['Estudos', 'Pessoal', 'Finanças'], title: 'Ler 12 livros no ano', difficulty: 'hard', tracking: { type: 'frequency', target: 12, count: 0, period: 'month' }, tags: ['leitura'], nextAction: 'Escolher o próximo livro' },
+    { id: 'certification', icon: '🎓', label: 'Certificação', categories: ['Estudos', 'Carreira', 'Finanças'], title: 'Passar na certificação', difficulty: 'epic', tracking: { type: 'percentage', current: 0 }, tags: ['certificação'], nextAction: 'Montar o cronograma de estudos' },
+    { id: 'course', icon: '🧑‍🏫', label: 'Curso online', categories: ['Estudos', 'Carreira', 'Finanças'], title: 'Concluir o curso', difficulty: 'medium', tracking: { type: 'percentage', current: 0 }, tags: ['curso'], nextAction: 'Assistir a próxima aula' },
+    { id: 'study-hours', icon: '⏱️', label: 'Horas de estudo', categories: ['Estudos', 'Carreira'], title: 'Estudar 100 horas', difficulty: 'hard', tracking: { type: 'duration', target: 6000, logged: 0 }, tags: ['estudo'], nextAction: 'Fazer uma sessão de foco de 25 min' },
+    { id: 'language', icon: '🗣️', label: 'Idioma', categories: ['Estudos', 'Carreira'], title: 'Chegar ao nível 8 em inglês', difficulty: 'hard', tracking: { type: 'scale', min: 1, max: 10, current: 3, target: 8 }, tags: ['idioma'], nextAction: 'Fazer uma aula de conversação' },
+    { id: 'weight', icon: '⚖️', label: 'Peso corporal', categories: ['Saúde'], title: 'Chegar a 80 kg', difficulty: 'epic', tracking: { type: 'numeric', start: 90, current: 90, target: 80, unit: 'kg' }, tags: ['saúde', 'peso'], nextAction: 'Pesar-se e registrar o valor de hoje' },
+    { id: 'workouts', icon: '🏋️', label: 'Treinos', categories: ['Saúde'], title: 'Treinar 48 vezes (3× por semana)', difficulty: 'hard', tracking: { type: 'frequency', target: 48, count: 0, period: 'week' }, tags: ['treino'], nextAction: 'Separar a roupa do treino de amanhã' },
+    { id: 'savings', icon: '💰', label: 'Reserva financeira', categories: ['Finanças', 'Pessoal'], title: 'Juntar R$ 10.000 de reserva', difficulty: 'epic', tracking: { type: 'numeric', start: 0, current: 0, target: 10000, unit: 'R$' }, tags: ['finanças', 'reserva'], nextAction: 'Programar a transferência do mês' },
+    { id: 'clients', icon: '🤝', label: 'Clientes', categories: ['Negócios', 'Carreira'], title: 'Conquistar 10 clientes', difficulty: 'epic', tracking: { type: 'frequency', target: 10, count: 0, period: 'month' }, tags: ['clientes', 'negócios'], nextAction: 'Listar 5 contatos para abordar' },
+    { id: 'habit', icon: '🔁', label: 'Hábito diário', categories: ['Pessoal', 'Saúde'], title: 'Meditar 30 dias', difficulty: 'medium', tracking: { type: 'frequency', target: 30, count: 0, period: 'day' }, tags: ['hábito'], nextAction: '' },
+    { id: 'task', icon: '✅', label: 'Tarefa única', categories: [], title: '', difficulty: 'easy', tracking: { type: 'simple' }, tags: [], nextAction: '' }
+  ];
+  // Atalhos "G depois X" (estilo Linear).
+  const G_SHORTCUTS = {
+    d: { route: 'dashboard', label: 'Dashboard' },
+    p: { route: 'projects', label: 'Projetos' },
+    m: { route: 'goals', label: 'Metas' },
+    c: { route: 'settings', label: 'Configurações' }
+  };
+  const SHORTCUTS_HELP = [
+    { group: 'Geral' },
+    { keys: 'Ctrl K', text: 'Buscar projetos, metas e ações' },
+    { keys: '/', text: 'Buscar (alternativa)' },
+    { keys: '?', text: 'Mostrar esta lista de atalhos' },
+    { keys: 'Ctrl Z', text: 'Desfazer' },
+    { keys: 'Ctrl Y', text: 'Refazer (ou Ctrl Shift Z)' },
+    { keys: 'Esc', text: 'Fechar janela' },
+    { group: 'Navegação' },
+    { keys: 'G D', text: 'Ir para o Dashboard' },
+    { keys: 'G P', text: 'Ir para Projetos' },
+    { keys: 'G M', text: 'Ir para Metas' },
+    { keys: 'G C', text: 'Ir para Configurações' },
+    { group: 'Criar e agir' },
+    { keys: 'N', text: 'Nova meta' },
+    { keys: 'Shift N', text: 'Novo projeto' },
+    { keys: 'F', text: 'Iniciar foco (ou pausar/retomar a sessão atual)' }
   ];
   const ACTIVITY_ICONS = {
     project_create: '🗂️', project_update: '✏️', project_delete: '🗑️', project_complete: '🏁',
     goal_create: '🎯', goal_update: '✏️', goal_delete: '🗑️', goal_complete: '✅', goal_reopen: '↩️',
     progress: '📈', level_up: '⬆️', profile: '👤', system: '⚙️',
     hp_damage: '💔', exhausted: '😵', recovered: '💪', streak_freeze: '❄️', streak_lost: '🥀',
-    streak_repair: '🔧', freeze_earned: '🧊', freeze_buy: '🛒', rest: '🏖️', streak_tier: '🔥'
+    streak_repair: '🔧', freeze_earned: '🧊', freeze_buy: '🛒', rest: '🏖️', streak_tier: '🔥',
+    focus: '🍅', reflection: '💭', frame: '🖼️'
   };
   // Ações da paleta de comandos (Ctrl/Cmd+K). "keywords" ajuda a busca.
   const PALETTE_COMMANDS = [
@@ -662,7 +899,10 @@
     { id: 'redo', icon: '↷', label: 'Refazer', keywords: 'avancar', shortcut: 'Ctrl Y' },
     { id: 'buy-freeze', icon: '❄️', label: 'Comprar proteção de streak', keywords: 'freeze gelo streak' },
     { id: 'repair-streak', icon: '🔧', label: 'Reparar streak perdido', keywords: 'recuperar streak' },
-    { id: 'toggle-rest', icon: '🏖️', label: 'Ativar/desativar modo descanso', keywords: 'ferias pausa descanso hp' }
+    { id: 'toggle-rest', icon: '🏖️', label: 'Ativar/desativar modo descanso', keywords: 'ferias pausa descanso hp' },
+    { id: 'start-focus', icon: '🍅', label: 'Iniciar sessão de foco', keywords: 'pomodoro timer concentrar', shortcut: 'F' },
+    { id: 'show-shortcuts', icon: '⌨️', label: 'Ver atalhos de teclado', keywords: 'teclas ajuda', shortcut: '?' },
+    { id: 'export-data', icon: '📤', label: 'Exportar dados (CSV / JSON)', keywords: 'backup excel planilha csv json baixar' }
   ];
   const SAVE_STATUS_LABELS = {
     loading: { text: 'Carregando…', cls: '' },
@@ -719,6 +959,15 @@
         player.daily = seedDailyFromHistory(data.activity, player.activeDays);
       }
       return Object.assign({}, data, { player: player });
+    },
+    3: function (data) {
+      // v2 → v3: reflexão por meta, minutos de foco, sessão de foco em andamento e novas preferências.
+      const player = Object.assign({ focusMinutes: 0 }, data.player || {});
+      const settings = Object.assign({ reflectOnComplete: true, focusMinutes: FOCUS_DEFAULT_MINUTES, focusSound: true }, data.settings || {});
+      const goals = (Array.isArray(data.goals) ? data.goals : []).map(function (g) {
+        return Object.assign({ reflection: null, focusMinutes: 0 }, g);
+      });
+      return Object.assign({}, data, { player: player, settings: settings, goals: goals, focus: null });
     }
   };
 
@@ -730,10 +979,16 @@
   let dbPromise = null;
   let storageAvailable = true;
   let persistenceBlocked = false;
-  let saveTimer = null;
+  let saveQueued = false;
+  let savesInFlight = 0;
   let saveStatus = 'loading';
   let pendingToasts = [];
   let paletteModal = null;
+  let pendingReflections = [];
+  let gShortcutAt = 0;
+  let keyHintTimer = null;
+  let focusTimer = null;
+  let baseDocTitle = 'GoalQuest';
   const undoHistory = { undo: [], redo: [] };
   const mediaCache = new Map();
   const modalStack = [];
@@ -741,6 +996,7 @@
     route: { name: 'dashboard' },
     detailStatus: 'all',
     highlightGoal: null,
+    scorePeriod: 'week',
     expandedGoals: new Set(),
     projectFilters: { text: '', status: 'active', category: 'all', sort: 'updated' },
     goalFilters: { text: '', status: 'open', project: 'all', difficulty: 'all', type: 'all', sort: 'deadline' }
@@ -1005,6 +1261,10 @@
     return idbTransaction(storeName, 'readwrite', function (store) { return store.delete(key); });
   }
 
+  function idbGetAll(storeName) {
+    return idbTransaction(storeName, 'readonly', function (store) { return store.getAll(); });
+  }
+
   function idbGetAllKeys(storeName) {
     return idbTransaction(storeName, 'readonly', function (store) { return store.getAllKeys(); });
   }
@@ -1020,7 +1280,7 @@
       createdAt: now,
       updatedAt: now,
       profile: { name: 'Jogador', subtitle: 'Rumo ao próximo nível' },
-      settings: { theme: 'dark' },
+      settings: { theme: 'dark', reflectOnComplete: true, focusMinutes: FOCUS_DEFAULT_MINUTES, focusSound: true },
       player: {
         xpEarned: 0,
         xpSpent: 0,
@@ -1031,11 +1291,13 @@
         freezes: FREEZE_START,
         frozenDays: [],
         lastTickDate: todayISO(),
-        daily: {}
+        daily: {},
+        focusMinutes: 0
       },
       projects: [],
       goals: [],
-      activity: []
+      activity: [],
+      focus: null
     };
   }
 
@@ -1065,7 +1327,7 @@
     if (!raw || typeof raw !== 'object') return out;
     Object.keys(raw).forEach(function (day) {
       if (!isValidISODate(day) || !raw[day] || typeof raw[day] !== 'object') return;
-      out[day] = { xp: Math.max(0, Number(raw[day].xp) || 0), actions: Math.max(0, Number(raw[day].actions) || 0) };
+      out[day] = { xp: Math.max(0, Number(raw[day].xp) || 0), actions: Math.max(0, Number(raw[day].actions) || 0), focus: Math.max(0, Number(raw[day].focus) || 0) };
     });
     return out;
   }
@@ -1151,6 +1413,8 @@
       log: Array.isArray(g.log) ? g.log.filter(function (e) { return e && typeof e === 'object'; }) : [],
       xpAwarded: Number(g.xpAwarded) || 0,
       hpAwarded: Number(g.hpAwarded) || 0,
+      reflection: normalizeReflection(g.reflection),
+      focusMinutes: Math.max(0, Number(g.focusMinutes) || 0),
       completedAt: Number(g.completedAt) || null,
       createdAt: Number(g.createdAt) || now,
       updatedAt: Number(g.updatedAt) || now
@@ -1175,8 +1439,12 @@
     player.frozenDays = Array.isArray(player.frozenDays) ? Array.from(new Set(player.frozenDays.filter(isValidISODate))) : [];
     player.lastTickDate = isValidISODate(player.lastTickDate) ? player.lastTickDate : todayISO();
     player.daily = normalizeDaily(player.daily);
+    player.focusMinutes = Math.max(0, Number(player.focusMinutes) || 0);
     const settings = Object.assign({}, base.settings, s.settings || {});
     if (!isOneOf(THEMES, settings.theme)) settings.theme = 'dark';
+    settings.reflectOnComplete = settings.reflectOnComplete !== false;
+    settings.focusSound = settings.focusSound !== false;
+    settings.focusMinutes = clamp(Math.round(Number(settings.focusMinutes) || FOCUS_DEFAULT_MINUTES), 1, FOCUS_MAX_MINUTES);
     return {
       schemaVersion: CURRENT_SCHEMA_VERSION,
       createdAt: Number(s.createdAt) || base.createdAt,
@@ -1189,7 +1457,39 @@
       player: player,
       projects: projects,
       goals: goals,
-      activity: (Array.isArray(s.activity) ? s.activity : []).filter(function (a) { return a && a.ts; }).slice(0, ACTIVITY_LIMIT)
+      activity: (Array.isArray(s.activity) ? s.activity : []).filter(function (a) { return a && a.ts; }).slice(0, ACTIVITY_LIMIT),
+      focus: normalizeFocus(s.focus, goals)
+    };
+  }
+
+  function normalizeReflection(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const mood = Math.round(Number(raw.mood) || 0);
+    const r = {
+      mood: mood >= 1 && mood <= 5 ? mood : 0,
+      worked: String(raw.worked || ''),
+      different: String(raw.different || ''),
+      ts: Number(raw.ts) || Date.now()
+    };
+    return r.mood || r.worked || r.different ? r : null;
+  }
+
+  // Sessão de foco em andamento (sobrevive a recarregar a página, pois é baseada em horários).
+  function normalizeFocus(raw, goals) {
+    if (!raw || typeof raw !== 'object') return null;
+    const kind = raw.kind === 'break' ? 'break' : 'focus';
+    const startedAt = Number(raw.startedAt);
+    const durationMin = Number(raw.durationMin);
+    if (!startedAt || !(durationMin > 0)) return null;
+    const goalId = raw.goalId ? String(raw.goalId) : null;
+    if (kind === 'focus' && goalId && !goals.some(function (g) { return g.id === goalId; })) return null;
+    return {
+      kind: kind,
+      goalId: goalId,
+      startedAt: startedAt,
+      durationMin: clamp(durationMin, 1, FOCUS_MAX_MINUTES),
+      pausedAt: Number(raw.pausedAt) || null,
+      pausedTotal: Math.max(0, Number(raw.pausedTotal) || 0)
     };
   }
 
@@ -1460,6 +1760,11 @@
     if (after > before) {
       addActivity(s, 'level_up', 'Subiu para o nível ' + after + '!');
       queueToast('⬆️ Nível ' + after + ' alcançado!', 'xp');
+      const frame = avatarFrameFor(after);
+      if (frame.id !== avatarFrameFor(before).id) {
+        addActivity(s, 'frame', 'Nova moldura de avatar: ' + frame.label);
+        queueToast('🖼️ Nova moldura de avatar desbloqueada: ' + frame.label + ' ' + frame.badge, 'xp');
+      }
     }
   }
 
@@ -1493,6 +1798,33 @@
     return p.hp - before;
   }
 
+  function avatarFrameFor(level) {
+    let frame = AVATAR_FRAMES[0];
+    AVATAR_FRAMES.forEach(function (f) { if (level >= f.min) frame = f; });
+    return frame;
+  }
+
+  // Credita uma sessão de foco: XP por minuto, cura, histórico diário e, em metas de duração, o tempo em si.
+  function creditFocus(s, goalId, minutes) {
+    const g = goalId ? findById(s.goals, goalId) : null;
+    markActiveDay(s);
+    const suffix = multiplierSuffix(s);
+    const xp = gainXp(s, Math.max(1, Math.round(minutes * XP_FOCUS_PER_MINUTE)));
+    const hp = changeHp(s, HP_HEAL_FOCUS);
+    s.player.focusMinutes += minutes;
+    dailyEntry(s, todayISO()).focus = (dailyEntry(s, todayISO()).focus || 0) + minutes;
+    if (g) {
+      g.focusMinutes += minutes;
+      g.updatedAt = Date.now();
+      touchProject(s, g.projectId);
+    }
+    addActivity(s, 'focus', 'Foco de ' + formatMinutes(minutes) + (g ? ' em "' + g.title + '"' : ''), { goalId: g ? g.id : null, projectId: g ? g.projectId : null, xp: xp });
+    queueToast('🍅 Sessão de foco concluída: ' + formatMinutes(minutes) + (g ? ' em ' + g.title : '') + ' — +' + xp + ' XP' + suffix + (hp ? ' · +' + hp + ' HP' : ''), 'xp', { label: 'Pausa de ' + FOCUS_BREAK_MINUTES + ' min', onClick: startBreak });
+    if (g && g.tracking.type === 'duration' && g.status !== 'done') {
+      applyProgressLog(s, g, { value: minutes, date: todayISO(), note: '🍅 Sessão de foco' });
+    }
+  }
+
   function touchProject(s, projectId) {
     const p = findById(s.projects, projectId);
     if (p) p.updatedAt = Date.now();
@@ -1512,6 +1844,7 @@
       if (!g.xpAwarded) g.xpAwarded = gainXp(s, diff.xp);
       if (!g.hpAwarded) g.hpAwarded = changeHp(s, diff.heal);
       addActivity(s, 'goal_complete', 'Meta concluída: "' + g.title + '"', { goalId: g.id, projectId: g.projectId, xp: g.xpAwarded });
+      pendingReflections.push(g.id);
       queueToast('🎉 +' + g.xpAwarded + ' XP' + suffix + (g.hpAwarded ? ' · +' + g.hpAwarded + ' HP' : '') + ' — meta concluída: ' + g.title, 'xp');
     } else if (wasDone && status !== 'done') {
       g.completedAt = null;
@@ -1726,12 +2059,14 @@
     const opts = options || {};
     const snapshot = JSON.stringify(state);
     pendingToasts = [];
+    pendingReflections = [];
     try {
       mutator(state);
     } catch (err) {
       console.error(err);
       state = JSON.parse(snapshot);
       pendingToasts = [];
+      pendingReflections = [];
       showToast('Erro ao aplicar alteração: ' + describeError(err), { type: 'error' });
       return false;
     }
@@ -1744,6 +2079,7 @@
     scheduleSave();
     renderApp();
     flushPendingToasts();
+    maybePromptReflection();
     return true;
   }
 
@@ -1757,7 +2093,9 @@
     const entry = undoHistory.undo.pop();
     if (!entry) return;
     undoHistory.redo.push({ label: entry.label, snapshot: JSON.stringify(state) });
+    const focus = state.focus;
     state = JSON.parse(entry.snapshot);
+    state.focus = focus;
     applyTheme(state.settings.theme);
     scheduleSave();
     renderApp();
@@ -1768,7 +2106,9 @@
     const entry = undoHistory.redo.pop();
     if (!entry) return;
     undoHistory.undo.push({ label: entry.label, snapshot: JSON.stringify(state) });
+    const focus = state.focus;
     state = JSON.parse(entry.snapshot);
+    state.focus = focus;
     applyTheme(state.settings.theme);
     scheduleSave();
     renderApp();
@@ -1784,18 +2124,23 @@
     if (persistenceBlocked) { setSaveStatus('blocked'); return; }
     if (!storageAvailable) { setSaveStatus('memory'); return; }
     setSaveStatus('pending');
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(persistNow, SAVE_DEBOUNCE_MS);
+    if (saveQueued) return;
+    // Sem debounce de tempo: a gravação começa ainda nesta rodada de eventos (fechar/recarregar logo
+    // depois de uma ação não perde dados). Várias alterações na mesma rodada viram uma só gravação.
+    saveQueued = true;
+    Promise.resolve().then(persistNow);
   }
 
   function persistNow() {
-    clearTimeout(saveTimer);
-    saveTimer = null;
+    saveQueued = false;
     if (persistenceBlocked || !storageAvailable) return Promise.resolve();
     setSaveStatus('saving');
+    savesInFlight++;
     return idbPut(STORE_STATE, { key: STATE_KEY, data: state, savedAt: Date.now() }).then(function () {
-      if (!saveTimer) setSaveStatus('saved');
+      savesInFlight--;
+      if (!savesInFlight && !saveQueued) setSaveStatus('saved');
     }).catch(function (err) {
+      savesInFlight--;
       console.error(err);
       setSaveStatus('error');
       showToast('Falha ao salvar: ' + describeError(err), { type: 'error' });
@@ -2152,6 +2497,7 @@
   }
 
   function renderApp() {
+    renderFocusPill();
     renderNav();
     renderPlayerMini();
     renderUndoButtons();
@@ -2170,7 +2516,7 @@
   function renderPlayerMini() {
     const ps = getPlayerStats();
     document.getElementById('player-mini').innerHTML =
-      '<div class="player-mini-top"><div class="avatar avatar-sm">' + escapeHtml(initials(state.profile.name)) + '</div>' +
+      '<div class="player-mini-top">' + avatarHtml(true) +
       '<div style="min-width:0"><div class="player-mini-name">' + escapeHtml(state.profile.name) + '</div>' +
       '<div class="player-mini-level">Nível ' + ps.level + (ps.multiplier !== 1 ? ' · XP ' + formatMultiplier(ps.multiplier) : '') + '</div></div></div>' +
       '<div class="player-mini-bars"><div data-tip="' + ps.earned + ' XP · faltam ' + ps.toNext + ' para o nível ' + (ps.level + 1) + '">' + progressBarHtml(ps.levelProgress, 'xp') + '</div>' +
@@ -2198,7 +2544,8 @@
 
   function setPageTitle(title) {
     document.getElementById('page-title').textContent = title;
-    document.title = title + ' · GoalQuest';
+    baseDocTitle = title + ' · GoalQuest';
+    if (!state || !state.focus) document.title = baseDocTitle;
   }
 
   function renderView() {
@@ -2276,6 +2623,7 @@
       heatmap +
       '<div class="dash-grid">' +
       dashCard('🧭 Áreas da vida', 'Progresso por categoria', areasHtml()) +
+      dashCard('📊 Placar', 'Você vs. você mesmo', scoreboardHtml()) +
       dashCard('📅 Próximos prazos', 'Próximos ' + UPCOMING_DAYS + ' dias', upcomingListHtml(today)) +
       dashCard('⏰ Atrasados', overdueGoals.length + overdueProjects.length + ' itens', overdueListHtml(overdueGoals, overdueProjects)) +
       dashCard('➡️ Próximas ações', 'Metas em andamento', nextActionsHtml(openGoals)) +
@@ -2318,7 +2666,7 @@
 
     return banner +
       '<section class="card hero' + (ps.exhausted ? ' is-exhausted' : '') + '">' +
-      '<div class="avatar">' + escapeHtml(initials(state.profile.name)) + '</div>' +
+      avatarHtml(false) +
       '<div style="min-width:0"><div class="hero-name">Olá, ' + escapeHtml(state.profile.name) + '</div>' +
       '<div class="hero-sub">' + escapeHtml(state.profile.subtitle || formatLongToday()) + '</div>' +
       '<div class="hero-bars">' +
@@ -2392,7 +2740,7 @@
         const isActive = active.has(d);
         const isFrozen = frozen.has(d);
         let tip = WEEKDAY_SHORT[date.getDay()] + ', ' + formatDate(d) + '\n';
-        tip += e && (e.xp > 0 || e.actions > 0) ? e.xp + ' XP · ' + e.actions + ' ' + plural(e.actions, 'ação', 'ações') : 'Sem atividade';
+        tip += e && (e.xp > 0 || e.actions > 0) ? e.xp + ' XP · ' + e.actions + ' ' + plural(e.actions, 'ação', 'ações') + (e.focus ? ' · 🍅 ' + formatMinutes(e.focus) : '') : 'Sem atividade';
         if (isFrozen) tip += '\n❄️ Dia coberto por proteção de streak';
         if (d === today) tip += '\n(hoje)';
         cells += '<span class="hm-cell l' + level(e, isActive) + (isFrozen ? ' frozen' : '') + (d === today ? ' today' : '') + '" data-tip="' + escapeHtml(tip) + '"></span>';
@@ -2762,6 +3110,7 @@
     meta.push(priorityBadge(g.priority));
     meta.push('<span class="chip" title="Tipo de acompanhamento">' + escapeHtml(optionOf(TRACKING_TYPES, t.type).label) + '</span>');
     if (g.startDate) meta.push('<span class="chip" title="Data de início">▶ ' + formatDate(g.startDate) + '</span>');
+    if (g.focusMinutes) meta.push('<span class="chip" title="Tempo em sessões de foco">🍅 ' + formatMinutes(g.focusMinutes) + '</span>');
     if (g.deadline) meta.push(deadlineChip(g.deadline, g.status));
     g.tags.forEach(function (tag) { meta.push('<span class="tag">#' + escapeHtml(tag) + '</span>'); });
 
@@ -2782,10 +3131,13 @@
       '<div class="goal-meta">' + meta.join('') + '</div>' +
       (g.nextAction && !done ? '<div class="next-action"><b>Próxima ação:</b> ' + escapeHtml(g.nextAction) + '</div>' : '') +
       (t.type !== 'simple' ? '<div class="goal-progress">' + progressBarHtml(prog) + '<span class="goal-value">' + escapeHtml(goalValueText(g)) + '</span></div>' : '') +
+      reflectionHtml(g) +
       '</div>' +
       '<div class="goal-side"><div class="goal-side-actions">' + quick + '</div>' +
       '<select class="select select-sm" data-change="goal-status" data-id="' + id + '" aria-label="Status da meta">' + optionsHtml(STATUSES, g.status) + '</select>' +
       '<div class="goal-side-actions">' +
+      (done ? '<button type="button" class="icon-btn" data-action="goal-reflect" data-id="' + id + '" title="' + (g.reflection ? 'Editar reflexão' : 'Escrever reflexão') + '" aria-label="Reflexão">💭</button>' :
+        '<button type="button" class="icon-btn" data-action="goal-focus" data-id="' + id + '" title="Sessão de foco nesta meta" aria-label="Sessão de foco">🍅</button>') +
       (t.type !== 'simple' ? '<button type="button" class="icon-btn" data-action="goal-toggle-history" data-id="' + id + '" title="Histórico de progresso (' + logCount + ')" aria-label="Histórico">' + (expanded ? '▴' : '🕘') + '</button>' : '') +
       '<button type="button" class="icon-btn" data-action="edit-goal" data-id="' + id + '" title="Editar meta" aria-label="Editar meta">✏️</button>' +
       '<button type="button" class="icon-btn danger" data-action="delete-goal" data-id="' + id + '" title="Excluir meta" aria-label="Excluir meta">🗑️</button>' +
@@ -2831,14 +3183,18 @@
     if (tokens.length) {
       state.goals.forEach(function (g) {
         const project = findProject(g.projectId);
-        const hay = normalizeSearch(g.title + ' ' + g.tags.join(' ') + ' ' + g.nextAction + ' ' + (project ? project.name : ''));
-        if (!matchesQuery(tokens, hay)) return;
+        const hay = normalizeSearch(g.tags.join(' ') + ' ' + g.nextAction + ' ' + (project ? project.name : ''));
         const hint = (project ? project.name + ' · ' : '') + optionOf(STATUSES, g.status).label;
-        goals.push({ kind: 'goal', id: g.id, icon: g.status === 'done' ? '✅' : '🎯', label: g.title, hint: hint });
+        const candidates = [{ kind: 'goal', id: g.id, icon: g.status === 'done' ? '✅' : '🎯', label: g.title, hint: hint }];
         if (g.status !== 'done') {
           const isSimple = g.tracking.type === 'simple';
-          goals.push({ kind: 'goal-log', id: g.id, icon: isSimple ? '✔️' : '📈', label: (isSimple ? 'Concluir: ' : 'Registrar progresso: ') + g.title, hint: hint });
+          candidates.push({ kind: 'goal-log', id: g.id, icon: isSimple ? '✔️' : '📈', label: (isSimple ? 'Concluir: ' : 'Registrar progresso: ') + g.title, hint: hint });
+          candidates.push({ kind: 'goal-focus', id: g.id, icon: '🍅', label: 'Focar em: ' + g.title, hint: hint });
         }
+        // Cada item casa com o próprio rótulo (ex.: "focar 78" ou "registrar peso") + dados da meta.
+        candidates.forEach(function (item) {
+          if (matchesQuery(tokens, normalizeSearch(item.label) + ' ' + hay)) goals.push(item);
+        });
       });
       goals = goals.sort(byScore).slice(0, PALETTE_LIMIT_PER_GROUP);
     }
@@ -2862,7 +3218,7 @@
       className: 'modal-palette',
       body: '<input class="input palette-input" type="search" placeholder="Buscar projetos, metas ou ações…" aria-label="Buscar projetos, metas ou ações" autocomplete="off" autofocus>' +
         '<div class="palette-list" role="listbox"></div>' +
-        '<div class="palette-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> fechar</span><span class="spacer" style="flex:1"></span><span><kbd>' + modShortcut('Ctrl K') + '</kbd> abre de qualquer lugar</span></div>',
+        '<div class="palette-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> fechar</span><span><kbd>?</kbd> atalhos</span><span class="spacer" style="flex:1"></span><span><kbd>' + modShortcut('Ctrl K') + '</kbd> abre de qualquer lugar</span></div>',
       onOpen: function (modal) {
         const input = modal.el.querySelector('.palette-input');
         const listEl = modal.el.querySelector('.palette-list');
@@ -2928,6 +3284,9 @@
       case 'goal-log':
         openProgressLog(item.id);
         return;
+      case 'goal-focus':
+        openFocusSetup(item.id);
+        return;
       default:
         runCommand(item.id);
     }
@@ -2947,6 +3306,9 @@
       case 'buy-freeze': buyFreeze(); break;
       case 'repair-streak': repairStreak(); break;
       case 'toggle-rest': toggleRest(); break;
+      case 'start-focus': openFocusSetup(null); break;
+      case 'show-shortcuts': openShortcutsHelp(); break;
+      case 'export-data': goToExport(); break;
       default: break;
     }
   }
@@ -2969,6 +3331,589 @@
     card.scrollIntoView({ block: 'center' });
     card.classList.add('flash');
     card.addEventListener('animationend', function () { card.classList.remove('flash'); }, { once: true });
+  }
+
+  /* =====================================================================
+   * 15c. MODO FOCO (Pomodoro vinculado a uma meta)
+   * ===================================================================== */
+
+  function focusElapsedMs(f, now) {
+    const end = f.pausedAt || now;
+    return Math.max(0, end - f.startedAt - f.pausedTotal);
+  }
+
+  function focusRemainingMs(f, now) {
+    return f.durationMin * 60000 - focusElapsedMs(f, now);
+  }
+
+  function formatClock(ms) {
+    const total = Math.max(0, Math.ceil(ms / 1000));
+    const m = Math.floor(total / 60);
+    const sec = total % 60;
+    return String(m).padStart(2, '0') + ':' + String(sec).padStart(2, '0');
+  }
+
+  function openFocusSetup(goalId) {
+    if (state.focus) {
+      showToast('Já existe uma sessão ' + (state.focus.kind === 'break' ? 'de pausa' : 'de foco') + ' em andamento.', { type: 'warning' });
+      return;
+    }
+    const openGoals = state.goals.filter(function (g) { return g.status !== 'done'; });
+    const goalOptions = [{ id: '', label: '— Sem meta específica —' }].concat(openGoals.map(function (g) {
+      const p = findProject(g.projectId);
+      return { id: g.id, label: (p ? p.icon + ' ' : '') + g.title };
+    }));
+    const selected = goalId && findGoal(goalId) ? goalId : '';
+    const minutes = state.settings.focusMinutes;
+    openModal({
+      title: '🍅 Sessão de foco',
+      size: 'md',
+      body: '<div class="form-grid">' +
+        '<label class="field full"><span>Meta</span><select class="select" name="goalId">' + optionsHtml(goalOptions, selected) + '</select></label>' +
+        '<div class="field full"><span class="field-label">Duração</span><div class="duration-options">' +
+        FOCUS_DURATIONS.map(function (m) { return '<button type="button" class="duration-option' + (m === minutes ? ' selected' : '') + '" data-duration="' + m + '">' + m + ' min</button>'; }).join('') +
+        '<input class="input" type="number" name="minutes" min="1" max="' + FOCUS_MAX_MINUTES + '" step="1" value="' + minutes + '" style="width:90px" aria-label="Minutos"><span class="muted">min</span></div></div>' +
+        '<p class="hint full">Ao terminar: +1 XP a cada ' + Math.round(1 / XP_FOCUS_PER_MINUTE) + ' min focados e +' + HP_HEAL_FOCUS + ' HP. Em metas de duração, o tempo entra direto no progresso. Pode pausar, encerrar antes (registra o tempo feito) ou descartar.</p>' +
+        '</div>',
+      actions: [
+        { id: 'cancel', label: 'Cancelar' },
+        { id: 'start', label: 'Iniciar foco', variant: 'primary', submit: true }
+      ],
+      onOpen: function (modal) {
+        const input = modal.el.querySelector('[name="minutes"]');
+        function sync() {
+          modal.el.querySelectorAll('[data-duration]').forEach(function (b) {
+            b.classList.toggle('selected', Number(b.getAttribute('data-duration')) === Number(input.value));
+          });
+        }
+        modal.el.addEventListener('click', function (e) {
+          const b = e.target.closest('[data-duration]');
+          if (!b) return;
+          input.value = b.getAttribute('data-duration');
+          sync();
+        });
+        input.addEventListener('input', sync);
+      },
+      onAction: function (action, modal) {
+        if (action !== 'start') return true;
+        const value = parseNumber(modal.el.querySelector('[name="minutes"]').value);
+        if (!isFiniteNumber(value) || value < 1 || value > FOCUS_MAX_MINUTES || Math.round(value) !== value) {
+          showFormErrors(modal.el, { minutes: 'Use um número inteiro entre 1 e ' + FOCUS_MAX_MINUTES + '.' });
+          return false;
+        }
+        startFocus(modal.el.querySelector('[name="goalId"]').value || null, value);
+        return true;
+      }
+    });
+  }
+
+  function startFocus(goalId, minutes) {
+    if (state.focus) return;
+    const g = goalId ? findGoal(goalId) : null;
+    commit('Iniciar foco', function (s) {
+      s.focus = { kind: 'focus', goalId: g ? g.id : null, startedAt: Date.now(), durationMin: minutes, pausedAt: null, pausedTotal: 0 };
+      s.settings.focusMinutes = minutes;
+    }, { undoable: false });
+    ensureFocusTimer();
+    showToast('🍅 Foco de ' + minutes + ' min iniciado' + (g ? ' em "' + g.title + '"' : '') + '. Bom trabalho!', { type: 'info' });
+  }
+
+  function startBreak(goalId) {
+    if (state.focus) return;
+    commit('Iniciar pausa', function (s) {
+      s.focus = { kind: 'break', goalId: goalId || null, startedAt: Date.now(), durationMin: FOCUS_BREAK_MINUTES, pausedAt: null, pausedTotal: 0 };
+    }, { undoable: false });
+    ensureFocusTimer();
+  }
+
+  function toggleFocusPause() {
+    if (!state.focus) return;
+    commit('Pausar foco', function (s) {
+      const f = s.focus;
+      if (f.pausedAt) {
+        f.pausedTotal += Date.now() - f.pausedAt;
+        f.pausedAt = null;
+      } else {
+        f.pausedAt = Date.now();
+      }
+    }, { undoable: false });
+  }
+
+  // full = o tempo acabou; senão, encerrado antes e credita só os minutos feitos.
+  function finishFocus(full) {
+    const f = state.focus;
+    if (!f) return;
+    if (f.kind === 'break') {
+      commit('Fim da pausa', function (s) { s.focus = null; }, { undoable: false });
+      if (full) playChime();
+      showToast('☕ Pausa encerrada. Pronto para mais uma rodada?', { type: 'info', action: { label: 'Novo foco', onClick: function () { openFocusSetup(f.goalId); } } });
+      return;
+    }
+    const minutes = full ? f.durationMin : Math.floor(focusElapsedMs(f, Date.now()) / 60000);
+    if (minutes < FOCUS_MIN_CREDIT_MINUTES) {
+      commit('Encerrar foco', function (s) { s.focus = null; }, { undoable: false });
+      showToast('Sessão encerrada antes de 1 minuto — nada foi registrado.', { type: 'info' });
+      return;
+    }
+    commit('Sessão de foco', function (s) {
+      s.focus = null;
+      creditFocus(s, f.goalId, minutes);
+    });
+    if (full) playChime();
+  }
+
+  function cancelFocus() {
+    const f = state.focus;
+    if (!f) return;
+    if (f.kind === 'break') {
+      commit('Encerrar pausa', function (s) { s.focus = null; }, { undoable: false });
+      return;
+    }
+    confirmDialog({
+      title: 'Descartar sessão de foco',
+      message: 'Descartar esta sessão? O tempo feito (' + formatMinutes(Math.floor(focusElapsedMs(f, Date.now()) / 60000)) + ') não será registrado.\nPara registrar o tempo feito, use ✓ (concluir agora).',
+      confirmLabel: 'Descartar',
+      danger: true
+    }).then(function (ok) {
+      if (ok && state.focus) commit('Descartar foco', function (s) { s.focus = null; }, { undoable: false });
+    });
+  }
+
+  function ensureFocusTimer() {
+    if (state.focus && !focusTimer) focusTimer = setInterval(tickFocus, FOCUS_TICK_MS);
+    tickFocus();
+  }
+
+  function tickFocus() {
+    const f = state && state.focus;
+    if (!f) {
+      if (focusTimer) {
+        clearInterval(focusTimer);
+        focusTimer = null;
+      }
+      document.title = baseDocTitle;
+      return;
+    }
+    const remaining = focusRemainingMs(f, Date.now());
+    if (!f.pausedAt && remaining <= 0) {
+      finishFocus(true);
+      return;
+    }
+    const clock = formatClock(remaining);
+    const el = document.getElementById('focus-time');
+    if (el && el.textContent !== clock) el.textContent = clock;
+    document.title = (f.pausedAt ? '⏸ ' : f.kind === 'break' ? '☕ ' : '🍅 ') + clock + ' · ' + baseDocTitle;
+  }
+
+  function renderFocusPill() {
+    const slot = document.getElementById('focus-slot');
+    const f = state.focus;
+    if (!f) {
+      slot.innerHTML = '';
+      return;
+    }
+    const isBreak = f.kind === 'break';
+    const g = f.goalId ? findGoal(f.goalId) : null;
+    const label = isBreak ? 'Pausa' : g ? g.title : 'Foco livre';
+    slot.innerHTML = '<div class="focus-pill' + (isBreak ? ' is-break' : '') + (f.pausedAt ? ' is-paused' : '') + '" data-tip="' + escapeHtml((isBreak ? 'Pausa de ' : 'Sessão de ') + f.durationMin + ' min' + (g ? ' · ' + g.title : '') + (f.pausedAt ? '\n(pausada)' : '')) + '">' +
+      '<span>' + (isBreak ? '☕' : '🍅') + '</span><span class="focus-time" id="focus-time">' + formatClock(focusRemainingMs(f, Date.now())) + '</span>' +
+      '<span class="focus-goal">' + escapeHtml(label) + '</span>' +
+      '<button type="button" class="icon-btn" data-action="focus-pause" title="' + (f.pausedAt ? 'Retomar' : 'Pausar') + '" aria-label="' + (f.pausedAt ? 'Retomar' : 'Pausar') + '">' + (f.pausedAt ? '▶' : '⏸') + '</button>' +
+      '<button type="button" class="icon-btn" data-action="focus-finish" title="' + (isBreak ? 'Encerrar pausa' : 'Concluir agora e registrar o tempo feito') + '" aria-label="Concluir">✓</button>' +
+      (isBreak ? '' : '<button type="button" class="icon-btn danger" data-action="focus-cancel" title="Descartar sessão" aria-label="Descartar">✕</button>') +
+      '</div>';
+  }
+
+  // Três notas curtas via WebAudio (sem arquivos externos).
+  function playChime() {
+    if (!state.settings.focusSound) return;
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      [660, 880, 1320].forEach(function (freq, i) {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const t = ctx.currentTime + i * 0.18;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.2, t + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.3);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t);
+        osc.stop(t + 0.32);
+      });
+      setTimeout(function () { ctx.close(); }, 1200);
+    } catch (err) {
+      // Som é um extra; falhar em silêncio.
+    }
+  }
+
+  /* =====================================================================
+   * 15d. REFLEXÃO AO CONCLUIR
+   * ===================================================================== */
+
+  function maybePromptReflection() {
+    const ids = pendingReflections;
+    pendingReflections = [];
+    if (!ids.length || !state.settings.reflectOnComplete) return;
+    const id = ids[ids.length - 1];
+    setTimeout(function () {
+      const g = findGoal(id);
+      if (!g || g.status !== 'done' || g.reflection) return;
+      if (modalStack.some(function (m) { return m.kind === 'reflection'; })) return;
+      openReflectionForm(id, true);
+    }, 260);
+  }
+
+  function openReflectionForm(goalId, afterComplete) {
+    const g = findGoal(goalId);
+    if (!g) return;
+    const r = g.reflection || { mood: 0, worked: '', different: '' };
+    const actions = [{ id: 'skip', label: afterComplete ? 'Pular' : 'Cancelar' }];
+    if (g.reflection && !afterComplete) actions.push({ id: 'clear', label: 'Apagar reflexão' });
+    actions.push({ id: 'save', label: 'Salvar reflexão', variant: 'primary', submit: true });
+    const modal = openModal({
+      title: '💭 Reflexão — ' + g.title,
+      size: 'md',
+      body: (afterComplete ? '<p class="modal-message" style="margin-bottom:14px">🎉 Meta concluída! Um minuto de reflexão ajuda a repetir o que deu certo na próxima.</p>' : '') +
+        '<div class="form-grid">' +
+        '<div class="field full"><span class="field-label">Como foi?</span><div class="mood-picker">' +
+        MOODS.map(function (m) { return '<button type="button" class="mood-option' + (m.value === r.mood ? ' selected' : '') + '" data-mood="' + m.value + '" title="' + escapeHtml(m.label) + '" aria-label="' + escapeHtml(m.label) + '">' + m.icon + '</button>'; }).join('') +
+        '</div><input type="hidden" name="mood" value="' + (r.mood || '') + '"></div>' +
+        '<label class="field full"><span>O que funcionou?</span><textarea class="textarea" name="worked" maxlength="500" placeholder="Ex.: estudar 25 min toda manhã antes do trabalho">' + escapeHtml(r.worked) + '</textarea></label>' +
+        '<label class="field full"><span>O que você faria diferente?</span><textarea class="textarea" name="different" maxlength="500" placeholder="Ex.: começar os simulados mais cedo">' + escapeHtml(r.different) + '</textarea></label>' +
+        (afterComplete ? '<label class="check-row full"><input type="checkbox" name="stop-asking"> Não perguntar mais ao concluir metas (dá para religar em Configurações)</label>' : '') +
+        '</div>',
+      actions: actions,
+      onOpen: function (m) {
+        const hidden = m.el.querySelector('[name="mood"]');
+        m.el.addEventListener('click', function (e) {
+          const b = e.target.closest('[data-mood]');
+          if (!b) return;
+          const v = b.getAttribute('data-mood');
+          hidden.value = hidden.value === v ? '' : v;
+          m.el.querySelectorAll('[data-mood]').forEach(function (x) { x.classList.toggle('selected', x.getAttribute('data-mood') === hidden.value); });
+        });
+      },
+      onAction: function (action, m) {
+        const stopEl = m.el.querySelector('[name="stop-asking"]');
+        const stopAsking = Boolean(stopEl && stopEl.checked);
+        if (action === 'save') {
+          const reflection = normalizeReflection({
+            mood: m.el.querySelector('[name="mood"]').value,
+            worked: m.el.querySelector('[name="worked"]').value.trim(),
+            different: m.el.querySelector('[name="different"]').value.trim(),
+            ts: Date.now()
+          });
+          commit('Registrar reflexão', function (s) {
+            const t = findById(s.goals, goalId);
+            if (!t) throw new Error('Meta não encontrada.');
+            t.reflection = reflection;
+            if (reflection) addActivity(s, 'reflection', 'Reflexão registrada: "' + t.title + '"', { goalId: t.id, projectId: t.projectId });
+            if (stopAsking) s.settings.reflectOnComplete = false;
+          });
+          showToast(reflection ? '💭 Reflexão salva.' : 'Reflexão vazia — nada salvo.', { type: reflection ? 'success' : 'info' });
+        } else if (action === 'clear') {
+          commit('Apagar reflexão', function (s) {
+            const t = findById(s.goals, goalId);
+            if (t) t.reflection = null;
+          });
+        } else if (stopAsking) {
+          commit('Desativar reflexões', function (s) { s.settings.reflectOnComplete = false; }, { undoable: false });
+          showToast('Tudo bem, não vou mais perguntar. Dá para religar em Configurações.', { type: 'info' });
+        }
+        return true;
+      }
+    });
+    modal.kind = 'reflection';
+  }
+
+  function reflectionHtml(g) {
+    const r = g.reflection;
+    if (!r) return '';
+    const mood = r.mood ? optionOf(MOODS.map(function (m) { return { id: m.value, icon: m.icon, label: m.label }; }), r.mood) : null;
+    return '<div class="reflection">' +
+      (mood ? '<p>' + mood.icon + ' <b>' + escapeHtml(mood.label) + '</b></p>' : '') +
+      (r.worked ? '<p><b>Funcionou:</b> ' + escapeHtml(r.worked) + '</p>' : '') +
+      (r.different ? '<p><b>Faria diferente:</b> ' + escapeHtml(r.different) + '</p>' : '') +
+      '</div>';
+  }
+
+  /* =====================================================================
+   * 15e. PLACAR, MELHOR DIA DA SEMANA E AVATAR
+   * ===================================================================== */
+
+  // Período atual (até hoje) vs. o mesmo trecho do período anterior — comparação justa.
+  function periodBounds(period, today) {
+    const start = periodStartISO(period, today);
+    const days = diffDays(start, today) + 1;
+    let prevStart;
+    if (period === 'week') {
+      prevStart = addDaysISO(start, -7);
+    } else {
+      const d = parseISODate(start);
+      d.setMonth(d.getMonth() - 1);
+      prevStart = toISODate(d);
+    }
+    const prevPeriodEnd = addDaysISO(start, -1);
+    let prevEnd = addDaysISO(prevStart, days - 1);
+    if (prevEnd > prevPeriodEnd) prevEnd = prevPeriodEnd;
+    return { start: start, end: today, prevStart: prevStart, prevEnd: prevEnd, days: days };
+  }
+
+  function periodTotals(start, end) {
+    const t = { xp: 0, actions: 0, focus: 0, activeDays: 0, completed: 0 };
+    const active = new Set(state.player.activeDays);
+    for (let d = start; d <= end; d = addDaysISO(d, 1)) {
+      const e = state.player.daily[d];
+      if (e) {
+        t.xp += e.xp;
+        t.actions += e.actions;
+        t.focus += e.focus || 0;
+      }
+      if (active.has(d)) t.activeDays++;
+    }
+    state.goals.forEach(function (g) {
+      if (g.status !== 'done' || !g.completedAt) return;
+      const d = toISODate(new Date(g.completedAt));
+      if (d >= start && d <= end) t.completed++;
+    });
+    return t;
+  }
+
+  function deltaHtml(cur, prev) {
+    if (!prev && !cur) return '<span class="delta flat">= igual</span>';
+    if (!prev) return '<span class="delta up">▲ novo</span>';
+    const pct = Math.round((cur - prev) / prev * 100);
+    if (pct === 0) return '<span class="delta flat">= igual</span>';
+    return '<span class="delta ' + (pct > 0 ? 'up' : 'down') + '">' + (pct > 0 ? '▲ +' : '▼ −') + Math.abs(pct) + '%</span>';
+  }
+
+  function scoreboardHtml() {
+    const period = ui.scorePeriod === 'month' ? 'month' : 'week';
+    const b = periodBounds(period, todayISO());
+    const cur = periodTotals(b.start, b.end);
+    const prev = periodTotals(b.prevStart, b.prevEnd);
+    const items = [
+      { label: '⭐ XP ganho', cur: cur.xp, prev: prev.xp, fmt: String },
+      { label: '📅 Dias ativos', cur: cur.activeDays, prev: prev.activeDays, fmt: String },
+      { label: '✅ Metas concluídas', cur: cur.completed, prev: prev.completed, fmt: String },
+      { label: '⚡ Ações', cur: cur.actions, prev: prev.actions, fmt: String },
+      { label: '🍅 Foco', cur: cur.focus, prev: prev.focus, fmt: formatMinutes }
+    ];
+    const tabs = [{ id: 'week', label: 'Semana' }, { id: 'month', label: 'Mês' }].map(function (t) {
+      return '<button type="button" class="tab' + (period === t.id ? ' active' : '') + '" data-action="score-period" data-period="' + t.id + '">' + t.label + '</button>';
+    }).join('');
+    return '<div class="row score-tabs"><div class="tabs">' + tabs + '</div><span class="spacer"></span>' +
+      '<span class="small muted">' + b.days + ' ' + plural(b.days, 'dia', 'dias') + ' vs. mesmo trecho ' + (period === 'week' ? 'da semana passada' : 'do mês passado') + '</span></div>' +
+      '<div class="score-grid">' + items.map(function (i) {
+        return '<div class="score-item"><div class="score-label">' + i.label + '</div><div class="score-value">' + escapeHtml(i.fmt(i.cur)) + '</div>' +
+          deltaHtml(i.cur, i.prev) + '<div class="score-prev">antes: ' + escapeHtml(i.fmt(i.prev)) + '</div></div>';
+      }).join('') + '</div>' + bestWeekdayHtml();
+  }
+
+  // Média de XP por dia da semana nas últimas semanas; destaca o dia mais forte.
+  function bestWeekdayHtml() {
+    const today = todayISO();
+    const sums = [0, 0, 0, 0, 0, 0, 0];
+    for (let i = 0; i < BEST_WEEKDAY_WEEKS * 7; i++) {
+      const d = addDaysISO(today, -i);
+      const e = state.player.daily[d];
+      if (e) sums[(parseISODate(d).getDay() + 6) % 7] += e.xp;
+    }
+    const avgs = sums.map(function (v) { return v / BEST_WEEKDAY_WEEKS; });
+    const max = Math.max.apply(null, avgs);
+    if (!max) return '<div class="weekday-block"><div class="wd-headline muted">📆 Registre atividade por algumas semanas para descobrir seu dia da semana mais forte.</div></div>';
+    const best = avgs.indexOf(max);
+    const fmt = function (v) { return v.toLocaleString('pt-BR', { maximumFractionDigits: 1 }); };
+    const bars = avgs.map(function (v, i) {
+      const wd = (i + 1) % 7;
+      const h = Math.max(2, Math.round(v / max * 100));
+      return '<div class="wd-bar-col" data-tip="' + escapeHtml(WEEKDAY_NAMES[wd] + ': média de ' + fmt(v) + ' XP') + '">' +
+        '<span class="wd-value">' + (i === best ? fmt(v) : '') + '</span>' +
+        '<div class="wd-bar' + (i === best ? ' best' : '') + '" style="height:' + h + '%"></div></div>';
+    }).join('');
+    const labels = avgs.map(function (v, i) { return '<span>' + WEEKDAY_SHORT[(i + 1) % 7] + '</span>'; }).join('');
+    return '<div class="weekday-block"><div class="wd-headline">📆 Seu dia mais forte: <b>' + WEEKDAY_NAMES[(best + 1) % 7] + '</b> — média de ' + fmt(max) + ' XP (últimas ' + BEST_WEEKDAY_WEEKS + ' semanas).</div>' +
+      '<div class="wd-bars" role="img" aria-label="' + escapeHtml('Média de XP por dia da semana. Melhor dia: ' + WEEKDAY_NAMES[(best + 1) % 7]) + '">' + bars + '</div>' +
+      '<div class="wd-labels">' + labels + '</div></div>';
+  }
+
+  function avatarHtml(small) {
+    const level = levelFromXp(state.player.xpEarned);
+    const frame = avatarFrameFor(level);
+    const next = AVATAR_FRAMES.filter(function (f) { return f.min > level; })[0];
+    const tip = 'Moldura: ' + frame.label + (next ? '\nPróxima: ' + next.label + ' no nível ' + next.min : '\nMoldura máxima!');
+    return '<div class="avatar-wrap' + (small ? ' sm' : '') + '" data-frame="' + frame.id + '" style="--frame-color:' + (frame.color || 'transparent') + '" data-tip="' + escapeHtml(tip) + '">' +
+      '<div class="avatar' + (small ? ' avatar-sm' : '') + '">' + escapeHtml(initials(state.profile.name)) + '</div>' +
+      (frame.badge ? '<span class="avatar-badge">' + frame.badge + '</span>' : '') + '</div>';
+  }
+
+  /* =====================================================================
+   * 15f. EXPORTAÇÃO (CSV para Excel e JSON)
+   * ===================================================================== */
+
+  function downloadFile(filename, content, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1500);
+  }
+
+  function csvCell(v) {
+    if (v === null || v === undefined) return '';
+    if (typeof v === 'number') return isFinite(v) ? String(Math.round(v * 100) / 100).replace('.', ',') : '';
+    const text = String(v);
+    return CSV_NEEDS_QUOTE_REGEX.test(text) ? '"' + text.replace(CSV_QUOTE_REGEX, '""') + '"' : text;
+  }
+
+  // BOM + ";" + vírgula decimal: abre direto no Excel em português com acentos corretos.
+  function buildCsv(headers, rows) {
+    return '\uFEFF' + [headers].concat(rows).map(function (r) { return r.map(csvCell).join(CSV_SEPARATOR); }).join('\r\n');
+  }
+
+  function goalValues(g) {
+    const t = g.tracking;
+    switch (t.type) {
+      case 'numeric': return { current: t.current, target: t.target, unit: t.unit };
+      case 'percentage': return { current: t.current, target: 100, unit: '%' };
+      case 'frequency': return { current: t.count, target: t.target, unit: 'vezes' };
+      case 'duration': return { current: t.logged / 60, target: t.target / 60, unit: 'h' };
+      case 'scale': return { current: t.current, target: t.target, unit: 'nível' };
+      default: return { current: g.status === 'done' ? 1 : 0, target: 1, unit: '' };
+    }
+  }
+
+  function exportFileName(kind, ext) {
+    return 'goalquest-' + kind + '-' + todayISO() + '.' + ext;
+  }
+
+  function exportGoalsCsv() {
+    const headers = ['Área', 'Projeto', 'Meta', 'Status', 'Tipo', 'Dificuldade', 'Prioridade', 'Início', 'Prazo', 'Progresso (%)', 'Atual', 'Alvo', 'Unidade', 'XP ganho', 'Foco (min)', 'Tags', 'Próxima ação', 'Concluída em', 'Humor', 'O que funcionou', 'O que faria diferente'];
+    const rows = state.goals.map(function (g) {
+      const p = findProject(g.projectId);
+      const v = goalValues(g);
+      const r = g.reflection;
+      const mood = r && r.mood ? MOODS[r.mood - 1].label : '';
+      return [p ? p.category : '', p ? p.name : '', g.title, optionOf(STATUSES, g.status).label, optionOf(TRACKING_TYPES, g.tracking.type).label,
+        optionOf(DIFFICULTIES, g.difficulty).label, optionOf(PRIORITIES, g.priority).label, g.startDate, g.deadline, Math.round(goalProgress(g) * 100),
+        v.current, v.target, v.unit, g.xpAwarded, g.focusMinutes, g.tags.join(', '), g.nextAction, g.completedAt ? toISODate(new Date(g.completedAt)) : '',
+        mood, r ? r.worked : '', r ? r.different : ''];
+    });
+    downloadFile(exportFileName('metas', 'csv'), buildCsv(headers, rows), 'text/csv;charset=utf-8');
+    return rows.length;
+  }
+
+  function exportProgressCsv() {
+    const headers = ['Data', 'Área', 'Projeto', 'Meta', 'Tipo', 'Valor', 'Variação', 'Unidade', 'Comentário'];
+    const rows = [];
+    state.goals.forEach(function (g) {
+      const p = findProject(g.projectId);
+      const t = g.tracking;
+      const unit = t.type === 'duration' ? 'min' : t.type === 'percentage' ? '%' : t.type === 'frequency' ? 'vezes' : t.type === 'numeric' ? t.unit : t.type === 'scale' ? 'nível' : '';
+      g.log.forEach(function (e) {
+        rows.push([e.date, p ? p.category : '', p ? p.name : '', g.title, optionOf(TRACKING_TYPES, t.type).label, Number(e.value), Number(e.delta), unit, e.note || '']);
+      });
+    });
+    rows.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
+    downloadFile(exportFileName('progresso', 'csv'), buildCsv(headers, rows), 'text/csv;charset=utf-8');
+    return rows.length;
+  }
+
+  function exportDailyCsv() {
+    const p = state.player;
+    const active = new Set(p.activeDays);
+    const frozen = new Set(p.frozenDays);
+    const days = Array.from(new Set(Object.keys(p.daily).concat(p.activeDays, p.frozenDays))).filter(isValidISODate).sort();
+    const headers = ['Data', 'Dia da semana', 'XP', 'Ações', 'Foco (min)', 'Ativo', 'Protegido'];
+    const rows = days.map(function (d) {
+      const e = p.daily[d] || { xp: 0, actions: 0, focus: 0 };
+      return [d, WEEKDAY_NAMES[parseISODate(d).getDay()], e.xp, e.actions, e.focus || 0, active.has(d) ? 'sim' : 'não', frozen.has(d) ? 'sim' : 'não'];
+    });
+    downloadFile(exportFileName('atividade-diaria', 'csv'), buildCsv(headers, rows), 'text/csv;charset=utf-8');
+    return rows.length;
+  }
+
+  function exportJson(withMedia) {
+    const mediaPromise = withMedia && storageAvailable ? idbGetAll(STORE_MEDIA) : Promise.resolve([]);
+    return mediaPromise.then(function (media) {
+      const payload = {
+        app: 'GoalQuest',
+        appVersion: APP_VERSION,
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        kind: withMedia ? 'completo' : 'dados',
+        exportedAt: new Date().toISOString(),
+        data: state,
+        media: (media || []).map(function (m) { return { id: m.id, dataUrl: m.dataUrl, createdAt: m.createdAt }; })
+      };
+      downloadFile(exportFileName(withMedia ? 'backup-completo' : 'backup-dados', 'json'), JSON.stringify(payload, null, 2), 'application/json');
+      return payload.media.length;
+    });
+  }
+
+  function runExport(kind) {
+    try {
+      if (kind === 'goals-csv') showToast('📄 ' + exportGoalsCsv() + ' metas exportadas.', { type: 'success' });
+      else if (kind === 'progress-csv') showToast('📄 ' + exportProgressCsv() + ' registros de progresso exportados.', { type: 'success' });
+      else if (kind === 'daily-csv') showToast('📄 ' + exportDailyCsv() + ' dias exportados.', { type: 'success' });
+      else if (kind === 'json' || kind === 'json-full') {
+        exportJson(kind === 'json-full').then(function (n) {
+          showToast('💾 Backup gerado' + (kind === 'json-full' ? ' com ' + n + ' ' + plural(n, 'imagem', 'imagens') : ' (só dados)') + '.', { type: 'success' });
+        }).catch(function (err) { showToast('Falha ao exportar: ' + describeError(err), { type: 'error' }); });
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Falha ao exportar: ' + describeError(err), { type: 'error' });
+    }
+  }
+
+  function goToExport() {
+    navigate('settings');
+    setTimeout(function () {
+      const card = document.getElementById('export-card');
+      if (card) card.scrollIntoView({ block: 'center' });
+    }, 60);
+  }
+
+  /* =====================================================================
+   * 15g. ATALHOS DE TECLADO — ajuda e dica do "G"
+   * ===================================================================== */
+
+  function kbdHtml(keys) {
+    return modShortcut(keys).split(' ').map(function (k) { return '<kbd>' + escapeHtml(k) + '</kbd>'; }).join(' ');
+  }
+
+  function openShortcutsHelp() {
+    openModal({
+      title: '⌨️ Atalhos de teclado',
+      size: 'md',
+      body: '<div class="shortcut-table">' + SHORTCUTS_HELP.map(function (row) {
+        if (row.group) return '<div class="shortcut-group">' + escapeHtml(row.group) + '</div>';
+        return '<span>' + kbdHtml(row.keys) + '</span><span>' + escapeHtml(row.text) + '</span>';
+      }).join('') + '</div><p class="hint" style="margin-top:14px">Os atalhos de uma letra não funcionam enquanto você digita num campo de texto.</p>',
+      actions: [{ id: 'ok', label: 'Fechar', variant: 'primary' }]
+    });
+  }
+
+  function showKeyHint(html) {
+    const el = document.getElementById('key-hint');
+    el.innerHTML = html;
+    el.classList.add('show');
+    clearTimeout(keyHintTimer);
+    keyHintTimer = setTimeout(hideKeyHint, G_SHORTCUT_TIMEOUT_MS);
+  }
+
+  function hideKeyHint() {
+    clearTimeout(keyHintTimer);
+    const el = document.getElementById('key-hint');
+    if (el) el.classList.remove('show');
   }
 
   /* =====================================================================
@@ -2997,7 +3942,21 @@
       '<dt>Registros de atividade</dt><dd>' + state.activity.length + '</dd>' +
       '<dt>Formato dos dados</dt><dd>schema v' + state.schemaVersion + '</dd>' +
       '<dt>Versão do app</dt><dd>' + APP_VERSION + '</dd>' +
-      '</dl><p class="hint" style="margin-top:12px">Os dados ficam só neste navegador. Exportação/backup em JSON chega numa próxima fase.</p></section>' +
+      '</dl><p class="hint" style="margin-top:12px">Os dados ficam só neste navegador. Faça backups regulares em "Exportar dados". A importação de backup chega na fase de Backup.</p></section>' +
+      '<section class="card" id="export-card"><div class="card-title"><h3>📤 Exportar dados</h3></div><div class="export-actions">' +
+      '<button type="button" class="btn" data-action="export" data-export="goals-csv">📄 Metas (CSV para Excel)</button>' +
+      '<button type="button" class="btn" data-action="export" data-export="progress-csv">📈 Histórico de progresso (CSV)</button>' +
+      '<button type="button" class="btn" data-action="export" data-export="daily-csv">📆 Atividade diária — XP, ações, foco (CSV)</button>' +
+      '<button type="button" class="btn" data-action="export" data-export="json">💾 Backup só dos dados (JSON)</button>' +
+      '<button type="button" class="btn" data-action="export" data-export="json-full">🗄️ Backup completo com imagens (JSON)</button>' +
+      '</div><p class="hint" style="margin-top:12px">Os CSV usam ";" e vírgula decimal: abrem direto no Excel em português, com acentos corretos.</p></section>' +
+      '<section class="card"><div class="card-title"><h3>🍅 Foco e reflexão</h3></div>' +
+      '<label class="setting-row"><span>Perguntar "o que funcionou?" ao concluir uma meta</span><input type="checkbox" data-change="setting" data-setting="reflectOnComplete"' + (state.settings.reflectOnComplete ? ' checked' : '') + '></label>' +
+      '<label class="setting-row"><span>Duração padrão do foco</span><select class="select select-sm" data-change="setting" data-setting="focusMinutes">' +
+      optionsHtml(FOCUS_DURATIONS.concat(FOCUS_DURATIONS.indexOf(state.settings.focusMinutes) >= 0 ? [] : [state.settings.focusMinutes]).sort(function (a, b) { return a - b; }).map(function (m) { return { id: String(m), label: m + ' min' }; }), String(state.settings.focusMinutes)) + '</select></label>' +
+      '<label class="setting-row"><span>Som ao terminar a sessão</span><input type="checkbox" data-change="setting" data-setting="focusSound"' + (state.settings.focusSound ? ' checked' : '') + '></label>' +
+      '<div class="setting-row"><span>Total em foco</span><b>' + formatMinutes(state.player.focusMinutes) + '</b></div>' +
+      '<div class="row" style="margin-top:10px"><button type="button" class="btn btn-sm" data-action="start-focus">🍅 Iniciar sessão de foco</button><button type="button" class="btn btn-sm btn-ghost" data-action="show-shortcuts">⌨️ Atalhos de teclado</button></div></section>' +
       '<section class="card"><div class="card-title"><h3>⭐ XP e níveis</h3></div><dl class="kv">' +
       DIFFICULTIES.map(function (d) { return '<dt>Meta ' + escapeHtml(d.label.toLowerCase()) + '</dt><dd>+' + d.xp + ' XP e +' + d.heal + ' HP ao concluir</dd>'; }).join('') +
       '<dt>Registro de progresso</dt><dd>+' + XP_PER_PROGRESS_LOG + ' XP e +' + HP_HEAL_PROGRESS + ' HP</dd>' +
@@ -3005,7 +3964,12 @@
       '<dt>Níveis</dt><dd>Nível 2 com ' + xpThreshold(2) + ' XP, 3 com ' + xpThreshold(3) + ', 4 com ' + xpThreshold(4) + ', 5 com ' + xpThreshold(5) + '…</dd>' +
       '<dt>Reabrir meta</dt><dd>Devolve o XP e o HP ganhos na conclusão</dd>' +
       '<dt>XP disponível</dt><dd>XP ganho menos XP gasto. Gastar não reduz o nível.</dd>' +
-      '</dl></section>' +
+      '<dt>Sessão de foco</dt><dd>+1 XP a cada ' + Math.round(1 / XP_FOCUS_PER_MINUTE) + ' min e +' + HP_HEAL_FOCUS + ' HP</dd>' +
+      '</dl><div class="field-label" style="margin-top:14px">Molduras do avatar</div><div class="frame-list">' +
+      AVATAR_FRAMES.slice(1).map(function (f) {
+        const unlocked = levelFromXp(state.player.xpEarned) >= f.min;
+        return '<span class="frame-item' + (unlocked ? '' : ' locked') + '" title="' + (unlocked ? 'Desbloqueada' : 'Bloqueada') + '">' + (unlocked ? f.badge : '🔒') + ' ' + escapeHtml(f.label) + ' · nível ' + f.min + '</span>';
+      }).join('') + '</div></section>' +
       '<section class="card"><div class="card-title"><h3>🔥 Streak e multiplicador</h3></div><dl class="kv">' +
       '<dt>Streak</dt><dd>Dias seguidos com pelo menos uma ação (criar, registrar progresso, concluir). Hoje só quebra à meia-noite.</dd>' +
       STREAK_TIERS.slice().reverse().map(function (t) { return '<dt>' + t.min + '+ dias · ' + escapeHtml(t.label) + '</dt><dd>Todo XP ' + formatMultiplier(t.mult) + '</dd>'; }).join('') +
@@ -3146,6 +4110,7 @@
       return;
     }
     const draft = existing ? deepClone(existing) : createProject({ name: '', color: PROJECT_COLORS[state.projects.length % PROJECT_COLORS.length] });
+    if (!existing) draft.name = '';
     const coverState = { newDataUrl: null, removed: false };
     openModal({
       title: existing ? 'Editar projeto' : 'Novo projeto',
@@ -3316,9 +4281,25 @@
     return t;
   }
 
-  function goalFormHtml(g) {
+  function templateChipsHtml(category, selectedId) {
+    const sorted = GOAL_TEMPLATES.slice().sort(function (a, b) {
+      const sa = a.categories.indexOf(category) >= 0 ? 0 : 1;
+      const sb = b.categories.indexOf(category) >= 0 ? 0 : 1;
+      return sa - sb;
+    });
+    return sorted.map(function (t) {
+      const suggested = t.categories.indexOf(category) >= 0;
+      return '<button type="button" class="template-chip' + (suggested ? ' suggested' : '') + (t.id === selectedId ? ' selected' : '') + '" data-template="' + t.id + '"' +
+        (suggested ? ' title="Sugerido para ' + escapeHtml(category) + '"' : '') + '>' + t.icon + ' ' + escapeHtml(t.label) + '</button>';
+    }).join('');
+  }
+
+  function goalFormHtml(g, showTemplates) {
     const projectOptions = state.projects.map(function (p) { return { id: p.id, label: p.icon + ' ' + p.name }; });
-    return '<div class="form-grid">' +
+    const project = findProject(g.projectId);
+    const templates = showTemplates ? '<div class="field full"><div class="template-box"><div class="row"><span class="fieldset-title" style="margin:0">✨ Começar de um modelo</span><span class="hint">opcional — preenche título, acompanhamento, dificuldade e tags; os sugeridos para a área do projeto vêm primeiro</span></div>' +
+      '<div class="template-row" data-template-row>' + templateChipsHtml(project ? project.category : '', '') + '</div></div></div>' : '';
+    return '<div class="form-grid">' + templates +
       '<label class="field full"><span>Título <span class="req">*</span></span><input class="input" name="title" maxlength="120" value="' + escapeHtml(g.title) + '" placeholder="Ex.: Ler 12 livros de finanças" autofocus></label>' +
       '<label class="field"><span>Projeto <span class="req">*</span></span><select class="select" name="projectId">' + optionsHtml(projectOptions, g.projectId) + '</select></label>' +
       '<label class="field"><span>Status</span><select class="select" name="status">' + optionsHtml(STATUSES, g.status) + '</select></label>' +
@@ -3351,6 +4332,8 @@
     if (!defaultProject && ui.goalFilters.project !== 'all' && findProject(ui.goalFilters.project)) defaultProject = ui.goalFilters.project;
     if (!defaultProject) defaultProject = state.projects.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; })[0].id;
     const draft = existing ? deepClone(existing) : createGoal({ title: '', projectId: defaultProject });
+    // A normalização troca título vazio por "Meta sem título"; no formulário novo o campo deve vir vazio.
+    if (!existing) draft.title = '';
     // Guarda valores digitados por tipo para não perdê-los ao alternar o tipo de acompanhamento.
     const trackingDrafts = {};
     trackingDrafts[draft.tracking.type] = draft.tracking;
@@ -3358,7 +4341,7 @@
     openModal({
       title: existing ? 'Editar meta' : 'Nova meta',
       size: 'lg',
-      body: goalFormHtml(draft),
+      body: goalFormHtml(draft, !existing),
       actions: [
         { id: 'cancel', label: 'Cancelar' },
         { id: 'save', label: existing ? 'Salvar alterações' : 'Criar meta', variant: 'primary', submit: true }
@@ -3371,6 +4354,41 @@
           trackingDrafts[currentType] = readTrackingFields(container, currentType, {});
           currentType = typeSelect.value;
           container.innerHTML = trackingFieldsHtml(trackingDrafts[currentType] || defaultTracking(currentType));
+        });
+        const row = modal.el.querySelector('[data-template-row]');
+        if (!row) return;
+        const field = function (name) { return modal.el.querySelector('[name="' + name + '"]'); };
+        const projectSelect = field('projectId');
+        let applied = { id: '', title: '', tags: '', nextAction: '' };
+        // Só sobrescreve campos vazios ou ainda iguais ao modelo anterior (não apaga o que o usuário digitou).
+        const setIfUntouched = function (name, previous, value) {
+          const el = field(name);
+          if (!el.value.trim() || el.value === previous) el.value = value;
+        };
+        row.addEventListener('click', function (e) {
+          const chip = e.target.closest('[data-template]');
+          if (!chip) return;
+          const tpl = findById(GOAL_TEMPLATES, chip.getAttribute('data-template'));
+          if (!tpl) return;
+          const tags = tpl.tags.join(', ');
+          setIfUntouched('title', applied.title, tpl.title);
+          setIfUntouched('tags', applied.tags, tags);
+          setIfUntouched('nextAction', applied.nextAction, tpl.nextAction);
+          field('difficulty').value = tpl.difficulty;
+          trackingDrafts[currentType] = readTrackingFields(container, currentType, {});
+          currentType = tpl.tracking.type;
+          typeSelect.value = currentType;
+          trackingDrafts[currentType] = normalizeTracking(tpl.tracking);
+          container.innerHTML = trackingFieldsHtml(trackingDrafts[currentType]);
+          applied = { id: tpl.id, title: tpl.title, tags: tags, nextAction: tpl.nextAction };
+          row.querySelectorAll('[data-template]').forEach(function (c) { c.classList.toggle('selected', c === chip); });
+          const title = field('title');
+          title.focus();
+          title.select();
+        });
+        projectSelect.addEventListener('change', function () {
+          const p = findProject(projectSelect.value);
+          row.innerHTML = templateChipsHtml(p ? p.category : '', applied.id);
         });
       },
       onAction: function (action, modal) {
@@ -3571,7 +4589,16 @@
   }
 
   function toggleTheme() {
-    setTheme(state.settings.theme === 'dark' ? 'light' : 'dark');
+    setTheme(LIGHT_THEMES.indexOf(state.settings.theme) >= 0 ? 'dark' : 'light');
+  }
+
+  function changeSetting(key, value) {
+    let v = value;
+    if (key === 'focusMinutes') v = clamp(Math.round(Number(value)) || FOCUS_DEFAULT_MINUTES, 1, FOCUS_MAX_MINUTES);
+    else if (key === 'reflectOnComplete' || key === 'focusSound') v = Boolean(value);
+    else return;
+    commit('Alterar preferência', function (s) { s.settings[key] = v; }, { undoable: false });
+    showToast('Preferência salva.', { type: 'success' });
   }
 
   function saveProfile() {
@@ -3754,6 +4781,18 @@
       case 'buy-freeze': buyFreeze(); break;
       case 'repair-streak': repairStreak(); break;
       case 'toggle-rest': toggleRest(); break;
+      case 'goal-focus': openFocusSetup(id); break;
+      case 'goal-reflect': openReflectionForm(id, false); break;
+      case 'start-focus': openFocusSetup(null); break;
+      case 'focus-pause': toggleFocusPause(); break;
+      case 'focus-finish': finishFocus(false); break;
+      case 'focus-cancel': cancelFocus(); break;
+      case 'score-period':
+        ui.scorePeriod = el.getAttribute('data-period');
+        renderView();
+        break;
+      case 'export': runExport(el.getAttribute('data-export')); break;
+      case 'show-shortcuts': openShortcutsHelp(); break;
       case 'open-area':
         ui.projectFilters = { text: '', status: 'all', category: el.getAttribute('data-area'), sort: ui.projectFilters.sort };
         navigate('projects');
@@ -3775,6 +4814,7 @@
         ui.goalFilters[el.getAttribute('data-field')] = el.value;
         renderGoalsList();
         break;
+      case 'setting': changeSetting(el.getAttribute('data-setting'), el.type === 'checkbox' ? el.checked : el.value); break;
       default: break;
     }
   }
@@ -3794,14 +4834,47 @@
       }
       return;
     }
-    // Em campos de texto, Ctrl+Z/Y continuam sendo o desfazer nativo do navegador.
-    if (!mod || e.altKey || isTypingTarget(e.target)) return;
-    if (key === 'z' && !e.shiftKey) {
+    // Em campos de texto, Ctrl+Z/Y e as letras continuam com o comportamento nativo.
+    if (e.altKey || isTypingTarget(e.target)) return;
+    if (mod) {
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        performUndo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        performRedo();
+      }
+      return;
+    }
+    // Segunda tecla do "G depois X".
+    if (gShortcutAt && Date.now() - gShortcutAt < G_SHORTCUT_TIMEOUT_MS) {
+      gShortcutAt = 0;
+      hideKeyHint();
+      const target = G_SHORTCUTS[key];
+      if (target) {
+        e.preventDefault();
+        navigate(target.route);
+      }
+      return;
+    }
+    gShortcutAt = 0;
+    if (key === 'g' && !e.shiftKey) {
+      gShortcutAt = Date.now();
+      showKeyHint('<kbd>G</kbd> depois: ' + Object.keys(G_SHORTCUTS).map(function (k) { return '<kbd>' + k.toUpperCase() + '</kbd> ' + G_SHORTCUTS[k].label; }).join(' · '));
+    } else if (key === 'n') {
       e.preventDefault();
-      performUndo();
-    } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+      if (e.shiftKey) openProjectForm(null);
+      else openGoalForm(null, null);
+    } else if (e.key === '/') {
       e.preventDefault();
-      performRedo();
+      openCommandPalette();
+    } else if (e.key === '?') {
+      e.preventDefault();
+      openShortcutsHelp();
+    } else if (key === 'f' && !e.shiftKey) {
+      e.preventDefault();
+      if (state.focus) toggleFocusPause();
+      else openFocusSetup(null);
     }
   }
 
@@ -3851,11 +4924,11 @@
     document.addEventListener('scroll', hideTooltip, true);
     window.addEventListener('hashchange', handleRouteChange);
     document.addEventListener('visibilitychange', function () {
-      if (document.visibilityState === 'hidden' && saveTimer) persistNow();
+      if (document.visibilityState === 'hidden' && saveQueued) persistNow();
       if (document.visibilityState === 'visible') checkDayRollover();
     });
     window.addEventListener('pagehide', function () {
-      if (saveTimer) persistNow();
+      if (saveQueued) persistNow();
     });
   }
 
@@ -3877,6 +4950,7 @@
       else if (saveStatus === 'loading') setSaveStatus('saved');
       renderApp();
       flushPendingToasts();
+      ensureFocusTimer();
       setInterval(checkDayRollover, TICK_INTERVAL_MS);
     });
   }
