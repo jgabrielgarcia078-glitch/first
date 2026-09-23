@@ -159,3 +159,7 @@ Fora de escopo por decisão de arquitetura (arquivo único 100% local): contas/s
 ## Comandos úteis
 
 Não há passo de build. Para testar: abrir o `.html` diretamente no navegador. Para validar antes de entregar uma versão: extrair o `<script>` para `.js` e rodar `node --check`.
+
+## Outros projetos no repositório
+
+- `strikezone.html` — **StrikeZone**, FPS tático 5 contra 5 inspirado no CS:GO (mapa `de_duna`, desarme de bomba, economia, bots). Independente do GoalQuest: não compartilha código nem dados. Segue as mesmas 7 regras de estrutura (arquivo único, IIFE, sem handlers inline, constantes/estado no topo, um único `init` no `DOMContentLoaded`). WebGL 2 puro sem bibliotecas, áudio sintetizado com WebAudio, `localStorage` só para preferências. Abrir com `?debug=1` expõe `window.__SZ` (estado, `simulate(segundos)`, `findPath`, `losClear`, `buy`) para testes com Playwright.
