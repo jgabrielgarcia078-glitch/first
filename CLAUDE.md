@@ -104,6 +104,19 @@ Todos os números do jogo são constantes no topo do arquivo (`HP_*`, `FREEZE_*`
 - **Recorrência** (`goal.recurrence`, dia/semana/mês): renova a cada período no `processDailyTick` (status "a fazer", progresso zerado, submetas desmarcadas, XP ganho fica), com sequência e recorde por meta. Período não cumprido: −dano da dificuldade uma vez (não conta se pausada, bloqueada, projeto pausado ou modo descanso). O prazo de uma recorrente é o fim do período.
 - Modelos novos: Revisão semanal (recorrente + checklist), Treinos semanais (3×/semana recorrente), Hábito diário; Peso já vem com checkpoint semanal; Certificação traz checklist.
 
+### Fase 3 — Quadro Visual (Canvas) ✅ entregue (v0.5.0, schema v5)
+
+Terceira visão do projeto (Lista · Kanban · 🧩 Quadro visual; V alterna). Dados em `project.board`:
+`blocks` (por id de meta: x, y, w, h, cor, formato, locked, hidden), `connections` (from → to, rótulo, cor), `groups` (retângulos com título, cor, locked), `viewport` (câmera x, y, zoom), `showDeps`, `snap`.
+
+- **Blocos**: arrastar livremente (alinha à grade de 20px, desligável), redimensionar pela alça, cor (automática = cor do status) e formato (arredondado, retângulo, pílula, nota), fixar posição (📌) e ocultar (painel "Ocultos" para mostrar de novo). Duplo clique abre o detalhe da meta. Metas novas entram no centro da visão; na 1ª abertura, layout em colunas por status.
+- **Seleção**: clique, Shift + clique, Shift + arrastar no fundo (área). Inspetor à direita conforme a seleção.
+- **Conexões/setas manuais**: arrastar a alça roxa do bloco até outro, ou modo "🔗 Conectar" (origem → destino). Rótulo, cor, inverter, excluir (Delete).
+- **Grupos**: "▭ Grupo" ou "Agrupar" a seleção; arrastar pelo cabeçalho leva as metas de dentro (participação geométrica: centro do bloco dentro do retângulo); título, cor, fixar; **progresso agregado** das metas de dentro no cabeçalho.
+- **Dependências** das metas aparecem como setas tracejadas (liga/desliga "⛓ Dependências").
+- **Zoom/pan**: roda = zoom no ponto do mouse, Shift + roda = rolar para os lados, arrastar o fundo = mover, botões −/100%/+/⤢ Ajustar, teclas + − Shift+1 Shift+0. **Tela cheia** (⛶): cobre a janela e usa a Fullscreen API quando disponível; Esc sai.
+- Teclado: setas movem a seleção 20px; Delete oculta bloco / exclui grupo ou conexão; Esc limpa seleção / sai da tela cheia.
+
 ### Regras do motor de jogo (não quebrar)
 
 - Toda mutação passa por `commit()`; XP positivo usa `gainXp()` (aplica multiplicador) e estornos usam `awardXp()` com o valor bruto salvo em `xpAwarded`. Cura de conclusão fica em `hpAwarded` e é estornada ao reabrir.
@@ -117,6 +130,8 @@ Todos os números do jogo são constantes no topo do arquivo (`HP_*`, `FREEZE_*`
 - Regras de negócio violadas dentro de um `commit` lançam `userError(msg)`: o commit desfaz tudo e mostra só a mensagem (aviso), sem "Erro ao aplicar".
 - Janelas com `liveBody` são re-renderizadas em `renderApp()`; retornar `null` fecha a janela (ex.: meta excluída). Ações `data-action` funcionam dentro de janelas.
 - Fotos de checkpoints ficam em `log[].photos` (ids do store `media`); `garbageCollectMedia()` considera capas e fotos de registros.
+- Quadro visual: durante um gesto (arrastar, redimensionar, pan) só o DOM muda; o estado é gravado **uma vez** ao soltar (1 passo de desfazer). Eventos de ponteiro/roda são registrados uma única vez no documento (`bindBoardEvents`). A câmera (`board.viewport`) e a sessão de foco ficam **fora** do desfazer (`keepAcrossHistory`). Mover vários blocos ou um grupo alinha só o elemento arrastado e aplica o mesmo deslocamento aos demais. Duplo clique usa `e.timeStamp` e é zerado após um arrasto.
+- `normalizeState` remove do quadro blocos/conexões de metas que não pertencem mais ao projeto; excluir uma meta limpa o bloco e as conexões dela.
 
 ### Validação antes de entregar
 
@@ -130,11 +145,9 @@ Além do `node --check` (regra 7): teste E2E com Playwright abrindo o `.html` vi
 5. **Calendário + Estatísticas avançadas**
 6. **Configurações visuais completas + Backup + Atalhos + Busca + Notificações + Histórico**
 
-## Melhorias da análise comparativa ainda pendentes
+## Melhorias da análise comparativa
 
-- **Grupos do Canvas com cor e progresso agregado** dentro do retângulo (Miro/Milanote). Entra junto com o Quadro Visual (Fase 3) — próxima fase.
-
-Todo o resto da análise comparativa (prioridades alta, média e baixa) já foi entregue nas Fases 1.5 e 1.6.
+Todas entregues (Fases 1.5, 1.6 e 3 — os grupos do Canvas com cor e progresso agregado vieram com o Quadro Visual).
 
 Fora de escopo por decisão de arquitetura (arquivo único 100% local): contas/sync em nuvem, multiplayer/festas do Habitica, notificações push do SO, IA integrada.
 

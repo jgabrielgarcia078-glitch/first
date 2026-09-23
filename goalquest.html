@@ -536,6 +536,78 @@
   @keyframes goal-flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--accent), var(--glow); } }
   .goal-card.flash { animation: goal-flash 1.6s ease 2; }
 
+  /* ---------- Quadro visual (canvas) ---------- */
+  .board-shell { position: relative; height: calc(100vh - 96px); min-height: 520px; scroll-margin-top: 76px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--bg); }
+  .board-shell.is-maximized { position: fixed; inset: 0; z-index: 90; height: auto; min-height: 0; border: 0; border-radius: 0; }
+  .board-viewport { position: absolute; inset: 0; overflow: hidden; cursor: grab; touch-action: none; user-select: none; outline: none; }
+  .board-viewport.is-panning { cursor: grabbing; }
+  .board-viewport.show-grid { background-image: radial-gradient(circle, color-mix(in srgb, var(--text-muted) 40%, transparent) 1px, transparent 1.3px); }
+  .board-viewport.is-connecting, .board-viewport.is-connecting .board-block { cursor: crosshair; }
+  .board-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+  .board-links { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; pointer-events: none; z-index: 2; }
+  .board-link { fill: none; stroke: var(--link-color, var(--text-muted)); stroke-width: 2; vector-effect: non-scaling-stroke; }
+  .board-link-head { fill: var(--link-color, var(--text-muted)); }
+  .board-link.is-selected { stroke: var(--accent); stroke-width: 3.5; }
+  .board-link-head.is-selected { fill: var(--accent); }
+  .board-link-hit { fill: none; stroke: transparent; stroke-width: 16; vector-effect: non-scaling-stroke; pointer-events: stroke; cursor: pointer; }
+  .board-link.temp { stroke: var(--accent); stroke-dasharray: 6 4; }
+  .board-dep { fill: none; stroke: var(--warning); stroke-width: 1.6; stroke-dasharray: 7 5; vector-effect: non-scaling-stroke; opacity: 0.85; }
+  .board-dep-head { fill: var(--warning); opacity: 0.85; }
+  .board-labels { position: absolute; left: 0; top: 0; z-index: 4; pointer-events: none; }
+  .board-link-label { position: absolute; transform: translate(-50%, -50%); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 1px 9px; font-size: 12px; white-space: nowrap; color: var(--text); }
+  .board-block { position: absolute; z-index: 3; display: flex; flex-direction: column; padding: 8px 11px; cursor: move; border: 2px solid color-mix(in srgb, var(--block-color, var(--border)) 75%, var(--border)); background: color-mix(in srgb, var(--block-color, var(--surface-3)) 14%, var(--surface)); border-radius: 12px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18); }
+  .board-block.shape-rect { border-radius: 3px; }
+  .board-block.shape-pill { border-radius: 999px; padding: 10px 34px; }
+  .board-block.shape-note { border-radius: 2px 2px 18px 2px; background: color-mix(in srgb, var(--block-color, #f5c542) 32%, var(--surface)); box-shadow: 3px 5px 12px rgba(0, 0, 0, 0.28); }
+  .board-block.is-selected { outline: 2px solid var(--accent); outline-offset: 3px; z-index: 6; }
+  .board-block.is-locked { cursor: default; }
+  .board-block.is-connect-source { outline: 2px dashed var(--accent); outline-offset: 3px; }
+  .board-block.is-done .board-block-title { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 45%, transparent); }
+  .board-block-body { flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 6px; }
+  .board-block-head { display: flex; gap: 7px; align-items: flex-start; }
+  .board-block-title { font-weight: 700; font-size: 13.5px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; }
+  .board-block-meta { display: flex; gap: 5px; flex-wrap: wrap; font-size: 11.5px; color: var(--text-muted); align-items: center; }
+  .board-block .progress { height: 5px; margin-top: auto; flex-shrink: 0; }
+  .status-dot { width: 9px; height: 9px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; background: var(--text-muted); }
+  .status-dot.doing { background: var(--info); }
+  .status-dot.paused { background: var(--warning); }
+  .status-dot.done { background: var(--success); }
+  .board-handle { position: absolute; width: 14px; height: 14px; background: var(--accent); border: 2px solid var(--surface); z-index: 7; }
+  .board-handle.resize { right: -7px; bottom: -7px; border-radius: 3px; cursor: nwse-resize; }
+  .board-handle.connect { right: -9px; top: 50%; margin-top: -8px; width: 16px; height: 16px; border-radius: 50%; cursor: crosshair; }
+  .board-group { position: absolute; z-index: 1; border: 2px solid var(--group-color, #64748b); border-radius: 14px; background: color-mix(in srgb, var(--group-color, #64748b) 7%, transparent); pointer-events: none; }
+  .board-group.is-selected { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .board-group-head { pointer-events: auto; position: absolute; left: 0; right: 0; top: 0; height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: color-mix(in srgb, var(--group-color, #64748b) 24%, var(--surface)); border-radius: 12px 12px 0 0; cursor: move; font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; }
+  .board-group.is-locked .board-group-head { cursor: default; }
+  .board-group-title { overflow: hidden; text-overflow: ellipsis; }
+  .board-group-progress { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+  .board-group-progress .progress { width: 70px; height: 6px; }
+  .board-group .board-handle { pointer-events: auto; }
+  .board-marquee { position: absolute; border: 1px dashed var(--accent); background: var(--accent-soft); pointer-events: none; z-index: 8; }
+  .board-overlay { position: absolute; z-index: 10; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .board-toolbar { top: 10px; left: 10px; display: flex; gap: 4px; flex-wrap: wrap; padding: 5px; max-width: calc(100% - 330px); }
+  .board-toolbar .btn.active { background: var(--accent-soft); border-color: var(--accent); }
+  .board-toolbar .sep { width: 1px; background: var(--border); margin: 2px 3px; }
+  .board-zoom { right: 10px; bottom: 10px; display: flex; gap: 4px; align-items: center; padding: 4px; }
+  .board-zoom .zoom-label { min-width: 54px; text-align: center; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+  .board-help { left: 10px; bottom: 10px; padding: 5px 12px; font-size: 12px; color: var(--text-muted); border-radius: 999px; }
+  .board-inspector { top: 10px; right: 10px; width: 290px; max-height: calc(100% - 76px); overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 14px; }
+  .board-inspector h4 { font-size: 14px; }
+  .board-hidden-panel { top: 60px; left: 10px; width: 300px; max-height: 55%; overflow-y: auto; padding: 8px; z-index: 11; }
+  .board-hidden-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; font-size: 13px; }
+  .board-hidden-item:hover { background: var(--surface-2); }
+  .board-hidden-item span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatch { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--border); cursor: pointer; padding: 0; font-size: 11px; color: var(--text-muted); background: var(--surface-2); }
+  .swatch.selected { border-color: var(--text); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .shape-options { display: flex; gap: 6px; flex-wrap: wrap; }
+  .shape-option { padding: 5px 10px; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; font-size: 12.5px; color: var(--text); }
+  .shape-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+  .shape-option[data-shape="rect"] { border-radius: 2px; }
+  .shape-option[data-shape="rounded"] { border-radius: 8px; }
+  .shape-option[data-shape="pill"] { border-radius: 999px; }
+  .shape-option[data-shape="note"] { border-radius: 2px 2px 10px 2px; }
+
   /* ---------- Kanban ---------- */
   .view-tabs .tab[disabled] { opacity: 0.45; cursor: not-allowed; }
   .kanban { display: grid; grid-template-columns: repeat(4, minmax(250px, 1fr)); gap: 14px; align-items: start; overflow-x: auto; padding-bottom: 6px; }
@@ -759,8 +831,8 @@
    * 1. CONSTANTES (todas declaradas aqui, antes de qualquer função)
    * ===================================================================== */
 
-  const APP_VERSION = '0.4.0';
-  const CURRENT_SCHEMA_VERSION = 4;
+  const APP_VERSION = '0.5.0';
+  const CURRENT_SCHEMA_VERSION = 5;
 
   const DB_NAME = 'goalquest';
   const DB_VERSION = 1;
@@ -832,6 +904,35 @@
   const TIMELINE_LIMIT = 30;
   const PROJECT_GALLERY_PREVIEW = 24;
   const CHECKPOINT_DUE_SOON_DAYS = 2;
+
+  // Fase 3: quadro visual (canvas). Coordenadas do "mundo" em px; câmera = { x, y, zoom }.
+  const BOARD_BLOCK_W = 230;
+  const BOARD_BLOCK_H = 104;
+  const BOARD_MIN_BLOCK_W = 140;
+  const BOARD_MIN_BLOCK_H = 64;
+  const BOARD_MIN_GROUP_W = 220;
+  const BOARD_MIN_GROUP_H = 140;
+  const BOARD_GRID = 20;
+  // Passos do layout inicial (múltiplos da grade).
+  const BOARD_LAYOUT_COL_STEP = 320;
+  const BOARD_LAYOUT_ROW_STEP = 140;
+  const BOARD_ZOOM_MIN = 0.25;
+  const BOARD_ZOOM_MAX = 2.5;
+  const BOARD_ZOOM_STEP = 1.2;
+  const BOARD_WHEEL_ZOOM = 0.0015;
+  const BOARD_FIT_PADDING = 70;
+  const BOARD_DRAG_THRESHOLD = 4;
+  const BOARD_DOUBLE_CLICK_MS = 350;
+  const BOARD_VIEWPORT_SAVE_MS = 350;
+  const BOARD_LABEL_MAX = 60;
+  const BOARD_COLORS = ['#7c5cff', '#3b82f6', '#22d3ee', '#22c55e', '#84cc16', '#f5c542', '#f97316', '#ef4444', '#ec4899', '#a855f7', '#64748b'];
+  const BOARD_GROUP_DEFAULT_COLOR = '#64748b';
+  const BLOCK_SHAPES = [
+    { id: 'rounded', label: 'Arredondado' },
+    { id: 'rect', label: 'Retângulo' },
+    { id: 'pill', label: 'Pílula' },
+    { id: 'note', label: 'Nota' }
+  ];
 
   const HEATMAP_WEEKS = 53;
   const BEST_WEEKDAY_WEEKS = 12;
@@ -907,6 +1008,7 @@
     { id: 'list', label: '☰ Lista' },
     { id: 'kanban', label: '▦ Kanban' }
   ];
+  const PROJECT_VIEWS = GOAL_VIEWS.concat([{ id: 'board', label: '🧩 Quadro visual' }]);
   const FREQUENCY_PERIODS = [
     { id: 'day', label: 'Dia', current: 'hoje' },
     { id: 'week', label: 'Semana', current: 'nesta semana' },
@@ -990,7 +1092,16 @@
     { keys: 'N', text: 'Nova meta' },
     { keys: 'Shift N', text: 'Novo projeto' },
     { keys: 'F', text: 'Iniciar foco (ou pausar/retomar a sessão atual)' },
-    { keys: 'V', text: 'Alternar Lista / Kanban (em Metas e no projeto)' },
+    { keys: 'V', text: 'Alternar Lista / Kanban / Quadro visual' },
+    { group: 'Quadro visual' },
+    { keys: 'Arrastar', text: 'Fundo: mover a visão · Bloco: mover · Shift + arrastar no fundo: selecionar vários' },
+    { keys: 'Roda', text: 'Zoom no ponto do mouse (Shift + roda: rolar para os lados)' },
+    { keys: '+ −', text: 'Zoom in / out' },
+    { keys: 'Shift 1', text: 'Ajustar tudo na tela' },
+    { keys: 'Shift 0', text: 'Zoom 100%' },
+    { keys: '← ↑ → ↓', text: 'Mover os blocos selecionados' },
+    { keys: 'Delete', text: 'Ocultar bloco / excluir grupo ou conexão selecionada' },
+    { keys: 'Esc', text: 'Limpar seleção / sair da tela cheia' },
     { group: 'Fotos' },
     { keys: '← →', text: 'Foto anterior / próxima no visualizador' }
   ];
@@ -1020,7 +1131,8 @@
     { id: 'start-focus', icon: '🍅', label: 'Iniciar sessão de foco', keywords: 'pomodoro timer concentrar', shortcut: 'F' },
     { id: 'show-shortcuts', icon: '⌨️', label: 'Ver atalhos de teclado', keywords: 'teclas ajuda', shortcut: '?' },
     { id: 'export-data', icon: '📤', label: 'Exportar dados (CSV / JSON)', keywords: 'backup excel planilha csv json baixar' },
-    { id: 'goals-kanban', icon: '▦', label: 'Ver todas as metas em Kanban', keywords: 'quadro colunas arrastar board' }
+    { id: 'goals-kanban', icon: '▦', label: 'Ver todas as metas em Kanban', keywords: 'quadro colunas arrastar board' },
+    { id: 'project-board', icon: '🧩', label: 'Abrir o quadro visual do projeto atual', keywords: 'canvas mapa blocos setas grupos board' }
   ];
   const SAVE_STATUS_LABELS = {
     loading: { text: 'Carregando…', cls: '' },
@@ -1095,6 +1207,13 @@
       });
       const settings = Object.assign({ projectView: 'list', goalsView: 'list' }, data.settings || {});
       return Object.assign({}, data, { goals: goals, settings: settings });
+    },
+    5: function (data) {
+      // v4 → v5 (Fase 3): quadro visual por projeto. Os blocos são posicionados na primeira abertura.
+      const projects = (Array.isArray(data.projects) ? data.projects : []).map(function (p) {
+        return Object.assign({ board: createEmptyBoard() }, p);
+      });
+      return Object.assign({}, data, { projects: projects });
     }
   };
 
@@ -1112,6 +1231,10 @@
   let pendingToasts = [];
   let paletteModal = null;
   let kanbanDrag = null;
+  let boardGesture = null;
+  let boardViewportTimer = null;
+  let boardLastClick = { id: null, at: 0 };
+  let boardLiveVp = null;
   let pendingReflections = [];
   let gShortcutAt = 0;
   let keyHintTimer = null;
@@ -1125,6 +1248,8 @@
     detailStatus: 'all',
     highlightGoal: null,
     scorePeriod: 'week',
+    // Estado de interface do quadro visual (não é salvo).
+    board: { projectId: null, selection: { type: null, ids: [] }, connectMode: false, connectFrom: null, maximized: false, hiddenPanel: false },
     expandedGoals: new Set(),
     projectFilters: { text: '', status: 'active', category: 'all', sort: 'updated' },
     goalFilters: { text: '', status: 'open', project: 'all', difficulty: 'all', type: 'all', sort: 'deadline' }
@@ -1509,6 +1634,7 @@
       deadline: isValidISODate(p.deadline) ? p.deadline : '',
       motivation: String(p.motivation || ''),
       coverId: p.coverId ? String(p.coverId) : null,
+      board: normalizeBoard(p.board),
       xpAwarded: Number(p.xpAwarded) || 0,
       hpAwarded: Number(p.hpAwarded) || 0,
       completedAt: Number(p.completedAt) || null,
@@ -1556,6 +1682,64 @@
     };
   }
 
+  function createEmptyBoard() {
+    // y inicial deixa espaço para a barra de ferramentas sobreposta ao quadro.
+    return { blocks: {}, connections: [], groups: [], viewport: { x: 40, y: 90, zoom: 1 }, showDeps: true, snap: true };
+  }
+
+  function boardNumber(v, fallback) {
+    const n = Number(v);
+    return isFinite(n) ? Math.round(n) : fallback;
+  }
+
+  function normalizeBoard(raw) {
+    const base = createEmptyBoard();
+    if (!raw || typeof raw !== 'object') return base;
+    const blocks = {};
+    if (raw.blocks && typeof raw.blocks === 'object') {
+      Object.keys(raw.blocks).forEach(function (id) {
+        const b = raw.blocks[id];
+        if (!b || typeof b !== 'object') return;
+        blocks[id] = {
+          x: boardNumber(b.x, 0),
+          y: boardNumber(b.y, 0),
+          w: Math.max(BOARD_MIN_BLOCK_W, boardNumber(b.w, BOARD_BLOCK_W)),
+          h: Math.max(BOARD_MIN_BLOCK_H, boardNumber(b.h, BOARD_BLOCK_H)),
+          color: normalizeHexColor(b.color, ''),
+          shape: isOneOf(BLOCK_SHAPES, b.shape) ? b.shape : 'rounded',
+          locked: Boolean(b.locked),
+          hidden: Boolean(b.hidden)
+        };
+      });
+    }
+    const vp = raw.viewport && typeof raw.viewport === 'object' ? raw.viewport : {};
+    return {
+      blocks: blocks,
+      connections: (Array.isArray(raw.connections) ? raw.connections : []).filter(function (c) { return c && c.from && c.to && c.from !== c.to; }).map(function (c) {
+        return { id: c.id ? String(c.id) : uid(), from: String(c.from), to: String(c.to), label: String(c.label || '').slice(0, BOARD_LABEL_MAX), color: normalizeHexColor(c.color, '') };
+      }),
+      groups: (Array.isArray(raw.groups) ? raw.groups : []).filter(function (g) { return g && typeof g === 'object'; }).map(function (g) {
+        return {
+          id: g.id ? String(g.id) : uid(),
+          x: boardNumber(g.x, 0),
+          y: boardNumber(g.y, 0),
+          w: Math.max(BOARD_MIN_GROUP_W, boardNumber(g.w, 400)),
+          h: Math.max(BOARD_MIN_GROUP_H, boardNumber(g.h, 260)),
+          title: String(g.title || 'Grupo').slice(0, BOARD_LABEL_MAX),
+          color: normalizeHexColor(g.color, BOARD_GROUP_DEFAULT_COLOR),
+          locked: Boolean(g.locked)
+        };
+      }),
+      viewport: {
+        x: isFinite(Number(vp.x)) ? Number(vp.x) : base.viewport.x,
+        y: isFinite(Number(vp.y)) ? Number(vp.y) : base.viewport.y,
+        zoom: clamp(Number(vp.zoom) || 1, BOARD_ZOOM_MIN, BOARD_ZOOM_MAX)
+      },
+      showDeps: raw.showDeps !== false,
+      snap: raw.snap !== false
+    };
+  }
+
   function normalizeSubtasks(raw) {
     if (!Array.isArray(raw)) return [];
     return raw.filter(function (t) { return t && typeof t === 'object' && String(t.text || '').trim(); }).slice(0, SUBTASK_LIMIT).map(function (t) {
@@ -1593,6 +1777,12 @@
     goals.forEach(function (g) {
       g.dependsOn = g.dependsOn.filter(function (id) { return id !== g.id && goalIds.has(id); });
     });
+    // Quadro: só blocos/conexões de metas que ainda pertencem ao projeto.
+    projects.forEach(function (p) {
+      const own = new Set(goals.filter(function (g) { return g.projectId === p.id; }).map(function (g) { return g.id; }));
+      Object.keys(p.board.blocks).forEach(function (id) { if (!own.has(id)) delete p.board.blocks[id]; });
+      p.board.connections = p.board.connections.filter(function (c) { return own.has(c.from) && own.has(c.to); });
+    });
     const player = Object.assign({}, base.player, s.player || {});
     player.xpEarned = Math.max(0, Number(player.xpEarned) || 0);
     player.xpSpent = Math.max(0, Number(player.xpSpent) || 0);
@@ -1611,7 +1801,7 @@
     settings.reflectOnComplete = settings.reflectOnComplete !== false;
     settings.focusSound = settings.focusSound !== false;
     settings.focusMinutes = clamp(Math.round(Number(settings.focusMinutes) || FOCUS_DEFAULT_MINUTES), 1, FOCUS_MAX_MINUTES);
-    if (!isOneOf(GOAL_VIEWS, settings.projectView)) settings.projectView = 'list';
+    if (!isOneOf(PROJECT_VIEWS, settings.projectView)) settings.projectView = 'list';
     if (!isOneOf(GOAL_VIEWS, settings.goalsView)) settings.goalsView = 'list';
     return {
       schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -2450,13 +2640,25 @@
     list.forEach(function (t) { showToast(t.message, { type: t.type, action: t.action }); });
   }
 
+  // Fora do desfazer/refazer: sessão de foco em andamento e a câmera (zoom/posição) de cada quadro.
+  function keepAcrossHistory() {
+    const cameras = {};
+    state.projects.forEach(function (p) { cameras[p.id] = p.board.viewport; });
+    return { focus: state.focus, cameras: cameras };
+  }
+
+  function restoreAcrossHistory(kept) {
+    state.focus = kept.focus;
+    state.projects.forEach(function (p) { if (kept.cameras[p.id]) p.board.viewport = kept.cameras[p.id]; });
+  }
+
   function performUndo() {
     const entry = undoHistory.undo.pop();
     if (!entry) return;
     undoHistory.redo.push({ label: entry.label, snapshot: JSON.stringify(state) });
-    const focus = state.focus;
+    const kept = keepAcrossHistory();
     state = JSON.parse(entry.snapshot);
-    state.focus = focus;
+    restoreAcrossHistory(kept);
     applyTheme(state.settings.theme);
     scheduleSave();
     renderApp();
@@ -2467,9 +2669,9 @@
     const entry = undoHistory.redo.pop();
     if (!entry) return;
     undoHistory.undo.push({ label: entry.label, snapshot: JSON.stringify(state) });
-    const focus = state.focus;
+    const kept = keepAcrossHistory();
     state = JSON.parse(entry.snapshot);
-    state.focus = focus;
+    restoreAcrossHistory(kept);
     applyTheme(state.settings.theme);
     scheduleSave();
     renderApp();
@@ -3364,10 +3566,12 @@
 
     const view = state.settings.projectView;
     let list;
-    if (!goals.length) {
+    if (!goals.length && view !== 'board') {
       list = '<div class="card">' + emptyStateHtml('🎯', 'Nenhuma meta neste projeto', 'Quebre o projeto em metas mensuráveis para acompanhar o progresso.', '<button type="button" class="btn btn-primary" data-action="new-goal" data-project-id="' + id + '">+ Adicionar meta</button>') + '</div>';
     } else if (view === 'kanban') {
       list = kanbanHtml(goals, false);
+    } else if (view === 'board') {
+      list = boardHtml(p);
     } else if (!visible.length) {
       list = '<div class="card"><div class="empty-inline">Nenhuma meta com este status.</div></div>';
     } else {
@@ -3726,6 +3930,10 @@
       case 'start-focus': openFocusSetup(null); break;
       case 'show-shortcuts': openShortcutsHelp(); break;
       case 'export-data': goToExport(); break;
+      case 'project-board':
+        if (ui.route.name === 'project' && findProject(ui.route.id)) setGoalView('project', 'board');
+        else showToast('Abra um projeto para ver o quadro visual dele.', { type: 'info' });
+        break;
       case 'goals-kanban':
         setGoalView('goals', 'kanban');
         navigate('goals');
@@ -4690,23 +4898,35 @@
    * ===================================================================== */
 
   function viewTabsHtml(scope, current) {
-    return '<div class="tabs view-tabs">' + GOAL_VIEWS.map(function (v) {
+    return '<div class="tabs view-tabs">' + (scope === 'project' ? PROJECT_VIEWS : GOAL_VIEWS).map(function (v) {
       return '<button type="button" class="tab' + (current === v.id ? ' active' : '') + '" data-action="set-view" data-scope="' + scope + '" data-view="' + v.id + '">' + escapeHtml(v.label) + '</button>';
-    }).join('') + (scope === 'project' ? '<button type="button" class="tab" disabled title="Chega na Fase 3">🧩 Quadro visual</button>' : '') + '</div>';
+    }).join('') + '</div>';
   }
 
   function setGoalView(scope, view) {
-    if (!isOneOf(GOAL_VIEWS, view)) return;
+    if (!isOneOf(scope === 'project' ? PROJECT_VIEWS : GOAL_VIEWS, view)) return;
+    if (scope === 'project' && view !== 'board') exitBoardMaximized();
     const key = scope === 'project' ? 'projectView' : 'goalsView';
     if (state.settings[key] === view) return;
     commit('Alterar visualização', function (s) { s.settings[key] = view; }, { undoable: false });
+    if (view === 'board') scrollBoardIntoView();
+  }
+
+  // O quadro ocupa a altura visível; ao abri-lo, a página rola até ele.
+  function scrollBoardIntoView() {
+    requestAnimationFrame(function () {
+      const shell = document.querySelector('.board-shell');
+      if (shell) shell.scrollIntoView({ block: 'start' });
+    });
   }
 
   function toggleGoalView() {
     const scope = ui.route.name === 'project' ? 'project' : ui.route.name === 'goals' ? 'goals' : null;
     if (!scope) return;
+    const views = scope === 'project' ? PROJECT_VIEWS : GOAL_VIEWS;
     const key = scope === 'project' ? 'projectView' : 'goalsView';
-    setGoalView(scope, state.settings[key] === 'kanban' ? 'list' : 'kanban');
+    const i = views.findIndex(function (v) { return v.id === state.settings[key]; });
+    setGoalView(scope, views[(i + 1) % views.length].id);
   }
 
   function kanbanCardHtml(g, showProject) {
@@ -4840,6 +5060,973 @@
         '<div class="list-item-main clickable" data-action="goal-open" data-id="' + escapeHtml(x.g.id) + '"><div class="list-item-title">' + escapeHtml(x.g.title) + '</div><div class="list-item-sub">' + escapeHtml(project ? project.name : '') + '</div></div>' +
         checkpointChipHtml(x.g) + '<button type="button" class="btn btn-sm" data-action="goal-checkpoint" data-id="' + escapeHtml(x.g.id) + '">Registrar</button></div>';
     }).join('') + '</div>';
+  }
+
+  /* =====================================================================
+   * 15k. QUADRO VISUAL (canvas) — blocos, conexões, grupos, zoom e tela cheia
+   * Renderização em HTML/SVG dentro de um "mundo" transformado (translate + scale).
+   * Durante um gesto só o DOM muda; o estado é gravado uma vez ao soltar (1 passo de desfazer).
+   * ===================================================================== */
+
+  function boardSnap(board, v) {
+    return board.snap ? Math.round(v / BOARD_GRID) * BOARD_GRID : Math.round(v);
+  }
+
+  function currentBoardViewport(p) {
+    return boardLiveVp && boardLiveVp.pid === p.id ? boardLiveVp.vp : p.board.viewport;
+  }
+
+  function boardViewportEl() {
+    return document.querySelector('.board-viewport');
+  }
+
+  // Coloca no quadro as metas que ainda não têm bloco (1ª abertura: colunas por status).
+  function ensureBoardBlocks(p) {
+    const b = p.board;
+    const missing = sortByKanbanOrder(goalsOfProject(p.id).filter(function (g) { return !b.blocks[g.id]; }));
+    if (!missing.length) return;
+    const fresh = !Object.keys(b.blocks).length && !b.groups.length;
+    const make = function (x, y) { return { x: x, y: y, w: BOARD_BLOCK_W, h: BOARD_BLOCK_H, color: '', shape: 'rounded', locked: false, hidden: false }; };
+    if (fresh) {
+      const rows = {};
+      missing.forEach(function (g) {
+        const col = Math.max(0, KANBAN_COLUMNS.findIndex(function (c) { return c.id === g.status; }));
+        const row = rows[col] || 0;
+        rows[col] = row + 1;
+        b.blocks[g.id] = make(40 + col * BOARD_LAYOUT_COL_STEP, 40 + row * BOARD_LAYOUT_ROW_STEP);
+      });
+    } else {
+      const el = boardViewportEl();
+      const size = el ? el.getBoundingClientRect() : { width: 1100, height: 600 };
+      const vp = b.viewport;
+      const cx = (size.width / 2 - vp.x) / vp.zoom - BOARD_BLOCK_W / 2;
+      const cy = (size.height / 2 - vp.y) / vp.zoom - BOARD_BLOCK_H / 2;
+      missing.forEach(function (g, i) { b.blocks[g.id] = make(boardSnap(b, cx + i * 30), boardSnap(b, cy + i * 30)); });
+    }
+    scheduleSave();
+  }
+
+  // Retângulos das metas visíveis no quadro (com substituições durante um gesto).
+  function boardRects(p, overrides) {
+    const rects = {};
+    goalsOfProject(p.id).forEach(function (g) {
+      const bl = p.board.blocks[g.id];
+      if (!bl || bl.hidden) return;
+      const o = overrides && overrides[g.id];
+      rects[g.id] = { x: o && o.x !== undefined ? o.x : bl.x, y: o && o.y !== undefined ? o.y : bl.y, w: o && o.w ? o.w : bl.w, h: o && o.h ? o.h : bl.h };
+    });
+    return rects;
+  }
+
+  function rectCenter(r) {
+    return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+  }
+
+  // Ponto na borda do retângulo na direção de (tx, ty).
+  function rectEdgePoint(r, tx, ty) {
+    const c = rectCenter(r);
+    const dx = tx - c.x;
+    const dy = ty - c.y;
+    if (!dx && !dy) return c;
+    const scale = Math.min(dx ? (r.w / 2) / Math.abs(dx) : Infinity, dy ? (r.h / 2) / Math.abs(dy) : Infinity);
+    return { x: c.x + dx * scale, y: c.y + dy * scale };
+  }
+
+  function linkGeometry(ra, rb) {
+    const ca = rectCenter(ra);
+    const cb = rectCenter(rb);
+    const a = rectEdgePoint(ra, cb.x, cb.y);
+    const b = rectEdgePoint(rb, ca.x, ca.y);
+    const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+    const ux = (b.x - a.x) / len;
+    const uy = (b.y - a.y) / len;
+    const size = 12;
+    const bx = b.x - ux * size;
+    const by = b.y - uy * size;
+    const px = -uy * size * 0.45;
+    const py = ux * size * 0.45;
+    const f = function (n) { return Math.round(n * 10) / 10; };
+    return {
+      line: 'M' + f(a.x) + ' ' + f(a.y) + 'L' + f(bx) + ' ' + f(by),
+      head: 'M' + f(b.x) + ' ' + f(b.y) + 'L' + f(bx + px) + ' ' + f(by + py) + 'L' + f(bx - px) + ' ' + f(by - py) + 'Z',
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+    };
+  }
+
+  function boardLinksContent(p, rects) {
+    const sel = ui.board.selection;
+    let svg = '';
+    let labels = '';
+    if (p.board.showDeps) {
+      goalsOfProject(p.id).forEach(function (g) {
+        g.dependsOn.forEach(function (depId) {
+          if (!rects[depId] || !rects[g.id]) return;
+          const geo = linkGeometry(rects[depId], rects[g.id]);
+          svg += '<path class="board-dep" d="' + geo.line + '"></path><path class="board-dep-head" d="' + geo.head + '"></path>';
+        });
+      });
+    }
+    p.board.connections.forEach(function (c) {
+      if (!rects[c.from] || !rects[c.to]) return;
+      const geo = linkGeometry(rects[c.from], rects[c.to]);
+      const selected = sel.type === 'conn' && sel.ids.indexOf(c.id) >= 0;
+      const style = c.color ? ' style="--link-color:' + c.color + '"' : '';
+      svg += '<path class="board-link-hit" data-conn-id="' + escapeHtml(c.id) + '" d="' + geo.line + '"></path>' +
+        '<path class="board-link' + (selected ? ' is-selected' : '') + '"' + style + ' d="' + geo.line + '"></path>' +
+        '<path class="board-link-head' + (selected ? ' is-selected' : '') + '"' + style + ' d="' + geo.head + '"></path>';
+      if (c.label) labels += '<div class="board-link-label" style="left:' + Math.round(geo.mid.x) + 'px;top:' + Math.round(geo.mid.y) + 'px">' + escapeHtml(c.label) + '</div>';
+    });
+    return { svg: svg, labels: labels };
+  }
+
+  // Redesenha só as linhas e rótulos (usado a cada movimento durante um gesto).
+  function refreshBoardLinks(p, rects) {
+    const g = document.querySelector('.board-links [data-links]');
+    const labels = document.querySelector('.board-labels');
+    if (!g || !labels) return;
+    const content = boardLinksContent(p, rects);
+    g.innerHTML = content.svg;
+    labels.innerHTML = content.labels;
+  }
+
+  function groupMembers(grp, rects) {
+    return Object.keys(rects).filter(function (id) {
+      const c = rectCenter(rects[id]);
+      return c.x >= grp.x && c.x <= grp.x + grp.w && c.y >= grp.y && c.y <= grp.y + grp.h;
+    });
+  }
+
+  function groupProgress(members) {
+    const goals = members.map(findGoal).filter(Boolean);
+    if (!goals.length) return { done: 0, total: 0, pct: 0 };
+    return {
+      done: goals.filter(function (g) { return g.status === 'done'; }).length,
+      total: goals.length,
+      pct: goals.reduce(function (a, g) { return a + goalProgress(g); }, 0) / goals.length
+    };
+  }
+
+  function boardBlockHtml(p, g, bl, selected, single) {
+    const blocked = isGoalBlocked(state.goals, g);
+    const st = subtaskStats(g);
+    const prog = goalProgress(g);
+    const connectSource = ui.board.connectMode && ui.board.connectFrom === g.id;
+    return '<div class="board-block shape-' + bl.shape + (bl.color ? '' : ' auto') + (selected ? ' is-selected' : '') + (bl.locked ? ' is-locked' : '') + (g.status === 'done' ? ' is-done' : '') + (connectSource ? ' is-connect-source' : '') + '"' +
+      ' data-block-id="' + escapeHtml(g.id) + '" style="left:' + bl.x + 'px;top:' + bl.y + 'px;width:' + bl.w + 'px;height:' + bl.h + 'px;--block-color:' + (bl.color || statusColorVar(g.status)) + '">' +
+      '<div class="board-block-body"><div class="board-block-head"><span class="status-dot ' + g.status + '" title="' + escapeHtml(optionOf(STATUSES, g.status).label) + '"></span>' +
+      '<span class="board-block-title">' + escapeHtml(g.title) + '</span></div>' +
+      '<div class="board-block-meta">' + (bl.locked ? '<span title="Posição fixada">📌</span>' : '') + (blocked ? '<span title="Bloqueada por dependência">🔒</span>' : '') +
+      (g.recurrence ? '<span title="Recorrente">🔁</span>' : '') + '<span class="badge badge-diff-' + g.difficulty + '" title="Dificuldade">' + escapeHtml(optionOf(DIFFICULTIES, g.difficulty).label) + '</span>' +
+      (st.total ? '<span>☑️ ' + st.done + '/' + st.total + '</span>' : '') + '<span>' + formatPercent(prog) + '</span></div>' +
+      progressBarHtml(prog) + '</div>' +
+      (selected && single && !bl.locked ? '<span class="board-handle resize" data-board-resize="block" title="Redimensionar"></span><span class="board-handle connect" data-board-connect title="Arraste até outra meta para conectar"></span>' : '') +
+      '</div>';
+  }
+
+  function statusColorVar(status) {
+    return status === 'doing' ? 'var(--info)' : status === 'paused' ? 'var(--warning)' : status === 'done' ? 'var(--success)' : 'var(--text-muted)';
+  }
+
+  function boardGroupHtml(grp, rects, selected) {
+    const prog = groupProgress(groupMembers(grp, rects));
+    return '<div class="board-group' + (selected ? ' is-selected' : '') + (grp.locked ? ' is-locked' : '') + '" data-group-id="' + escapeHtml(grp.id) + '" style="left:' + grp.x + 'px;top:' + grp.y + 'px;width:' + grp.w + 'px;height:' + grp.h + 'px;--group-color:' + grp.color + '">' +
+      '<div class="board-group-head" data-group-drag>' + (grp.locked ? '📌 ' : '') + '<span class="board-group-title">' + escapeHtml(grp.title) + '</span>' +
+      '<span class="board-group-progress">' + (prog.total ? prog.done + '/' + prog.total + ' · ' + formatPercent(prog.pct) + progressBarHtml(prog.pct) : 'vazio') + '</span></div>' +
+      (selected && !grp.locked ? '<span class="board-handle resize" data-board-resize="group" title="Redimensionar grupo"></span>' : '') + '</div>';
+  }
+
+  function boardHtml(p) {
+    if (ui.board.projectId !== p.id) {
+      ui.board = { projectId: p.id, selection: { type: null, ids: [] }, connectMode: false, connectFrom: null, maximized: false, hiddenPanel: false };
+    }
+    ensureBoardBlocks(p);
+    const b = p.board;
+    const vp = currentBoardViewport(p);
+    const sel = ui.board.selection;
+    const rects = boardRects(p);
+    const goals = goalsOfProject(p.id);
+    const visible = goals.filter(function (g) { return rects[g.id]; });
+    const selectedBlocks = sel.type === 'blocks' ? sel.ids.filter(function (id) { return rects[id]; }) : [];
+    const links = boardLinksContent(p, rects);
+    const hiddenCount = goals.filter(function (g) { return b.blocks[g.id] && b.blocks[g.id].hidden; }).length;
+    const grid = BOARD_GRID * vp.zoom;
+    const help = ui.board.connectMode ? (ui.board.connectFrom ? 'Agora clique na meta de destino (Esc cancela)' : 'Clique na meta de origem (Esc cancela)') :
+      'Arraste o fundo para mover · roda = zoom · duplo clique abre a meta · ? atalhos';
+
+    return '<div class="board-shell' + (ui.board.maximized ? ' is-maximized' : '') + '" data-board-project="' + escapeHtml(p.id) + '">' +
+      '<div class="board-viewport' + (b.snap ? ' show-grid' : '') + (ui.board.connectMode ? ' is-connecting' : '') + '" tabindex="0" aria-label="Quadro visual do projeto" style="background-size:' + grid + 'px ' + grid + 'px;background-position:' + vp.x + 'px ' + vp.y + 'px">' +
+      '<div class="board-world" style="transform:translate(' + vp.x + 'px,' + vp.y + 'px) scale(' + vp.zoom + ')">' +
+      b.groups.map(function (grp) { return boardGroupHtml(grp, rects, sel.type === 'group' && sel.ids.indexOf(grp.id) >= 0); }).join('') +
+      '<svg class="board-links" aria-hidden="true"><g data-links>' + links.svg + '</g><path class="board-link temp" data-board-temp d=""></path></svg>' +
+      visible.map(function (g) { return boardBlockHtml(p, g, b.blocks[g.id], selectedBlocks.indexOf(g.id) >= 0, selectedBlocks.length === 1); }).join('') +
+      '<div class="board-labels">' + links.labels + '</div>' +
+      '</div><div class="board-marquee" hidden></div>' +
+      (!goals.length ? '<div class="board-help board-overlay" style="left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%)">Este projeto ainda não tem metas — use "+ Meta".</div>' : '') +
+      '</div>' +
+      '<div class="board-overlay board-toolbar">' +
+      '<button type="button" class="btn btn-sm btn-primary" data-action="new-goal" data-project-id="' + escapeHtml(p.id) + '">+ Meta</button>' +
+      '<button type="button" class="btn btn-sm" data-action="board-add-group" title="Retângulo com título para agrupar metas">▭ Grupo</button>' +
+      '<button type="button" class="btn btn-sm' + (ui.board.connectMode ? ' active' : '') + '" data-action="board-connect-mode" title="Criar seta entre duas metas (ou arraste o ponto roxo de um bloco selecionado)">🔗 Conectar</button>' +
+      '<span class="sep"></span>' +
+      '<button type="button" class="btn btn-sm' + (ui.board.hiddenPanel ? ' active' : '') + '" data-action="board-hidden-toggle"' + (hiddenCount ? '' : ' disabled') + ' title="Blocos ocultos">👁 Ocultos (' + hiddenCount + ')</button>' +
+      '<button type="button" class="btn btn-sm' + (b.showDeps ? ' active' : '') + '" data-action="board-toggle-deps" title="Mostrar as dependências como setas tracejadas">⛓ Dependências</button>' +
+      '<button type="button" class="btn btn-sm' + (b.snap ? ' active' : '') + '" data-action="board-toggle-snap" title="Alinhar à grade">＃ Grade</button>' +
+      '<span class="sep"></span>' +
+      '<button type="button" class="btn btn-sm" data-action="board-fullscreen" title="' + (ui.board.maximized ? 'Sair da tela cheia (Esc)' : 'Tela cheia') + '">' + (ui.board.maximized ? '🗗 Sair da tela cheia' : '⛶ Tela cheia') + '</button>' +
+      '</div>' +
+      (ui.board.hiddenPanel && hiddenCount ? boardHiddenPanelHtml(p) : '') +
+      boardInspectorHtml(p, rects) +
+      '<div class="board-overlay board-zoom">' +
+      '<button type="button" class="icon-btn" data-action="board-zoom" data-dir="out" title="Diminuir zoom (−)" aria-label="Diminuir zoom">−</button>' +
+      '<button type="button" class="btn btn-sm btn-ghost zoom-label" data-action="board-zoom" data-dir="reset" title="Voltar a 100% (Shift 0)">' + Math.round(vp.zoom * 100) + '%</button>' +
+      '<button type="button" class="icon-btn" data-action="board-zoom" data-dir="in" title="Aumentar zoom (+)" aria-label="Aumentar zoom">+</button>' +
+      '<button type="button" class="icon-btn" data-action="board-fit" title="Ajustar tudo na tela (Shift 1)" aria-label="Ajustar na tela">⤢</button>' +
+      '</div>' +
+      '<div class="board-overlay board-help">' + escapeHtml(help) + '</div>' +
+      '</div>';
+  }
+
+  function boardHiddenPanelHtml(p) {
+    const hidden = goalsOfProject(p.id).filter(function (g) { return p.board.blocks[g.id] && p.board.blocks[g.id].hidden; });
+    return '<div class="board-overlay board-hidden-panel"><div class="row" style="padding:4px 8px 8px"><b>Blocos ocultos</b><span class="spacer"></span>' +
+      '<button type="button" class="btn btn-sm" data-action="board-unhide-all">Mostrar todos</button></div>' +
+      hidden.map(function (g) {
+        return '<div class="board-hidden-item"><span>' + escapeHtml(g.title) + '</span><button type="button" class="btn btn-sm" data-action="board-unhide" data-id="' + escapeHtml(g.id) + '">Mostrar</button></div>';
+      }).join('') + '</div>';
+  }
+
+  function swatchesHtml(current, allowAuto) {
+    return '<div class="swatches">' + (allowAuto ? '<button type="button" class="swatch' + (!current ? ' selected' : '') + '" data-action="board-color" data-color="" title="Automática (pela situação)">A</button>' : '') +
+      BOARD_COLORS.map(function (c) {
+        return '<button type="button" class="swatch' + (current === c ? ' selected' : '') + '" data-action="board-color" data-color="' + c + '" style="background:' + c + '" aria-label="Cor ' + c + '"></button>';
+      }).join('') + '</div>';
+  }
+
+  function boardInspectorHtml(p, rects) {
+    const sel = ui.board.selection;
+    const b = p.board;
+    if (sel.type === 'blocks') {
+      const ids = sel.ids.filter(function (id) { return rects[id]; });
+      if (!ids.length) return '';
+      const blocks = ids.map(function (id) { return b.blocks[id]; });
+      const allLocked = blocks.every(function (bl) { return bl.locked; });
+      const common = function (key) { return blocks.every(function (bl) { return bl[key] === blocks[0][key]; }) ? blocks[0][key] : null; };
+      let head;
+      if (ids.length === 1) {
+        const g = findGoal(ids[0]);
+        head = '<h4>' + escapeHtml(g.title) + '</h4>' +
+          '<div class="row-wrap">' + statusBadge(g.status) + difficultyBadge(g.difficulty) + lockChipHtml(g) + '</div>' +
+          '<label class="field"><span>Status</span><select class="select select-sm" data-change="goal-status" data-id="' + escapeHtml(g.id) + '">' + optionsHtml(STATUSES, g.status) + '</select></label>' +
+          '<div class="row-wrap"><button type="button" class="btn btn-sm" data-action="goal-open" data-id="' + escapeHtml(g.id) + '">↗ Abrir meta</button>' +
+          '<button type="button" class="btn btn-sm" data-action="board-connect-from" data-id="' + escapeHtml(g.id) + '">🔗 Conectar a…</button></div>';
+      } else {
+        head = '<h4>' + ids.length + ' blocos selecionados</h4><button type="button" class="btn btn-sm" data-action="board-group-selection">▭ Agrupar em um grupo</button>';
+      }
+      return '<div class="board-overlay board-inspector">' + head +
+        '<div><div class="field-label">Cor</div>' + swatchesHtml(common('color'), true) + '</div>' +
+        '<div><div class="field-label">Formato</div><div class="shape-options">' + BLOCK_SHAPES.map(function (sh) {
+          return '<button type="button" class="shape-option' + (common('shape') === sh.id ? ' selected' : '') + '" data-action="board-shape" data-shape="' + sh.id + '">' + escapeHtml(sh.label) + '</button>';
+        }).join('') + '</div></div>' +
+        '<div class="row-wrap"><button type="button" class="btn btn-sm" data-action="board-lock">' + (allLocked ? '📌 Soltar posição' : '📌 Fixar posição') + '</button>' +
+        '<button type="button" class="btn btn-sm" data-action="board-hide">👁 Ocultar</button></div></div>';
+    }
+    if (sel.type === 'group') {
+      const grp = findById(b.groups, sel.ids[0]);
+      if (!grp) return '';
+      const members = groupMembers(grp, rects);
+      const prog = groupProgress(members);
+      return '<div class="board-overlay board-inspector"><h4>Grupo</h4>' +
+        '<label class="field"><span>Título</span><input class="input" maxlength="' + BOARD_LABEL_MAX + '" data-change="board-group-title" value="' + escapeHtml(grp.title) + '"></label>' +
+        '<div><div class="field-label">Progresso das metas dentro</div>' + (prog.total ? '<div class="small" style="margin:4px 0">' + prog.done + '/' + prog.total + ' concluídas · ' + formatPercent(prog.pct) + '</div>' + progressBarHtml(prog.pct) : '<div class="small muted">Arraste metas para dentro do grupo.</div>') + '</div>' +
+        '<div><div class="field-label">Cor</div>' + swatchesHtml(grp.color, false) + '</div>' +
+        '<div class="row-wrap"><button type="button" class="btn btn-sm" data-action="board-lock">' + (grp.locked ? '📌 Soltar posição' : '📌 Fixar posição') + '</button>' +
+        (members.length ? '<button type="button" class="btn btn-sm" data-action="board-select-members">Selecionar metas</button>' : '') + '</div>' +
+        '<button type="button" class="btn btn-sm btn-danger" data-action="board-delete">🗑️ Excluir grupo (as metas ficam)</button></div>';
+    }
+    if (sel.type === 'conn') {
+      const c = findById(b.connections, sel.ids[0]);
+      if (!c) return '';
+      const from = findGoal(c.from);
+      const to = findGoal(c.to);
+      return '<div class="board-overlay board-inspector"><h4>Conexão</h4>' +
+        '<div class="small">' + escapeHtml(from ? from.title : '?') + ' → ' + escapeHtml(to ? to.title : '?') + '</div>' +
+        '<label class="field"><span>Rótulo</span><input class="input" maxlength="' + BOARD_LABEL_MAX + '" data-change="board-conn-label" value="' + escapeHtml(c.label) + '" placeholder="Ex.: leva a, alimenta, depois…"></label>' +
+        '<div><div class="field-label">Cor</div>' + swatchesHtml(c.color, true) + '</div>' +
+        '<div class="row-wrap"><button type="button" class="btn btn-sm" data-action="board-reverse">⇄ Inverter direção</button>' +
+        '<button type="button" class="btn btn-sm btn-danger" data-action="board-delete">🗑️ Excluir</button></div></div>';
+    }
+    return '';
+  }
+
+  // --- Seleção e mutações ---
+
+  function setBoardSelection(type, ids) {
+    ui.board.selection = { type: ids && ids.length ? type : null, ids: ids || [] };
+    renderView();
+  }
+
+  function boardProject() {
+    return ui.board.projectId ? findProject(ui.board.projectId) : null;
+  }
+
+  function mutateBoard(label, fn, options) {
+    const pid = ui.board.projectId;
+    return commit(label, function (s) {
+      const p = findById(s.projects, pid);
+      if (!p) throw new Error('Projeto não encontrado.');
+      fn(p.board, p, s);
+    }, options);
+  }
+
+  function addBoardConnection(from, to) {
+    const p = boardProject();
+    if (!p || from === to) return;
+    const existing = p.board.connections.filter(function (c) { return c.from === from && c.to === to; })[0];
+    if (existing) {
+      showToast('Essas metas já estão conectadas.', { type: 'info' });
+      setBoardSelection('conn', [existing.id]);
+      return;
+    }
+    const id = uid();
+    ui.board.connectMode = false;
+    ui.board.connectFrom = null;
+    ui.board.selection = { type: 'conn', ids: [id] };
+    mutateBoard('Conectar metas', function (b) { b.connections.push({ id: id, from: from, to: to, label: '', color: '' }); });
+  }
+
+  function boardAction(action, el) {
+    const p = boardProject();
+    if (!p) return;
+    const sel = ui.board.selection;
+    const b = p.board;
+    switch (action) {
+      case 'board-add-group': {
+        const view = boardViewportEl();
+        const size = view ? view.getBoundingClientRect() : { width: 1000, height: 600 };
+        const vp = currentBoardViewport(p);
+        const id = uid();
+        const w = 440;
+        const h = 300;
+        ui.board.selection = { type: 'group', ids: [id] };
+        mutateBoard('Criar grupo', function (bd) {
+          bd.groups.push({ id: id, x: boardSnap(bd, (size.width / 2 - vp.x) / vp.zoom - w / 2), y: boardSnap(bd, (size.height / 2 - vp.y) / vp.zoom - h / 2), w: w, h: h, title: 'Novo grupo', color: BOARD_GROUP_DEFAULT_COLOR, locked: false });
+        });
+        focusBoardInput('board-group-title');
+        break;
+      }
+      case 'board-group-selection': {
+        const rects = boardRects(p);
+        const ids = sel.ids.filter(function (id) { return rects[id]; });
+        if (!ids.length) return;
+        const minX = Math.min.apply(null, ids.map(function (id) { return rects[id].x; }));
+        const minY = Math.min.apply(null, ids.map(function (id) { return rects[id].y; }));
+        const maxX = Math.max.apply(null, ids.map(function (id) { return rects[id].x + rects[id].w; }));
+        const maxY = Math.max.apply(null, ids.map(function (id) { return rects[id].y + rects[id].h; }));
+        const id = uid();
+        ui.board.selection = { type: 'group', ids: [id] };
+        mutateBoard('Agrupar metas', function (bd) {
+          bd.groups.push({ id: id, x: minX - 20, y: minY - 60, w: Math.max(BOARD_MIN_GROUP_W, maxX - minX + 40), h: Math.max(BOARD_MIN_GROUP_H, maxY - minY + 80), title: 'Grupo', color: BOARD_GROUP_DEFAULT_COLOR, locked: false });
+        });
+        focusBoardInput('board-group-title');
+        break;
+      }
+      case 'board-connect-mode':
+        ui.board.connectMode = !ui.board.connectMode;
+        ui.board.connectFrom = null;
+        renderView();
+        break;
+      case 'board-connect-from':
+        ui.board.connectMode = true;
+        ui.board.connectFrom = el.getAttribute('data-id');
+        renderView();
+        break;
+      case 'board-hidden-toggle':
+        ui.board.hiddenPanel = !ui.board.hiddenPanel;
+        renderView();
+        break;
+      case 'board-unhide':
+        mutateBoard('Mostrar bloco', function (bd) { if (bd.blocks[el.getAttribute('data-id')]) bd.blocks[el.getAttribute('data-id')].hidden = false; });
+        break;
+      case 'board-unhide-all':
+        ui.board.hiddenPanel = false;
+        mutateBoard('Mostrar todos os blocos', function (bd) { Object.keys(bd.blocks).forEach(function (id) { bd.blocks[id].hidden = false; }); });
+        break;
+      case 'board-toggle-deps':
+        mutateBoard('Mostrar dependências', function (bd) { bd.showDeps = !bd.showDeps; }, { undoable: false });
+        break;
+      case 'board-toggle-snap':
+        mutateBoard('Alinhar à grade', function (bd) { bd.snap = !bd.snap; }, { undoable: false });
+        break;
+      case 'board-fullscreen':
+        toggleBoardFullscreen();
+        break;
+      case 'board-zoom': {
+        const dir = el.getAttribute('data-dir');
+        zoomBoardBy(p, dir === 'in' ? BOARD_ZOOM_STEP : dir === 'out' ? 1 / BOARD_ZOOM_STEP : 1 / currentBoardViewport(p).zoom);
+        break;
+      }
+      case 'board-fit':
+        fitBoard(p);
+        break;
+      case 'board-color': {
+        const color = el.getAttribute('data-color') || '';
+        if (sel.type === 'blocks') mutateBoard('Cor dos blocos', function (bd) { sel.ids.forEach(function (id) { if (bd.blocks[id]) bd.blocks[id].color = color; }); });
+        else if (sel.type === 'group') mutateBoard('Cor do grupo', function (bd) { const g = findById(bd.groups, sel.ids[0]); if (g) g.color = color || BOARD_GROUP_DEFAULT_COLOR; });
+        else if (sel.type === 'conn') mutateBoard('Cor da conexão', function (bd) { const c = findById(bd.connections, sel.ids[0]); if (c) c.color = color; });
+        break;
+      }
+      case 'board-shape':
+        mutateBoard('Formato dos blocos', function (bd) { sel.ids.forEach(function (id) { if (bd.blocks[id]) bd.blocks[id].shape = el.getAttribute('data-shape'); }); });
+        break;
+      case 'board-lock':
+        if (sel.type === 'blocks') {
+          const lock = !sel.ids.every(function (id) { return b.blocks[id] && b.blocks[id].locked; });
+          mutateBoard(lock ? 'Fixar blocos' : 'Soltar blocos', function (bd) { sel.ids.forEach(function (id) { if (bd.blocks[id]) bd.blocks[id].locked = lock; }); });
+        } else if (sel.type === 'group') {
+          mutateBoard('Fixar grupo', function (bd) { const g = findById(bd.groups, sel.ids[0]); if (g) g.locked = !g.locked; });
+        }
+        break;
+      case 'board-hide':
+        hideBoardSelection();
+        break;
+      case 'board-select-members': {
+        const grp = findById(b.groups, sel.ids[0]);
+        if (grp) setBoardSelection('blocks', groupMembers(grp, boardRects(p)));
+        break;
+      }
+      case 'board-reverse':
+        mutateBoard('Inverter conexão', function (bd) { const c = findById(bd.connections, sel.ids[0]); if (c) { const f = c.from; c.from = c.to; c.to = f; } });
+        break;
+      case 'board-delete':
+        deleteBoardSelection();
+        break;
+      default:
+        break;
+    }
+  }
+
+  function focusBoardInput(name) {
+    setTimeout(function () {
+      const input = document.querySelector('[data-change="' + name + '"]');
+      if (input) {
+        input.focus();
+        input.select();
+      }
+    }, 30);
+  }
+
+  function hideBoardSelection() {
+    const sel = ui.board.selection;
+    if (sel.type !== 'blocks' || !sel.ids.length) return;
+    const ids = sel.ids.slice();
+    ui.board.selection = { type: null, ids: [] };
+    mutateBoard(ids.length > 1 ? 'Ocultar blocos' : 'Ocultar bloco', function (bd) { ids.forEach(function (id) { if (bd.blocks[id]) bd.blocks[id].hidden = true; }); });
+    showToast('👁 ' + ids.length + ' ' + plural(ids.length, 'bloco oculto', 'blocos ocultos') + '. Mostre de novo em "Ocultos".', { type: 'info', action: { label: 'Desfazer', onClick: performUndo } });
+  }
+
+  function deleteBoardSelection() {
+    const sel = ui.board.selection;
+    if (sel.type === 'blocks') {
+      hideBoardSelection();
+      return;
+    }
+    if (!sel.type) return;
+    const id = sel.ids[0];
+    ui.board.selection = { type: null, ids: [] };
+    if (sel.type === 'group') mutateBoard('Excluir grupo', function (bd) { bd.groups = bd.groups.filter(function (g) { return g.id !== id; }); });
+    else mutateBoard('Excluir conexão', function (bd) { bd.connections = bd.connections.filter(function (c) { return c.id !== id; }); });
+  }
+
+  function changeBoardText(kind, value) {
+    const sel = ui.board.selection;
+    const text = String(value || '').trim().slice(0, BOARD_LABEL_MAX);
+    if (kind === 'board-group-title' && sel.type === 'group') {
+      mutateBoard('Renomear grupo', function (bd) { const g = findById(bd.groups, sel.ids[0]); if (g) g.title = text || 'Grupo'; });
+    } else if (kind === 'board-conn-label' && sel.type === 'conn') {
+      mutateBoard('Rótulo da conexão', function (bd) { const c = findById(bd.connections, sel.ids[0]); if (c) c.label = text; });
+    }
+  }
+
+  // --- Câmera: zoom, ajustar, salvar ---
+
+  function applyBoardViewport(vp) {
+    const view = boardViewportEl();
+    const world = document.querySelector('.board-world');
+    if (!view || !world) return;
+    world.style.transform = 'translate(' + vp.x + 'px,' + vp.y + 'px) scale(' + vp.zoom + ')';
+    const grid = BOARD_GRID * vp.zoom;
+    view.style.backgroundSize = grid + 'px ' + grid + 'px';
+    view.style.backgroundPosition = vp.x + 'px ' + vp.y + 'px';
+    const label = document.querySelector('.board-zoom .zoom-label');
+    if (label) label.textContent = Math.round(vp.zoom * 100) + '%';
+  }
+
+  function saveBoardViewport(pid, vp) {
+    clearTimeout(boardViewportTimer);
+    boardViewportTimer = null;
+    boardLiveVp = null;
+    const target = { x: Math.round(vp.x), y: Math.round(vp.y), zoom: Math.round(vp.zoom * 1000) / 1000 };
+    const p = findProject(pid);
+    if (!p || (p.board.viewport.x === target.x && p.board.viewport.y === target.y && p.board.viewport.zoom === target.zoom)) return;
+    commit('Mover visão', function (s) {
+      const proj = findById(s.projects, pid);
+      if (proj) proj.board.viewport = target;
+    }, { undoable: false });
+  }
+
+  function scheduleBoardViewportSave(pid, vp) {
+    boardLiveVp = { pid: pid, vp: vp };
+    clearTimeout(boardViewportTimer);
+    boardViewportTimer = setTimeout(function () { saveBoardViewport(pid, vp); }, BOARD_VIEWPORT_SAVE_MS);
+  }
+
+  function zoomViewportAt(vp, factor, sx, sy) {
+    const nz = clamp(vp.zoom * factor, BOARD_ZOOM_MIN, BOARD_ZOOM_MAX);
+    const k = nz / vp.zoom;
+    vp.x = sx - (sx - vp.x) * k;
+    vp.y = sy - (sy - vp.y) * k;
+    vp.zoom = nz;
+  }
+
+  function zoomBoardBy(p, factor) {
+    const view = boardViewportEl();
+    if (!view) return;
+    const r = view.getBoundingClientRect();
+    const vp = Object.assign({}, currentBoardViewport(p));
+    zoomViewportAt(vp, factor, r.width / 2, r.height / 2);
+    applyBoardViewport(vp);
+    saveBoardViewport(p.id, vp);
+  }
+
+  function fitBoard(p) {
+    const view = boardViewportEl();
+    if (!view) return;
+    const r = view.getBoundingClientRect();
+    const rects = boardRects(p);
+    const boxes = Object.keys(rects).map(function (id) { return rects[id]; }).concat(p.board.groups);
+    if (!boxes.length) {
+      saveBoardViewport(p.id, createEmptyBoard().viewport);
+      return;
+    }
+    const minX = Math.min.apply(null, boxes.map(function (b) { return b.x; }));
+    const minY = Math.min.apply(null, boxes.map(function (b) { return b.y; }));
+    const maxX = Math.max.apply(null, boxes.map(function (b) { return b.x + b.w; }));
+    const maxY = Math.max.apply(null, boxes.map(function (b) { return b.y + b.h; }));
+    const zoom = clamp(Math.min((r.width - BOARD_FIT_PADDING * 2) / (maxX - minX), (r.height - BOARD_FIT_PADDING * 2) / (maxY - minY), 1.25), BOARD_ZOOM_MIN, BOARD_ZOOM_MAX);
+    const vp = { x: (r.width - (maxX - minX) * zoom) / 2 - minX * zoom, y: (r.height - (maxY - minY) * zoom) / 2 - minY * zoom, zoom: zoom };
+    applyBoardViewport(vp);
+    saveBoardViewport(p.id, vp);
+  }
+
+  // --- Tela cheia: o quadro cobre a janela e, se o navegador deixar, entra em tela cheia de verdade ---
+
+  function toggleBoardFullscreen() {
+    ui.board.maximized = !ui.board.maximized;
+    try {
+      if (ui.board.maximized && document.documentElement.requestFullscreen && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function () { return null; });
+      } else if (!ui.board.maximized && document.fullscreenElement) {
+        document.exitFullscreen().catch(function () { return null; });
+      }
+    } catch (err) {
+      // Sem API de tela cheia: fica só o modo maximizado (CSS).
+    }
+    renderView();
+    if (!ui.board.maximized) scrollBoardIntoView();
+  }
+
+  function exitBoardMaximized() {
+    if (!ui.board.maximized) return;
+    ui.board.maximized = false;
+    if (document.fullscreenElement) document.exitFullscreen().catch(function () { return null; });
+  }
+
+  // --- Gestos com o ponteiro ---
+
+  function worldPoint(view, vp, clientX, clientY) {
+    const r = view.getBoundingClientRect();
+    return { x: (clientX - r.left - vp.x) / vp.zoom, y: (clientY - r.top - vp.y) / vp.zoom };
+  }
+
+  function onBoardPointerDown(e) {
+    if (e.button !== 0 && e.button !== 1) return;
+    const view = e.target.closest ? e.target.closest('.board-viewport') : null;
+    if (!view) return;
+    const shell = view.closest('.board-shell');
+    const p = findProject(shell.getAttribute('data-board-project'));
+    if (!p) return;
+    ui.board.projectId = p.id;
+    const vp = Object.assign({}, currentBoardViewport(p));
+    const base = { pid: p.id, startX: e.clientX, startY: e.clientY, moved: false, vp: vp };
+    view.focus({ preventScroll: true });
+    hideTooltip();
+
+    if (e.button === 1) {
+      e.preventDefault();
+      boardGesture = Object.assign(base, { type: 'pan', startVp: Object.assign({}, vp) });
+      view.classList.add('is-panning');
+      return;
+    }
+    const resize = e.target.closest('[data-board-resize]');
+    const connect = e.target.closest('[data-board-connect]');
+    const blockEl = e.target.closest('.board-block');
+    const groupEl = e.target.closest('[data-group-drag]') ? e.target.closest('.board-group') : null;
+    const connEl = e.target.closest('[data-conn-id]');
+    e.preventDefault();
+
+    if (resize) {
+      const owner = resize.getAttribute('data-board-resize');
+      if (owner === 'block') {
+        const id = resize.closest('.board-block').getAttribute('data-block-id');
+        const bl = p.board.blocks[id];
+        boardGesture = Object.assign(base, { type: 'resize-block', id: id, start: { w: bl.w, h: bl.h } });
+      } else {
+        const gid = resize.closest('.board-group').getAttribute('data-group-id');
+        const grp = findById(p.board.groups, gid);
+        boardGesture = Object.assign(base, { type: 'resize-group', id: gid, start: { w: grp.w, h: grp.h } });
+      }
+      return;
+    }
+    if (connect && blockEl) {
+      boardGesture = Object.assign(base, { type: 'connect', from: blockEl.getAttribute('data-block-id') });
+      return;
+    }
+    if (blockEl) {
+      const id = blockEl.getAttribute('data-block-id');
+      // Tempo do evento (monotônico) — não o relógio do sistema.
+      const now = e.timeStamp;
+      if (boardLastClick.id === id && now - boardLastClick.at < BOARD_DOUBLE_CLICK_MS) {
+        boardLastClick = { id: null, at: 0 };
+        openGoalDetail(id);
+        return;
+      }
+      boardLastClick = { id: id, at: now };
+      if (ui.board.connectMode) {
+        if (!ui.board.connectFrom) {
+          ui.board.connectFrom = id;
+          renderView();
+        } else if (ui.board.connectFrom !== id) {
+          addBoardConnection(ui.board.connectFrom, id);
+        }
+        return;
+      }
+      const sel = ui.board.selection;
+      let ids = sel.type === 'blocks' ? sel.ids.slice() : [];
+      if (e.shiftKey) {
+        const i = ids.indexOf(id);
+        if (i >= 0) ids.splice(i, 1);
+        else ids.push(id);
+        setBoardSelection('blocks', ids);
+        return;
+      }
+      const wasSelected = ids.indexOf(id) >= 0;
+      if (!wasSelected) ids = [id];
+      setBoardSelection('blocks', ids);
+      const items = ids.filter(function (bid) { return p.board.blocks[bid] && !p.board.blocks[bid].locked; }).map(function (bid) {
+        return { id: bid, x: p.board.blocks[bid].x, y: p.board.blocks[bid].y };
+      });
+      if (!items.length) return;
+      boardGesture = Object.assign(base, { type: 'move', id: id, items: items, collapseTo: wasSelected && ids.length > 1 ? id : null });
+      return;
+    }
+    if (groupEl) {
+      const gid = groupEl.getAttribute('data-group-id');
+      setBoardSelection('group', [gid]);
+      const grp = findById(p.board.groups, gid);
+      if (!grp || grp.locked) return;
+      const rects = boardRects(p);
+      const members = groupMembers(grp, rects).filter(function (id) { return !p.board.blocks[id].locked; }).map(function (id) {
+        return { id: id, x: p.board.blocks[id].x, y: p.board.blocks[id].y };
+      });
+      boardGesture = Object.assign(base, { type: 'group-move', id: gid, start: { x: grp.x, y: grp.y }, items: members });
+      return;
+    }
+    if (connEl) {
+      setBoardSelection('conn', [connEl.getAttribute('data-conn-id')]);
+      return;
+    }
+    // Fundo: Shift = seleção por área; senão, arrastar a visão.
+    if (ui.board.connectMode) {
+      ui.board.connectMode = false;
+      ui.board.connectFrom = null;
+    }
+    if (e.shiftKey) {
+      boardGesture = Object.assign(base, { type: 'marquee' });
+      return;
+    }
+    if (ui.board.selection.type || ui.board.hiddenPanel) {
+      ui.board.hiddenPanel = false;
+      setBoardSelection(null, []);
+    }
+    boardGesture = Object.assign(base, { type: 'pan', startVp: Object.assign({}, vp) });
+    const freshView = boardViewportEl();
+    if (freshView) freshView.classList.add('is-panning');
+  }
+
+  function onBoardPointerMove(e) {
+    const g = boardGesture;
+    if (!g) return;
+    const dxs = e.clientX - g.startX;
+    const dys = e.clientY - g.startY;
+    if (!g.moved && Math.hypot(dxs, dys) < BOARD_DRAG_THRESHOLD) return;
+    g.moved = true;
+    const p = findProject(g.pid);
+    const view = boardViewportEl();
+    if (!p || !view) return;
+    const dx = dxs / g.vp.zoom;
+    const dy = dys / g.vp.zoom;
+    const b = p.board;
+    if (g.type === 'pan') {
+      g.vp.x = g.startVp.x + dxs;
+      g.vp.y = g.startVp.y + dys;
+      applyBoardViewport(g.vp);
+    } else if (g.type === 'move' || g.type === 'group-move') {
+      // Só o elemento arrastado (bloco ou grupo) alinha à grade; os demais seguem o mesmo deslocamento.
+      const anchor = g.type === 'group-move' ? g.start : g.items.filter(function (it) { return it.id === g.id; })[0] || g.items[0];
+      const ddx = boardSnap(b, anchor.x + dx) - anchor.x;
+      const ddy = boardSnap(b, anchor.y + dy) - anchor.y;
+      const overrides = {};
+      g.items.forEach(function (it) {
+        const pos = { x: it.x + ddx, y: it.y + ddy };
+        overrides[it.id] = pos;
+        const el = document.querySelector('.board-block[data-block-id="' + it.id + '"]');
+        if (el) {
+          el.style.left = pos.x + 'px';
+          el.style.top = pos.y + 'px';
+        }
+      });
+      if (g.type === 'group-move') {
+        g.pos = { x: g.start.x + ddx, y: g.start.y + ddy };
+        const gel = document.querySelector('.board-group[data-group-id="' + g.id + '"]');
+        if (gel) {
+          gel.style.left = g.pos.x + 'px';
+          gel.style.top = g.pos.y + 'px';
+        }
+      }
+      g.overrides = overrides;
+      refreshBoardLinks(p, boardRects(p, overrides));
+    } else if (g.type === 'resize-block') {
+      const size = { w: Math.max(BOARD_MIN_BLOCK_W, boardSnap(b, g.start.w + dx)), h: Math.max(BOARD_MIN_BLOCK_H, boardSnap(b, g.start.h + dy)) };
+      g.size = size;
+      const el = document.querySelector('.board-block[data-block-id="' + g.id + '"]');
+      if (el) {
+        el.style.width = size.w + 'px';
+        el.style.height = size.h + 'px';
+      }
+      const overrides = {};
+      overrides[g.id] = size;
+      refreshBoardLinks(p, boardRects(p, overrides));
+    } else if (g.type === 'resize-group') {
+      g.size = { w: Math.max(BOARD_MIN_GROUP_W, boardSnap(b, g.start.w + dx)), h: Math.max(BOARD_MIN_GROUP_H, boardSnap(b, g.start.h + dy)) };
+      const gel = document.querySelector('.board-group[data-group-id="' + g.id + '"]');
+      if (gel) {
+        gel.style.width = g.size.w + 'px';
+        gel.style.height = g.size.h + 'px';
+      }
+    } else if (g.type === 'connect') {
+      const rects = boardRects(p);
+      const from = rects[g.from];
+      const temp = document.querySelector('[data-board-temp]');
+      if (from && temp) {
+        const pt = worldPoint(view, g.vp, e.clientX, e.clientY);
+        const a = rectEdgePoint(from, pt.x, pt.y);
+        temp.setAttribute('d', 'M' + a.x + ' ' + a.y + 'L' + pt.x + ' ' + pt.y);
+      }
+    } else if (g.type === 'marquee') {
+      const r = view.getBoundingClientRect();
+      const box = document.querySelector('.board-marquee');
+      const x1 = Math.min(g.startX, e.clientX) - r.left;
+      const y1 = Math.min(g.startY, e.clientY) - r.top;
+      g.box = { x1: x1, y1: y1, x2: Math.max(g.startX, e.clientX) - r.left, y2: Math.max(g.startY, e.clientY) - r.top };
+      box.hidden = false;
+      box.style.left = x1 + 'px';
+      box.style.top = y1 + 'px';
+      box.style.width = (g.box.x2 - x1) + 'px';
+      box.style.height = (g.box.y2 - y1) + 'px';
+    }
+  }
+
+  function onBoardPointerUp(e) {
+    const g = boardGesture;
+    if (!g) return;
+    boardGesture = null;
+    // Um arrasto não conta como 1º clique de um duplo clique.
+    if (g.moved) boardLastClick = { id: null, at: 0 };
+    const view = boardViewportEl();
+    if (view) view.classList.remove('is-panning');
+    const p = findProject(g.pid);
+    if (!p) return;
+    if (g.type === 'pan') {
+      if (g.moved) saveBoardViewport(p.id, g.vp);
+      return;
+    }
+    if (g.type === 'move') {
+      if (!g.moved) {
+        if (g.collapseTo) setBoardSelection('blocks', [g.collapseTo]);
+        return;
+      }
+      const pos = g.overrides || {};
+      mutateBoard(g.items.length > 1 ? 'Mover blocos' : 'Mover bloco', function (bd) {
+        Object.keys(pos).forEach(function (id) {
+          if (!bd.blocks[id]) return;
+          bd.blocks[id].x = pos[id].x;
+          bd.blocks[id].y = pos[id].y;
+        });
+      });
+      return;
+    }
+    if (g.type === 'group-move') {
+      if (!g.moved || !g.pos) return;
+      const pos = g.overrides || {};
+      mutateBoard('Mover grupo', function (bd) {
+        const grp = findById(bd.groups, g.id);
+        if (grp) {
+          grp.x = g.pos.x;
+          grp.y = g.pos.y;
+        }
+        Object.keys(pos).forEach(function (id) {
+          if (!bd.blocks[id]) return;
+          bd.blocks[id].x = pos[id].x;
+          bd.blocks[id].y = pos[id].y;
+        });
+      });
+      return;
+    }
+    if (g.type === 'resize-block' || g.type === 'resize-group') {
+      if (!g.moved || !g.size) return;
+      mutateBoard(g.type === 'resize-block' ? 'Redimensionar bloco' : 'Redimensionar grupo', function (bd) {
+        const target = g.type === 'resize-block' ? bd.blocks[g.id] : findById(bd.groups, g.id);
+        if (target) {
+          target.w = g.size.w;
+          target.h = g.size.h;
+        }
+      });
+      return;
+    }
+    if (g.type === 'connect') {
+      const temp = document.querySelector('[data-board-temp]');
+      if (temp) temp.setAttribute('d', '');
+      const under = document.elementFromPoint(e.clientX, e.clientY);
+      const target = under && under.closest ? under.closest('.board-block') : null;
+      if (target) addBoardConnection(g.from, target.getAttribute('data-block-id'));
+      return;
+    }
+    if (g.type === 'marquee') {
+      const box = document.querySelector('.board-marquee');
+      if (box) box.hidden = true;
+      if (!g.box) return;
+      const a = { x: (g.box.x1 - g.vp.x) / g.vp.zoom, y: (g.box.y1 - g.vp.y) / g.vp.zoom };
+      const bpt = { x: (g.box.x2 - g.vp.x) / g.vp.zoom, y: (g.box.y2 - g.vp.y) / g.vp.zoom };
+      const rects = boardRects(p);
+      const hit = Object.keys(rects).filter(function (id) {
+        const r = rects[id];
+        return r.x < bpt.x && r.x + r.w > a.x && r.y < bpt.y && r.y + r.h > a.y;
+      });
+      const current = ui.board.selection.type === 'blocks' ? ui.board.selection.ids : [];
+      setBoardSelection('blocks', Array.from(new Set(current.concat(hit))));
+    }
+  }
+
+  function onBoardWheel(e) {
+    const view = e.target.closest ? e.target.closest('.board-viewport') : null;
+    if (!view) return;
+    const p = findProject(view.closest('.board-shell').getAttribute('data-board-project'));
+    if (!p) return;
+    e.preventDefault();
+    const vp = Object.assign({}, currentBoardViewport(p));
+    if (e.shiftKey) {
+      vp.x -= e.deltaY || e.deltaX;
+    } else {
+      const r = view.getBoundingClientRect();
+      const delta = e.deltaY * (e.deltaMode === 1 ? 16 : 1);
+      zoomViewportAt(vp, Math.exp(-delta * BOARD_WHEEL_ZOOM), e.clientX - r.left, e.clientY - r.top);
+    }
+    applyBoardViewport(vp);
+    scheduleBoardViewportSave(p.id, vp);
+  }
+
+  function isBoardActive() {
+    return ui.route.name === 'project' && state.settings.projectView === 'board' && Boolean(findProject(ui.route.id)) && Boolean(boardViewportEl());
+  }
+
+  // Teclado do quadro (chamado antes dos atalhos gerais). Retorna true se tratou a tecla.
+  function handleBoardKey(e) {
+    if (!isBoardActive()) return false;
+    const p = findProject(ui.route.id);
+    ui.board.projectId = p.id;
+    const sel = ui.board.selection;
+    const key = e.key;
+    if (key === 'Escape') {
+      if (ui.board.connectMode || sel.type || ui.board.hiddenPanel) {
+        ui.board.connectMode = false;
+        ui.board.connectFrom = null;
+        ui.board.hiddenPanel = false;
+        setBoardSelection(null, []);
+      } else if (ui.board.maximized) {
+        exitBoardMaximized();
+        renderView();
+        scrollBoardIntoView();
+      }
+      return true;
+    }
+    if (key === 'Delete' || key === 'Backspace') {
+      if (!sel.type) return false;
+      e.preventDefault();
+      deleteBoardSelection();
+      return true;
+    }
+    const arrows = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    if (arrows[key] && sel.type === 'blocks' && sel.ids.length) {
+      e.preventDefault();
+      const d = arrows[key];
+      mutateBoard('Mover bloco', function (bd) {
+        sel.ids.forEach(function (id) {
+          const bl = bd.blocks[id];
+          if (!bl || bl.locked) return;
+          bl.x += d[0] * BOARD_GRID;
+          bl.y += d[1] * BOARD_GRID;
+        });
+      });
+      return true;
+    }
+    if (e.shiftKey && e.code === 'Digit1') {
+      e.preventDefault();
+      fitBoard(p);
+      return true;
+    }
+    if (e.shiftKey && e.code === 'Digit0') {
+      e.preventDefault();
+      zoomBoardBy(p, 1 / currentBoardViewport(p).zoom);
+      return true;
+    }
+    if (key === '+' || key === '=') {
+      e.preventDefault();
+      zoomBoardBy(p, BOARD_ZOOM_STEP);
+      return true;
+    }
+    if (key === '-' || key === '_') {
+      e.preventDefault();
+      zoomBoardBy(p, 1 / BOARD_ZOOM_STEP);
+      return true;
+    }
+    return false;
+  }
+
+  function bindBoardEvents() {
+    document.addEventListener('pointerdown', onBoardPointerDown);
+    window.addEventListener('pointermove', onBoardPointerMove);
+    window.addEventListener('pointerup', onBoardPointerUp);
+    window.addEventListener('pointercancel', onBoardPointerUp);
+    document.addEventListener('wheel', onBoardWheel, { passive: false });
+    document.addEventListener('fullscreenchange', function () {
+      if (!document.fullscreenElement && ui.board.maximized) {
+        ui.board.maximized = false;
+        if (isBoardActive()) {
+          renderView();
+          scrollBoardIntoView();
+        }
+      }
+    });
   }
 
   /* =====================================================================
@@ -5454,6 +6641,11 @@
         const target = findById(s.goals, goalId);
         s.goals = s.goals.filter(function (x) { return x.id !== goalId; });
         s.goals.forEach(function (x) { x.dependsOn = x.dependsOn.filter(function (d) { return d !== goalId; }); });
+        const owner = target ? findById(s.projects, target.projectId) : null;
+        if (owner) {
+          delete owner.board.blocks[goalId];
+          owner.board.connections = owner.board.connections.filter(function (c) { return c.from !== goalId && c.to !== goalId; });
+        }
         if (target) touchProject(s, target.projectId);
         addActivity(s, 'goal_delete', 'Meta excluída: "' + title + '"');
       });
@@ -5741,6 +6933,7 @@
   function handleRouteChange() {
     const prev = ui.route;
     ui.route = parseRoute();
+    if (ui.route.name !== 'project' || ui.route.id !== prev.id) exitBoardMaximized();
     if (ui.route.name === 'project' && (prev.name !== 'project' || prev.id !== ui.route.id)) ui.detailStatus = 'all';
     closeAllModals();
     renderApp();
@@ -5805,6 +6998,27 @@
       case 'log-delete': deleteLogEntry(id, el.getAttribute('data-entry')); break;
       case 'open-photo': openPhoto(el.getAttribute('data-scope'), id, Number(el.getAttribute('data-index')) || 0); break;
       case 'set-view': setGoalView(el.getAttribute('data-scope'), el.getAttribute('data-view')); break;
+      case 'board-add-group':
+      case 'board-group-selection':
+      case 'board-connect-mode':
+      case 'board-connect-from':
+      case 'board-hidden-toggle':
+      case 'board-unhide':
+      case 'board-unhide-all':
+      case 'board-toggle-deps':
+      case 'board-toggle-snap':
+      case 'board-fullscreen':
+      case 'board-zoom':
+      case 'board-fit':
+      case 'board-color':
+      case 'board-shape':
+      case 'board-lock':
+      case 'board-hide':
+      case 'board-select-members':
+      case 'board-reverse':
+      case 'board-delete':
+        boardAction(action, el);
+        break;
       case 'goal-reflect': openReflectionForm(id, false); break;
       case 'start-focus': openFocusSetup(null); break;
       case 'focus-pause': toggleFocusPause(); break;
@@ -5838,6 +7052,10 @@
         renderGoalsList();
         break;
       case 'setting': changeSetting(el.getAttribute('data-setting'), el.type === 'checkbox' ? el.checked : el.value); break;
+      case 'board-group-title':
+      case 'board-conn-label':
+        changeBoardText(kind, el.value);
+        break;
       default: break;
     }
   }
@@ -5859,6 +7077,7 @@
     }
     // Em campos de texto, Ctrl+Z/Y e as letras continuam com o comportamento nativo.
     if (e.altKey || isTypingTarget(e.target)) return;
+    if (!mod && handleBoardKey(e)) return;
     if (mod) {
       if (key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -5934,6 +7153,7 @@
       handleAction(el.getAttribute('data-action'), el);
     });
     bindKanbanDnD();
+    bindBoardEvents();
     document.addEventListener('change', function (e) {
       const el = e.target.closest('[data-change]');
       if (el) handleChange(el.getAttribute('data-change'), el);
