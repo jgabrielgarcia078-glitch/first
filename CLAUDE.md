@@ -94,6 +94,16 @@ Todos os números do jogo são constantes no topo do arquivo (`HP_*`, `FREEZE_*`
 - **Temas extras**: Floresta, Sépia e Retrô (C64). **Moldura do avatar** evolui com o nível (Bronze 3, Prata 5, Ouro 8, Esmeralda 12, Diamante 16, Lendária 20) — só visual, sem títulos temáticos.
 - Pendente desta lista: **grupos do Canvas com cor e progresso agregado** — depende do Quadro Visual (Fase 3).
 
+### Fase 2 — Kanban + Checkpoints ✅ entregue (v0.4.0, schema v4)
+
+- **Kanban** (colunas = `KANBAN_COLUMNS`, mesmos ids de `STATUSES`) no projeto e na página Metas, alternável com Lista (tecla V; preferência salva em `settings.projectView/goalsView`). Arrastar entre colunas muda o status pelas regras normais (XP, bloqueio); arrastar dentro da coluna reordena (`goal.kanbanOrder`). Aba "Quadro visual" já aparece desabilitada (Fase 3).
+- **Detalhe da meta** (janela com `liveBody`, re-renderizada a cada commit): checklist, checkpoints com fotos, dependências (depende de / libera), recorrência com histórico, números.
+- **Checklist (submetas)**: `goal.subtasks`; +1 XP por submeta (estornado ao desmarcar); em meta simples o progresso é a fração feita e concluir tudo conclui a meta. Editável também por texto no formulário (uma por linha; linhas iguais mantêm o estado).
+- **Checkpoints com fotos**: registro de progresso com até 6 fotos (comprimidas, store `media`), também em metas simples (comentário/foto sem valor). Lembrete `goal.checkpointEvery` (diário/semanal/mensal) com card no Dashboard. Galeria por meta e por projeto + visualizador (← →, Esc, baixar). Excluir registro recalcula o valor.
+- **Dependências**: `goal.dependsOn`; meta bloqueada não pode ir para "Em andamento"/"Concluído", nem registrar progresso, foco ou marcar submeta (`userError` → aviso e rollback). Seletor sem ciclos (`dependentsClosure`). Ao concluir, avisa as metas liberadas. Bloqueadas não sofrem dano de atraso. Reabrir uma dependência re-bloqueia a dependente sem mudar o status dela.
+- **Recorrência** (`goal.recurrence`, dia/semana/mês): renova a cada período no `processDailyTick` (status "a fazer", progresso zerado, submetas desmarcadas, XP ganho fica), com sequência e recorde por meta. Período não cumprido: −dano da dificuldade uma vez (não conta se pausada, bloqueada, projeto pausado ou modo descanso). O prazo de uma recorrente é o fim do período.
+- Modelos novos: Revisão semanal (recorrente + checklist), Treinos semanais (3×/semana recorrente), Hábito diário; Peso já vem com checkpoint semanal; Certificação traz checklist.
+
 ### Regras do motor de jogo (não quebrar)
 
 - Toda mutação passa por `commit()`; XP positivo usa `gainXp()` (aplica multiplicador) e estornos usam `awardXp()` com o valor bruto salvo em `xpAwarded`. Cura de conclusão fica em `hpAwarded` e é estornada ao reabrir.
@@ -104,6 +114,9 @@ Todos os números do jogo são constantes no topo do arquivo (`HP_*`, `FREEZE_*`
 - `state.focus` (sessão de foco em andamento) fica **fora** do undo/redo: `performUndo/Redo` preservam o valor atual, senão desfazer um crédito ressuscitaria um timer vencido.
 - Conclusões de meta entram em `pendingReflections` dentro do `commit`; o prompt de reflexão abre depois do render (`maybePromptReflection`).
 - Formulários de criação zeram título/nome do rascunho (a normalização troca vazio por "Meta sem título").
+- Regras de negócio violadas dentro de um `commit` lançam `userError(msg)`: o commit desfaz tudo e mostra só a mensagem (aviso), sem "Erro ao aplicar".
+- Janelas com `liveBody` são re-renderizadas em `renderApp()`; retornar `null` fecha a janela (ex.: meta excluída). Ações `data-action` funcionam dentro de janelas.
+- Fotos de checkpoints ficam em `log[].photos` (ids do store `media`); `garbageCollectMedia()` considera capas e fotos de registros.
 
 ### Validação antes de entregar
 
@@ -119,7 +132,7 @@ Além do `node --check` (regra 7): teste E2E com Playwright abrindo o `.html` vi
 
 ## Melhorias da análise comparativa ainda pendentes
 
-- **Grupos do Canvas com cor e progresso agregado** dentro do retângulo (Miro/Milanote). Entra junto com o Quadro Visual (Fase 3).
+- **Grupos do Canvas com cor e progresso agregado** dentro do retângulo (Miro/Milanote). Entra junto com o Quadro Visual (Fase 3) — próxima fase.
 
 Todo o resto da análise comparativa (prioridades alta, média e baixa) já foi entregue nas Fases 1.5 e 1.6.
 

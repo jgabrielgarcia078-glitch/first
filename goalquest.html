@@ -536,6 +536,84 @@
   @keyframes goal-flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--accent), var(--glow); } }
   .goal-card.flash { animation: goal-flash 1.6s ease 2; }
 
+  /* ---------- Kanban ---------- */
+  .view-tabs .tab[disabled] { opacity: 0.45; cursor: not-allowed; }
+  .kanban { display: grid; grid-template-columns: repeat(4, minmax(250px, 1fr)); gap: 14px; align-items: start; overflow-x: auto; padding-bottom: 6px; }
+  .kanban-col { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px; display: flex; flex-direction: column; min-height: 240px; transition: border-color 0.12s, background 0.12s; }
+  .kanban-col.drag-over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+  .kanban-col-head { display: flex; align-items: center; gap: 8px; padding: 4px 4px 10px; font-weight: 700; }
+  .kanban-col-head .count { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--surface-2); border-radius: 999px; padding: 1px 8px; }
+  .kanban-cards { display: flex; flex-direction: column; gap: 8px; flex: 1; min-height: 80px; }
+  .kanban-empty { font-size: 12.5px; color: var(--text-muted); text-align: center; padding: 18px 6px; border: 1px dashed var(--border); border-radius: var(--radius-sm); }
+  .kanban-card { background: var(--surface-2); border: 1px solid var(--border); border-left: 3px solid var(--project-color, var(--accent)); border-radius: var(--radius-sm); padding: 10px 11px; cursor: grab; display: flex; flex-direction: column; gap: 7px; user-select: none; }
+  .kanban-card:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+  .kanban-card:active { cursor: grabbing; }
+  .kanban-card.dragging { opacity: 0.35; }
+  .kanban-card.is-blocked { cursor: not-allowed; background: repeating-linear-gradient(135deg, var(--surface-2), var(--surface-2) 8px, var(--surface-3) 8px, var(--surface-3) 10px); }
+  .kanban-card.is-done .kanban-card-title { text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text) 40%, transparent); }
+  .kanban-card-title { font-weight: 600; line-height: 1.3; }
+  .kanban-card-project { font-size: 11.5px; color: var(--text-muted); }
+  .kanban-card-meta { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; }
+  .kanban-card .progress { height: 5px; }
+  .drop-indicator { height: 3px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 8px var(--accent); flex-shrink: 0; }
+
+  /* ---------- Detalhe da meta ---------- */
+  .modal-xl { max-width: 980px; }
+  .detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 22px; }
+  .detail-section { margin-top: 18px; }
+  .detail-section-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .detail-section-head h4 { font-size: 14px; }
+  .detail-side { display: flex; flex-direction: column; gap: 14px; border-left: 1px solid var(--border); padding-left: 18px; }
+  .side-block h5 { margin: 0 0 6px; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--text-muted); }
+  .side-list { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .side-list button { text-align: left; }
+  .subtask-list { display: flex; flex-direction: column; gap: 2px; }
+  .subtask-item { display: flex; align-items: center; gap: 8px; padding: 5px 6px; border-radius: var(--radius-sm); }
+  .subtask-item:hover { background: var(--surface-2); }
+  .subtask-item.done .subtask-text { text-decoration: line-through; color: var(--text-muted); }
+  .subtask-text { flex: 1; min-width: 0; }
+  .subtask-check { width: 20px; height: 20px; border-radius: 6px; border: 2px solid var(--border); background: transparent; cursor: pointer; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 900; padding: 0; flex-shrink: 0; }
+  .subtask-check.checked { background: var(--success); border-color: var(--success); }
+  .subtask-check:disabled { cursor: not-allowed; opacity: 0.5; }
+  .subtask-add { display: flex; gap: 6px; margin-top: 6px; }
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+  .timeline-item { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; }
+  .timeline-date { color: var(--text-muted); font-size: 12px; }
+  .timeline-photos { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .timeline-photos .photo-thumb { width: 56px; height: 56px; }
+  .photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+  .photo-thumb { display: block; width: 100%; aspect-ratio: 1; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-3); overflow: hidden; cursor: zoom-in; padding: 0; }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-previews { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .photo-preview { position: relative; width: 72px; height: 72px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-preview button { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: rgba(0, 0, 0, 0.65); color: #fff; cursor: pointer; font-size: 11px; line-height: 20px; padding: 0; }
+  .recur-dots { display: flex; gap: 3px; flex-wrap: wrap; }
+  .recur-dot { width: 14px; height: 14px; border-radius: 4px; background: var(--surface-3); display: grid; place-items: center; font-size: 9px; color: #fff; }
+  .recur-dot.done { background: var(--success); }
+  .recur-dot.miss { background: color-mix(in srgb, var(--danger) 70%, var(--surface-3)); }
+  .goal-title-btn { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; font-size: 15px; color: var(--text); cursor: pointer; text-align: left; }
+  .goal-title-btn:hover { color: var(--accent); text-decoration: underline; }
+  .chip-lock { color: var(--warning); border-color: color-mix(in srgb, var(--warning) 45%, var(--border)); }
+  .goal-card.is-blocked { background: repeating-linear-gradient(135deg, var(--surface), var(--surface) 10px, var(--surface-2) 10px, var(--surface-2) 12px); }
+  .dep-picker { max-height: 210px; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-2); padding: 4px; margin-top: 6px; }
+  .dep-option { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+  .dep-option:hover { background: var(--surface-3); }
+  .dep-option .muted { margin-left: auto; font-size: 12px; }
+
+  /* ---------- Visualizador de fotos ---------- */
+  .modal-lightbox { max-width: 1100px; background: #0b0c10; border-color: #23262f; color: #e8eaf0; }
+  .modal-lightbox .modal-header { border-color: #23262f; }
+  .modal-lightbox .modal-body { padding: 10px 14px 14px; }
+  .lightbox-stage { position: relative; display: grid; place-items: center; min-height: 320px; }
+  .lightbox-stage img { max-width: 100%; max-height: 72vh; border-radius: 6px; display: block; }
+  .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, 0.12); color: #fff; font-size: 22px; cursor: pointer; }
+  .lightbox-nav:hover { background: rgba(255, 255, 255, 0.25); }
+  .lightbox-nav.prev { left: 6px; }
+  .lightbox-nav.next { right: 6px; }
+  .lightbox-caption { display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: 13px; color: #b4bac8; }
+  .lightbox-caption a { color: #b4bac8; }
+
   /* ---------- Modelos de meta ---------- */
   .template-box { border: 1px dashed var(--border); border-radius: var(--radius); padding: 12px; background: var(--surface-2); }
   .template-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
@@ -626,6 +704,8 @@
     .nav { flex-direction: row; flex-wrap: wrap; }
     .player-mini, .sidebar-section-title { display: none; }
     .dash-grid, .settings-grid, .recent-projects { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .detail-side { border-left: 0; padding-left: 0; }
     .project-row { grid-template-columns: 48px minmax(0, 1fr); }
     .project-row-progress, .project-row-actions { grid-column: 2; }
     .project-header-body { grid-template-columns: 1fr; }
@@ -679,8 +759,8 @@
    * 1. CONSTANTES (todas declaradas aqui, antes de qualquer função)
    * ===================================================================== */
 
-  const APP_VERSION = '0.3.0';
-  const CURRENT_SCHEMA_VERSION = 3;
+  const APP_VERSION = '0.4.0';
+  const CURRENT_SCHEMA_VERSION = 4;
 
   const DB_NAME = 'goalquest';
   const DB_VERSION = 1;
@@ -744,6 +824,15 @@
   const HP_HEAL_FOCUS = 1;
   const FOCUS_TICK_MS = 1000;
 
+  // Fase 2: submetas, checkpoints com fotos, recorrência.
+  const XP_PER_SUBTASK = 1;
+  const SUBTASK_LIMIT = 50;
+  const PHOTO_LIMIT_PER_CHECKPOINT = 6;
+  const RECURRENCE_HISTORY_LIMIT = 60;
+  const TIMELINE_LIMIT = 30;
+  const PROJECT_GALLERY_PREVIEW = 24;
+  const CHECKPOINT_DUE_SOON_DAYS = 2;
+
   const HEATMAP_WEEKS = 53;
   const BEST_WEEKDAY_WEEKS = 12;
   const G_SHORTCUT_TIMEOUT_MS = 1500;
@@ -795,6 +884,29 @@
     { id: 'duration', label: 'Duração', hint: 'Acumula tempo investido até atingir uma meta de horas (ex.: 120 h de estudo).' },
     { id: 'scale', label: 'Escala', hint: 'Um valor dentro de uma escala (ex.: nível de inglês de 1 a 10, meta 8).' }
   ];
+  const RECURRENCE_OPTIONS = [
+    { id: '', label: 'Não repete' },
+    { id: 'day', label: 'Todo dia', adj: 'Diária', noun: 'dia' },
+    { id: 'week', label: 'Toda semana', adj: 'Semanal', noun: 'semana' },
+    { id: 'month', label: 'Todo mês', adj: 'Mensal', noun: 'mês' }
+  ];
+  const CHECKPOINT_OPTIONS = [
+    { id: '', label: 'Sem lembrete' },
+    { id: 'day', label: 'Diário' },
+    { id: 'week', label: 'Semanal' },
+    { id: 'month', label: 'Mensal' }
+  ];
+  // Colunas do Kanban = status das metas (mesmos ids de STATUSES).
+  const KANBAN_COLUMNS = [
+    { id: 'todo', icon: '📋' },
+    { id: 'doing', icon: '⚡' },
+    { id: 'paused', icon: '⏸️' },
+    { id: 'done', icon: '✅' }
+  ];
+  const GOAL_VIEWS = [
+    { id: 'list', label: '☰ Lista' },
+    { id: 'kanban', label: '▦ Kanban' }
+  ];
   const FREQUENCY_PERIODS = [
     { id: 'day', label: 'Dia', current: 'hoje' },
     { id: 'week', label: 'Semana', current: 'nesta semana' },
@@ -842,15 +954,16 @@
   // Modelos de meta: tracking já no formato salvo (duração em minutos).
   const GOAL_TEMPLATES = [
     { id: 'reading', icon: '📚', label: 'Leitura de livros', categories: ['Estudos', 'Pessoal', 'Finanças'], title: 'Ler 12 livros no ano', difficulty: 'hard', tracking: { type: 'frequency', target: 12, count: 0, period: 'month' }, tags: ['leitura'], nextAction: 'Escolher o próximo livro' },
-    { id: 'certification', icon: '🎓', label: 'Certificação', categories: ['Estudos', 'Carreira', 'Finanças'], title: 'Passar na certificação', difficulty: 'epic', tracking: { type: 'percentage', current: 0 }, tags: ['certificação'], nextAction: 'Montar o cronograma de estudos' },
+    { id: 'certification', icon: '🎓', label: 'Certificação', categories: ['Estudos', 'Carreira', 'Finanças'], title: 'Passar na certificação', difficulty: 'epic', tracking: { type: 'percentage', current: 0 }, tags: ['certificação'], nextAction: 'Montar o cronograma de estudos', subtasks: ['Montar o cronograma de estudos', 'Estudar todos os módulos', 'Fazer 3 simulados', 'Agendar a prova'] },
+    { id: 'weekly-review', icon: '🗓️', label: 'Revisão semanal', categories: ['Pessoal', 'Carreira', 'Negócios', 'Finanças'], title: 'Revisão semanal', difficulty: 'medium', tracking: { type: 'simple' }, tags: ['rotina'], nextAction: '', recurrence: 'week', subtasks: ['Revisar as metas da semana', 'Atualizar os números', 'Planejar a próxima semana'] },
     { id: 'course', icon: '🧑‍🏫', label: 'Curso online', categories: ['Estudos', 'Carreira', 'Finanças'], title: 'Concluir o curso', difficulty: 'medium', tracking: { type: 'percentage', current: 0 }, tags: ['curso'], nextAction: 'Assistir a próxima aula' },
     { id: 'study-hours', icon: '⏱️', label: 'Horas de estudo', categories: ['Estudos', 'Carreira'], title: 'Estudar 100 horas', difficulty: 'hard', tracking: { type: 'duration', target: 6000, logged: 0 }, tags: ['estudo'], nextAction: 'Fazer uma sessão de foco de 25 min' },
     { id: 'language', icon: '🗣️', label: 'Idioma', categories: ['Estudos', 'Carreira'], title: 'Chegar ao nível 8 em inglês', difficulty: 'hard', tracking: { type: 'scale', min: 1, max: 10, current: 3, target: 8 }, tags: ['idioma'], nextAction: 'Fazer uma aula de conversação' },
-    { id: 'weight', icon: '⚖️', label: 'Peso corporal', categories: ['Saúde'], title: 'Chegar a 80 kg', difficulty: 'epic', tracking: { type: 'numeric', start: 90, current: 90, target: 80, unit: 'kg' }, tags: ['saúde', 'peso'], nextAction: 'Pesar-se e registrar o valor de hoje' },
-    { id: 'workouts', icon: '🏋️', label: 'Treinos', categories: ['Saúde'], title: 'Treinar 48 vezes (3× por semana)', difficulty: 'hard', tracking: { type: 'frequency', target: 48, count: 0, period: 'week' }, tags: ['treino'], nextAction: 'Separar a roupa do treino de amanhã' },
+    { id: 'weight', icon: '⚖️', label: 'Peso corporal', categories: ['Saúde'], title: 'Chegar a 80 kg', difficulty: 'epic', tracking: { type: 'numeric', start: 90, current: 90, target: 80, unit: 'kg' }, tags: ['saúde', 'peso'], nextAction: 'Pesar-se e registrar o valor de hoje', checkpointEvery: 'week' },
+    { id: 'workouts', icon: '🏋️', label: 'Treinos semanais', categories: ['Saúde'], title: 'Treinar 3× por semana', difficulty: 'hard', tracking: { type: 'frequency', target: 3, count: 0, period: 'week' }, tags: ['treino'], nextAction: 'Separar a roupa do treino de amanhã', recurrence: 'week' },
     { id: 'savings', icon: '💰', label: 'Reserva financeira', categories: ['Finanças', 'Pessoal'], title: 'Juntar R$ 10.000 de reserva', difficulty: 'epic', tracking: { type: 'numeric', start: 0, current: 0, target: 10000, unit: 'R$' }, tags: ['finanças', 'reserva'], nextAction: 'Programar a transferência do mês' },
     { id: 'clients', icon: '🤝', label: 'Clientes', categories: ['Negócios', 'Carreira'], title: 'Conquistar 10 clientes', difficulty: 'epic', tracking: { type: 'frequency', target: 10, count: 0, period: 'month' }, tags: ['clientes', 'negócios'], nextAction: 'Listar 5 contatos para abordar' },
-    { id: 'habit', icon: '🔁', label: 'Hábito diário', categories: ['Pessoal', 'Saúde'], title: 'Meditar 30 dias', difficulty: 'medium', tracking: { type: 'frequency', target: 30, count: 0, period: 'day' }, tags: ['hábito'], nextAction: '' },
+    { id: 'habit', icon: '🔁', label: 'Hábito diário', categories: ['Pessoal', 'Saúde'], title: 'Meditar 10 minutos', difficulty: 'easy', tracking: { type: 'simple' }, tags: ['hábito'], nextAction: '', recurrence: 'day' },
     { id: 'task', icon: '✅', label: 'Tarefa única', categories: [], title: '', difficulty: 'easy', tracking: { type: 'simple' }, tags: [], nextAction: '' }
   ];
   // Atalhos "G depois X" (estilo Linear).
@@ -876,7 +989,10 @@
     { group: 'Criar e agir' },
     { keys: 'N', text: 'Nova meta' },
     { keys: 'Shift N', text: 'Novo projeto' },
-    { keys: 'F', text: 'Iniciar foco (ou pausar/retomar a sessão atual)' }
+    { keys: 'F', text: 'Iniciar foco (ou pausar/retomar a sessão atual)' },
+    { keys: 'V', text: 'Alternar Lista / Kanban (em Metas e no projeto)' },
+    { group: 'Fotos' },
+    { keys: '← →', text: 'Foto anterior / próxima no visualizador' }
   ];
   const ACTIVITY_ICONS = {
     project_create: '🗂️', project_update: '✏️', project_delete: '🗑️', project_complete: '🏁',
@@ -884,7 +1000,8 @@
     progress: '📈', level_up: '⬆️', profile: '👤', system: '⚙️',
     hp_damage: '💔', exhausted: '😵', recovered: '💪', streak_freeze: '❄️', streak_lost: '🥀',
     streak_repair: '🔧', freeze_earned: '🧊', freeze_buy: '🛒', rest: '🏖️', streak_tier: '🔥',
-    focus: '🍅', reflection: '💭', frame: '🖼️'
+    focus: '🍅', reflection: '💭', frame: '🖼️',
+    checkpoint: '📸', unlocked: '🔓', subtask: '☑️', recurrence: '🔁'
   };
   // Ações da paleta de comandos (Ctrl/Cmd+K). "keywords" ajuda a busca.
   const PALETTE_COMMANDS = [
@@ -902,7 +1019,8 @@
     { id: 'toggle-rest', icon: '🏖️', label: 'Ativar/desativar modo descanso', keywords: 'ferias pausa descanso hp' },
     { id: 'start-focus', icon: '🍅', label: 'Iniciar sessão de foco', keywords: 'pomodoro timer concentrar', shortcut: 'F' },
     { id: 'show-shortcuts', icon: '⌨️', label: 'Ver atalhos de teclado', keywords: 'teclas ajuda', shortcut: '?' },
-    { id: 'export-data', icon: '📤', label: 'Exportar dados (CSV / JSON)', keywords: 'backup excel planilha csv json baixar' }
+    { id: 'export-data', icon: '📤', label: 'Exportar dados (CSV / JSON)', keywords: 'backup excel planilha csv json baixar' },
+    { id: 'goals-kanban', icon: '▦', label: 'Ver todas as metas em Kanban', keywords: 'quadro colunas arrastar board' }
   ];
   const SAVE_STATUS_LABELS = {
     loading: { text: 'Carregando…', cls: '' },
@@ -968,6 +1086,15 @@
         return Object.assign({ reflection: null, focusMinutes: 0 }, g);
       });
       return Object.assign({}, data, { player: player, settings: settings, goals: goals, focus: null });
+    },
+    4: function (data) {
+      // v3 → v4 (Fase 2): submetas, dependências, recorrência, lembrete de checkpoint, ordem no Kanban e fotos nos registros.
+      const goals = (Array.isArray(data.goals) ? data.goals : []).map(function (g) {
+        const log = (Array.isArray(g.log) ? g.log : []).map(function (e) { return Object.assign({ photos: [] }, e); });
+        return Object.assign({ subtasks: [], dependsOn: [], recurrence: null, checkpointEvery: '', kanbanOrder: Number(g.createdAt) || Date.now() }, g, { log: log });
+      });
+      const settings = Object.assign({ projectView: 'list', goalsView: 'list' }, data.settings || {});
+      return Object.assign({}, data, { goals: goals, settings: settings });
     }
   };
 
@@ -984,6 +1111,7 @@
   let saveStatus = 'loading';
   let pendingToasts = [];
   let paletteModal = null;
+  let kanbanDrag = null;
   let pendingReflections = [];
   let gShortcutAt = 0;
   let keyHintTimer = null;
@@ -1280,7 +1408,7 @@
       createdAt: now,
       updatedAt: now,
       profile: { name: 'Jogador', subtitle: 'Rumo ao próximo nível' },
-      settings: { theme: 'dark', reflectOnComplete: true, focusMinutes: FOCUS_DEFAULT_MINUTES, focusSound: true },
+      settings: { theme: 'dark', reflectOnComplete: true, focusMinutes: FOCUS_DEFAULT_MINUTES, focusSound: true, projectView: 'list', goalsView: 'list' },
       player: {
         xpEarned: 0,
         xpSpent: 0,
@@ -1410,14 +1538,47 @@
       deadline: isValidISODate(g.deadline) ? g.deadline : '',
       nextAction: String(g.nextAction || ''),
       tags: Array.isArray(g.tags) ? g.tags.map(String).filter(Boolean) : [],
-      log: Array.isArray(g.log) ? g.log.filter(function (e) { return e && typeof e === 'object'; }) : [],
+      log: Array.isArray(g.log) ? g.log.filter(function (e) { return e && typeof e === 'object'; }).map(function (e) {
+        return Object.assign({}, e, { photos: Array.isArray(e.photos) ? e.photos.map(String).filter(Boolean) : [] });
+      }) : [],
       xpAwarded: Number(g.xpAwarded) || 0,
       hpAwarded: Number(g.hpAwarded) || 0,
       reflection: normalizeReflection(g.reflection),
       focusMinutes: Math.max(0, Number(g.focusMinutes) || 0),
+      subtasks: normalizeSubtasks(g.subtasks),
+      dependsOn: Array.isArray(g.dependsOn) ? Array.from(new Set(g.dependsOn.map(String).filter(Boolean))) : [],
+      recurrence: normalizeRecurrence(g.recurrence),
+      checkpointEvery: isOneOf(CHECKPOINT_OPTIONS, g.checkpointEvery) ? g.checkpointEvery : '',
+      kanbanOrder: isFiniteNumber(Number(g.kanbanOrder)) && g.kanbanOrder !== null && g.kanbanOrder !== '' ? Number(g.kanbanOrder) : (Number(g.createdAt) || now),
       completedAt: Number(g.completedAt) || null,
       createdAt: Number(g.createdAt) || now,
       updatedAt: Number(g.updatedAt) || now
+    };
+  }
+
+  function normalizeSubtasks(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.filter(function (t) { return t && typeof t === 'object' && String(t.text || '').trim(); }).slice(0, SUBTASK_LIMIT).map(function (t) {
+      return {
+        id: t.id ? String(t.id) : uid(),
+        text: String(t.text).trim().slice(0, 200),
+        done: Boolean(t.done),
+        doneAt: t.done ? Number(t.doneAt) || null : null,
+        xp: t.done ? Math.max(0, Number(t.xp) || 0) : 0
+      };
+    });
+  }
+
+  function normalizeRecurrence(raw) {
+    if (!raw || typeof raw !== 'object' || !raw.period || !isOneOf(RECURRENCE_OPTIONS, raw.period)) return null;
+    return {
+      period: raw.period,
+      periodStart: isValidISODate(raw.periodStart) ? raw.periodStart : periodStartISO(raw.period, todayISO()),
+      streak: Math.max(0, Math.round(Number(raw.streak) || 0)),
+      best: Math.max(0, Math.round(Number(raw.best) || 0)),
+      history: (Array.isArray(raw.history) ? raw.history : []).filter(function (h) { return h && isValidISODate(h.start); }).slice(-RECURRENCE_HISTORY_LIMIT).map(function (h) {
+        return { start: h.start, done: Boolean(h.done) };
+      })
     };
   }
 
@@ -1427,6 +1588,11 @@
     const projects = (Array.isArray(s.projects) ? s.projects : []).map(normalizeProject);
     const projectIds = new Set(projects.map(function (p) { return p.id; }));
     const goals = (Array.isArray(s.goals) ? s.goals : []).map(normalizeGoal).filter(function (g) { return projectIds.has(g.projectId); });
+    // Dependências só para metas que existem (e nunca para si mesma).
+    const goalIds = new Set(goals.map(function (g) { return g.id; }));
+    goals.forEach(function (g) {
+      g.dependsOn = g.dependsOn.filter(function (id) { return id !== g.id && goalIds.has(id); });
+    });
     const player = Object.assign({}, base.player, s.player || {});
     player.xpEarned = Math.max(0, Number(player.xpEarned) || 0);
     player.xpSpent = Math.max(0, Number(player.xpSpent) || 0);
@@ -1445,6 +1611,8 @@
     settings.reflectOnComplete = settings.reflectOnComplete !== false;
     settings.focusSound = settings.focusSound !== false;
     settings.focusMinutes = clamp(Math.round(Number(settings.focusMinutes) || FOCUS_DEFAULT_MINUTES), 1, FOCUS_MAX_MINUTES);
+    if (!isOneOf(GOAL_VIEWS, settings.projectView)) settings.projectView = 'list';
+    if (!isOneOf(GOAL_VIEWS, settings.goalsView)) settings.goalsView = 'list';
     return {
       schemaVersion: CURRENT_SCHEMA_VERSION,
       createdAt: Number(s.createdAt) || base.createdAt,
@@ -1547,7 +1715,138 @@
   }
 
   function goalProgress(g) {
-    return g.status === 'done' ? 1 : goalMeasuredProgress(g);
+    if (g.status === 'done') return 1;
+    // Meta simples com checklist: o progresso é a fração de submetas feitas.
+    if (g.tracking.type === 'simple' && g.subtasks.length) return subtaskStats(g).done / g.subtasks.length;
+    return goalMeasuredProgress(g);
+  }
+
+  function subtaskStats(g) {
+    const done = g.subtasks.filter(function (t) { return t.done; }).length;
+    return { done: done, total: g.subtasks.length };
+  }
+
+  // --- Dependências ---
+
+  function blockingGoalsOf(goals, g) {
+    return g.dependsOn.map(function (id) { return findById(goals, id); }).filter(function (d) { return d && d.status !== 'done'; });
+  }
+
+  function isGoalBlocked(goals, g) {
+    return blockingGoalsOf(goals, g).length > 0;
+  }
+
+  // Todas as metas que dependem (direta ou indiretamente) de goalId — não podem virar dependência dela (evita ciclos).
+  function dependentsClosure(goals, goalId) {
+    const out = new Set();
+    const queue = [goalId];
+    while (queue.length) {
+      const cur = queue.shift();
+      goals.forEach(function (g) {
+        if (g.dependsOn.indexOf(cur) >= 0 && !out.has(g.id)) {
+          out.add(g.id);
+          queue.push(g.id);
+        }
+      });
+    }
+    return out;
+  }
+
+  function blockedMessage(goals, g) {
+    const names = blockingGoalsOf(goals, g).map(function (d) { return '"' + d.title + '"'; });
+    return '🔒 "' + g.title + '" está bloqueada até concluir ' + names.join(', ') + '.';
+  }
+
+  // Erro "esperado" (regra do jogo): o commit desfaz a alteração e mostra só a mensagem.
+  function userError(message) {
+    const err = new Error(message);
+    err.isUserError = true;
+    return err;
+  }
+
+  // --- Recorrência ---
+
+  function nextPeriodStartISO(start, period) {
+    if (period === 'day') return addDaysISO(start, 1);
+    if (period === 'week') return addDaysISO(start, 7);
+    const d = parseISODate(start);
+    d.setDate(1);
+    d.setMonth(d.getMonth() + 1);
+    return toISODate(d);
+  }
+
+  function recurrencePeriodEnd(r) {
+    return addDaysISO(nextPeriodStartISO(r.periodStart, r.period), -1);
+  }
+
+  function newRecurrence(period, previous) {
+    if (!period) return null;
+    if (previous && previous.period === period) return previous;
+    return { period: period, periodStart: periodStartISO(period, todayISO()), streak: 0, best: previous ? previous.best : 0, history: [] };
+  }
+
+  // Novo período: a meta volta a "a fazer" com o progresso zerado (o XP já ganho fica).
+  function resetRecurringGoal(g) {
+    const t = g.tracking;
+    if (g.status !== 'paused') g.status = 'todo';
+    g.completedAt = null;
+    g.xpAwarded = 0;
+    g.hpAwarded = 0;
+    if (t.type === 'numeric') t.current = t.start;
+    else if (t.type === 'percentage') t.current = 0;
+    else if (t.type === 'frequency') t.count = 0;
+    else if (t.type === 'duration') t.logged = 0;
+    g.subtasks.forEach(function (st) {
+      st.done = false;
+      st.doneAt = null;
+      st.xp = 0;
+    });
+    g.updatedAt = Date.now();
+  }
+
+  // --- Checkpoints ---
+
+  function lastLogDate(g) {
+    let last = '';
+    g.log.forEach(function (e) { if (e.date > last) last = e.date; });
+    return last;
+  }
+
+  // Próximo checkpoint = último registro (ou criação) + intervalo escolhido.
+  function checkpointDue(g) {
+    if (!g.checkpointEvery || g.status === 'done') return null;
+    const base = lastLogDate(g) || toISODate(new Date(g.createdAt));
+    let due;
+    if (g.checkpointEvery === 'day') due = addDaysISO(base, 1);
+    else if (g.checkpointEvery === 'week') due = addDaysISO(base, 7);
+    else {
+      const d = parseISODate(base);
+      d.setMonth(d.getMonth() + 1);
+      due = toISODate(d);
+    }
+    return { due: due, days: diffDays(todayISO(), due) };
+  }
+
+  function goalPhotos(g) {
+    const out = [];
+    g.log.slice().sort(function (a, b) { return b.ts - a.ts; }).forEach(function (e) {
+      e.photos.forEach(function (mediaId) {
+        out.push({ mediaId: mediaId, caption: g.title + ' · ' + formatDate(e.date) + (e.note ? ' — ' + e.note : '') });
+      });
+    });
+    return out;
+  }
+
+  function projectPhotos(projectId) {
+    const all = [];
+    goalsOfProject(projectId).forEach(function (g) {
+      g.log.forEach(function (e) {
+        e.photos.forEach(function (mediaId) {
+          all.push({ mediaId: mediaId, ts: e.ts, caption: g.title + ' · ' + formatDate(e.date) + (e.note ? ' — ' + e.note : '') });
+        });
+      });
+    });
+    return all.sort(function (a, b) { return b.ts - a.ts; });
   }
 
   function projectProgress(p) {
@@ -1832,6 +2131,7 @@
 
   function setGoalStatus(s, g, status) {
     if (g.status === status) return;
+    if ((status === 'doing' || status === 'done') && isGoalBlocked(s.goals, g)) throw userError(blockedMessage(s.goals, g));
     const wasDone = g.status === 'done';
     g.status = status;
     g.updatedAt = Date.now();
@@ -1845,6 +2145,11 @@
       if (!g.hpAwarded) g.hpAwarded = changeHp(s, diff.heal);
       addActivity(s, 'goal_complete', 'Meta concluída: "' + g.title + '"', { goalId: g.id, projectId: g.projectId, xp: g.xpAwarded });
       pendingReflections.push(g.id);
+      s.goals.forEach(function (other) {
+        if (other.status === 'done' || other.dependsOn.indexOf(g.id) < 0 || isGoalBlocked(s.goals, other)) return;
+        addActivity(s, 'unlocked', 'Meta liberada: "' + other.title + '"', { goalId: other.id, projectId: other.projectId });
+        queueToast('🔓 Liberada: "' + other.title + '" — já pode começar!', 'success');
+      });
       queueToast('🎉 +' + g.xpAwarded + ' XP' + suffix + (g.hpAwarded ? ' · +' + g.hpAwarded + ' HP' : '') + ' — meta concluída: ' + g.title, 'xp');
     } else if (wasDone && status !== 'done') {
       g.completedAt = null;
@@ -1889,7 +2194,8 @@
   // --- Virada do dia: proteções automáticas, streak perdido e dano de vitalidade ---
 
   function isGoalOverdueOn(s, g, day) {
-    if (!g.deadline || g.deadline >= day) return false;
+    if (!g.deadline || g.deadline >= day || g.recurrence) return false;
+    if (isGoalBlocked(s.goals, g)) return false;
     if (g.status === 'done' || g.status === 'paused') return false;
     if (toISODate(new Date(g.createdAt)) > day) return false;
     const project = findById(s.projects, g.projectId);
@@ -1943,13 +2249,53 @@
       day = cursor;
     }
 
-    // 2) Dano de vitalidade por dia (desligado no modo descanso).
+    // 2) Metas recorrentes: fecha os períodos que terminaram (streak da meta) e renova para o período atual.
+    // Período não cumprido tira HP uma vez, no último dia dele (se estiver dentro da janela avaliada).
+    const recurDamage = {};
+    let renewed = 0;
+    let missedPeriods = 0;
+    s.goals.forEach(function (g) {
+      const r = g.recurrence;
+      if (!r) return;
+      const current = periodStartISO(r.period, today);
+      if (r.periodStart >= current) return;
+      const project = findById(s.projects, g.projectId);
+      const excused = p.resting || g.status === 'paused' || (project && (project.status === 'paused' || project.status === 'done')) || isGoalBlocked(s.goals, g);
+      let ps = r.periodStart;
+      let first = true;
+      while (ps < current) {
+        const done = first && g.status === 'done';
+        const end = addDaysISO(nextPeriodStartISO(ps, r.period), -1);
+        if (done) {
+          r.streak++;
+          r.best = Math.max(r.best, r.streak);
+        } else if (!excused) {
+          r.streak = 0;
+          missedPeriods++;
+          if (end >= start && end < today) recurDamage[end] = (recurDamage[end] || 0) + optionOf(DIFFICULTIES, g.difficulty).damage;
+        }
+        r.history.push({ start: ps, done: done });
+        ps = nextPeriodStartISO(ps, r.period);
+        first = false;
+      }
+      if (r.history.length > RECURRENCE_HISTORY_LIMIT) r.history.splice(0, r.history.length - RECURRENCE_HISTORY_LIMIT);
+      r.periodStart = current;
+      resetRecurringGoal(g);
+      renewed++;
+    });
+
+    // 3) Dano de vitalidade por dia (desligado no modo descanso).
     let damage = 0;
     let overdueHits = 0;
     let idleDays = 0;
+    let recurHits = 0;
     if (!p.resting) {
       for (day = start; day < today; day = addDaysISO(day, 1)) {
         let dmg = 0;
+        if (recurDamage[day]) {
+          dmg += recurDamage[day];
+          recurHits++;
+        }
         if (!active.has(day) && !frozen.has(day)) {
           dmg += HP_INACTIVITY_DAMAGE;
           idleDays++;
@@ -1981,10 +2327,15 @@
       const repair = getStreakRepair(s);
       queueToast('🥀 Seu streak de ' + lostStreak + ' ' + plural(lostStreak, 'dia', 'dias') + ' foi interrompido.' + (repair ? ' Dá para repará-lo.' : ''), 'warning', repair ? { label: 'Reparar', onClick: repairStreak } : null);
     }
+    if (renewed) {
+      addActivity(s, 'recurrence', renewed + ' ' + plural(renewed, 'meta recorrente renovada', 'metas recorrentes renovadas') + (missedPeriods ? ' (' + missedPeriods + ' ' + plural(missedPeriods, 'período não cumprido', 'períodos não cumpridos') + ')' : ''));
+      queueToast('🔁 ' + renewed + ' ' + plural(renewed, 'meta recorrente renovada', 'metas recorrentes renovadas') + ' para o novo período' + (missedPeriods ? ' · ' + missedPeriods + ' não ' + plural(missedPeriods, 'cumprida', 'cumpridas') : '') + '.', missedPeriods ? 'warning' : 'info');
+    }
     if (damage) {
       const reasons = [];
       if (idleDays) reasons.push(idleDays + ' ' + plural(idleDays, 'dia parado', 'dias parados'));
       if (overdueHits) reasons.push('atrasos');
+      if (recurHits) reasons.push('recorrentes não cumpridas');
       addActivity(s, 'hp_damage', 'Perdeu ' + damage + ' HP (' + reasons.join(' e ') + ')');
       queueToast('💔 −' + damage + ' HP por ' + reasons.join(' e ') + '. Vitalidade: ' + p.hp + '/' + HP_MAX + '.', 'warning');
     }
@@ -1999,11 +2350,12 @@
       case 'frequency': return sign + entry.delta + ' ' + plural(Math.abs(entry.delta), 'vez', 'vezes') + ' (total ' + entry.value + ')';
       case 'duration': return '+' + formatMinutes(entry.delta) + ' (total ' + formatMinutes(entry.value) + ')';
       case 'scale': return 'nível ' + formatNumber(entry.value) + ' (' + sign + formatNumber(entry.delta) + ')';
-      default: return '';
+      default: return 'Checkpoint';
     }
   }
 
   function applyProgressLog(s, g, input) {
+    if (isGoalBlocked(s.goals, g)) throw userError(blockedMessage(s.goals, g));
     const t = g.tracking;
     let value = input.value;
     let delta = 0;
@@ -2033,9 +2385,12 @@
         value = t.logged;
         break;
       default:
-        return;
+        // Meta simples: checkpoint só com comentário/fotos, sem valor.
+        value = null;
+        delta = 0;
     }
-    const entry = { id: uid(), ts: Date.now(), date: isValidISODate(input.date) ? input.date : todayISO(), value: value, delta: delta, note: input.note || '' };
+    const photos = Array.isArray(input.photos) ? input.photos.slice(0, PHOTO_LIMIT_PER_CHECKPOINT) : [];
+    const entry = { id: uid(), ts: Date.now(), date: isValidISODate(input.date) ? input.date : todayISO(), value: value, delta: delta, note: input.note || '', photos: photos };
     g.log.push(entry);
     if (g.log.length > GOAL_LOG_LIMIT) g.log.splice(0, g.log.length - GOAL_LOG_LIMIT);
     g.updatedAt = Date.now();
@@ -2044,8 +2399,9 @@
     const suffix = multiplierSuffix(s);
     const xp = gainXp(s, XP_PER_PROGRESS_LOG);
     const hp = changeHp(s, HP_HEAL_PROGRESS);
-    addActivity(s, 'progress', 'Progresso em "' + g.title + '": ' + describeLogEntry(g, entry), { goalId: g.id, projectId: g.projectId, xp: xp });
-    queueToast('📈 +' + xp + ' XP' + suffix + (hp ? ' · +' + hp + ' HP' : '') + ' — ' + g.title + ': ' + describeLogEntry(g, entry), 'xp');
+    const photoNote = photos.length ? ' · 📸 ' + photos.length + ' ' + plural(photos.length, 'foto', 'fotos') : '';
+    addActivity(s, photos.length || t.type === 'simple' ? 'checkpoint' : 'progress', (t.type === 'simple' ? 'Checkpoint em "' + g.title + '"' : 'Progresso em "' + g.title + '": ' + describeLogEntry(g, entry)) + photoNote, { goalId: g.id, projectId: g.projectId, xp: xp });
+    queueToast((photos.length || t.type === 'simple' ? '📸 ' : '📈 ') + '+' + xp + ' XP' + suffix + (hp ? ' · +' + hp + ' HP' : '') + ' — ' + g.title + ': ' + describeLogEntry(g, entry) + photoNote, 'xp');
     if (g.status === 'todo' || g.status === 'paused') g.status = 'doing';
     if (g.status !== 'done' && goalMeasuredProgress(g) >= 1) setGoalStatus(s, g, 'done');
   }
@@ -2063,11 +2419,16 @@
     try {
       mutator(state);
     } catch (err) {
-      console.error(err);
       state = JSON.parse(snapshot);
       pendingToasts = [];
       pendingReflections = [];
-      showToast('Erro ao aplicar alteração: ' + describeError(err), { type: 'error' });
+      if (err && err.isUserError) {
+        showToast(err.message, { type: 'warning' });
+      } else {
+        console.error(err);
+        showToast('Erro ao aplicar alteração: ' + describeError(err), { type: 'error' });
+      }
+      renderApp();
       return false;
     }
     if (opts.undoable !== false) {
@@ -2264,6 +2625,7 @@
     if (!storageAvailable || persistenceBlocked) return Promise.resolve();
     const referenced = new Set();
     state.projects.forEach(function (p) { if (p.coverId) referenced.add(p.coverId); });
+    state.goals.forEach(function (g) { g.log.forEach(function (e) { e.photos.forEach(function (id) { referenced.add(id); }); }); });
     return idbGetAllKeys(STORE_MEDIA).then(function (keys) {
       const orphans = (keys || []).filter(function (k) { return !referenced.has(k); });
       return Promise.all(orphans.map(function (k) { return idbDelete(STORE_MEDIA, k); }));
@@ -2322,11 +2684,33 @@
       '<form class="modal modal-' + (opts.size || 'md') + (opts.className ? ' ' + opts.className : '') + '" role="dialog" aria-modal="true" novalidate>' +
       '<header class="modal-header"><h2>' + escapeHtml(opts.title || '') + '</h2>' +
       '<button type="button" class="icon-btn" data-modal-close aria-label="Fechar">✕</button></header>' +
-      '<div class="modal-body">' + (opts.body || '') + '</div>' +
+      '<div class="modal-body">' + (opts.body || (opts.liveBody ? opts.liveBody() : '') || '') + '</div>' +
       (actions ? '<footer class="modal-footer">' + actions + '</footer>' : '') +
       '</form>';
     const form = backdrop.querySelector('form');
-    const modal = { el: form, backdrop: backdrop, closed: false, busy: false, close: null };
+    const modal = { el: form, backdrop: backdrop, closed: false, busy: false, close: null, refresh: null };
+    // Conteúdo "vivo": re-renderizado a cada mudança de estado (renderApp); null fecha a janela.
+    if (opts.liveBody) {
+      modal.refresh = function () {
+        if (modal.closed) return;
+        const html = opts.liveBody();
+        if (html === null) {
+          close('gone');
+          return;
+        }
+        const body = form.querySelector('.modal-body');
+        const active = document.activeElement;
+        const refocus = active && form.contains(active) && active.hasAttribute('data-subtask-input');
+        const scroll = backdrop.scrollTop;
+        body.innerHTML = html;
+        backdrop.scrollTop = scroll;
+        hydrateMedia(body);
+        if (refocus) {
+          const again = body.querySelector('[data-subtask-input]');
+          if (again) again.focus();
+        }
+      };
+    }
 
     function close(reason) {
       if (modal.closed) return;
@@ -2385,6 +2769,7 @@
     });
 
     root.appendChild(backdrop);
+    hydrateMedia(backdrop);
     modalStack.push(modal);
     requestAnimationFrame(function () { backdrop.classList.add('show'); });
     if (opts.onOpen) opts.onOpen(modal);
@@ -2497,6 +2882,7 @@
   }
 
   function renderApp() {
+    modalStack.forEach(function (m) { if (m.refresh) m.refresh(); });
     renderFocusPill();
     renderNav();
     renderPlayerMini();
@@ -2624,6 +3010,7 @@
       '<div class="dash-grid">' +
       dashCard('🧭 Áreas da vida', 'Progresso por categoria', areasHtml()) +
       dashCard('📊 Placar', 'Você vs. você mesmo', scoreboardHtml()) +
+      dashCard('📸 Checkpoints', 'Próximos ' + CHECKPOINT_DUE_SOON_DAYS + ' dias', checkpointsDueHtml()) +
       dashCard('📅 Próximos prazos', 'Próximos ' + UPCOMING_DAYS + ' dias', upcomingListHtml(today)) +
       dashCard('⏰ Atrasados', overdueGoals.length + overdueProjects.length + ' itens', overdueListHtml(overdueGoals, overdueProjects)) +
       dashCard('➡️ Próximas ações', 'Metas em andamento', nextActionsHtml(openGoals)) +
@@ -2837,7 +3224,7 @@
   }
 
   function nextActionsHtml(openGoals) {
-    const items = openGoals.filter(function (g) { return g.nextAction && g.status !== 'paused'; })
+    const items = openGoals.filter(function (g) { return g.nextAction && g.status !== 'paused' && !isGoalBlocked(state.goals, g); })
       .sort(function (a, b) {
         const pa = optionOf(PRIORITIES, a.priority).weight;
         const pb = optionOf(PRIORITIES, b.priority).weight;
@@ -2848,7 +3235,7 @@
     if (!items.length) return '<div class="empty-inline">Defina uma "próxima ação" nas suas metas para vê-las aqui.</div>';
     return '<div class="list">' + items.map(function (g) {
       const project = findProject(g.projectId);
-      return '<div class="list-item clickable" data-action="open-project" data-id="' + escapeHtml(g.projectId) + '">' +
+      return '<div class="list-item clickable" data-action="goal-open" data-id="' + escapeHtml(g.id) + '">' +
         '<div class="activity-icon">➡️</div>' +
         '<div class="list-item-main"><div class="list-item-title">' + escapeHtml(g.nextAction) + '</div>' +
         '<div class="list-item-sub">' + escapeHtml(g.title) + (project ? ' · ' + escapeHtml(project.name) : '') + '</div></div>' +
@@ -2975,9 +3362,12 @@
     const visible = sortGoals(goals.filter(function (g) { return ui.detailStatus === 'all' || g.status === ui.detailStatus; }), 'deadline');
     const xpEarnedHere = goals.reduce(function (a, g) { return a + g.xpAwarded; }, 0) + p.xpAwarded;
 
+    const view = state.settings.projectView;
     let list;
     if (!goals.length) {
       list = '<div class="card">' + emptyStateHtml('🎯', 'Nenhuma meta neste projeto', 'Quebre o projeto em metas mensuráveis para acompanhar o progresso.', '<button type="button" class="btn btn-primary" data-action="new-goal" data-project-id="' + id + '">+ Adicionar meta</button>') + '</div>';
+    } else if (view === 'kanban') {
+      list = kanbanHtml(goals, false);
     } else if (!visible.length) {
       list = '<div class="card"><div class="empty-inline">Nenhuma meta com este status.</div></div>';
     } else {
@@ -3000,9 +3390,18 @@
       '<div class="row"><button type="button" class="btn btn-sm" data-action="edit-project" data-id="' + id + '">✏️ Editar</button>' +
       '<button type="button" class="btn btn-sm btn-danger" data-action="delete-project" data-id="' + id + '">🗑️ Excluir</button></div>' +
       '</div></div></section>' +
-      '<div class="section-head"><h2>Metas</h2><div class="tabs">' + tabs + '</div><span class="spacer"></span>' +
+      '<div class="section-head"><h2>Metas</h2>' + viewTabsHtml('project', view) + (view === 'list' ? '<div class="tabs">' + tabs + '</div>' : '') + '<span class="spacer"></span>' +
       '<button type="button" class="btn btn-primary" data-action="new-goal" data-project-id="' + id + '">+ Nova meta</button></div>' +
-      list;
+      list + projectGalleryHtml(p);
+  }
+
+  function projectGalleryHtml(p) {
+    const photos = projectPhotos(p.id);
+    if (!photos.length) return '';
+    return '<section class="card" style="margin-top:18px"><div class="card-title"><h3>🖼️ Evidências</h3><span class="small muted">' + photos.length + ' ' + plural(photos.length, 'foto', 'fotos') + ' dos checkpoints</span></div>' +
+      '<div class="photo-grid">' + photos.slice(0, PROJECT_GALLERY_PREVIEW).map(function (ph, i) { return photoThumbHtml(ph.mediaId, 'project', p.id, i); }).join('') + '</div>' +
+      (photos.length > PROJECT_GALLERY_PREVIEW ? '<div class="row" style="margin-top:10px"><button type="button" class="btn btn-sm" data-action="open-photo" data-scope="project" data-id="' + escapeHtml(p.id) + '" data-index="' + PROJECT_GALLERY_PREVIEW + '">Ver todas (' + photos.length + ')</button></div>' : '') +
+      '</section>';
   }
 
   /* =====================================================================
@@ -3014,15 +3413,16 @@
     const statusOptions = [{ id: 'open', label: 'Em aberto' }, { id: 'all', label: 'Todos os status' }].concat(STATUSES);
     const projectOptions = [{ id: 'all', label: 'Todos os projetos' }].concat(state.projects.map(function (p) { return { id: p.id, label: p.icon + ' ' + p.name }; }));
     if (f.project !== 'all' && !findProject(f.project)) f.project = 'all';
-    return '<div class="section-head"><h2>Metas</h2><span class="muted" id="goals-count"></span><span class="spacer"></span>' +
+    const kanban = state.settings.goalsView === 'kanban';
+    return '<div class="section-head"><h2>Metas</h2>' + viewTabsHtml('goals', state.settings.goalsView) + '<span class="muted" id="goals-count"></span><span class="spacer"></span>' +
       '<button type="button" class="btn btn-primary" data-action="new-goal">+ Nova meta</button></div>' +
       '<div class="toolbar">' +
       '<input class="input" type="search" placeholder="Filtrar por título, tag…" value="' + escapeHtml(f.text) + '" data-input="filter-goals" data-field="text">' +
-      '<select class="select" data-change="filter-goals" data-field="status">' + optionsHtml(statusOptions, f.status) + '</select>' +
+      (kanban ? '' : '<select class="select" data-change="filter-goals" data-field="status">' + optionsHtml(statusOptions, f.status) + '</select>') +
       '<select class="select" data-change="filter-goals" data-field="project">' + optionsHtml(projectOptions, f.project) + '</select>' +
       '<select class="select" data-change="filter-goals" data-field="difficulty">' + optionsHtml([{ id: 'all', label: 'Todas as dificuldades' }].concat(DIFFICULTIES), f.difficulty) + '</select>' +
       '<select class="select" data-change="filter-goals" data-field="type">' + optionsHtml([{ id: 'all', label: 'Todos os tipos' }].concat(TRACKING_TYPES), f.type) + '</select>' +
-      '<select class="select" data-change="filter-goals" data-field="sort">' + optionsHtml(GOAL_SORTS, f.sort) + '</select>' +
+      (kanban ? '' : '<select class="select" data-change="filter-goals" data-field="sort">' + optionsHtml(GOAL_SORTS, f.sort) + '</select>') +
       '</div><div id="goals-list"></div>';
   }
 
@@ -3049,9 +3449,10 @@
   function filteredGoals() {
     const f = ui.goalFilters;
     const text = f.text.trim().toLowerCase();
+    const kanban = state.settings.goalsView === 'kanban';
     return sortGoals(state.goals.filter(function (g) {
-      if (f.status === 'open' && g.status === 'done') return false;
-      if (f.status !== 'open' && f.status !== 'all' && g.status !== f.status) return false;
+      if (!kanban && f.status === 'open' && g.status === 'done') return false;
+      if (!kanban && f.status !== 'open' && f.status !== 'all' && g.status !== f.status) return false;
       if (f.project !== 'all' && g.projectId !== f.project) return false;
       if (f.difficulty !== 'all' && g.difficulty !== f.difficulty) return false;
       if (f.type !== 'all' && g.tracking.type !== f.type) return false;
@@ -3072,6 +3473,8 @@
       container.innerHTML = '<div class="card">' + emptyStateHtml('🎯', 'Nenhuma meta ainda', 'Adicione metas mensuráveis aos seus projetos.', '<button type="button" class="btn btn-primary" data-action="new-goal">+ Nova meta</button>') + '</div>';
     } else if (!list.length) {
       container.innerHTML = '<div class="card">' + emptyStateHtml('🔎', 'Nenhuma meta encontrada', 'Ajuste os filtros para ver mais resultados.', '<button type="button" class="btn" data-action="clear-goal-filters">Limpar filtros</button>') + '</div>';
+    } else if (state.settings.goalsView === 'kanban') {
+      container.innerHTML = kanbanHtml(list, true);
     } else {
       container.innerHTML = '<div class="goal-list">' + list.map(function (g) { return goalCardHtml(g, { showProject: true }); }).join('') + '</div>';
     }
@@ -3086,21 +3489,26 @@
     const overdue = isOverdue(g.deadline, g.status);
     const project = findProject(g.projectId);
     const expanded = ui.expandedGoals.has(g.id);
+    const blocked = isGoalBlocked(state.goals, g);
+    const dis = blocked ? ' disabled' : '';
+    const sub = subtaskStats(g);
+    const photos = photoCount(g);
 
     let lead;
     if (t.type === 'simple') {
-      lead = '<button type="button" class="check-btn' + (done ? ' checked' : '') + '" data-action="goal-toggle-done" data-id="' + id + '" title="' + (done ? 'Reabrir meta' : 'Concluir meta') + '" aria-label="' + (done ? 'Reabrir meta' : 'Concluir meta') + '">' + (done ? '✓' : '') + '</button>';
+      lead = '<button type="button" class="check-btn' + (done ? ' checked' : '') + '" data-action="goal-toggle-done" data-id="' + id + '" title="' + (blocked ? 'Bloqueada por dependência' : done ? 'Reabrir meta' : 'Concluir meta') + '" aria-label="' + (done ? 'Reabrir meta' : 'Concluir meta') + '"' + dis + '>' + (done ? '✓' : blocked ? '🔒' : '') + '</button>';
     } else {
       lead = '<div class="goal-ring' + (pct >= 100 ? ' done' : '') + '" style="--p:' + pct + '"><span>' + pct + '%</span></div>';
     }
 
     let quick = '';
     if (t.type === 'frequency') {
-      quick = '<button type="button" class="btn btn-sm" data-action="goal-freq-inc" data-id="' + id + '" title="Registrar 1 ocorrência hoje">+1</button>' +
-        '<button type="button" class="btn btn-sm btn-ghost" data-action="goal-log" data-id="' + id + '">Registrar…</button>';
+      quick = '<button type="button" class="btn btn-sm" data-action="goal-freq-inc" data-id="' + id + '" title="Registrar 1 ocorrência hoje"' + dis + '>+1</button>' +
+        '<button type="button" class="btn btn-sm btn-ghost" data-action="goal-log" data-id="' + id + '"' + dis + '>Registrar…</button>';
     } else if (t.type !== 'simple') {
-      quick = '<button type="button" class="btn btn-sm" data-action="goal-log" data-id="' + id + '">📈 Registrar</button>';
+      quick = '<button type="button" class="btn btn-sm" data-action="goal-log" data-id="' + id + '"' + dis + '>📈 Registrar</button>';
     }
+    if (!done) quick += '<button type="button" class="btn btn-sm btn-ghost" data-action="goal-checkpoint" data-id="' + id + '" title="Checkpoint com comentário e fotos"' + dis + '>📸</button>';
 
     const meta = [];
     if (opts.showProject && project) {
@@ -3109,9 +3517,15 @@
     meta.push(difficultyBadge(g.difficulty));
     meta.push(priorityBadge(g.priority));
     meta.push('<span class="chip" title="Tipo de acompanhamento">' + escapeHtml(optionOf(TRACKING_TYPES, t.type).label) + '</span>');
+    if (blocked) meta.push(lockChipHtml(g));
+    if (g.recurrence) meta.push(recurrenceChipHtml(g));
+    if (sub.total) meta.push('<span class="chip" title="Submetas feitas">☑️ ' + sub.done + '/' + sub.total + '</span>');
+    if (photos) meta.push('<span class="chip" title="Fotos nos checkpoints">📸 ' + photos + '</span>');
+    const cpChip = checkpointChipHtml(g);
+    if (cpChip) meta.push(cpChip);
     if (g.startDate) meta.push('<span class="chip" title="Data de início">▶ ' + formatDate(g.startDate) + '</span>');
     if (g.focusMinutes) meta.push('<span class="chip" title="Tempo em sessões de foco">🍅 ' + formatMinutes(g.focusMinutes) + '</span>');
-    if (g.deadline) meta.push(deadlineChip(g.deadline, g.status));
+    if (g.deadline && !g.recurrence) meta.push(deadlineChip(g.deadline, g.status));
     g.tags.forEach(function (tag) { meta.push('<span class="tag">#' + escapeHtml(tag) + '</span>'); });
 
     const logCount = g.log.length;
@@ -3123,21 +3537,24 @@
       }).join('') + (logCount > HISTORY_PREVIEW_LIMIT ? '<div class="small muted">Mostrando os ' + HISTORY_PREVIEW_LIMIT + ' registros mais recentes de ' + logCount + '.</div>' : '') : '<div class="small muted">Nenhum registro de progresso ainda.</div>') + '</div>';
     }
 
-    return '<article class="goal-card' + (done ? ' is-done' : '') + (overdue ? ' is-overdue' : '') + '" data-goal-id="' + id + '">' +
+    return '<article class="goal-card' + (done ? ' is-done' : '') + (overdue ? ' is-overdue' : '') + (blocked ? ' is-blocked' : '') + '" data-goal-id="' + id + '">' +
       '<div class="goal-lead">' + lead + '</div>' +
-      '<div style="min-width:0"><div class="goal-head"><span class="goal-title">' + escapeHtml(g.title) + '</span>' + statusBadge(g.status) +
+      '<div style="min-width:0"><div class="goal-head"><button type="button" class="goal-title goal-title-btn" data-action="goal-open" data-id="' + id + '" title="Abrir detalhes: checklist, checkpoints e fotos">' + escapeHtml(g.title) + '</button>' + statusBadge(g.status) +
       (g.xpAwarded ? '<span class="badge badge-xp">+' + g.xpAwarded + ' XP</span>' : '') + '</div>' +
       (g.description ? '<div class="goal-desc">' + escapeHtml(g.description) + '</div>' : '') +
       '<div class="goal-meta">' + meta.join('') + '</div>' +
       (g.nextAction && !done ? '<div class="next-action"><b>Próxima ação:</b> ' + escapeHtml(g.nextAction) + '</div>' : '') +
-      (t.type !== 'simple' ? '<div class="goal-progress">' + progressBarHtml(prog) + '<span class="goal-value">' + escapeHtml(goalValueText(g)) + '</span></div>' : '') +
+      (t.type !== 'simple' ? '<div class="goal-progress">' + progressBarHtml(prog) + '<span class="goal-value">' + escapeHtml(goalValueText(g)) + '</span></div>' :
+        sub.total ? '<div class="goal-progress">' + progressBarHtml(prog) + '<span class="goal-value">' + sub.done + '/' + sub.total + ' submetas</span></div>' : '') +
       reflectionHtml(g) +
       '</div>' +
       '<div class="goal-side"><div class="goal-side-actions">' + quick + '</div>' +
-      '<select class="select select-sm" data-change="goal-status" data-id="' + id + '" aria-label="Status da meta">' + optionsHtml(STATUSES, g.status) + '</select>' +
+      '<select class="select select-sm" data-change="goal-status" data-id="' + id + '" aria-label="Status da meta">' + STATUSES.map(function (s) {
+        return '<option value="' + s.id + '"' + (s.id === g.status ? ' selected' : '') + (blocked && (s.id === 'doing' || s.id === 'done') && s.id !== g.status ? ' disabled' : '') + '>' + escapeHtml(s.label) + '</option>';
+      }).join('') + '</select>' +
       '<div class="goal-side-actions">' +
       (done ? '<button type="button" class="icon-btn" data-action="goal-reflect" data-id="' + id + '" title="' + (g.reflection ? 'Editar reflexão' : 'Escrever reflexão') + '" aria-label="Reflexão">💭</button>' :
-        '<button type="button" class="icon-btn" data-action="goal-focus" data-id="' + id + '" title="Sessão de foco nesta meta" aria-label="Sessão de foco">🍅</button>') +
+        '<button type="button" class="icon-btn" data-action="goal-focus" data-id="' + id + '" title="Sessão de foco nesta meta" aria-label="Sessão de foco"' + dis + '>🍅</button>') +
       (t.type !== 'simple' ? '<button type="button" class="icon-btn" data-action="goal-toggle-history" data-id="' + id + '" title="Histórico de progresso (' + logCount + ')" aria-label="Histórico">' + (expanded ? '▴' : '🕘') + '</button>' : '') +
       '<button type="button" class="icon-btn" data-action="edit-goal" data-id="' + id + '" title="Editar meta" aria-label="Editar meta">✏️</button>' +
       '<button type="button" class="icon-btn danger" data-action="delete-goal" data-id="' + id + '" title="Excluir meta" aria-label="Excluir meta">🗑️</button>' +
@@ -3309,6 +3726,10 @@
       case 'start-focus': openFocusSetup(null); break;
       case 'show-shortcuts': openShortcutsHelp(); break;
       case 'export-data': goToExport(); break;
+      case 'goals-kanban':
+        setGoalView('goals', 'kanban');
+        navigate('goals');
+        break;
       default: break;
     }
   }
@@ -3358,7 +3779,7 @@
       showToast('Já existe uma sessão ' + (state.focus.kind === 'break' ? 'de pausa' : 'de foco') + ' em andamento.', { type: 'warning' });
       return;
     }
-    const openGoals = state.goals.filter(function (g) { return g.status !== 'done'; });
+    const openGoals = state.goals.filter(function (g) { return g.status !== 'done' && !isGoalBlocked(state.goals, g); });
     const goalOptions = [{ id: '', label: '— Sem meta específica —' }].concat(openGoals.map(function (g) {
       const p = findProject(g.projectId);
       return { id: g.id, label: (p ? p.icon + ' ' : '') + g.title };
@@ -3796,7 +4217,7 @@
   }
 
   function exportGoalsCsv() {
-    const headers = ['Área', 'Projeto', 'Meta', 'Status', 'Tipo', 'Dificuldade', 'Prioridade', 'Início', 'Prazo', 'Progresso (%)', 'Atual', 'Alvo', 'Unidade', 'XP ganho', 'Foco (min)', 'Tags', 'Próxima ação', 'Concluída em', 'Humor', 'O que funcionou', 'O que faria diferente'];
+    const headers = ['Área', 'Projeto', 'Meta', 'Status', 'Tipo', 'Dificuldade', 'Prioridade', 'Início', 'Prazo', 'Progresso (%)', 'Atual', 'Alvo', 'Unidade', 'XP ganho', 'Foco (min)', 'Tags', 'Próxima ação', 'Concluída em', 'Humor', 'O que funcionou', 'O que faria diferente', 'Recorrência', 'Sequência', 'Submetas feitas', 'Submetas total', 'Depende de', 'Bloqueada', 'Fotos'];
     const rows = state.goals.map(function (g) {
       const p = findProject(g.projectId);
       const v = goalValues(g);
@@ -3805,21 +4226,25 @@
       return [p ? p.category : '', p ? p.name : '', g.title, optionOf(STATUSES, g.status).label, optionOf(TRACKING_TYPES, g.tracking.type).label,
         optionOf(DIFFICULTIES, g.difficulty).label, optionOf(PRIORITIES, g.priority).label, g.startDate, g.deadline, Math.round(goalProgress(g) * 100),
         v.current, v.target, v.unit, g.xpAwarded, g.focusMinutes, g.tags.join(', '), g.nextAction, g.completedAt ? toISODate(new Date(g.completedAt)) : '',
-        mood, r ? r.worked : '', r ? r.different : ''];
+        mood, r ? r.worked : '', r ? r.different : '',
+        g.recurrence ? optionOf(RECURRENCE_OPTIONS, g.recurrence.period).adj : '', g.recurrence ? g.recurrence.streak : '',
+        subtaskStats(g).done, g.subtasks.length,
+        g.dependsOn.map(function (d) { const x = findGoal(d); return x ? x.title : ''; }).filter(Boolean).join(' | '),
+        isGoalBlocked(state.goals, g) ? 'sim' : 'não', photoCount(g)];
     });
     downloadFile(exportFileName('metas', 'csv'), buildCsv(headers, rows), 'text/csv;charset=utf-8');
     return rows.length;
   }
 
   function exportProgressCsv() {
-    const headers = ['Data', 'Área', 'Projeto', 'Meta', 'Tipo', 'Valor', 'Variação', 'Unidade', 'Comentário'];
+    const headers = ['Data', 'Área', 'Projeto', 'Meta', 'Tipo', 'Valor', 'Variação', 'Unidade', 'Comentário', 'Fotos'];
     const rows = [];
     state.goals.forEach(function (g) {
       const p = findProject(g.projectId);
       const t = g.tracking;
       const unit = t.type === 'duration' ? 'min' : t.type === 'percentage' ? '%' : t.type === 'frequency' ? 'vezes' : t.type === 'numeric' ? t.unit : t.type === 'scale' ? 'nível' : '';
       g.log.forEach(function (e) {
-        rows.push([e.date, p ? p.category : '', p ? p.name : '', g.title, optionOf(TRACKING_TYPES, t.type).label, Number(e.value), Number(e.delta), unit, e.note || '']);
+        rows.push([e.date, p ? p.category : '', p ? p.name : '', g.title, optionOf(TRACKING_TYPES, t.type).label, e.value === null ? null : Number(e.value), Number(e.delta), unit, e.note || '', e.photos.length]);
       });
     });
     rows.sort(function (a, b) { return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0; });
@@ -3917,6 +4342,507 @@
   }
 
   /* =====================================================================
+   * 15h. FASE 2 — chips, checklist, checkpoints com fotos e visualizador
+   * ===================================================================== */
+
+  function lockChipHtml(g) {
+    const blockers = blockingGoalsOf(state.goals, g);
+    if (!blockers.length) return '';
+    return '<span class="chip chip-lock" data-tip="' + escapeHtml('Bloqueada até concluir:\n' + blockers.map(function (d) { return '• ' + d.title; }).join('\n')) + '">🔒 Bloqueada (' + blockers.length + ')</span>';
+  }
+
+  function recurrenceChipHtml(g) {
+    const r = g.recurrence;
+    if (!r) return '';
+    const opt = optionOf(RECURRENCE_OPTIONS, r.period);
+    const tip = opt.label + ' · período atual até ' + formatDate(recurrencePeriodEnd(r)) + '\nSequência: ' + r.streak + ' · recorde: ' + r.best;
+    return '<span class="chip" data-tip="' + escapeHtml(tip) + '">🔁 ' + escapeHtml(opt.adj) + (r.streak ? ' · 🔥 ' + r.streak : '') + '</span>' + deadlineChip(recurrencePeriodEnd(r), g.status);
+  }
+
+  function checkpointChipHtml(g) {
+    const c = checkpointDue(g);
+    if (!c) return '';
+    let text;
+    let cls = '';
+    if (c.days < 0) { text = 'checkpoint atrasado ' + (-c.days) + 'd'; cls = ' chip-danger'; }
+    else if (c.days === 0) { text = 'checkpoint hoje'; cls = ' chip-warning'; }
+    else if (c.days <= CHECKPOINT_DUE_SOON_DAYS) { text = 'checkpoint em ' + c.days + 'd'; cls = ' chip-warning'; }
+    else text = 'checkpoint ' + formatDate(c.due);
+    return '<span class="chip' + cls + '" title="Lembrete ' + escapeHtml(optionOf(CHECKPOINT_OPTIONS, g.checkpointEvery).label.toLowerCase()) + '">📸 ' + text + '</span>';
+  }
+
+  function photoCount(g) {
+    return g.log.reduce(function (a, e) { return a + e.photos.length; }, 0);
+  }
+
+  // --- Checklist (submetas) ---
+
+  function toggleSubtask(goalId, subId) {
+    commit('Marcar submeta', function (s) {
+      const g = findById(s.goals, goalId);
+      const st = g ? findById(g.subtasks, subId) : null;
+      if (!st) return;
+      if (!st.done && isGoalBlocked(s.goals, g)) throw userError(blockedMessage(s.goals, g));
+      st.done = !st.done;
+      g.updatedAt = Date.now();
+      touchProject(s, g.projectId);
+      if (st.done) {
+        st.doneAt = Date.now();
+        markActiveDay(s);
+        st.xp = gainXp(s, XP_PER_SUBTASK);
+        addActivity(s, 'subtask', 'Submeta feita em "' + g.title + '": ' + st.text, { goalId: g.id, projectId: g.projectId, xp: st.xp });
+        if (g.status === 'todo' || g.status === 'paused') g.status = 'doing';
+        const stats = subtaskStats(g);
+        if (g.tracking.type === 'simple' && stats.done === stats.total && g.status !== 'done') setGoalStatus(s, g, 'done');
+      } else {
+        if (st.xp) awardXp(s, -st.xp);
+        st.xp = 0;
+        st.doneAt = null;
+      }
+    });
+  }
+
+  function addSubtask(goalId, text) {
+    const clean = String(text || '').trim().slice(0, 200);
+    if (!clean) return false;
+    const g = findGoal(goalId);
+    if (!g) return false;
+    if (g.subtasks.length >= SUBTASK_LIMIT) {
+      showToast('Limite de ' + SUBTASK_LIMIT + ' submetas por meta.', { type: 'warning' });
+      return false;
+    }
+    return commit('Adicionar submeta', function (s) {
+      const target = findById(s.goals, goalId);
+      target.subtasks.push({ id: uid(), text: clean, done: false, doneAt: null, xp: 0 });
+      target.updatedAt = Date.now();
+    });
+  }
+
+  function deleteSubtask(goalId, subId) {
+    commit('Remover submeta', function (s) {
+      const g = findById(s.goals, goalId);
+      if (g) g.subtasks = g.subtasks.filter(function (t) { return t.id !== subId; });
+    });
+  }
+
+  // Remove um registro e recalcula o acompanhamento (o XP ganho fica).
+  function deleteLogEntry(goalId, entryId) {
+    confirmDialog({
+      title: 'Excluir registro',
+      message: 'Excluir este registro e suas fotos? O valor da meta é recalculado; o XP ganho é mantido.',
+      confirmLabel: 'Excluir',
+      danger: true
+    }).then(function (ok) {
+      if (!ok) return;
+      commit('Excluir registro', function (s) {
+        const g = findById(s.goals, goalId);
+        if (!g) return;
+        const entry = findById(g.log, entryId);
+        if (!entry) return;
+        const t = g.tracking;
+        const isLatest = g.log.every(function (e) { return e.ts <= entry.ts; });
+        g.log = g.log.filter(function (e) { return e.id !== entryId; });
+        if (t.type === 'frequency') t.count = Math.max(0, t.count - (Number(entry.delta) || 0));
+        else if (t.type === 'duration') t.logged = Math.max(0, t.logged - (Number(entry.delta) || 0));
+        else if ((t.type === 'numeric' || t.type === 'percentage' || t.type === 'scale') && isLatest && isFiniteNumber(entry.value)) t.current = entry.value - (Number(entry.delta) || 0);
+        g.updatedAt = Date.now();
+      });
+    });
+  }
+
+  // --- Seletor de fotos do checkpoint (comprime no navegador antes de salvar) ---
+
+  function photoPickerHtml() {
+    return '<div class="field full"><span class="field-label">Fotos / evidências</span>' +
+      '<div class="row"><input type="file" accept="image/*" multiple name="photo-files" hidden>' +
+      '<button type="button" class="btn btn-sm" data-photo-add>📷 Adicionar fotos</button>' +
+      '<span class="hint">Até ' + PHOTO_LIMIT_PER_CHECKPOINT + ' fotos, redimensionadas para ' + IMAGE_MAX_SIDE + 'px.</span></div>' +
+      '<div class="photo-previews" data-photo-previews></div></div>';
+  }
+
+  function bindPhotoPicker(modal, photos) {
+    const input = modal.el.querySelector('[name="photo-files"]');
+    const previews = modal.el.querySelector('[data-photo-previews]');
+    let pending = 0;
+    function renderPreviews() {
+      previews.innerHTML = photos.map(function (url, i) {
+        return '<div class="photo-preview"><img alt="" src="' + url + '"><button type="button" data-photo-remove="' + i + '" aria-label="Remover foto">✕</button></div>';
+      }).join('') + (pending ? '<div class="photo-preview" style="display:grid;place-items:center">⏳</div>' : '');
+    }
+    modal.el.addEventListener('click', function (e) {
+      if (e.target.closest('[data-photo-add]')) input.click();
+      const rm = e.target.closest('[data-photo-remove]');
+      if (rm) {
+        photos.splice(Number(rm.getAttribute('data-photo-remove')), 1);
+        renderPreviews();
+      }
+    });
+    input.addEventListener('change', function () {
+      const files = Array.from(input.files || []).slice(0, Math.max(0, PHOTO_LIMIT_PER_CHECKPOINT - photos.length));
+      if (input.files && input.files.length > files.length) showToast('Limite de ' + PHOTO_LIMIT_PER_CHECKPOINT + ' fotos por checkpoint.', { type: 'warning' });
+      input.value = '';
+      files.forEach(function (file) {
+        pending++;
+        renderPreviews();
+        compressImage(file).then(function (url) {
+          photos.push(url);
+        }).catch(function (err) {
+          showToast(describeError(err), { type: 'error' });
+        }).then(function () {
+          pending--;
+          renderPreviews();
+        });
+      });
+    });
+    return function isBusy() { return pending > 0; };
+  }
+
+  // --- Visualizador de fotos (lightbox) ---
+
+  function openLightbox(photos, startIndex) {
+    if (!photos.length) return;
+    let index = clamp(startIndex || 0, 0, photos.length - 1);
+    function onKey(e) {
+      if (e.key === 'ArrowLeft') { e.preventDefault(); show(index - 1); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); show(index + 1); }
+    }
+    const modal = openModal({
+      title: 'Evidências',
+      className: 'modal-lightbox',
+      size: 'lg',
+      body: '<div class="lightbox-stage"><img alt="" data-lb-img>' +
+        (photos.length > 1 ? '<button type="button" class="lightbox-nav prev" data-lb="prev" aria-label="Anterior">‹</button><button type="button" class="lightbox-nav next" data-lb="next" aria-label="Próxima">›</button>' : '') +
+        '</div><div class="lightbox-caption"><span data-lb-count></span><span data-lb-caption style="flex:1"></span><a data-lb-download download="evidencia.jpg" href="#">⬇ Baixar</a></div>',
+      onOpen: function (m) {
+        m.el.addEventListener('click', function (e) {
+          const nav = e.target.closest('[data-lb]');
+          if (nav) show(index + (nav.getAttribute('data-lb') === 'next' ? 1 : -1));
+        });
+        document.addEventListener('keydown', onKey);
+      },
+      onClose: function () { document.removeEventListener('keydown', onKey); }
+    });
+    modal.kind = 'lightbox';
+    function show(i) {
+      index = (i + photos.length) % photos.length;
+      const photo = photos[index];
+      const img = modal.el.querySelector('[data-lb-img]');
+      const link = modal.el.querySelector('[data-lb-download]');
+      img.removeAttribute('src');
+      modal.el.querySelector('[data-lb-count]').textContent = (index + 1) + ' / ' + photos.length;
+      modal.el.querySelector('[data-lb-caption]').textContent = photo.caption || '';
+      loadMedia(photo.mediaId).then(function (url) {
+        if (!url || photos[index] !== photo) return;
+        img.src = url;
+        link.href = url;
+      });
+    }
+    show(index);
+  }
+
+  function openPhoto(scope, id, index) {
+    if (scope === 'project') openLightbox(projectPhotos(id), index);
+    else {
+      const g = findGoal(id);
+      if (g) openLightbox(goalPhotos(g), index);
+    }
+  }
+
+  function photoThumbHtml(mediaId, scope, ownerId, index) {
+    return '<button type="button" class="photo-thumb" data-action="open-photo" data-scope="' + scope + '" data-id="' + escapeHtml(ownerId) + '" data-index="' + index + '" aria-label="Abrir foto"><img alt="" data-media-id="' + escapeHtml(mediaId) + '"></button>';
+  }
+
+  /* =====================================================================
+   * 15i. DETALHE DA META (janela com checklist, checkpoints, dependências)
+   * ===================================================================== */
+
+  function openGoalDetail(goalId) {
+    const g = findGoal(goalId);
+    if (!g) return;
+    const existing = modalStack.filter(function (m) { return m.kind === 'goal-detail'; })[0];
+    if (existing) existing.close('replace');
+    const modal = openModal({
+      title: g.title,
+      size: 'xl',
+      liveBody: function () {
+        const current = findGoal(goalId);
+        if (!current) return null;
+        if (modal) modal.el.querySelector('.modal-header h2').textContent = current.title;
+        return goalDetailHtml(current);
+      },
+      body: goalDetailHtml(g),
+      actions: [{ id: 'close', label: 'Fechar' }],
+      onOpen: function (m) {
+        m.el.addEventListener('keydown', function (e) {
+          const input = e.target.closest('[data-subtask-input]');
+          if (input && e.key === 'Enter') {
+            e.preventDefault();
+            if (addSubtask(goalId, input.value)) {
+              const again = m.el.querySelector('[data-subtask-input]');
+              if (again) again.focus();
+            }
+          }
+        });
+        m.el.addEventListener('click', function (e) {
+          const add = e.target.closest('[data-subtask-add]');
+          if (!add) return;
+          const input = m.el.querySelector('[data-subtask-input]');
+          if (addSubtask(goalId, input.value)) {
+            const again = m.el.querySelector('[data-subtask-input]');
+            if (again) again.focus();
+          }
+        });
+      }
+    });
+    modal.kind = 'goal-detail';
+    modal.goalId = goalId;
+  }
+
+  function goalDetailHtml(g) {
+    const id = escapeHtml(g.id);
+    const t = g.tracking;
+    const done = g.status === 'done';
+    const blocked = isGoalBlocked(state.goals, g);
+    const project = findProject(g.projectId);
+    const prog = goalProgress(g);
+    const st = subtaskStats(g);
+    const dis = blocked ? ' disabled title="Bloqueada por dependência"' : '';
+
+    let actions = '';
+    if (!done) {
+      if (t.type === 'frequency') actions += '<button type="button" class="btn btn-sm" data-action="goal-freq-inc" data-id="' + id + '"' + dis + '>+1</button>';
+      if (t.type !== 'simple') actions += '<button type="button" class="btn btn-sm" data-action="goal-log" data-id="' + id + '"' + dis + '>📈 Registrar</button>';
+      actions += '<button type="button" class="btn btn-sm" data-action="goal-checkpoint" data-id="' + id + '"' + dis + '>📸 Checkpoint</button>';
+      actions += '<button type="button" class="btn btn-sm" data-action="goal-focus" data-id="' + id + '"' + dis + '>🍅 Foco</button>';
+      if (t.type === 'simple') actions += '<button type="button" class="btn btn-sm btn-primary" data-action="goal-toggle-done" data-id="' + id + '"' + dis + '>✓ Concluir</button>';
+    } else {
+      actions += '<button type="button" class="btn btn-sm" data-action="goal-toggle-done" data-id="' + id + '">↩ Reabrir</button>';
+      actions += '<button type="button" class="btn btn-sm" data-action="goal-reflect" data-id="' + id + '">💭 Reflexão</button>';
+    }
+
+    const checklist = '<div class="detail-section"><div class="detail-section-head"><h4>☑️ Checklist</h4><span class="small muted">' + (st.total ? st.done + '/' + st.total + ' · +' + XP_PER_SUBTASK + ' XP cada' : 'quebre a meta em passos') + '</span></div>' +
+      (st.total ? progressBarHtml(st.done / st.total) : '') +
+      '<div class="subtask-list" style="margin-top:6px">' + g.subtasks.map(function (sub) {
+        const lock = blocked && !sub.done;
+        return '<div class="subtask-item' + (sub.done ? ' done' : '') + '">' +
+          '<button type="button" class="subtask-check' + (sub.done ? ' checked' : '') + '" data-action="subtask-toggle" data-id="' + id + '" data-sub="' + escapeHtml(sub.id) + '"' + (lock ? ' disabled' : '') + ' aria-label="' + (sub.done ? 'Desmarcar' : 'Marcar como feita') + '">' + (sub.done ? '✓' : '') + '</button>' +
+          '<span class="subtask-text">' + escapeHtml(sub.text) + '</span>' +
+          '<button type="button" class="icon-btn danger" data-action="subtask-delete" data-id="' + id + '" data-sub="' + escapeHtml(sub.id) + '" aria-label="Remover submeta">✕</button></div>';
+      }).join('') + '</div>' +
+      '<div class="subtask-add"><input class="input" data-subtask-input maxlength="200" placeholder="Nova submeta… (Enter para adicionar)"><button type="button" class="btn btn-sm" data-subtask-add>Adicionar</button></div></div>';
+
+    const photos = goalPhotos(g);
+    const entries = g.log.slice().sort(function (a, b) { return b.ts - a.ts; }).slice(0, TIMELINE_LIMIT);
+    const photoIndexOf = {};
+    photos.forEach(function (ph, i) { if (photoIndexOf[ph.mediaId] === undefined) photoIndexOf[ph.mediaId] = i; });
+    const timeline = '<div class="detail-section"><div class="detail-section-head"><h4>📸 Checkpoints e evidências</h4><span class="small muted">' + g.log.length + ' ' + plural(g.log.length, 'registro', 'registros') + ' · ' + photos.length + ' ' + plural(photos.length, 'foto', 'fotos') + '</span></div>' +
+      (entries.length ? '<div class="timeline">' + entries.map(function (e) {
+        return '<div class="timeline-item"><span class="timeline-date">' + formatDate(e.date) + '</span><div style="min-width:0"><b>' + escapeHtml(describeLogEntry(g, e)) + '</b>' +
+          (e.note ? '<div class="muted">' + escapeHtml(e.note) + '</div>' : '') +
+          (e.photos.length ? '<div class="timeline-photos">' + e.photos.map(function (mid) { return photoThumbHtml(mid, 'goal', g.id, photoIndexOf[mid]); }).join('') + '</div>' : '') +
+          '</div><button type="button" class="icon-btn danger" data-action="log-delete" data-id="' + id + '" data-entry="' + escapeHtml(e.id) + '" aria-label="Excluir registro" title="Excluir registro">🗑️</button></div>';
+      }).join('') + '</div>' + (g.log.length > TIMELINE_LIMIT ? '<div class="small muted" style="margin-top:6px">Mostrando os ' + TIMELINE_LIMIT + ' mais recentes.</div>' : '')
+        : '<div class="empty-inline">Nenhum registro ainda. Use "📸 Checkpoint" para anotar como está indo, com fotos se quiser.</div>') + '</div>';
+
+    const deps = g.dependsOn.map(function (did) { return findGoal(did); }).filter(Boolean);
+    const unlocks = state.goals.filter(function (x) { return x.dependsOn.indexOf(g.id) >= 0; });
+    const goalLink = function (x) {
+      return '<button type="button" class="project-link" data-action="goal-open" data-id="' + escapeHtml(x.id) + '">' + (x.status === 'done' ? '✅' : '⏳') + ' ' + escapeHtml(x.title) + '</button>';
+    };
+    const r = g.recurrence;
+    const cp = checkpointDue(g);
+
+    const side = '<aside class="detail-side">' +
+      '<div class="side-block"><h5>Status</h5><select class="select" data-change="goal-status" data-id="' + id + '">' + STATUSES.map(function (s) {
+        return '<option value="' + s.id + '"' + (s.id === g.status ? ' selected' : '') + (blocked && (s.id === 'doing' || s.id === 'done') && g.status !== s.id ? ' disabled' : '') + '>' + escapeHtml(s.label) + '</option>';
+      }).join('') + '</select></div>' +
+      '<div class="side-block"><h5>Depende de</h5><div class="side-list">' + (deps.length ? deps.map(goalLink).join('') : '<span class="muted">Nenhuma dependência</span>') + '</div></div>' +
+      (unlocks.length ? '<div class="side-block"><h5>Libera</h5><div class="side-list">' + unlocks.map(goalLink).join('') + '</div></div>' : '') +
+      (r ? '<div class="side-block"><h5>Recorrência</h5><div class="small">' + escapeHtml(optionOf(RECURRENCE_OPTIONS, r.period).label) + ' · período até ' + formatDate(recurrencePeriodEnd(r)) + '</div>' +
+        '<div class="small muted" style="margin:4px 0 6px">Sequência: <b>' + r.streak + '</b> · recorde: ' + r.best + '</div>' +
+        '<div class="recur-dots">' + r.history.slice(-14).map(function (h) { return '<span class="recur-dot ' + (h.done ? 'done' : 'miss') + '" title="' + formatDate(h.start) + (h.done ? ' — cumprida' : ' — não cumprida') + '">' + (h.done ? '✓' : '') + '</span>'; }).join('') + '</div></div>' : '') +
+      (cp ? '<div class="side-block"><h5>Próximo checkpoint</h5><div class="small">' + formatDate(cp.due) + (cp.days < 0 ? ' · <b style="color:var(--danger)">atrasado</b>' : cp.days === 0 ? ' · hoje' : '') + '</div></div>' : '') +
+      '<div class="side-block"><h5>Números</h5><div class="side-list small">' +
+      '<span>⭐ ' + g.xpAwarded + ' XP na conclusão</span>' +
+      (g.focusMinutes ? '<span>🍅 ' + formatMinutes(g.focusMinutes) + ' em foco</span>' : '') +
+      '<span>📅 criada em ' + formatDate(toISODate(new Date(g.createdAt))) + '</span>' +
+      (g.completedAt ? '<span>✅ concluída em ' + formatDate(toISODate(new Date(g.completedAt))) + '</span>' : '') +
+      '</div></div>' +
+      '<div class="row"><button type="button" class="btn btn-sm" data-action="edit-goal" data-id="' + id + '">✏️ Editar</button>' +
+      '<button type="button" class="btn btn-sm btn-danger" data-action="delete-goal" data-id="' + id + '">🗑️ Excluir</button></div>' +
+      '</aside>';
+
+    return '<div class="detail-grid"><div style="min-width:0">' +
+      '<div class="row-wrap" style="margin-bottom:8px">' + (project ? '<button type="button" class="project-link" data-action="open-project" data-id="' + escapeHtml(project.id) + '">' + escapeHtml(project.icon + ' ' + project.name) + '</button>' : '') +
+      statusBadge(g.status) + difficultyBadge(g.difficulty) + priorityBadge(g.priority) + lockChipHtml(g) + recurrenceChipHtml(g) + (!g.recurrence ? deadlineChip(g.deadline, g.status) : '') + checkpointChipHtml(g) +
+      g.tags.map(function (tag) { return '<span class="tag">#' + escapeHtml(tag) + '</span>'; }).join('') + '</div>' +
+      (blocked ? '<div class="banner banner-danger">' + escapeHtml(blockedMessage(state.goals, g)) + '</div>' : '') +
+      (g.description ? '<p class="goal-desc" style="font-size:14px">' + escapeHtml(g.description) + '</p>' : '') +
+      (g.nextAction && !done ? '<div class="next-action"><b>Próxima ação:</b> ' + escapeHtml(g.nextAction) + '</div>' : '') +
+      '<div class="goal-progress">' + progressBarHtml(prog) + '<span class="goal-value">' + formatPercent(prog) + (t.type !== 'simple' ? ' · ' + escapeHtml(goalValueText(g)) : '') + '</span></div>' +
+      '<div class="row-wrap" style="margin-top:12px">' + actions + '</div>' +
+      reflectionHtml(g) + checklist + timeline +
+      '</div>' + side + '</div>';
+  }
+
+  /* =====================================================================
+   * 15j. KANBAN (arrastar e soltar entre status)
+   * ===================================================================== */
+
+  function viewTabsHtml(scope, current) {
+    return '<div class="tabs view-tabs">' + GOAL_VIEWS.map(function (v) {
+      return '<button type="button" class="tab' + (current === v.id ? ' active' : '') + '" data-action="set-view" data-scope="' + scope + '" data-view="' + v.id + '">' + escapeHtml(v.label) + '</button>';
+    }).join('') + (scope === 'project' ? '<button type="button" class="tab" disabled title="Chega na Fase 3">🧩 Quadro visual</button>' : '') + '</div>';
+  }
+
+  function setGoalView(scope, view) {
+    if (!isOneOf(GOAL_VIEWS, view)) return;
+    const key = scope === 'project' ? 'projectView' : 'goalsView';
+    if (state.settings[key] === view) return;
+    commit('Alterar visualização', function (s) { s.settings[key] = view; }, { undoable: false });
+  }
+
+  function toggleGoalView() {
+    const scope = ui.route.name === 'project' ? 'project' : ui.route.name === 'goals' ? 'goals' : null;
+    if (!scope) return;
+    const key = scope === 'project' ? 'projectView' : 'goalsView';
+    setGoalView(scope, state.settings[key] === 'kanban' ? 'list' : 'kanban');
+  }
+
+  function kanbanCardHtml(g, showProject) {
+    const project = findProject(g.projectId);
+    const blocked = isGoalBlocked(state.goals, g);
+    const st = subtaskStats(g);
+    const prog = goalProgress(g);
+    const diff = optionOf(DIFFICULTIES, g.difficulty);
+    const photos = photoCount(g);
+    const showBar = g.tracking.type !== 'simple' || st.total;
+    return '<article class="kanban-card' + (blocked ? ' is-blocked' : '') + (g.status === 'done' ? ' is-done' : '') + '" draggable="true" data-kanban-id="' + escapeHtml(g.id) + '" data-action="goal-open" data-id="' + escapeHtml(g.id) + '" style="--project-color:' + (project ? project.color : DEFAULT_PROJECT_COLOR) + '">' +
+      (showProject && project ? '<div class="kanban-card-project">' + escapeHtml(project.icon + ' ' + project.name) + '</div>' : '') +
+      '<div class="kanban-card-title">' + (blocked ? '🔒 ' : '') + escapeHtml(g.title) + '</div>' +
+      (showBar ? progressBarHtml(prog) : '') +
+      '<div class="kanban-card-meta"><span class="badge badge-diff-' + diff.id + '">' + escapeHtml(diff.label) + '</span>' +
+      (g.recurrence ? recurrenceChipHtml(g) : deadlineChip(g.deadline, g.status)) +
+      (st.total ? '<span class="chip">☑️ ' + st.done + '/' + st.total + '</span>' : '') +
+      (photos ? '<span class="chip">📸 ' + photos + '</span>' : '') +
+      checkpointChipHtml(g) +
+      (g.tracking.type !== 'simple' ? '<span class="chip">' + formatPercent(prog) + '</span>' : '') +
+      '</div></article>';
+  }
+
+  function sortByKanbanOrder(list) {
+    return list.slice().sort(function (a, b) { return a.kanbanOrder - b.kanbanOrder || a.createdAt - b.createdAt; });
+  }
+
+  function kanbanHtml(goals, showProject) {
+    return '<div class="kanban">' + KANBAN_COLUMNS.map(function (col) {
+      const items = sortByKanbanOrder(goals.filter(function (g) { return g.status === col.id; }));
+      return '<section class="kanban-col" data-kanban-status="' + col.id + '">' +
+        '<div class="kanban-col-head">' + col.icon + ' ' + escapeHtml(optionOf(STATUSES, col.id).label) + '<span class="count">' + items.length + '</span></div>' +
+        '<div class="kanban-cards">' + (items.length ? items.map(function (g) { return kanbanCardHtml(g, showProject); }).join('') : '<div class="kanban-empty">Arraste metas para cá</div>') + '</div></section>';
+    }).join('') + '</div>';
+  }
+
+  // Solta a meta na coluna "status", antes do cartão beforeId (ou no fim). Reordena e muda o status.
+  function moveGoalInKanban(goalId, status, beforeId) {
+    const g = findGoal(goalId);
+    if (!g || !isOneOf(STATUSES, status)) return;
+    const column = sortByKanbanOrder(state.goals.filter(function (x) { return x.status === status && x.id !== goalId; }));
+    let index = beforeId ? column.findIndex(function (x) { return x.id === beforeId; }) : column.length;
+    if (index < 0) index = column.length;
+    const prev = column[index - 1];
+    const next = column[index];
+    let order;
+    if (prev && next) order = (prev.kanbanOrder + next.kanbanOrder) / 2;
+    else if (prev) order = prev.kanbanOrder + 1000;
+    else if (next) order = next.kanbanOrder - 1000;
+    else order = Date.now();
+    if (g.status === status && g.kanbanOrder === order) return;
+    commit(g.status === status ? 'Reordenar meta' : 'Mover meta para ' + optionOf(STATUSES, status).label, function (s) {
+      const target = findById(s.goals, goalId);
+      target.kanbanOrder = order;
+      setGoalStatus(s, target, status);
+    });
+  }
+
+  function kanbanDropTarget(col, clientY) {
+    const cards = Array.from(col.querySelectorAll('.kanban-card:not(.dragging)'));
+    for (let i = 0; i < cards.length; i++) {
+      const r = cards[i].getBoundingClientRect();
+      if (clientY < r.top + r.height / 2) return cards[i];
+    }
+    return null;
+  }
+
+  function clearKanbanDrag() {
+    document.querySelectorAll('.kanban-col.drag-over').forEach(function (c) { c.classList.remove('drag-over'); });
+    document.querySelectorAll('.drop-indicator').forEach(function (d) { d.remove(); });
+    document.querySelectorAll('.kanban-card.dragging').forEach(function (c) { c.classList.remove('dragging'); });
+  }
+
+  function bindKanbanDnD() {
+    document.addEventListener('dragstart', function (e) {
+      const card = e.target.closest ? e.target.closest('.kanban-card') : null;
+      if (!card) return;
+      kanbanDrag = card.getAttribute('data-kanban-id');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', kanbanDrag);
+      hideTooltip();
+      setTimeout(function () { card.classList.add('dragging'); }, 0);
+    });
+    document.addEventListener('dragover', function (e) {
+      if (!kanbanDrag) return;
+      const col = e.target.closest ? e.target.closest('.kanban-col') : null;
+      if (!col) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      document.querySelectorAll('.kanban-col.drag-over').forEach(function (c) { if (c !== col) c.classList.remove('drag-over'); });
+      col.classList.add('drag-over');
+      const list = col.querySelector('.kanban-cards');
+      let indicator = document.querySelector('.drop-indicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.className = 'drop-indicator';
+      }
+      const before = kanbanDropTarget(col, e.clientY);
+      if (before) list.insertBefore(indicator, before);
+      else list.appendChild(indicator);
+    });
+    document.addEventListener('drop', function (e) {
+      if (!kanbanDrag) return;
+      const col = e.target.closest ? e.target.closest('.kanban-col') : null;
+      const goalId = kanbanDrag;
+      kanbanDrag = null;
+      if (!col) {
+        clearKanbanDrag();
+        return;
+      }
+      e.preventDefault();
+      const before = kanbanDropTarget(col, e.clientY);
+      clearKanbanDrag();
+      moveGoalInKanban(goalId, col.getAttribute('data-kanban-status'), before ? before.getAttribute('data-kanban-id') : null);
+    });
+    document.addEventListener('dragend', function () {
+      kanbanDrag = null;
+      clearKanbanDrag();
+    });
+  }
+
+  function checkpointsDueHtml() {
+    const items = state.goals.map(function (g) { return { g: g, c: checkpointDue(g) }; })
+      .filter(function (x) { return x.c && x.c.days <= CHECKPOINT_DUE_SOON_DAYS && !isGoalBlocked(state.goals, x.g); })
+      .sort(function (a, b) { return a.c.days - b.c.days; }).slice(0, DASHBOARD_LIST_LIMIT);
+    const scheduled = state.goals.some(function (g) { return g.checkpointEvery && g.status !== 'done'; });
+    if (!items.length) return '<div class="empty-inline">' + (scheduled ? 'Nenhum checkpoint para os próximos dias. 👍' : 'Defina um lembrete de checkpoint numa meta (ex.: pesar-se toda semana) para vê-lo aqui.') + '</div>';
+    return '<div class="list">' + items.map(function (x) {
+      const project = findProject(x.g.projectId);
+      return '<div class="list-item"><div class="activity-icon">📸</div>' +
+        '<div class="list-item-main clickable" data-action="goal-open" data-id="' + escapeHtml(x.g.id) + '"><div class="list-item-title">' + escapeHtml(x.g.title) + '</div><div class="list-item-sub">' + escapeHtml(project ? project.name : '') + '</div></div>' +
+        checkpointChipHtml(x.g) + '<button type="button" class="btn btn-sm" data-action="goal-checkpoint" data-id="' + escapeHtml(x.g.id) + '">Registrar</button></div>';
+    }).join('') + '</div>';
+  }
+
+  /* =====================================================================
    * 16. VIEW — Configurações (básicas)
    * ===================================================================== */
 
@@ -3965,6 +4891,8 @@
       '<dt>Reabrir meta</dt><dd>Devolve o XP e o HP ganhos na conclusão</dd>' +
       '<dt>XP disponível</dt><dd>XP ganho menos XP gasto. Gastar não reduz o nível.</dd>' +
       '<dt>Sessão de foco</dt><dd>+1 XP a cada ' + Math.round(1 / XP_FOCUS_PER_MINUTE) + ' min e +' + HP_HEAL_FOCUS + ' HP</dd>' +
+      '<dt>Submeta feita</dt><dd>+' + XP_PER_SUBTASK + ' XP (devolvido se desmarcar)</dd>' +
+      '<dt>Checkpoint</dt><dd>Conta como registro de progresso: +' + XP_PER_PROGRESS_LOG + ' XP e +' + HP_HEAL_PROGRESS + ' HP</dd>' +
       '</dl><div class="field-label" style="margin-top:14px">Molduras do avatar</div><div class="frame-list">' +
       AVATAR_FRAMES.slice(1).map(function (f) {
         const unlocked = levelFromXp(state.player.xpEarned) >= f.min;
@@ -3981,8 +4909,9 @@
       '<dt>Dia sem atividade</dt><dd>−' + HP_INACTIVITY_DAMAGE + ' HP (não se o dia estiver protegido)</dd>' +
       DIFFICULTIES.map(function (d) { return '<dt>Meta ' + escapeHtml(d.label.toLowerCase()) + ' atrasada</dt><dd>−' + d.damage + ' HP por dia</dd>'; }).join('') +
       '<dt>Projeto atrasado</dt><dd>−' + HP_PROJECT_OVERDUE_DAMAGE + ' HP por dia</dd>' +
+      '<dt>Recorrente não cumprida</dt><dd>−dano da dificuldade, uma vez por período perdido</dd>' +
       '<dt>Limite diário</dt><dd>No máximo −' + HP_MAX_DAILY_DAMAGE + ' HP por dia</dd>' +
-      '<dt>Sem dano</dt><dd>Metas/projetos pausados ou concluídos, e todo o período em modo descanso</dd>' +
+      '<dt>Sem dano</dt><dd>Metas/projetos pausados ou concluídos, metas bloqueadas por dependência e todo o período em modo descanso</dd>' +
       '<dt>Exaustão (0 HP)</dt><dd>XP ' + formatMultiplier(EXHAUSTED_MULTIPLIER) + ' até voltar a ' + EXHAUSTED_RECOVER_HP + ' HP</dd>' +
       '</dl><div class="row" style="margin-top:14px"><button type="button" class="btn btn-sm" data-action="toggle-rest">' + (state.player.resting ? '🏖️ Desligar modo descanso' : '🏖️ Ligar modo descanso') + '</button>' +
       '<span class="hint">Use em férias, doença ou viagem.</span></div></section></div>';
@@ -4176,6 +5105,8 @@
       const done = commit('Excluir projeto', function (s) {
         s.projects = s.projects.filter(function (x) { return x.id !== projectId; });
         s.goals = s.goals.filter(function (g) { return g.projectId !== projectId; });
+        const remaining = new Set(s.goals.map(function (g) { return g.id; }));
+        s.goals.forEach(function (g) { g.dependsOn = g.dependsOn.filter(function (d) { return remaining.has(d); }); });
         addActivity(s, 'project_delete', 'Projeto excluído: "' + name + '"');
       });
       if (!done) return;
@@ -4294,6 +5225,32 @@
     }).join('');
   }
 
+  // Lista de metas que podem virar dependência (exclui a própria e as que dependem dela → sem ciclos).
+  function dependencyPickerHtml(g) {
+    const excluded = dependentsClosure(state.goals, g.id);
+    excluded.add(g.id);
+    const candidates = state.goals.filter(function (x) { return !excluded.has(x.id); })
+      .sort(function (a, b) { return (a.status === 'done') - (b.status === 'done') || a.title.localeCompare(b.title, 'pt-BR'); });
+    const body = candidates.length ? candidates.map(function (x) {
+      const p = findProject(x.projectId);
+      return '<label class="dep-option" data-dep-text="' + escapeHtml(normalizeSearch(x.title + ' ' + (p ? p.name : ''))) + '"><input type="checkbox" name="dependsOn" value="' + escapeHtml(x.id) + '"' + (g.dependsOn.indexOf(x.id) >= 0 ? ' checked' : '') + '>' +
+        '<span>' + (x.status === 'done' ? '✅ ' : '') + escapeHtml(x.title) + '</span><span class="muted">' + escapeHtml(p ? p.icon + ' ' + p.name : '') + '</span></label>';
+    }).join('') : '<div class="empty-inline" style="padding:8px">Nenhuma outra meta disponível.</div>';
+    return '<div class="field full"><span class="field-label">Depende de — só libera quando estas metas estiverem concluídas</span>' +
+      '<input class="input" type="search" data-dep-filter placeholder="Filtrar metas…" aria-label="Filtrar metas">' +
+      '<div class="dep-picker">' + body + '</div></div>';
+  }
+
+  // Mapeia as linhas do textarea para as submetas existentes (mantém "feita" e XP de quem não mudou de texto).
+  function subtasksFromText(text, existing) {
+    const pool = existing.slice();
+    return String(text || '').split('\n').map(function (l) { return l.trim().slice(0, 200); }).filter(Boolean).slice(0, SUBTASK_LIMIT).map(function (line) {
+      const i = pool.findIndex(function (t) { return t.text === line; });
+      if (i >= 0) return pool.splice(i, 1)[0];
+      return { id: uid(), text: line, done: false, doneAt: null, xp: 0 };
+    });
+  }
+
   function goalFormHtml(g, showTemplates) {
     const projectOptions = state.projects.map(function (p) { return { id: p.id, label: p.icon + ' ' + p.name }; });
     const project = findProject(g.projectId);
@@ -4311,6 +5268,12 @@
       '<label class="field"><span>Prazo</span><input class="input" type="date" name="deadline" value="' + escapeHtml(g.deadline) + '"></label>' +
       '<label class="field full"><span>Próxima ação sugerida</span><input class="input" name="nextAction" maxlength="160" value="' + escapeHtml(g.nextAction) + '" placeholder="Ex.: Assistir aula 3 do módulo de renda fixa"></label>' +
       '<label class="field full"><span>Tags (separadas por vírgula)</span><input class="input" name="tags" maxlength="200" value="' + escapeHtml(g.tags.join(', ')) + '" placeholder="finanças, certificação"></label>' +
+      '<label class="field"><span>Repetir</span><select class="select" name="recurrence">' + optionsHtml(RECURRENCE_OPTIONS, g.recurrence ? g.recurrence.period : '') + '</select>' +
+      '<span class="hint">Recorrente: renova a cada período (progresso zerado); o prazo passa a ser o fim do período.</span></label>' +
+      '<label class="field"><span>Lembrete de checkpoint</span><select class="select" name="checkpointEvery">' + optionsHtml(CHECKPOINT_OPTIONS, g.checkpointEvery) + '</select>' +
+      '<span class="hint">Avisa quando é hora de registrar como está indo (com fotos, se quiser).</span></label>' +
+      '<label class="field full"><span>Checklist — uma submeta por linha</span><textarea class="textarea" name="subtasks" maxlength="4000" placeholder="Ex.:\nMontar o cronograma\nFazer o simulado 1">' + escapeHtml(g.subtasks.map(function (t) { return t.text; }).join('\n')) + '</textarea></label>' +
+      dependencyPickerHtml(g) +
       '<div class="field full"><div class="fieldset"><div class="row" style="margin-bottom:10px"><span class="fieldset-title" style="margin:0">Acompanhamento</span><span class="spacer"></span>' +
       '<select class="select select-sm" name="trackingType">' + optionsHtml(TRACKING_TYPES, g.tracking.type) + '</select></div>' +
       '<div data-tracking-fields>' + trackingFieldsHtml(g.tracking) + '</div></div></div>' +
@@ -4349,6 +5312,20 @@
       onOpen: function (modal) {
         const typeSelect = modal.el.querySelector('[name="trackingType"]');
         const container = modal.el.querySelector('[data-tracking-fields]');
+        const recurrenceSelect = modal.el.querySelector('[name="recurrence"]');
+        const deadlineInput = modal.el.querySelector('[name="deadline"]');
+        const syncDeadline = function () {
+          deadlineInput.disabled = Boolean(recurrenceSelect.value);
+          deadlineInput.title = recurrenceSelect.value ? 'Metas recorrentes vencem no fim de cada período' : '';
+        };
+        recurrenceSelect.addEventListener('change', syncDeadline);
+        syncDeadline();
+        modal.el.querySelector('[data-dep-filter]').addEventListener('input', function (e) {
+          const q = normalizeSearch(e.target.value).trim();
+          modal.el.querySelectorAll('.dep-option').forEach(function (opt) {
+            opt.hidden = Boolean(q) && opt.getAttribute('data-dep-text').indexOf(q) < 0;
+          });
+        });
         let currentType = typeSelect.value;
         typeSelect.addEventListener('change', function () {
           trackingDrafts[currentType] = readTrackingFields(container, currentType, {});
@@ -4359,7 +5336,7 @@
         if (!row) return;
         const field = function (name) { return modal.el.querySelector('[name="' + name + '"]'); };
         const projectSelect = field('projectId');
-        let applied = { id: '', title: '', tags: '', nextAction: '' };
+        let applied = { id: '', title: '', tags: '', nextAction: '', subtasks: '' };
         // Só sobrescreve campos vazios ou ainda iguais ao modelo anterior (não apaga o que o usuário digitou).
         const setIfUntouched = function (name, previous, value) {
           const el = field(name);
@@ -4374,13 +5351,18 @@
           setIfUntouched('title', applied.title, tpl.title);
           setIfUntouched('tags', applied.tags, tags);
           setIfUntouched('nextAction', applied.nextAction, tpl.nextAction);
+          const subtasksText = (tpl.subtasks || []).join('\n');
+          setIfUntouched('subtasks', applied.subtasks, subtasksText);
+          field('recurrence').value = tpl.recurrence || '';
+          field('checkpointEvery').value = tpl.checkpointEvery || '';
+          syncDeadline();
           field('difficulty').value = tpl.difficulty;
           trackingDrafts[currentType] = readTrackingFields(container, currentType, {});
           currentType = tpl.tracking.type;
           typeSelect.value = currentType;
           trackingDrafts[currentType] = normalizeTracking(tpl.tracking);
           container.innerHTML = trackingFieldsHtml(trackingDrafts[currentType]);
-          applied = { id: tpl.id, title: tpl.title, tags: tags, nextAction: tpl.nextAction };
+          applied = { id: tpl.id, title: tpl.title, tags: tags, nextAction: tpl.nextAction, subtasks: subtasksText };
           row.querySelectorAll('[data-template]').forEach(function (c) { c.classList.toggle('selected', c === chip); });
           const title = field('title');
           title.focus();
@@ -4410,6 +5392,16 @@
           tags: parseTags(get('tags'))
         };
         const status = get('status');
+        const period = get('recurrence');
+        data.checkpointEvery = get('checkpointEvery');
+        data.dependsOn = Array.from(root.querySelectorAll('[name="dependsOn"]:checked')).map(function (el) { return el.value; });
+        data.subtasks = subtasksFromText(get('subtasks'), existing ? existing.subtasks : []);
+        data.recurrence = newRecurrence(period, existing ? existing.recurrence : null);
+        if (period) data.deadline = '';
+        const pendingDeps = data.dependsOn.map(findGoal).filter(function (d) { return d && d.status !== 'done'; });
+        if (pendingDeps.length && (status === 'doing' || status === 'done')) {
+          errors.status = 'Bloqueada até concluir: ' + pendingDeps.map(function (d) { return d.title; }).join(', ') + '. Use "A fazer" ou "Pausado".';
+        }
         if (!data.title) errors.title = 'Informe um título para a meta.';
         if (!findProject(data.projectId)) errors.projectId = 'Escolha um projeto.';
         if (data.startDate && !isValidISODate(data.startDate)) errors.startDate = 'Data inválida.';
@@ -4461,6 +5453,7 @@
       const done = commit('Excluir meta', function (s) {
         const target = findById(s.goals, goalId);
         s.goals = s.goals.filter(function (x) { return x.id !== goalId; });
+        s.goals.forEach(function (x) { x.dependsOn = x.dependsOn.filter(function (d) { return d !== goalId; }); });
         if (target) touchProject(s, target.projectId);
         addActivity(s, 'goal_delete', 'Meta excluída: "' + title + '"');
       });
@@ -4503,7 +5496,7 @@
     });
   }
 
-  function progressLogFieldsHtml(g) {
+  function progressLogFieldsHtml(g, asCheckpoint) {
     const t = g.tracking;
     switch (t.type) {
       case 'numeric':
@@ -4513,12 +5506,12 @@
         return numberField('Novo percentual (0–100) <span class="req">*</span>', 'value', t.current, 'min="0" max="100" autofocus') +
           '<p class="hint" style="align-self:end">Atual: ' + formatNumber(t.current) + '%</p>';
       case 'frequency':
-        return numberField('Quantas ocorrências registrar <span class="req">*</span>', 'value', 1, 'step="1" autofocus') +
+        return numberField('Quantas ocorrências registrar' + (asCheckpoint ? '' : ' <span class="req">*</span>'), 'value', asCheckpoint ? 0 : 1, 'step="1" autofocus') +
           '<p class="hint" style="align-self:end">Total: ' + t.count + ' de ' + t.target + '. Use número negativo para corrigir.</p>';
       case 'duration':
         return '<div class="field"><span class="field-label">Tempo investido <span class="req">*</span></span><div class="row">' +
           '<input class="input" type="number" name="hours" min="0" step="1" value="0" aria-label="Horas" autofocus><span class="muted">h</span>' +
-          '<input class="input" type="number" name="value" min="0" step="1" value="30" aria-label="Minutos"><span class="muted">min</span></div></div>' +
+          '<input class="input" type="number" name="value" min="0" step="1" value="' + (asCheckpoint ? 0 : 30) + '" aria-label="Minutos"><span class="muted">min</span></div></div>' +
           '<p class="hint" style="align-self:end">Total: ' + formatMinutes(t.logged) + ' de ' + formatMinutes(t.target) + '</p>';
       case 'scale':
         return numberField('Novo valor (' + formatNumber(t.min) + '–' + formatNumber(t.max) + ') <span class="req">*</span>', 'value', t.current, 'min="' + t.min + '" max="' + t.max + '" autofocus') +
@@ -4528,52 +5521,70 @@
     }
   }
 
-  function openProgressLog(goalId) {
+  // Registro de progresso; como checkpoint aceita fotos e valor "sem mudança" (0 ocorrências, 0 min).
+  function openProgressLog(goalId, asCheckpoint) {
     const g = findGoal(goalId);
     if (!g) return;
-    if (g.tracking.type === 'simple') {
+    if (g.tracking.type === 'simple' && !asCheckpoint) {
       toggleGoalDone(goalId);
       return;
     }
+    if (isGoalBlocked(state.goals, g)) {
+      showToast(blockedMessage(state.goals, g), { type: 'warning' });
+      return;
+    }
+    const photos = [];
+    let photosBusy = function () { return false; };
     openModal({
-      title: 'Registrar progresso — ' + g.title,
+      title: (asCheckpoint ? '📸 Checkpoint — ' : 'Registrar progresso — ') + g.title,
       size: 'md',
-      body: '<div class="form-grid">' + progressLogFieldsHtml(g) +
+      body: '<div class="form-grid">' + progressLogFieldsHtml(g, asCheckpoint) +
         '<label class="field"><span>Data</span><input class="input" type="date" name="date" value="' + todayISO() + '" max="' + todayISO() + '"></label>' +
-        '<label class="field full"><span>Comentário</span><textarea class="textarea" name="note" maxlength="300" placeholder="Opcional"></textarea></label></div>',
+        '<label class="field full"><span>Comentário</span><textarea class="textarea" name="note" maxlength="300" placeholder="' + (asCheckpoint ? 'Como está indo? O que mudou desde o último checkpoint?' : 'Opcional') + '"' + (g.tracking.type === 'simple' ? ' autofocus' : '') + '></textarea></label>' +
+        photoPickerHtml() + '</div>',
       actions: [
         { id: 'cancel', label: 'Cancelar' },
         { id: 'save', label: 'Registrar (+' + multipliedXp(state.player, XP_PER_PROGRESS_LOG) + ' XP)', variant: 'primary', submit: true }
       ],
+      onOpen: function (modal) { photosBusy = bindPhotoPicker(modal, photos); },
       onAction: function (action, modal) {
         if (action !== 'save') return true;
+        if (photosBusy()) {
+          showToast('Aguarde as fotos terminarem de processar.', { type: 'info' });
+          return false;
+        }
         const root = modal.el;
         const t = g.tracking;
         const errors = {};
-        let value = parseNumber(root.querySelector('[name="value"]').value);
-        if (t.type === 'duration') {
+        const valueEl = root.querySelector('[name="value"]');
+        let value = valueEl ? parseNumber(valueEl.value) : null;
+        const note = root.querySelector('[name="note"]').value.trim();
+        if (t.type === 'simple') {
+          if (!note && !photos.length) errors.note = 'Escreva um comentário ou adicione uma foto.';
+        } else if (t.type === 'duration') {
           const hours = parseNumber(root.querySelector('[name="hours"]').value);
           value = (isFiniteNumber(hours) ? hours : 0) * 60 + (isFiniteNumber(value) ? value : 0);
-          if (value <= 0) errors.value = 'Informe um tempo maior que zero.';
+          if (value < 0 || (!asCheckpoint && value <= 0)) errors.value = 'Informe um tempo maior que zero.';
         } else if (!isFiniteNumber(value)) {
           errors.value = 'Informe um valor.';
         } else if (t.type === 'percentage' && (value < 0 || value > 100)) {
           errors.value = 'Use um valor entre 0 e 100.';
         } else if (t.type === 'scale' && (value < t.min || value > t.max)) {
           errors.value = 'O valor precisa estar dentro da escala.';
-        } else if (t.type === 'frequency' && (value === 0 || Math.round(value) !== value)) {
-          errors.value = 'Informe um número inteiro diferente de zero.';
+        } else if (t.type === 'frequency' && ((!asCheckpoint && value === 0) || Math.round(value) !== value)) {
+          errors.value = 'Informe um número inteiro' + (asCheckpoint ? '.' : ' diferente de zero.');
         }
         const date = root.querySelector('[name="date"]').value || todayISO();
         if (!isValidISODate(date)) errors.date = 'Data inválida.';
         if (!showFormErrors(root, errors)) return false;
-        const note = root.querySelector('[name="note"]').value.trim();
-        commit('Registrar progresso', function (s) {
-          const target = findById(s.goals, goalId);
-          if (!target) throw new Error('Meta não encontrada.');
-          applyProgressLog(s, target, { value: value, date: date, note: note });
+        return Promise.all(photos.map(saveMedia)).then(function (ids) {
+          commit(asCheckpoint ? 'Registrar checkpoint' : 'Registrar progresso', function (s) {
+            const target = findById(s.goals, goalId);
+            if (!target) throw new Error('Meta não encontrada.');
+            applyProgressLog(s, target, { value: value, date: date, note: note, photos: ids });
+          });
+          return true;
         });
-        return true;
       }
     });
   }
@@ -4781,7 +5792,19 @@
       case 'buy-freeze': buyFreeze(); break;
       case 'repair-streak': repairStreak(); break;
       case 'toggle-rest': toggleRest(); break;
-      case 'goal-focus': openFocusSetup(id); break;
+      case 'goal-focus': {
+        const fg = findGoal(id);
+        if (fg && isGoalBlocked(state.goals, fg)) showToast(blockedMessage(state.goals, fg), { type: 'warning' });
+        else openFocusSetup(id);
+        break;
+      }
+      case 'goal-open': openGoalDetail(id); break;
+      case 'goal-checkpoint': openProgressLog(id, true); break;
+      case 'subtask-toggle': toggleSubtask(id, el.getAttribute('data-sub')); break;
+      case 'subtask-delete': deleteSubtask(id, el.getAttribute('data-sub')); break;
+      case 'log-delete': deleteLogEntry(id, el.getAttribute('data-entry')); break;
+      case 'open-photo': openPhoto(el.getAttribute('data-scope'), id, Number(el.getAttribute('data-index')) || 0); break;
+      case 'set-view': setGoalView(el.getAttribute('data-scope'), el.getAttribute('data-view')); break;
       case 'goal-reflect': openReflectionForm(id, false); break;
       case 'start-focus': openFocusSetup(null); break;
       case 'focus-pause': toggleFocusPause(); break;
@@ -4871,6 +5894,9 @@
     } else if (e.key === '?') {
       e.preventDefault();
       openShortcutsHelp();
+    } else if (key === 'v' && !e.shiftKey) {
+      e.preventDefault();
+      toggleGoalView();
     } else if (key === 'f' && !e.shiftKey) {
       e.preventDefault();
       if (state.focus) toggleFocusPause();
@@ -4902,11 +5928,12 @@
 
   function bindGlobalEvents() {
     document.addEventListener('click', function (e) {
-      if (e.target.closest('.modal-backdrop, #toast-root')) return;
+      if (e.target.closest('#toast-root')) return;
       const el = e.target.closest('[data-action]');
       if (!el || el.disabled) return;
       handleAction(el.getAttribute('data-action'), el);
     });
+    bindKanbanDnD();
     document.addEventListener('change', function (e) {
       const el = e.target.closest('[data-change]');
       if (el) handleChange(el.getAttribute('data-change'), el);
