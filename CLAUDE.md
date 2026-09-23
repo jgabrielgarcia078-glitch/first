@@ -64,20 +64,36 @@ Na primeira tentativa (com outra IA), o código foi colado em 18 blocos sequenci
 
 As 7 regras acima existem especificamente para tornar essa classe de bug impossível por construção.
 
-## Fase atual: Fase 1 — Fundação
+## Status
 
-Escopo desta entrega (confirmado com o usuário):
+### Fase 1 — Fundação ✅ entregue (v0.1.0)
 
-- Modelo de dados versionado + migração
-- Camada de armazenamento em IndexedDB
-- Estrutura de undo/redo (pode ser só o esqueleto ainda)
-- Toasts e sistema de modais reutilizável
-- Shell do app: navegação, tema claro/escuro básico
-- Dashboard com estatísticas reais (não mockadas)
-- CRUD completo de Projetos — visão Lista apenas
-- CRUD completo de Metas — tipos de acompanhamento básicos (simples, numérica, percentual, frequência, duração, escala), **sem** dependências/recorrência ainda
+Modelo de dados versionado + migração, IndexedDB, undo/redo, toasts, modais, shell com navegação e tema claro/escuro, dashboard com estatísticas reais, CRUD de Projetos (visão Lista) e CRUD de Metas com os 6 tipos de acompanhamento (sem dependências/recorrência).
 
-**Fora de escopo nesta fase** (não implementar agora): Quadro Visual (Canvas), Kanban, Checkpoints com fotos, Conquistas, Recompensas, Calendário, Estatísticas avançadas, Configurações visuais completas, Backup, atalhos de teclado, busca global, notificações, histórico de atividades.
+### Fase 1.5 — Melhorias de prioridade alta ✅ entregue (v0.2.0, schema v2)
+
+Vindas da análise comparativa com Habitica, Duolingo, Way of Life, Notion/ClickUp, Linear/Superhuman (pedido explícito do usuário — antecipa partes das Fases 4, 5 e 6):
+
+- **Vitalidade (HP)** estilo Habitica: dano por meta/projeto atrasado e por dia sem atividade; cura ao registrar progresso e concluir. Em 0 HP o jogador fica **exausto** (XP ×0,5 até voltar a 25 HP). **Modo descanso** desliga o dano (férias/doença).
+- **Streak com proteções (freeze)**: máx. 2; ganha 1 a cada 7 dias seguidos ou compra com XP disponível; usadas automaticamente só quando cobrem todos os dias parados. **Reparo** de streak perdido (até 3 dias depois) usando proteções + XP.
+- **Multiplicador de XP por streak**: 3+ dias ×1,1 · 7+ ×1,25 · 14+ ×1,5 · 30+ ×2.
+- **Paleta de comandos Ctrl/Cmd+K** (busca global de projetos, metas e ações, sem acento) + Ctrl+Z / Ctrl+Y (Ctrl+Shift+Z) fora de campos de texto.
+- **Heatmap de atividade diária** (53 semanas, estilo GitHub) no Dashboard, com dias protegidos marcados.
+- **Áreas da vida**: rollup por categoria de projeto no Dashboard (clique filtra a lista de projetos).
+
+Todos os números do jogo são constantes no topo do arquivo (`HP_*`, `FREEZE_*`, `STREAK_*`, `DIFFICULTIES`); a tela Configurações mostra as regras vigentes.
+
+### Regras do motor de jogo (não quebrar)
+
+- Toda mutação passa por `commit()`; XP positivo usa `gainXp()` (aplica multiplicador) e estornos usam `awardXp()` com o valor bruto salvo em `xpAwarded`. Cura de conclusão fica em `hpAwarded` e é estornada ao reabrir.
+- `markActiveDay()` deve rodar **antes** de `gainXp()` para o multiplicador já contar o dia de hoje.
+- `processDailyTick()` avalia dias completos de `player.lastTickDate` até ontem (máx. 30), roda na abertura (antes do 1º render, fora do undo), a cada 60 s e ao voltar para a aba. Usa o status **atual** de metas/projetos.
+- `player.daily[iso] = { xp, actions }` alimenta o heatmap (o log de atividades é truncado em 300 itens, não usar para histórico longo).
+- Salvamento com debounce curto (50 ms) de propósito: fechar a aba logo após uma ação não pode perder dados.
+
+### Validação antes de entregar
+
+Além do `node --check` (regra 7): teste E2E com Playwright abrindo o `.html` via `file://`, usando `page.clock.setFixedTime` para simular a passagem dos dias. Atenção: `page.goto` que só muda o `#hash` não recarrega a página — use `page.reload()`.
 
 ## Roadmap completo (fases futuras, nesta ordem)
 
@@ -87,11 +103,24 @@ Escopo desta entrega (confirmado com o usuário):
 5. **Calendário + Estatísticas avançadas**
 6. **Configurações visuais completas + Backup + Atalhos + Busca + Notificações + Histórico**
 
+## Melhorias da análise comparativa ainda pendentes
+
+Prioridade média (encaixar nas fases indicadas):
+- **Modo foco / Pomodoro vinculado a uma meta** (Forest, Finch) — registra tempo em metas de duração. Fase 3 ou 4.
+- **Scoreboard semanal/mensal** no Dashboard (esta semana vs. anterior: XP, metas, dias ativos) (Way of Life). Fase 5.
+- **Export CSV** além do JSON (por meta/checkpoint, para abrir no Excel). Fase 6.
+- **Templates de meta** prontos por categoria (leitura, peso, certificação…) com o tipo de acompanhamento certo. Fase 2.
+- **Reflexão na conclusão** ("o que funcionou / o que faria diferente") gravada no histórico. Fase 2 ou 4.
+- **Grupos do Canvas com cor e progresso agregado** dentro do retângulo (Miro/Milanote). Fase 3.
+- **Atalhos "G depois X"** para navegação (G→D Dashboard, G→P Projetos…) (Linear). Fase 6.
+
+Baixa prioridade: temas extras (ex.: retrô), avatar que evolui com o nível, "melhor dia da semana" nas estatísticas.
+
+Fora de escopo por decisão de arquitetura (arquivo único 100% local): contas/sync em nuvem, multiplayer/festas do Habitica, notificações push do SO, IA integrada.
+
 ## Ideias de gamificação em backlog (opcional — só implementar se o usuário pedir explicitamente)
 
-- Multiplicador de XP crescente por manter streak alto
 - Títulos temáticos por nível (ligados à jornada financeira do usuário)
-- Modo foco (timer tipo Pomodoro vinculado a uma meta, registrando tempo investido)
 - Destaque do caminho crítico de dependências no Quadro Visual
 
 ## Comandos úteis

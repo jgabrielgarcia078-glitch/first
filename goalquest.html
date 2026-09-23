@@ -127,7 +127,8 @@
     cursor: pointer; font-weight: 500; white-space: nowrap; transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
   }
   .btn:hover { background: var(--surface-3); }
-  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn:disabled, .btn:disabled:hover { opacity: 0.45; cursor: not-allowed; background: var(--surface-2); box-shadow: none; }
+  .btn-primary:disabled, .btn-primary:disabled:hover { background: var(--accent); }
   .btn:focus-visible, .icon-btn:focus-visible, .nav-item:focus-visible, .check-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .btn-primary { background: var(--accent); border-color: var(--accent); color: var(--accent-contrast); }
   .btn-primary:hover { background: var(--accent-hover); box-shadow: var(--glow); }
@@ -378,6 +379,82 @@
 
   .loading { padding: 60px; text-align: center; color: var(--text-muted); }
 
+  /* ---------- Vitalidade, streak e jogador ---------- */
+  .progress.hp > span { background: var(--danger); }
+  .hero.is-exhausted { border-color: color-mix(in srgb, var(--danger) 55%, var(--border)); }
+  .hero-bars { display: flex; flex-direction: column; gap: 4px; }
+  .hero-bar-line { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-muted); margin-bottom: 8px; }
+  .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .chip-accent { color: var(--xp); border-color: color-mix(in srgb, var(--xp) 40%, var(--border)); }
+  .chip-ice { color: var(--secondary); border-color: color-mix(in srgb, var(--secondary) 40%, var(--border)); }
+  .banner { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); margin-bottom: 14px; font-size: 13.5px; }
+  .banner-danger { border-color: color-mix(in srgb, var(--danger) 45%, var(--border)); background: color-mix(in srgb, var(--danger) 10%, var(--surface)); }
+  .banner-info { border-color: color-mix(in srgb, var(--secondary) 40%, var(--border)); }
+  .banner .spacer { flex: 1; }
+  .player-mini-bars { display: flex; flex-direction: column; gap: 5px; }
+  .player-mini-bars .progress { height: 6px; }
+
+  /* ---------- Heatmap de atividade ---------- */
+  .heatmap-wrap { --hm-cell: 16px; overflow-x: auto; padding: 2px 2px 6px; }
+  .hm-footer { --hm-cell: 13px; }
+  .heatmap { display: grid; grid-template-columns: 30px auto; column-gap: 6px; row-gap: 4px; width: max-content; }
+  .hm-months { grid-column: 2; display: grid; grid-template-columns: repeat(var(--weeks), var(--hm-cell)); column-gap: 3px; height: 15px; font-size: 11px; color: var(--text-muted); }
+  .hm-months span { grid-row: 1; white-space: nowrap; }
+  .hm-days { display: grid; grid-template-rows: repeat(7, var(--hm-cell)); row-gap: 3px; font-size: 10.5px; line-height: var(--hm-cell); color: var(--text-muted); }
+  .hm-grid { display: grid; grid-auto-flow: column; grid-template-rows: repeat(7, var(--hm-cell)); grid-auto-columns: var(--hm-cell); gap: 3px; }
+  .hm-cell { width: var(--hm-cell); height: var(--hm-cell); border-radius: 3px; background: var(--surface-3); }
+  .hm-cell.l1 { background: color-mix(in srgb, var(--accent) 32%, var(--surface-3)); }
+  .hm-cell.l2 { background: color-mix(in srgb, var(--accent) 56%, var(--surface-3)); }
+  .hm-cell.l3 { background: color-mix(in srgb, var(--accent) 78%, var(--surface-3)); }
+  .hm-cell.l4 { background: var(--accent); }
+  .hm-cell.frozen { box-shadow: inset 0 0 0 2px var(--secondary); }
+  .hm-cell.today { outline: 1.5px solid var(--text); outline-offset: 1px; }
+  .hm-cell.future { visibility: hidden; }
+  .hm-grid .hm-cell:not(.future):hover { outline: 2px solid var(--text-muted); outline-offset: 1px; }
+  .hm-footer { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: var(--text-muted); }
+  .hm-legend { display: flex; align-items: center; gap: 3px; }
+  .hm-legend .hm-cell { cursor: default; }
+  .hm-legend-label { margin: 0 4px; }
+  .dash-full { grid-column: 1 / -1; margin-bottom: 18px; }
+
+  /* ---------- Áreas da vida ---------- */
+  .area-row { display: grid; grid-template-columns: 32px minmax(0, 1fr) 56px; gap: 10px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+  .area-row:last-child { border-bottom: 0; }
+  .area-row:hover .area-name { color: var(--accent); }
+  .area-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--surface-2); display: grid; place-items: center; font-size: 16px; }
+  .area-name { font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .area-sub { font-size: 12px; color: var(--text-muted); margin: 2px 0 5px; }
+  .area-pct { text-align: right; font-weight: 800; font-size: 15px; }
+
+  /* ---------- Paleta de comandos ---------- */
+  .search-btn { display: inline-flex; align-items: center; gap: 10px; padding: 6px 8px 6px 12px; min-width: 220px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); cursor: pointer; }
+  .search-btn:hover { border-color: var(--accent); color: var(--text); }
+  .search-btn .spacer { flex: 1; }
+  kbd { font-family: inherit; font-size: 11px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 5px; background: var(--surface); color: var(--text-muted); white-space: nowrap; }
+  .modal-palette { max-width: 620px; }
+  .modal-palette .modal-header { display: none; }
+  .modal-palette .modal-body { padding: 12px; }
+  .palette-input { font-size: 15px; padding: 11px 12px; }
+  .palette-list { margin-top: 8px; max-height: 56vh; overflow-y: auto; }
+  .palette-group { font-size: 11px; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); padding: 10px 10px 4px; }
+  .palette-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--radius-sm); cursor: pointer; min-width: 0; }
+  .palette-item.active { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+  .palette-item-icon { width: 22px; text-align: center; flex-shrink: 0; }
+  .palette-item-label { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .palette-item-hint { font-size: 12px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+  .palette-foot { display: flex; gap: 14px; margin-top: 10px; padding: 8px 4px 0; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-muted); }
+  .palette-empty { padding: 18px 10px; color: var(--text-muted); text-align: center; }
+
+  /* ---------- Tooltip e destaque ---------- */
+  #tooltip {
+    position: fixed; z-index: 300; pointer-events: none; max-width: 260px; padding: 7px 10px; border-radius: var(--radius-sm);
+    background: var(--surface); color: var(--text); border: 1px solid var(--border); box-shadow: var(--shadow);
+    font-size: 12.5px; white-space: pre-line; opacity: 0; transition: opacity 0.1s ease;
+  }
+  #tooltip.show { opacity: 1; }
+  @keyframes goal-flash { 0%, 100% { box-shadow: none; } 30% { box-shadow: 0 0 0 3px var(--accent), var(--glow); } }
+  .goal-card.flash { animation: goal-flash 1.6s ease 2; }
+
   /* Responsividade básica (bônus, desktop é o foco) */
   @media (max-width: 1200px) {
     .stats-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -416,6 +493,7 @@
     <header class="topbar">
       <div class="topbar-title" id="page-title">GoalQuest</div>
       <div class="topbar-actions">
+        <button type="button" class="search-btn" data-action="open-palette" title="Buscar projetos, metas e ações">🔍 Buscar ou executar…<span class="spacer"></span><kbd id="palette-kbd">Ctrl K</kbd></button>
         <span class="save-indicator" id="save-indicator">Carregando…</span>
         <button type="button" class="icon-btn" id="btn-undo" data-action="undo" title="Desfazer" aria-label="Desfazer">↶</button>
         <button type="button" class="icon-btn" id="btn-redo" data-action="redo" title="Refazer" aria-label="Refazer">↷</button>
@@ -428,6 +506,7 @@
 </div>
 <div id="modal-root"></div>
 <div id="toast-root" aria-live="polite"></div>
+<div id="tooltip" role="tooltip"></div>
 
 <script>
 (function () {
@@ -437,8 +516,8 @@
    * 1. CONSTANTES (todas declaradas aqui, antes de qualquer função)
    * ===================================================================== */
 
-  const APP_VERSION = '0.1.0';
-  const CURRENT_SCHEMA_VERSION = 1;
+  const APP_VERSION = '0.2.0';
+  const CURRENT_SCHEMA_VERSION = 2;
 
   const DB_NAME = 'goalquest';
   const DB_VERSION = 1;
@@ -447,7 +526,8 @@
   const STATE_KEY = 'main';
   const BACKUP_KEY_PREFIX = 'backup-schema-v';
 
-  const SAVE_DEBOUNCE_MS = 400;
+  // Curto de propósito: fechar/recarregar logo após uma ação não pode perder dados.
+  const SAVE_DEBOUNCE_MS = 50;
   const UNDO_LIMIT = 60;
   const ACTIVITY_LIMIT = 300;
   const GOAL_LOG_LIMIT = 500;
@@ -465,7 +545,41 @@
   const XP_PROJECT_COMPLETE = 50;
   const XP_LEVEL_BASE = 50;
 
+  // Vitalidade (HP): cai com atrasos e dias parados, sobe ao agir.
+  const HP_MAX = 50;
+  const HP_INACTIVITY_DAMAGE = 2;
+  const HP_PROJECT_OVERDUE_DAMAGE = 3;
+  const HP_MAX_DAILY_DAMAGE = 10;
+  const HP_HEAL_PROGRESS = 1;
+  const HP_HEAL_PROJECT = 10;
+  const EXHAUSTED_RECOVER_HP = 25;
+  const EXHAUSTED_MULTIPLIER = 0.5;
+  const TICK_MAX_DAYS = 30;
+  const TICK_INTERVAL_MS = 60000;
+
+  // Streak: proteções (freeze), reparo e multiplicador de XP.
+  const FREEZE_MAX = 2;
+  const FREEZE_START = 1;
+  const FREEZE_EARN_EVERY = 7;
+  const FREEZE_COST = 60;
+  const STREAK_REPAIR_MAX_DAYS = 3;
+  const STREAK_REPAIR_COST_PER_DAY = 40;
+  const STREAK_REPAIR_MIN_STREAK = 2;
+  // Ordem decrescente: o primeiro tier atingido vale.
+  const STREAK_TIERS = [
+    { min: 30, mult: 2, label: 'Lendário' },
+    { min: 14, mult: 1.5, label: 'Em chamas' },
+    { min: 7, mult: 1.25, label: 'Aquecido' },
+    { min: 3, mult: 1.1, label: 'Embalado' }
+  ];
+
+  const HEATMAP_WEEKS = 53;
+  const PALETTE_LIMIT_PER_GROUP = 8;
+  const COUNTED_ACTIVITY_TYPES = ['project_create', 'project_complete', 'goal_create', 'goal_complete', 'progress'];
+
   const HEX_COLOR_REGEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+  const DIACRITICS_REGEX = /[̀-ͯ]/g;
+  const MAC_PLATFORM_REGEX = /mac|iphone|ipad/i;
   const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
   const HTML_ESCAPE_REGEX = /[&<>"']/g;
   const ROUTE_PREFIX_REGEX = /^#\/?/;
@@ -475,6 +589,7 @@
   const MONTH_NAMES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
   const MONTH_SHORT = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
   const WEEKDAY_NAMES = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+  const WEEKDAY_SHORT = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
 
   // Mesmos ids das futuras colunas do Kanban (Fase 2).
   const STATUSES = [
@@ -489,11 +604,12 @@
     { id: 'high', label: 'Alta', weight: 3 },
     { id: 'critical', label: 'Crítica', weight: 4 }
   ];
+  // xp: ao concluir · heal: HP recuperado ao concluir · damage: HP perdido por dia de atraso.
   const DIFFICULTIES = [
-    { id: 'easy', label: 'Fácil', xp: 10 },
-    { id: 'medium', label: 'Média', xp: 25 },
-    { id: 'hard', label: 'Difícil', xp: 50 },
-    { id: 'epic', label: 'Épica', xp: 100 }
+    { id: 'easy', label: 'Fácil', xp: 10, heal: 2, damage: 1 },
+    { id: 'medium', label: 'Média', xp: 25, heal: 3, damage: 2 },
+    { id: 'hard', label: 'Difícil', xp: 50, heal: 5, damage: 3 },
+    { id: 'epic', label: 'Épica', xp: 100, heal: 8, damage: 5 }
   ];
   const TRACKING_TYPES = [
     { id: 'simple', label: 'Simples', hint: 'Feita ou não feita.' },
@@ -509,6 +625,8 @@
     { id: 'month', label: 'Mês', current: 'neste mês' }
   ];
   const PROJECT_CATEGORIES = ['Estudos', 'Carreira', 'Negócios', 'Finanças', 'Saúde', 'Pessoal', 'Outro'];
+  // Cada categoria de projeto é uma "área da vida" no dashboard.
+  const CATEGORY_ICONS = { 'Estudos': '📚', 'Carreira': '💼', 'Negócios': '📈', 'Finanças': '💰', 'Saúde': '🏋️', 'Pessoal': '🌱', 'Outro': '🧩' };
   const PROJECT_ICONS = ['🎯', '📚', '🎓', '💼', '📈', '💰', '🏦', '🧮', '🏋️', '🥗', '🧠', '🚀', '🌱', '🏆', '✍️', '⭐'];
   const PROJECT_COLORS = ['#7c5cff', '#3b82f6', '#22d3ee', '#22c55e', '#84cc16', '#f59e0b', '#f97316', '#ef4444', '#ec4899', '#a855f7', '#64748b'];
   const DEFAULT_PROJECT_COLOR = '#7c5cff';
@@ -527,8 +645,25 @@
   const ACTIVITY_ICONS = {
     project_create: '🗂️', project_update: '✏️', project_delete: '🗑️', project_complete: '🏁',
     goal_create: '🎯', goal_update: '✏️', goal_delete: '🗑️', goal_complete: '✅', goal_reopen: '↩️',
-    progress: '📈', level_up: '⬆️', profile: '👤', system: '⚙️'
+    progress: '📈', level_up: '⬆️', profile: '👤', system: '⚙️',
+    hp_damage: '💔', exhausted: '😵', recovered: '💪', streak_freeze: '❄️', streak_lost: '🥀',
+    streak_repair: '🔧', freeze_earned: '🧊', freeze_buy: '🛒', rest: '🏖️', streak_tier: '🔥'
   };
+  // Ações da paleta de comandos (Ctrl/Cmd+K). "keywords" ajuda a busca.
+  const PALETTE_COMMANDS = [
+    { id: 'go-dashboard', icon: '🏠', label: 'Ir para Dashboard', keywords: 'inicio home painel' },
+    { id: 'go-projects', icon: '🗂️', label: 'Ir para Projetos', keywords: 'lista' },
+    { id: 'go-goals', icon: '🎯', label: 'Ir para Metas', keywords: 'objetivos' },
+    { id: 'go-settings', icon: '⚙️', label: 'Ir para Configurações', keywords: 'perfil tema opcoes' },
+    { id: 'new-project', icon: '➕', label: 'Novo projeto', keywords: 'criar adicionar' },
+    { id: 'new-goal', icon: '➕', label: 'Nova meta', keywords: 'criar adicionar objetivo' },
+    { id: 'toggle-theme', icon: '◐', label: 'Alternar tema claro/escuro', keywords: 'dark light modo' },
+    { id: 'undo', icon: '↶', label: 'Desfazer', keywords: 'voltar', shortcut: 'Ctrl Z' },
+    { id: 'redo', icon: '↷', label: 'Refazer', keywords: 'avancar', shortcut: 'Ctrl Y' },
+    { id: 'buy-freeze', icon: '❄️', label: 'Comprar proteção de streak', keywords: 'freeze gelo streak' },
+    { id: 'repair-streak', icon: '🔧', label: 'Reparar streak perdido', keywords: 'recuperar streak' },
+    { id: 'toggle-rest', icon: '🏖️', label: 'Ativar/desativar modo descanso', keywords: 'ferias pausa descanso hp' }
+  ];
   const SAVE_STATUS_LABELS = {
     loading: { text: 'Carregando…', cls: '' },
     saved: { text: '✓ Salvo', cls: '' },
@@ -569,6 +704,21 @@
         goals: Array.isArray(data.goals) ? data.goals : [],
         activity: Array.isArray(data.activity) ? data.activity : []
       };
+    },
+    2: function (data) {
+      // v1 → v2: vitalidade (HP), proteções de streak e histórico diário para o heatmap.
+      // Começa com HP cheio e o relógio do jogo em "hoje" para não punir o passado.
+      const player = Object.assign({}, data.player || {});
+      if (player.hp === undefined) player.hp = HP_MAX;
+      if (player.exhausted === undefined) player.exhausted = false;
+      if (player.resting === undefined) player.resting = false;
+      if (player.freezes === undefined) player.freezes = FREEZE_START;
+      if (!Array.isArray(player.frozenDays)) player.frozenDays = [];
+      player.lastTickDate = todayISO();
+      if (!player.daily || typeof player.daily !== 'object' || !Object.keys(player.daily).length) {
+        player.daily = seedDailyFromHistory(data.activity, player.activeDays);
+      }
+      return Object.assign({}, data, { player: player });
     }
   };
 
@@ -583,12 +733,14 @@
   let saveTimer = null;
   let saveStatus = 'loading';
   let pendingToasts = [];
+  let paletteModal = null;
   const undoHistory = { undo: [], redo: [] };
   const mediaCache = new Map();
   const modalStack = [];
   const ui = {
     route: { name: 'dashboard' },
     detailStatus: 'all',
+    highlightGoal: null,
     expandedGoals: new Set(),
     projectFilters: { text: '', status: 'active', category: 'all', sort: 'updated' },
     goalFilters: { text: '', status: 'open', project: 'all', difficulty: 'all', type: 'all', sort: 'deadline' }
@@ -754,6 +906,20 @@
     return err.message || String(err);
   }
 
+  function normalizeSearch(value) {
+    return String(value || '').normalize('NFD').replace(DIACRITICS_REGEX, '').toLowerCase();
+  }
+
+  function isMacPlatform() {
+    return MAC_PLATFORM_REGEX.test(navigator.platform || navigator.userAgent || '');
+  }
+
+  function isTypingTarget(el) {
+    if (!el) return false;
+    const tag = el.tagName;
+    return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
+  }
+
   function parseTags(value) {
     const seen = new Set();
     return String(value || '').split(',').map(function (t) { return t.trim(); }).filter(function (t) {
@@ -855,11 +1021,53 @@
       updatedAt: now,
       profile: { name: 'Jogador', subtitle: 'Rumo ao próximo nível' },
       settings: { theme: 'dark' },
-      player: { xpEarned: 0, xpSpent: 0, activeDays: [] },
+      player: {
+        xpEarned: 0,
+        xpSpent: 0,
+        activeDays: [],
+        hp: HP_MAX,
+        exhausted: false,
+        resting: false,
+        freezes: FREEZE_START,
+        frozenDays: [],
+        lastTickDate: todayISO(),
+        daily: {}
+      },
       projects: [],
       goals: [],
       activity: []
     };
+  }
+
+  // Reconstrói o histórico diário (XP e nº de ações por dia) a partir do log de atividades.
+  function seedDailyFromHistory(activity, activeDays) {
+    const daily = {};
+    function entry(day) {
+      if (!daily[day]) daily[day] = { xp: 0, actions: 0 };
+      return daily[day];
+    }
+    (Array.isArray(activity) ? activity : []).forEach(function (a) {
+      if (!a || !a.ts) return;
+      const e = entry(toISODate(new Date(a.ts)));
+      if (a.xp > 0) e.xp += a.xp;
+      if (COUNTED_ACTIVITY_TYPES.indexOf(a.type) >= 0) e.actions++;
+    });
+    (Array.isArray(activeDays) ? activeDays : []).forEach(function (day) {
+      if (!isValidISODate(day)) return;
+      const e = entry(day);
+      if (!e.actions) e.actions = 1;
+    });
+    return daily;
+  }
+
+  function normalizeDaily(raw) {
+    const out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (day) {
+      if (!isValidISODate(day) || !raw[day] || typeof raw[day] !== 'object') return;
+      out[day] = { xp: Math.max(0, Number(raw[day].xp) || 0), actions: Math.max(0, Number(raw[day].actions) || 0) };
+    });
+    return out;
   }
 
   function defaultTracking(type) {
@@ -912,6 +1120,7 @@
       motivation: String(p.motivation || ''),
       coverId: p.coverId ? String(p.coverId) : null,
       xpAwarded: Number(p.xpAwarded) || 0,
+      hpAwarded: Number(p.hpAwarded) || 0,
       completedAt: Number(p.completedAt) || null,
       createdAt: Number(p.createdAt) || now,
       updatedAt: Number(p.updatedAt) || now
@@ -941,6 +1150,7 @@
       tags: Array.isArray(g.tags) ? g.tags.map(String).filter(Boolean) : [],
       log: Array.isArray(g.log) ? g.log.filter(function (e) { return e && typeof e === 'object'; }) : [],
       xpAwarded: Number(g.xpAwarded) || 0,
+      hpAwarded: Number(g.hpAwarded) || 0,
       completedAt: Number(g.completedAt) || null,
       createdAt: Number(g.createdAt) || now,
       updatedAt: Number(g.updatedAt) || now
@@ -956,7 +1166,15 @@
     const player = Object.assign({}, base.player, s.player || {});
     player.xpEarned = Math.max(0, Number(player.xpEarned) || 0);
     player.xpSpent = Math.max(0, Number(player.xpSpent) || 0);
-    player.activeDays = Array.isArray(player.activeDays) ? player.activeDays.filter(isValidISODate) : [];
+    player.activeDays = Array.isArray(player.activeDays) ? Array.from(new Set(player.activeDays.filter(isValidISODate))) : [];
+    const hp = Number(player.hp);
+    player.hp = isFiniteNumber(hp) ? clamp(Math.round(hp), 0, HP_MAX) : HP_MAX;
+    player.exhausted = Boolean(player.exhausted);
+    player.resting = Boolean(player.resting);
+    player.freezes = clamp(Math.round(Number(player.freezes) || 0), 0, FREEZE_MAX);
+    player.frozenDays = Array.isArray(player.frozenDays) ? Array.from(new Set(player.frozenDays.filter(isValidISODate))) : [];
+    player.lastTickDate = isValidISODate(player.lastTickDate) ? player.lastTickDate : todayISO();
+    player.daily = normalizeDaily(player.daily);
     const settings = Object.assign({}, base.settings, s.settings || {});
     if (!isOneOf(THEMES, settings.theme)) settings.theme = 'dark';
     return {
@@ -1082,27 +1300,87 @@
     return level;
   }
 
-  function computeStreak(days) {
-    const set = new Set(days);
-    let cursor = todayISO();
-    if (!set.has(cursor)) cursor = addDaysISO(cursor, -1);
+  // --- Streak: dias ativos contam; dias protegidos (freeze) mantêm a sequência sem somar. ---
+
+  function streakEndingAt(activeSet, frozenSet, day) {
+    let cursor = day;
     let count = 0;
-    while (set.has(cursor)) {
-      count++;
+    while (activeSet.has(cursor) || frozenSet.has(cursor)) {
+      if (activeSet.has(cursor)) count++;
       cursor = addDaysISO(cursor, -1);
     }
     return count;
   }
 
-  function computeBestStreak(days) {
-    const sorted = Array.from(new Set(days)).sort();
+  function computeStreak(player) {
+    const active = new Set(player.activeDays);
+    const frozen = new Set(player.frozenDays);
+    const today = todayISO();
+    // Hoje ainda sem atividade não quebra o streak: conta até ontem.
+    const start = active.has(today) ? today : addDaysISO(today, -1);
+    return streakEndingAt(active, frozen, start);
+  }
+
+  function computeBestStreak(player) {
+    const active = new Set(player.activeDays);
+    const days = Array.from(new Set(player.activeDays.concat(player.frozenDays))).sort();
     let best = 0;
     let run = 0;
-    for (let i = 0; i < sorted.length; i++) {
-      run = i > 0 && diffDays(sorted[i - 1], sorted[i]) === 1 ? run + 1 : 1;
+    for (let i = 0; i < days.length; i++) {
+      if (i === 0 || diffDays(days[i - 1], days[i]) !== 1) run = 0;
+      if (active.has(days[i])) run++;
       if (run > best) best = run;
     }
     return best;
+  }
+
+  function streakTier(streak) {
+    for (let i = 0; i < STREAK_TIERS.length; i++) {
+      if (streak >= STREAK_TIERS[i].min) return STREAK_TIERS[i];
+    }
+    return null;
+  }
+
+  function nextStreakTier(streak) {
+    let next = null;
+    STREAK_TIERS.forEach(function (t) { if (t.min > streak && (!next || t.min < next.min)) next = t; });
+    return next;
+  }
+
+  function xpMultiplier(player) {
+    if (player.exhausted) return EXHAUSTED_MULTIPLIER;
+    const tier = streakTier(computeStreak(player));
+    return tier ? tier.mult : 1;
+  }
+
+  function formatMultiplier(mult) {
+    return '×' + mult.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+  }
+
+  function multipliedXp(player, base) {
+    return Math.max(1, Math.round(base * xpMultiplier(player)));
+  }
+
+  // Streak perdido recentemente que ainda pode ser reparado (com proteções e/ou XP).
+  function getStreakRepair(s) {
+    const p = s.player;
+    const active = new Set(p.activeDays);
+    const frozen = new Set(p.frozenDays);
+    const yesterday = addDaysISO(todayISO(), -1);
+    if (active.has(yesterday) || frozen.has(yesterday)) return null;
+    const days = [];
+    let cursor = yesterday;
+    while (!active.has(cursor) && !frozen.has(cursor) && days.length <= STREAK_REPAIR_MAX_DAYS) {
+      days.push(cursor);
+      cursor = addDaysISO(cursor, -1);
+    }
+    if (days.length > STREAK_REPAIR_MAX_DAYS || !(active.has(cursor) || frozen.has(cursor))) return null;
+    const lostStreak = streakEndingAt(active, frozen, cursor);
+    if (lostStreak < STREAK_REPAIR_MIN_STREAK) return null;
+    const freezeUse = Math.min(p.freezes, days.length);
+    const cost = (days.length - freezeUse) * STREAK_REPAIR_COST_PER_DAY;
+    const available = Math.max(0, p.xpEarned - p.xpSpent);
+    return { days: days.reverse(), lostStreak: lostStreak, freezeUse: freezeUse, cost: cost, affordable: available >= cost };
   }
 
   function getPlayerStats() {
@@ -1110,6 +1388,7 @@
     const level = levelFromXp(p.xpEarned);
     const levelStart = xpThreshold(level);
     const levelEnd = xpThreshold(level + 1);
+    const streak = computeStreak(p);
     return {
       earned: p.xpEarned,
       spent: p.xpSpent,
@@ -1119,15 +1398,23 @@
       levelEnd: levelEnd,
       levelProgress: (p.xpEarned - levelStart) / (levelEnd - levelStart),
       toNext: levelEnd - p.xpEarned,
-      streak: computeStreak(p.activeDays),
-      bestStreak: computeBestStreak(p.activeDays)
+      streak: streak,
+      bestStreak: computeBestStreak(p),
+      tier: streakTier(streak),
+      nextTier: nextStreakTier(streak),
+      multiplier: xpMultiplier(p),
+      hp: p.hp,
+      exhausted: p.exhausted,
+      resting: p.resting,
+      freezes: p.freezes,
+      activeToday: p.activeDays.indexOf(todayISO()) >= 0
     };
   }
 
   // --- Mutações (sempre chamadas dentro de commit, recebendo o estado s) ---
 
-  function queueToast(message, type) {
-    pendingToasts.push({ message: message, type: type || 'info' });
+  function queueToast(message, type, action) {
+    pendingToasts.push({ message: message, type: type || 'info', action: action || null });
   }
 
   function addActivity(s, type, text, extra) {
@@ -1135,20 +1422,75 @@
     if (s.activity.length > ACTIVITY_LIMIT) s.activity.length = ACTIVITY_LIMIT;
   }
 
-  function markActiveDay(s) {
-    const today = todayISO();
-    if (s.player.activeDays.indexOf(today) < 0) s.player.activeDays.push(today);
+  function dailyEntry(s, day) {
+    if (!s.player.daily[day]) s.player.daily[day] = { xp: 0, actions: 0 };
+    return s.player.daily[day];
   }
 
+  // Registra uma ação no dia de hoje; no primeiro registro do dia, avança o streak.
+  function markActiveDay(s) {
+    const p = s.player;
+    const today = todayISO();
+    dailyEntry(s, today).actions++;
+    if (p.activeDays.indexOf(today) >= 0) return;
+    const before = computeStreak(p);
+    p.activeDays.push(today);
+    const streak = computeStreak(p);
+    if (streak <= before) return;
+    if (streak % FREEZE_EARN_EVERY === 0 && p.freezes < FREEZE_MAX) {
+      p.freezes++;
+      addActivity(s, 'freeze_earned', 'Ganhou uma proteção de streak por ' + streak + ' dias seguidos');
+      queueToast('🧊 ' + streak + ' dias seguidos! Você ganhou uma proteção de streak.', 'success');
+    }
+    const tier = streakTier(streak);
+    if (tier && tier.min === streak) {
+      addActivity(s, 'streak_tier', 'Streak de ' + streak + ' dias: XP ' + formatMultiplier(tier.mult));
+      queueToast('🔥 Streak de ' + streak + ' dias — "' + tier.label + '": todo XP agora vale ' + formatMultiplier(tier.mult) + '!', 'xp');
+    }
+  }
+
+  // Soma/subtrai XP bruto (sem multiplicador). Usado também para estornos.
   function awardXp(s, amount) {
     if (!amount) return;
     const before = levelFromXp(s.player.xpEarned);
     s.player.xpEarned = Math.max(0, s.player.xpEarned + amount);
+    const today = dailyEntry(s, todayISO());
+    today.xp = Math.max(0, today.xp + amount);
     const after = levelFromXp(s.player.xpEarned);
     if (after > before) {
       addActivity(s, 'level_up', 'Subiu para o nível ' + after + '!');
       queueToast('⬆️ Nível ' + after + ' alcançado!', 'xp');
     }
+  }
+
+  // Ganho de XP com multiplicador (streak ou exaustão). Retorna o valor realmente creditado.
+  function gainXp(s, base) {
+    const amount = multipliedXp(s.player, base);
+    awardXp(s, amount);
+    return amount;
+  }
+
+  function multiplierSuffix(s) {
+    const mult = xpMultiplier(s.player);
+    if (mult === 1) return '';
+    return ' (' + formatMultiplier(mult) + (s.player.exhausted ? ' exausto' : ' streak') + ')';
+  }
+
+  // Altera a vitalidade e trata a entrada/saída do estado de exaustão. Retorna a variação real.
+  function changeHp(s, delta) {
+    const p = s.player;
+    const before = p.hp;
+    p.hp = clamp(Math.round(p.hp + delta), 0, HP_MAX);
+    if (p.hp === 0 && !p.exhausted) {
+      p.exhausted = true;
+      addActivity(s, 'exhausted', 'Vitalidade zerada: ficou exausto');
+      queueToast('😵 Sua vitalidade zerou! Todo XP vale ' + formatMultiplier(EXHAUSTED_MULTIPLIER) + ' até você recuperar ' + EXHAUSTED_RECOVER_HP + ' HP agindo nas suas metas.', 'error');
+    } else if (p.exhausted && p.hp >= EXHAUSTED_RECOVER_HP) {
+      p.exhausted = false;
+      addActivity(s, 'recovered', 'Recuperou-se da exaustão');
+      queueToast('💪 Recuperado! Sua vitalidade voltou a ' + p.hp + ' HP e o XP voltou ao normal.', 'success');
+    }
+    return p.hp - before;
   }
 
   function touchProject(s, projectId) {
@@ -1164,19 +1506,22 @@
     touchProject(s, g.projectId);
     if (status === 'done' && !wasDone) {
       g.completedAt = Date.now();
-      const xp = optionOf(DIFFICULTIES, g.difficulty).xp;
-      if (!g.xpAwarded) {
-        g.xpAwarded = xp;
-        awardXp(s, xp);
-      }
+      const diff = optionOf(DIFFICULTIES, g.difficulty);
       markActiveDay(s);
-      addActivity(s, 'goal_complete', 'Meta concluída: "' + g.title + '"', { goalId: g.id, projectId: g.projectId, xp: xp });
-      queueToast('🎉 +' + xp + ' XP — meta concluída: ' + g.title, 'xp');
+      const suffix = multiplierSuffix(s);
+      if (!g.xpAwarded) g.xpAwarded = gainXp(s, diff.xp);
+      if (!g.hpAwarded) g.hpAwarded = changeHp(s, diff.heal);
+      addActivity(s, 'goal_complete', 'Meta concluída: "' + g.title + '"', { goalId: g.id, projectId: g.projectId, xp: g.xpAwarded });
+      queueToast('🎉 +' + g.xpAwarded + ' XP' + suffix + (g.hpAwarded ? ' · +' + g.hpAwarded + ' HP' : '') + ' — meta concluída: ' + g.title, 'xp');
     } else if (wasDone && status !== 'done') {
       g.completedAt = null;
       if (g.xpAwarded) {
         awardXp(s, -g.xpAwarded);
         g.xpAwarded = 0;
+      }
+      if (g.hpAwarded) {
+        changeHp(s, -g.hpAwarded);
+        g.hpAwarded = 0;
       }
       addActivity(s, 'goal_reopen', 'Meta reaberta: "' + g.title + '"', { goalId: g.id, projectId: g.projectId });
     }
@@ -1189,19 +1534,126 @@
     p.updatedAt = Date.now();
     if (status === 'done' && !wasDone) {
       p.completedAt = Date.now();
-      if (!p.xpAwarded) {
-        p.xpAwarded = XP_PROJECT_COMPLETE;
-        awardXp(s, XP_PROJECT_COMPLETE);
-      }
       markActiveDay(s);
-      addActivity(s, 'project_complete', 'Projeto concluído: "' + p.name + '"', { projectId: p.id, xp: XP_PROJECT_COMPLETE });
-      queueToast('🏁 +' + XP_PROJECT_COMPLETE + ' XP — projeto concluído: ' + p.name, 'xp');
+      const suffix = multiplierSuffix(s);
+      if (!p.xpAwarded) p.xpAwarded = gainXp(s, XP_PROJECT_COMPLETE);
+      if (!p.hpAwarded) p.hpAwarded = changeHp(s, HP_HEAL_PROJECT);
+      addActivity(s, 'project_complete', 'Projeto concluído: "' + p.name + '"', { projectId: p.id, xp: p.xpAwarded });
+      queueToast('🏁 +' + p.xpAwarded + ' XP' + suffix + (p.hpAwarded ? ' · +' + p.hpAwarded + ' HP' : '') + ' — projeto concluído: ' + p.name, 'xp');
     } else if (wasDone) {
       p.completedAt = null;
       if (p.xpAwarded) {
         awardXp(s, -p.xpAwarded);
         p.xpAwarded = 0;
       }
+      if (p.hpAwarded) {
+        changeHp(s, -p.hpAwarded);
+        p.hpAwarded = 0;
+      }
+    }
+  }
+
+  // --- Virada do dia: proteções automáticas, streak perdido e dano de vitalidade ---
+
+  function isGoalOverdueOn(s, g, day) {
+    if (!g.deadline || g.deadline >= day) return false;
+    if (g.status === 'done' || g.status === 'paused') return false;
+    if (toISODate(new Date(g.createdAt)) > day) return false;
+    const project = findById(s.projects, g.projectId);
+    return !project || (project.status !== 'paused' && project.status !== 'done');
+  }
+
+  function isProjectOverdueOn(p, day) {
+    if (!p.deadline || p.deadline >= day) return false;
+    if (p.status === 'done' || p.status === 'paused') return false;
+    return toISODate(new Date(p.createdAt)) <= day;
+  }
+
+  // Avalia cada dia completo desde a última execução (de lastTickDate até ontem).
+  function processDailyTick(s) {
+    const p = s.player;
+    const today = todayISO();
+    if (!isValidISODate(p.lastTickDate) || p.lastTickDate > today) {
+      p.lastTickDate = today;
+      return;
+    }
+    if (p.lastTickDate === today) return;
+    const earliest = addDaysISO(today, -TICK_MAX_DAYS);
+    const start = p.lastTickDate < earliest ? earliest : p.lastTickDate;
+    const active = new Set(p.activeDays);
+    const frozen = new Set(p.frozenDays);
+    const frozenNow = [];
+    let lostStreak = 0;
+
+    // 1) Sequências de dias sem atividade: usa proteções se cobrirem a sequência inteira.
+    let day = start;
+    while (day < today) {
+      if (active.has(day) || frozen.has(day)) {
+        day = addDaysISO(day, 1);
+        continue;
+      }
+      const run = [];
+      let cursor = day;
+      while (cursor < today && !active.has(cursor) && !frozen.has(cursor)) {
+        run.push(cursor);
+        cursor = addDaysISO(cursor, 1);
+      }
+      const before = addDaysISO(day, -1);
+      const alive = active.has(before) || frozen.has(before);
+      if (alive && p.freezes >= run.length) {
+        run.forEach(function (d) { frozen.add(d); p.frozenDays.push(d); frozenNow.push(d); });
+        p.freezes -= run.length;
+      } else if (alive) {
+        const lost = streakEndingAt(active, frozen, before);
+        if (lost >= STREAK_REPAIR_MIN_STREAK) lostStreak = Math.max(lostStreak, lost);
+      }
+      day = cursor;
+    }
+
+    // 2) Dano de vitalidade por dia (desligado no modo descanso).
+    let damage = 0;
+    let overdueHits = 0;
+    let idleDays = 0;
+    if (!p.resting) {
+      for (day = start; day < today; day = addDaysISO(day, 1)) {
+        let dmg = 0;
+        if (!active.has(day) && !frozen.has(day)) {
+          dmg += HP_INACTIVITY_DAMAGE;
+          idleDays++;
+        }
+        s.goals.forEach(function (g) {
+          if (isGoalOverdueOn(s, g, day)) {
+            dmg += optionOf(DIFFICULTIES, g.difficulty).damage;
+            overdueHits++;
+          }
+        });
+        s.projects.forEach(function (proj) {
+          if (isProjectOverdueOn(proj, day)) {
+            dmg += HP_PROJECT_OVERDUE_DAMAGE;
+            overdueHits++;
+          }
+        });
+        dmg = Math.min(dmg, HP_MAX_DAILY_DAMAGE);
+        if (dmg) damage -= changeHp(s, -dmg);
+      }
+    }
+    p.lastTickDate = today;
+
+    if (frozenNow.length) {
+      addActivity(s, 'streak_freeze', frozenNow.length + ' ' + plural(frozenNow.length, 'proteção usada', 'proteções usadas') + ' para manter o streak');
+      queueToast('❄️ ' + frozenNow.length + ' ' + plural(frozenNow.length, 'proteção de streak foi usada', 'proteções de streak foram usadas') + ' — seu streak continua vivo.', 'info');
+    }
+    if (lostStreak) {
+      addActivity(s, 'streak_lost', 'Streak de ' + lostStreak + ' ' + plural(lostStreak, 'dia', 'dias') + ' interrompido');
+      const repair = getStreakRepair(s);
+      queueToast('🥀 Seu streak de ' + lostStreak + ' ' + plural(lostStreak, 'dia', 'dias') + ' foi interrompido.' + (repair ? ' Dá para repará-lo.' : ''), 'warning', repair ? { label: 'Reparar', onClick: repairStreak } : null);
+    }
+    if (damage) {
+      const reasons = [];
+      if (idleDays) reasons.push(idleDays + ' ' + plural(idleDays, 'dia parado', 'dias parados'));
+      if (overdueHits) reasons.push('atrasos');
+      addActivity(s, 'hp_damage', 'Perdeu ' + damage + ' HP (' + reasons.join(' e ') + ')');
+      queueToast('💔 −' + damage + ' HP por ' + reasons.join(' e ') + '. Vitalidade: ' + p.hp + '/' + HP_MAX + '.', 'warning');
     }
   }
 
@@ -1256,8 +1708,11 @@
     g.updatedAt = Date.now();
     touchProject(s, g.projectId);
     markActiveDay(s);
-    awardXp(s, XP_PER_PROGRESS_LOG);
-    addActivity(s, 'progress', 'Progresso em "' + g.title + '": ' + describeLogEntry(g, entry), { goalId: g.id, projectId: g.projectId, xp: XP_PER_PROGRESS_LOG });
+    const suffix = multiplierSuffix(s);
+    const xp = gainXp(s, XP_PER_PROGRESS_LOG);
+    const hp = changeHp(s, HP_HEAL_PROGRESS);
+    addActivity(s, 'progress', 'Progresso em "' + g.title + '": ' + describeLogEntry(g, entry), { goalId: g.id, projectId: g.projectId, xp: xp });
+    queueToast('📈 +' + xp + ' XP' + suffix + (hp ? ' · +' + hp + ' HP' : '') + ' — ' + g.title + ': ' + describeLogEntry(g, entry), 'xp');
     if (g.status === 'todo' || g.status === 'paused') g.status = 'doing';
     if (g.status !== 'done' && goalMeasuredProgress(g) >= 1) setGoalStatus(s, g, 'done');
   }
@@ -1295,7 +1750,7 @@
   function flushPendingToasts() {
     const list = pendingToasts;
     pendingToasts = [];
-    list.forEach(function (t) { showToast(t.message, { type: t.type }); });
+    list.forEach(function (t) { showToast(t.message, { type: t.type, action: t.action }); });
   }
 
   function performUndo() {
@@ -1519,7 +1974,7 @@
       return '<button type="' + (a.submit ? 'submit' : 'button') + '" class="' + cls + '" data-modal-action="' + escapeHtml(a.id) + '">' + escapeHtml(a.label) + '</button>';
     }).join('');
     backdrop.innerHTML =
-      '<form class="modal modal-' + (opts.size || 'md') + '" role="dialog" aria-modal="true" novalidate>' +
+      '<form class="modal modal-' + (opts.size || 'md') + (opts.className ? ' ' + opts.className : '') + '" role="dialog" aria-modal="true" novalidate>' +
       '<header class="modal-header"><h2>' + escapeHtml(opts.title || '') + '</h2>' +
       '<button type="button" class="icon-btn" data-modal-close aria-label="Fechar">✕</button></header>' +
       '<div class="modal-body">' + (opts.body || '') + '</div>' +
@@ -1717,9 +2172,10 @@
     document.getElementById('player-mini').innerHTML =
       '<div class="player-mini-top"><div class="avatar avatar-sm">' + escapeHtml(initials(state.profile.name)) + '</div>' +
       '<div style="min-width:0"><div class="player-mini-name">' + escapeHtml(state.profile.name) + '</div>' +
-      '<div class="player-mini-level">Nível ' + ps.level + '</div></div></div>' +
-      progressBarHtml(ps.levelProgress, 'xp') +
-      '<div class="player-mini-foot"><span>' + ps.earned + ' XP</span><span>🔥 ' + ps.streak + ' ' + plural(ps.streak, 'dia', 'dias') + '</span></div>';
+      '<div class="player-mini-level">Nível ' + ps.level + (ps.multiplier !== 1 ? ' · XP ' + formatMultiplier(ps.multiplier) : '') + '</div></div></div>' +
+      '<div class="player-mini-bars"><div data-tip="' + ps.earned + ' XP · faltam ' + ps.toNext + ' para o nível ' + (ps.level + 1) + '">' + progressBarHtml(ps.levelProgress, 'xp') + '</div>' +
+      '<div data-tip="Vitalidade: ' + ps.hp + '/' + HP_MAX + ' HP' + (ps.exhausted ? ' (exausto)' : '') + '">' + progressBarHtml(ps.hp / HP_MAX, 'hp') + '</div></div>' +
+      '<div class="player-mini-foot"><span>❤️ ' + ps.hp + '</span><span>❄️ ' + ps.freezes + '</span><span>🔥 ' + ps.streak + ' ' + plural(ps.streak, 'dia', 'dias') + '</span></div>';
   }
 
   function renderUndoButtons() {
@@ -1779,7 +2235,6 @@
    * ===================================================================== */
 
   function dashboardHtml() {
-    const ps = getPlayerStats();
     const today = todayISO();
     const goals = state.goals;
     const projects = state.projects;
@@ -1792,21 +2247,11 @@
     const overdueProjects = activeProjects.filter(function (p) { return isOverdue(p.deadline, p.status); });
     const monthAgo = addDaysISO(today, -29);
     const activeDays30 = state.player.activeDays.filter(function (d) { return d >= monthAgo && d <= today; }).length;
-    const weekAgoTs = Date.now() - 7 * DAY_MS;
-    const xp7 = state.activity.reduce(function (a, e) { return e.ts >= weekAgoTs && e.xp > 0 ? a + e.xp : a; }, 0);
-
-    const hero =
-      '<section class="card hero">' +
-      '<div class="avatar">' + escapeHtml(initials(state.profile.name)) + '</div>' +
-      '<div><div class="hero-name">Olá, ' + escapeHtml(state.profile.name) + '</div>' +
-      '<div class="hero-sub">' + escapeHtml(state.profile.subtitle || formatLongToday()) + '</div>' +
-      progressBarHtml(ps.levelProgress, 'xp progress-lg') +
-      '<div class="hero-xp-line"><span>' + ps.earned + ' XP no total</span><span>' + ps.toNext + ' XP para o nível ' + (ps.level + 1) + '</span></div>' +
-      '<div class="hero-chips"><span class="chip">🔥 Streak: ' + ps.streak + ' ' + plural(ps.streak, 'dia', 'dias') + '</span>' +
-      '<span class="chip">🏅 Recorde: ' + ps.bestStreak + ' ' + plural(ps.bestStreak, 'dia', 'dias') + '</span>' +
-      '<span class="chip">💎 XP disponível: ' + ps.available + '</span></div></div>' +
-      '<div class="hero-level"><div class="small muted">NÍVEL</div><div class="hero-level-num">' + ps.level + '</div></div>' +
-      '</section>';
+    let xp7 = 0;
+    for (let i = 0; i < 7; i++) {
+      const e = state.player.daily[addDaysISO(today, -i)];
+      if (e) xp7 += e.xp;
+    }
 
     const stats = [
       { label: '🗂️ Projetos ativos', value: activeProjects.length, sub: projects.length + ' no total' },
@@ -1819,20 +2264,193 @@
       return '<div class="card stat-card ' + (s.cls || '') + '"><div class="stat-label">' + s.label + '</div><div class="stat-value">' + s.value + '</div><div class="stat-sub">' + escapeHtml(s.sub) + '</div></div>';
     }).join('');
 
+    const heatmap = '<section class="card dash-full"><div class="card-title"><h3>📆 Atividade diária</h3><span class="small muted">Últimas ' + HEATMAP_WEEKS + ' semanas</span></div>' + heatmapHtml() + '</section>';
+
     if (!projects.length) {
-      return hero + '<div class="stats-grid">' + stats + '</div>' +
+      return heroHtml() + '<div class="stats-grid">' + stats + '</div>' +
         '<div class="card">' + emptyStateHtml('🚀', 'Comece sua jornada', 'Crie um projeto (ex.: "Formação em Economia" ou "Consultoria de investimentos") e adicione metas a ele.', '<button type="button" class="btn btn-primary" data-action="new-project">+ Criar primeiro projeto</button>') + '</div>';
     }
 
-    return hero +
+    return heroHtml() +
       '<div class="stats-grid">' + stats + '</div>' +
+      heatmap +
       '<div class="dash-grid">' +
+      dashCard('🧭 Áreas da vida', 'Progresso por categoria', areasHtml()) +
       dashCard('📅 Próximos prazos', 'Próximos ' + UPCOMING_DAYS + ' dias', upcomingListHtml(today)) +
       dashCard('⏰ Atrasados', overdueGoals.length + overdueProjects.length + ' itens', overdueListHtml(overdueGoals, overdueProjects)) +
       dashCard('➡️ Próximas ações', 'Metas em andamento', nextActionsHtml(openGoals)) +
       dashCard('🗂️ Projetos recentes', '', recentProjectsHtml()) +
       dashCard('🕘 Atividade recente', '', activityListHtml()) +
       '</div>';
+  }
+
+  // Quanto de HP os atrasos atuais vão custar amanhã se nada mudar.
+  function projectedOverdueDamage() {
+    const tomorrow = addDaysISO(todayISO(), 1);
+    let dmg = 0;
+    state.goals.forEach(function (g) { if (isGoalOverdueOn(state, g, tomorrow)) dmg += optionOf(DIFFICULTIES, g.difficulty).damage; });
+    state.projects.forEach(function (p) { if (isProjectOverdueOn(p, tomorrow)) dmg += HP_PROJECT_OVERDUE_DAMAGE; });
+    return Math.min(dmg, HP_MAX_DAILY_DAMAGE);
+  }
+
+  function heroHtml() {
+    const ps = getPlayerStats();
+    const repair = getStreakRepair(state);
+    const overdueDmg = projectedOverdueDamage();
+
+    let banner = '';
+    if (ps.exhausted) {
+      banner = '<div class="banner banner-danger">😵 <span><b>Exausto.</b> Todo XP vale ' + formatMultiplier(EXHAUSTED_MULTIPLIER) + ' até a vitalidade voltar a ' + EXHAUSTED_RECOVER_HP + ' HP. Registre progresso e conclua metas para se recuperar.</span></div>';
+    }
+    if (ps.resting) {
+      banner += '<div class="banner banner-info">🏖️ <span><b>Modo descanso ligado.</b> Você não perde vitalidade; streak e XP seguem normais.</span><span class="spacer"></span><button type="button" class="btn btn-sm" data-action="toggle-rest">Desligar</button></div>';
+    }
+    if (repair) {
+      banner += '<div class="banner banner-danger">🥀 <span>Seu streak de <b>' + repair.lostStreak + ' dias</b> foi interrompido há ' + repair.days.length + ' ' + plural(repair.days.length, 'dia', 'dias') + '. Repare antes que seja tarde.</span><span class="spacer"></span>' +
+        '<button type="button" class="btn btn-sm btn-primary" data-action="repair-streak"' + (repair.affordable ? '' : ' disabled title="XP disponível insuficiente"') + '>🔧 Reparar' + (repair.cost ? ' (' + repair.cost + ' XP)' : '') + '</button></div>';
+    }
+
+    const streakTip = ps.tier ? 'Faixa "' + ps.tier.label + '": XP ' + formatMultiplier(ps.tier.mult) : 'Sem bônus ainda';
+    const nextTip = ps.nextTier ? '\nPróxima faixa em ' + (ps.nextTier.min - ps.streak) + ' ' + plural(ps.nextTier.min - ps.streak, 'dia', 'dias') + ': ' + formatMultiplier(ps.nextTier.mult) : '';
+    const todayTip = ps.activeToday ? '\nHoje já contou ✓' : '\nFaça algo hoje para manter o streak';
+    const hpLine = ps.resting ? 'Sem perda de HP (descanso)' : overdueDmg ? '⚠ Atrasos custam ' + overdueDmg + ' HP/dia' : 'Nenhum atraso drenando HP';
+    const freezeFull = ps.freezes >= FREEZE_MAX;
+
+    return banner +
+      '<section class="card hero' + (ps.exhausted ? ' is-exhausted' : '') + '">' +
+      '<div class="avatar">' + escapeHtml(initials(state.profile.name)) + '</div>' +
+      '<div style="min-width:0"><div class="hero-name">Olá, ' + escapeHtml(state.profile.name) + '</div>' +
+      '<div class="hero-sub">' + escapeHtml(state.profile.subtitle || formatLongToday()) + '</div>' +
+      '<div class="hero-bars">' +
+      '<div data-tip="Experiência total. O nível sobe com o XP ganho; gastar XP não reduz o nível.">' + progressBarHtml(ps.levelProgress, 'xp progress-lg') + '</div>' +
+      '<div class="hero-bar-line"><span>⭐ ' + ps.earned + ' XP no total</span><span>' + ps.toNext + ' XP para o nível ' + (ps.level + 1) + '</span></div>' +
+      '<div data-tip="Vitalidade. Cai com metas/projetos atrasados e dias sem atividade; sobe ao registrar progresso e concluir metas.">' + progressBarHtml(ps.hp / HP_MAX, 'hp') + '</div>' +
+      '<div class="hero-bar-line"><span>❤️ ' + ps.hp + '/' + HP_MAX + ' HP' + (ps.exhausted ? ' · exausto' : '') + '</span><span>' + escapeHtml(hpLine) + '</span></div>' +
+      '</div>' +
+      '<div class="hero-chips">' +
+      '<span class="chip' + (ps.activeToday ? ' chip-accent' : '') + '" data-tip="' + escapeHtml(streakTip + nextTip + todayTip) + '">🔥 Streak: ' + ps.streak + ' ' + plural(ps.streak, 'dia', 'dias') + (ps.activeToday ? ' ✓' : '') + '</span>' +
+      '<span class="chip' + (ps.multiplier > 1 ? ' chip-accent' : ps.multiplier < 1 ? ' chip-danger' : '') + '" data-tip="Multiplicador aplicado a todo XP ganho agora">✨ XP ' + formatMultiplier(ps.multiplier) + '</span>' +
+      '<span class="chip chip-ice" data-tip="Proteções de streak: usadas automaticamente em dias sem atividade. Ganhe 1 a cada ' + FREEZE_EARN_EVERY + ' dias seguidos ou compre com XP.">❄️ Proteções: ' + ps.freezes + '/' + FREEZE_MAX + '</span>' +
+      '<span class="chip">🏅 Recorde: ' + ps.bestStreak + ' ' + plural(ps.bestStreak, 'dia', 'dias') + '</span>' +
+      '<span class="chip" data-tip="XP ganho menos XP gasto (proteções, reparos e, no futuro, recompensas)">💎 XP disponível: ' + ps.available + '</span>' +
+      '</div>' +
+      '<div class="hero-actions">' +
+      '<button type="button" class="btn btn-sm" data-action="buy-freeze"' + (freezeFull || ps.available < FREEZE_COST ? ' disabled' : '') + ' title="' + (freezeFull ? 'Você já tem o máximo de proteções' : ps.available < FREEZE_COST ? 'Requer ' + FREEZE_COST + ' XP disponível' : 'Gastar ' + FREEZE_COST + ' XP disponível') + '">❄️ Comprar proteção (' + FREEZE_COST + ' XP)</button>' +
+      '<button type="button" class="btn btn-sm btn-ghost" data-action="toggle-rest">' + (ps.resting ? '🏖️ Sair do modo descanso' : '🏖️ Modo descanso') + '</button>' +
+      '</div></div>' +
+      '<div class="hero-level"><div class="small muted">NÍVEL</div><div class="hero-level-num">' + ps.level + '</div></div>' +
+      '</section>';
+  }
+
+  // Grade estilo GitHub: colunas = semanas (seg→dom), intensidade = XP do dia (quartis).
+  function heatmapHtml() {
+    const p = state.player;
+    const today = todayISO();
+    const firstMonday = addDaysISO(periodStartISO('week', today), -7 * (HEATMAP_WEEKS - 1));
+    const active = new Set(p.activeDays);
+    const frozen = new Set(p.frozenDays);
+    const values = [];
+    let totalXp = 0;
+    let activeCount = 0;
+    let bestDay = null;
+    for (let d = firstMonday; d <= today; d = addDaysISO(d, 1)) {
+      const e = p.daily[d];
+      if (e && e.xp > 0) values.push(e.xp);
+      if (e) totalXp += e.xp;
+      if (active.has(d)) activeCount++;
+      if (e && e.xp > 0 && (!bestDay || e.xp > p.daily[bestDay].xp)) bestDay = d;
+    }
+    values.sort(function (a, b) { return a - b; });
+    const q = function (f) { return values.length ? values[Math.min(values.length - 1, Math.floor(f * values.length))] : 0; };
+    const q1 = q(0.25);
+    const q2 = q(0.5);
+    const q3 = q(0.75);
+    function level(e, isActive) {
+      if (!e || e.xp <= 0) return isActive || (e && e.actions > 0) ? 1 : 0;
+      if (e.xp <= q1) return 1;
+      if (e.xp <= q2) return 2;
+      if (e.xp <= q3) return 3;
+      return 4;
+    }
+
+    let months = '';
+    let cells = '';
+    let lastLabelCol = -10;
+    for (let w = 0; w < HEATMAP_WEEKS; w++) {
+      for (let dow = 0; dow < 7; dow++) {
+        const d = addDaysISO(firstMonday, w * 7 + dow);
+        const date = parseISODate(d);
+        if (date.getDate() === 1 && w - lastLabelCol >= 3) {
+          months += '<span style="grid-column:' + (w + 1) + ' / span 3">' + MONTH_SHORT[date.getMonth()] + '</span>';
+          lastLabelCol = w;
+        }
+        if (d > today) {
+          cells += '<span class="hm-cell future"></span>';
+          continue;
+        }
+        const e = p.daily[d];
+        const isActive = active.has(d);
+        const isFrozen = frozen.has(d);
+        let tip = WEEKDAY_SHORT[date.getDay()] + ', ' + formatDate(d) + '\n';
+        tip += e && (e.xp > 0 || e.actions > 0) ? e.xp + ' XP · ' + e.actions + ' ' + plural(e.actions, 'ação', 'ações') : 'Sem atividade';
+        if (isFrozen) tip += '\n❄️ Dia coberto por proteção de streak';
+        if (d === today) tip += '\n(hoje)';
+        cells += '<span class="hm-cell l' + level(e, isActive) + (isFrozen ? ' frozen' : '') + (d === today ? ' today' : '') + '" data-tip="' + escapeHtml(tip) + '"></span>';
+      }
+    }
+    const dayLabels = ['seg', '', 'qua', '', 'sex', '', ''].map(function (l) { return '<span>' + l + '</span>'; }).join('');
+    const summary = activeCount + ' ' + plural(activeCount, 'dia ativo', 'dias ativos') + ' · ' + totalXp + ' XP no período' + (bestDay ? ' · melhor dia: ' + formatDate(bestDay) + ' (' + p.daily[bestDay].xp + ' XP)' : '');
+    return '<div class="heatmap-wrap"><div class="heatmap" style="--weeks:' + HEATMAP_WEEKS + '">' +
+      '<div class="hm-months">' + months + '</div>' +
+      '<div class="hm-days" aria-hidden="true">' + dayLabels + '</div>' +
+      '<div class="hm-grid" role="img" aria-label="' + escapeHtml('Heatmap de atividade: ' + summary) + '">' + cells + '</div>' +
+      '</div></div>' +
+      '<div class="hm-footer"><span>' + escapeHtml(summary) + '</span><span class="spacer"></span>' +
+      '<span class="hm-legend">Menos<span class="hm-legend-label"></span>' +
+      [0, 1, 2, 3, 4].map(function (l) { return '<span class="hm-cell l' + l + '"></span>'; }).join('') +
+      '<span class="hm-legend-label"></span>Mais</span>' +
+      '<span class="hm-legend"><span class="hm-cell frozen"></span><span class="hm-legend-label">Protegido</span></span></div>';
+  }
+
+  // Cada categoria de projeto funciona como uma área da vida (rollup de projetos → metas).
+  function areasHtml() {
+    const rows = PROJECT_CATEGORIES.map(function (cat) {
+      const projects = state.projects.filter(function (p) { return p.category === cat; });
+      if (!projects.length) return '';
+      let units = 0;
+      let sum = 0;
+      let goalCount = 0;
+      let doneCount = 0;
+      let xp = 0;
+      let overdue = 0;
+      projects.forEach(function (p) {
+        const goals = goalsOfProject(p.id);
+        xp += p.xpAwarded;
+        if (isOverdue(p.deadline, p.status)) overdue++;
+        if (!goals.length) {
+          units++;
+          sum += p.status === 'done' ? 1 : 0;
+          return;
+        }
+        goals.forEach(function (g) {
+          units++;
+          sum += goalProgress(g);
+          goalCount++;
+          if (g.status === 'done') doneCount++;
+          xp += g.xpAwarded;
+          if (isOverdue(g.deadline, g.status)) overdue++;
+        });
+      });
+      const prog = units ? sum / units : 0;
+      const activeProjects = projects.filter(function (p) { return p.status !== 'done'; }).length;
+      return '<div class="area-row" data-action="open-area" data-area="' + escapeHtml(cat) + '">' +
+        '<div class="area-icon">' + (CATEGORY_ICONS[cat] || '🧩') + '</div>' +
+        '<div style="min-width:0"><div class="area-name">' + escapeHtml(cat) + (overdue ? '<span class="chip chip-danger">' + overdue + ' ' + plural(overdue, 'atraso', 'atrasos') + '</span>' : '') + '</div>' +
+        '<div class="area-sub">' + activeProjects + '/' + projects.length + ' ' + plural(projects.length, 'projeto ativo', 'projetos ativos') + ' · ' + doneCount + '/' + goalCount + ' metas · ' + xp + ' XP</div>' +
+        progressBarHtml(prog) + '</div>' +
+        '<div class="area-pct">' + formatPercent(prog) + '</div></div>';
+    }).join('');
+    return rows ? '<div class="list">' + rows + '</div>' : '<div class="empty-inline">Crie projetos para ver o progresso por área.</div>';
   }
 
   function dashCard(title, subtitle, body) {
@@ -2156,7 +2774,7 @@
       }).join('') + (logCount > HISTORY_PREVIEW_LIMIT ? '<div class="small muted">Mostrando os ' + HISTORY_PREVIEW_LIMIT + ' registros mais recentes de ' + logCount + '.</div>' : '') : '<div class="small muted">Nenhum registro de progresso ainda.</div>') + '</div>';
     }
 
-    return '<article class="goal-card' + (done ? ' is-done' : '') + (overdue ? ' is-overdue' : '') + '">' +
+    return '<article class="goal-card' + (done ? ' is-done' : '') + (overdue ? ' is-overdue' : '') + '" data-goal-id="' + id + '">' +
       '<div class="goal-lead">' + lead + '</div>' +
       '<div style="min-width:0"><div class="goal-head"><span class="goal-title">' + escapeHtml(g.title) + '</span>' + statusBadge(g.status) +
       (g.xpAwarded ? '<span class="badge badge-xp">+' + g.xpAwarded + ' XP</span>' : '') + '</div>' +
@@ -2172,6 +2790,185 @@
       '<button type="button" class="icon-btn" data-action="edit-goal" data-id="' + id + '" title="Editar meta" aria-label="Editar meta">✏️</button>' +
       '<button type="button" class="icon-btn danger" data-action="delete-goal" data-id="' + id + '" title="Excluir meta" aria-label="Excluir meta">🗑️</button>' +
       '</div></div>' + history + '</article>';
+  }
+
+  /* =====================================================================
+   * 15b. PALETA DE COMANDOS (Ctrl/Cmd+K) — busca global + ações
+   * ===================================================================== */
+
+  function modShortcut(keys) {
+    return isMacPlatform() ? keys.replace('Ctrl ', '⌘') : keys;
+  }
+
+  function matchesQuery(tokens, haystack) {
+    for (let i = 0; i < tokens.length; i++) {
+      if (haystack.indexOf(tokens[i]) < 0) return false;
+    }
+    return true;
+  }
+
+  // Monta a lista agrupada. Pontuação simples: título que começa com a busca vem antes.
+  function paletteGroups(query) {
+    const q = normalizeSearch(query).trim();
+    const tokens = q.split(WHITESPACE_REGEX).filter(Boolean);
+    const score = function (label) { return q && normalizeSearch(label).indexOf(q) === 0 ? 0 : 1; };
+    const byScore = function (a, b) { return score(a.label) - score(b.label); };
+
+    const commands = PALETTE_COMMANDS.filter(function (c) {
+      return !tokens.length || matchesQuery(tokens, normalizeSearch(c.label + ' ' + (c.keywords || '')));
+    }).map(function (c) {
+      return { kind: 'command', id: c.id, icon: c.icon, label: c.label, hint: c.shortcut ? modShortcut(c.shortcut) : '' };
+    });
+
+    const projectsSource = tokens.length ? state.projects : state.projects.slice().sort(function (a, b) { return b.updatedAt - a.updatedAt; }).slice(0, 5);
+    const projects = projectsSource.filter(function (p) {
+      return !tokens.length || matchesQuery(tokens, normalizeSearch(p.name + ' ' + p.category + ' ' + p.description));
+    }).map(function (p) {
+      return { kind: 'project', id: p.id, icon: p.icon, label: p.name, hint: p.category + ' · ' + formatPercent(projectProgress(p)) };
+    }).sort(byScore).slice(0, PALETTE_LIMIT_PER_GROUP);
+
+    let goals = [];
+    if (tokens.length) {
+      state.goals.forEach(function (g) {
+        const project = findProject(g.projectId);
+        const hay = normalizeSearch(g.title + ' ' + g.tags.join(' ') + ' ' + g.nextAction + ' ' + (project ? project.name : ''));
+        if (!matchesQuery(tokens, hay)) return;
+        const hint = (project ? project.name + ' · ' : '') + optionOf(STATUSES, g.status).label;
+        goals.push({ kind: 'goal', id: g.id, icon: g.status === 'done' ? '✅' : '🎯', label: g.title, hint: hint });
+        if (g.status !== 'done') {
+          const isSimple = g.tracking.type === 'simple';
+          goals.push({ kind: 'goal-log', id: g.id, icon: isSimple ? '✔️' : '📈', label: (isSimple ? 'Concluir: ' : 'Registrar progresso: ') + g.title, hint: hint });
+        }
+      });
+      goals = goals.sort(byScore).slice(0, PALETTE_LIMIT_PER_GROUP);
+    }
+
+    return [
+      { title: 'Ações', items: commands },
+      { title: tokens.length ? 'Projetos' : 'Projetos recentes', items: projects },
+      { title: 'Metas', items: goals }
+    ].filter(function (g) { return g.items.length; });
+  }
+
+  function openCommandPalette() {
+    if (paletteModal) {
+      paletteModal.close('toggle');
+      return;
+    }
+    let flat = [];
+    let active = 0;
+    paletteModal = openModal({
+      title: 'Buscar ou executar',
+      className: 'modal-palette',
+      body: '<input class="input palette-input" type="search" placeholder="Buscar projetos, metas ou ações…" aria-label="Buscar projetos, metas ou ações" autocomplete="off" autofocus>' +
+        '<div class="palette-list" role="listbox"></div>' +
+        '<div class="palette-foot"><span><kbd>↑</kbd> <kbd>↓</kbd> navegar</span><span><kbd>Enter</kbd> abrir</span><span><kbd>Esc</kbd> fechar</span><span class="spacer" style="flex:1"></span><span><kbd>' + modShortcut('Ctrl K') + '</kbd> abre de qualquer lugar</span></div>',
+      onOpen: function (modal) {
+        const input = modal.el.querySelector('.palette-input');
+        const listEl = modal.el.querySelector('.palette-list');
+        function render() {
+          const groups = paletteGroups(input.value);
+          flat = [];
+          if (!groups.length) {
+            listEl.innerHTML = '<div class="palette-empty">Nada encontrado para "' + escapeHtml(input.value) + '".</div>';
+            return;
+          }
+          listEl.innerHTML = groups.map(function (g) {
+            return '<div class="palette-group">' + escapeHtml(g.title) + '</div>' + g.items.map(function (item) {
+              const idx = flat.push(item) - 1;
+              return '<div class="palette-item' + (idx === active ? ' active' : '') + '" role="option" data-palette-index="' + idx + '">' +
+                '<span class="palette-item-icon">' + escapeHtml(item.icon) + '</span><span class="palette-item-label">' + escapeHtml(item.label) + '</span>' +
+                (item.hint ? (item.kind === 'command' ? '<kbd>' + escapeHtml(item.hint) + '</kbd>' : '<span class="palette-item-hint">' + escapeHtml(item.hint) + '</span>') : '') + '</div>';
+            }).join('');
+          }).join('');
+        }
+        function setActive(idx) {
+          if (!flat.length) return;
+          active = (idx + flat.length) % flat.length;
+          listEl.querySelectorAll('.palette-item').forEach(function (el) {
+            el.classList.toggle('active', Number(el.getAttribute('data-palette-index')) === active);
+          });
+          const el = listEl.querySelector('.palette-item.active');
+          if (el) el.scrollIntoView({ block: 'nearest' });
+        }
+        function run(idx) {
+          const item = flat[idx];
+          if (!item) return;
+          modal.close('run');
+          runPaletteItem(item);
+        }
+        input.addEventListener('input', function () { active = 0; render(); });
+        input.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowDown') { e.preventDefault(); setActive(active + 1); }
+          else if (e.key === 'ArrowUp') { e.preventDefault(); setActive(active - 1); }
+          else if (e.key === 'Enter') { e.preventDefault(); run(active); }
+        });
+        listEl.addEventListener('mousemove', function (e) {
+          const el = e.target.closest('[data-palette-index]');
+          if (el && Number(el.getAttribute('data-palette-index')) !== active) setActive(Number(el.getAttribute('data-palette-index')));
+        });
+        listEl.addEventListener('click', function (e) {
+          const el = e.target.closest('[data-palette-index]');
+          if (el) run(Number(el.getAttribute('data-palette-index')));
+        });
+        render();
+      },
+      onClose: function () { paletteModal = null; }
+    });
+  }
+
+  function runPaletteItem(item) {
+    switch (item.kind) {
+      case 'project':
+        navigate('project/' + encodeURIComponent(item.id));
+        return;
+      case 'goal':
+        revealGoal(item.id);
+        return;
+      case 'goal-log':
+        openProgressLog(item.id);
+        return;
+      default:
+        runCommand(item.id);
+    }
+  }
+
+  function runCommand(id) {
+    switch (id) {
+      case 'go-dashboard': navigate('dashboard'); break;
+      case 'go-projects': navigate('projects'); break;
+      case 'go-goals': navigate('goals'); break;
+      case 'go-settings': navigate('settings'); break;
+      case 'new-project': openProjectForm(null); break;
+      case 'new-goal': openGoalForm(null, null); break;
+      case 'toggle-theme': toggleTheme(); break;
+      case 'undo': performUndo(); break;
+      case 'redo': performRedo(); break;
+      case 'buy-freeze': buyFreeze(); break;
+      case 'repair-streak': repairStreak(); break;
+      case 'toggle-rest': toggleRest(); break;
+      default: break;
+    }
+  }
+
+  // Abre o projeto da meta, rola até o cartão e o destaca.
+  function revealGoal(goalId) {
+    const g = findGoal(goalId);
+    if (!g) return;
+    ui.highlightGoal = goalId;
+    ui.detailStatus = 'all';
+    navigate('project/' + encodeURIComponent(g.projectId));
+  }
+
+  function applyGoalHighlight() {
+    const id = ui.highlightGoal;
+    if (!id) return;
+    ui.highlightGoal = null;
+    const card = document.querySelector('[data-goal-id="' + id + '"]');
+    if (!card) return;
+    card.scrollIntoView({ block: 'center' });
+    card.classList.add('flash');
+    card.addEventListener('animationend', function () { card.classList.remove('flash'); }, { once: true });
   }
 
   /* =====================================================================
@@ -2201,13 +2998,30 @@
       '<dt>Formato dos dados</dt><dd>schema v' + state.schemaVersion + '</dd>' +
       '<dt>Versão do app</dt><dd>' + APP_VERSION + '</dd>' +
       '</dl><p class="hint" style="margin-top:12px">Os dados ficam só neste navegador. Exportação/backup em JSON chega numa próxima fase.</p></section>' +
-      '<section class="card"><div class="card-title"><h3>🎮 Regras de XP</h3></div><dl class="kv">' +
-      DIFFICULTIES.map(function (d) { return '<dt>Meta ' + escapeHtml(d.label.toLowerCase()) + '</dt><dd>+' + d.xp + ' XP ao concluir</dd>'; }).join('') +
-      '<dt>Registro de progresso</dt><dd>+' + XP_PER_PROGRESS_LOG + ' XP</dd>' +
-      '<dt>Projeto concluído</dt><dd>+' + XP_PROJECT_COMPLETE + ' XP</dd>' +
+      '<section class="card"><div class="card-title"><h3>⭐ XP e níveis</h3></div><dl class="kv">' +
+      DIFFICULTIES.map(function (d) { return '<dt>Meta ' + escapeHtml(d.label.toLowerCase()) + '</dt><dd>+' + d.xp + ' XP e +' + d.heal + ' HP ao concluir</dd>'; }).join('') +
+      '<dt>Registro de progresso</dt><dd>+' + XP_PER_PROGRESS_LOG + ' XP e +' + HP_HEAL_PROGRESS + ' HP</dd>' +
+      '<dt>Projeto concluído</dt><dd>+' + XP_PROJECT_COMPLETE + ' XP e +' + HP_HEAL_PROJECT + ' HP</dd>' +
       '<dt>Níveis</dt><dd>Nível 2 com ' + xpThreshold(2) + ' XP, 3 com ' + xpThreshold(3) + ', 4 com ' + xpThreshold(4) + ', 5 com ' + xpThreshold(5) + '…</dd>' +
-      '<dt>Reabrir meta</dt><dd>Devolve o XP ganho na conclusão</dd>' +
-      '</dl></section></div>';
+      '<dt>Reabrir meta</dt><dd>Devolve o XP e o HP ganhos na conclusão</dd>' +
+      '<dt>XP disponível</dt><dd>XP ganho menos XP gasto. Gastar não reduz o nível.</dd>' +
+      '</dl></section>' +
+      '<section class="card"><div class="card-title"><h3>🔥 Streak e multiplicador</h3></div><dl class="kv">' +
+      '<dt>Streak</dt><dd>Dias seguidos com pelo menos uma ação (criar, registrar progresso, concluir). Hoje só quebra à meia-noite.</dd>' +
+      STREAK_TIERS.slice().reverse().map(function (t) { return '<dt>' + t.min + '+ dias · ' + escapeHtml(t.label) + '</dt><dd>Todo XP ' + formatMultiplier(t.mult) + '</dd>'; }).join('') +
+      '<dt>Proteções ❄️</dt><dd>Máx. ' + FREEZE_MAX + '. Ganhe 1 a cada ' + FREEZE_EARN_EVERY + ' dias seguidos ou compre por ' + FREEZE_COST + ' XP. Usadas automaticamente quando cobrem todos os dias parados.</dd>' +
+      '<dt>Reparo 🔧</dt><dd>Até ' + STREAK_REPAIR_MAX_DAYS + ' dias depois de perder um streak de ' + STREAK_REPAIR_MIN_STREAK + '+ dias: usa suas proteções e ' + STREAK_REPAIR_COST_PER_DAY + ' XP por dia restante.</dd>' +
+      '</dl></section>' +
+      '<section class="card"><div class="card-title"><h3>❤️ Vitalidade</h3></div><dl class="kv">' +
+      '<dt>Máximo</dt><dd>' + HP_MAX + ' HP</dd>' +
+      '<dt>Dia sem atividade</dt><dd>−' + HP_INACTIVITY_DAMAGE + ' HP (não se o dia estiver protegido)</dd>' +
+      DIFFICULTIES.map(function (d) { return '<dt>Meta ' + escapeHtml(d.label.toLowerCase()) + ' atrasada</dt><dd>−' + d.damage + ' HP por dia</dd>'; }).join('') +
+      '<dt>Projeto atrasado</dt><dd>−' + HP_PROJECT_OVERDUE_DAMAGE + ' HP por dia</dd>' +
+      '<dt>Limite diário</dt><dd>No máximo −' + HP_MAX_DAILY_DAMAGE + ' HP por dia</dd>' +
+      '<dt>Sem dano</dt><dd>Metas/projetos pausados ou concluídos, e todo o período em modo descanso</dd>' +
+      '<dt>Exaustão (0 HP)</dt><dd>XP ' + formatMultiplier(EXHAUSTED_MULTIPLIER) + ' até voltar a ' + EXHAUSTED_RECOVER_HP + ' HP</dd>' +
+      '</dl><div class="row" style="margin-top:14px"><button type="button" class="btn btn-sm" data-action="toggle-rest">' + (state.player.resting ? '🏖️ Desligar modo descanso' : '🏖️ Ligar modo descanso') + '</button>' +
+      '<span class="hint">Use em férias, doença ou viagem.</span></div></section></div>';
   }
 
   function fillStorageEstimate() {
@@ -2669,7 +3483,6 @@
       const target = findById(s.goals, goalId);
       if (target) applyProgressLog(s, target, { value: 1, date: todayISO(), note: '' });
     });
-    showToast('+1 registrado em "' + g.title + '" (+' + XP_PER_PROGRESS_LOG + ' XP)', { type: 'xp' });
   }
 
   function progressLogFieldsHtml(g) {
@@ -2712,7 +3525,7 @@
         '<label class="field full"><span>Comentário</span><textarea class="textarea" name="note" maxlength="300" placeholder="Opcional"></textarea></label></div>',
       actions: [
         { id: 'cancel', label: 'Cancelar' },
-        { id: 'save', label: 'Registrar (+' + XP_PER_PROGRESS_LOG + ' XP)', variant: 'primary', submit: true }
+        { id: 'save', label: 'Registrar (+' + multipliedXp(state.player, XP_PER_PROGRESS_LOG) + ' XP)', variant: 'primary', submit: true }
       ],
       onAction: function (action, modal) {
         if (action !== 'save') return true;
@@ -2742,7 +3555,6 @@
           if (!target) throw new Error('Meta não encontrada.');
           applyProgressLog(s, target, { value: value, date: date, note: note });
         });
-        showToast('Progresso registrado (+' + XP_PER_PROGRESS_LOG + ' XP)', { type: 'xp' });
         return true;
       }
     });
@@ -2780,6 +3592,93 @@
   }
 
   /* =====================================================================
+   * 19b. JOGADOR — proteções, reparo de streak, descanso e virada do dia
+   * ===================================================================== */
+
+  function buyFreeze() {
+    const ps = getPlayerStats();
+    if (ps.freezes >= FREEZE_MAX) {
+      showToast('Você já tem o máximo de ' + FREEZE_MAX + ' proteções.', { type: 'info' });
+      return;
+    }
+    if (ps.available < FREEZE_COST) {
+      showToast('XP disponível insuficiente: a proteção custa ' + FREEZE_COST + ' XP e você tem ' + ps.available + '.', { type: 'warning' });
+      return;
+    }
+    confirmDialog({
+      title: 'Comprar proteção de streak',
+      message: 'Gastar ' + FREEZE_COST + ' XP disponível em uma proteção?\n\nSe você passar um dia sem atividade, ela é usada automaticamente e o streak continua. Seu nível não muda — só o XP disponível para gastar.',
+      confirmLabel: 'Comprar (' + FREEZE_COST + ' XP)'
+    }).then(function (ok) {
+      if (!ok) return;
+      const done = commit('Comprar proteção de streak', function (s) {
+        if (s.player.freezes >= FREEZE_MAX) throw new Error('limite de proteções atingido');
+        if (s.player.xpEarned - s.player.xpSpent < FREEZE_COST) throw new Error('XP disponível insuficiente');
+        s.player.freezes++;
+        s.player.xpSpent += FREEZE_COST;
+        addActivity(s, 'freeze_buy', 'Comprou uma proteção de streak (−' + FREEZE_COST + ' XP disponível)');
+      });
+      if (done) showToast('❄️ Proteção comprada. Você tem ' + state.player.freezes + '/' + FREEZE_MAX + '.', { type: 'success' });
+    });
+  }
+
+  function repairStreak() {
+    const r = getStreakRepair(state);
+    if (!r) {
+      showToast('Não há streak recente para reparar.', { type: 'info' });
+      return;
+    }
+    if (!r.affordable) {
+      showToast('O reparo custa ' + r.cost + ' XP disponível e você tem ' + getPlayerStats().available + '.', { type: 'warning' });
+      return;
+    }
+    const n = r.days.length;
+    const parts = [];
+    if (r.freezeUse) parts.push(r.freezeUse + ' ' + plural(r.freezeUse, 'proteção', 'proteções'));
+    if (r.cost) parts.push(r.cost + ' XP disponível');
+    confirmDialog({
+      title: 'Reparar streak',
+      message: 'Cobrir ' + n + ' ' + plural(n, 'dia perdido', 'dias perdidos') + ' (' + r.days.map(formatDate).join(', ') + ') e recuperar seu streak de ' + r.lostStreak + ' dias?\n\nCusto: ' + parts.join(' + ') + '.',
+      confirmLabel: 'Reparar'
+    }).then(function (ok) {
+      if (!ok) return;
+      const done = commit('Reparar streak', function (s) {
+        const repair = getStreakRepair(s);
+        if (!repair || !repair.affordable) throw new Error('o reparo não está mais disponível');
+        repair.days.forEach(function (d) { s.player.frozenDays.push(d); });
+        s.player.freezes -= repair.freezeUse;
+        s.player.xpSpent += repair.cost;
+        addActivity(s, 'streak_repair', 'Reparou o streak de ' + repair.lostStreak + ' dias (' + parts.join(' + ') + ')');
+      });
+      if (done) showToast('🔧 Streak reparado! Agora: ' + getPlayerStats().streak + ' dias.', { type: 'success' });
+    });
+  }
+
+  function toggleRest() {
+    const on = !state.player.resting;
+    commit(on ? 'Ativar modo descanso' : 'Desativar modo descanso', function (s) {
+      s.player.resting = on;
+      addActivity(s, 'rest', on ? 'Modo descanso ativado' : 'Modo descanso desativado');
+    });
+    showToast(on ? '🏖️ Modo descanso ativado: você não perde vitalidade enquanto ele estiver ligado. O streak continua valendo.' : 'Modo descanso desativado.', { type: 'info' });
+  }
+
+  // Na abertura do app: processa os dias passados antes do primeiro render (sem entrar no undo).
+  function runInitialTick() {
+    if (state.player.lastTickDate === todayISO()) return;
+    pendingToasts = [];
+    processDailyTick(state);
+    state.updatedAt = Date.now();
+    scheduleSave();
+  }
+
+  // Com o app aberto durante a virada da meia-noite.
+  function checkDayRollover() {
+    if (!state || state.player.lastTickDate === todayISO()) return;
+    commit('Virada do dia', processDailyTick, { undoable: false });
+  }
+
+  /* =====================================================================
    * 20. ROTEAMENTO E EVENTOS GLOBAIS (delegação via addEventListener)
    * ===================================================================== */
 
@@ -2808,6 +3707,7 @@
     closeAllModals();
     renderApp();
     window.scrollTo(0, 0);
+    applyGoalHighlight();
   }
 
   function closeAllModals() {
@@ -2850,6 +3750,14 @@
         renderView();
         break;
       case 'save-profile': saveProfile(); break;
+      case 'open-palette': openCommandPalette(); break;
+      case 'buy-freeze': buyFreeze(); break;
+      case 'repair-streak': repairStreak(); break;
+      case 'toggle-rest': toggleRest(); break;
+      case 'open-area':
+        ui.projectFilters = { text: '', status: 'all', category: el.getAttribute('data-area'), sort: ui.projectFilters.sort };
+        navigate('projects');
+        break;
       default: console.warn('Ação desconhecida:', action);
     }
   }
@@ -2871,6 +3779,54 @@
     }
   }
 
+  function handleGlobalKeydown(e) {
+    const mod = e.ctrlKey || e.metaKey;
+    const key = (e.key || '').toLowerCase();
+    if (mod && !e.altKey && key === 'k') {
+      e.preventDefault();
+      openCommandPalette();
+      return;
+    }
+    if (modalStack.length) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        modalStack[modalStack.length - 1].close('dismiss');
+      }
+      return;
+    }
+    // Em campos de texto, Ctrl+Z/Y continuam sendo o desfazer nativo do navegador.
+    if (!mod || e.altKey || isTypingTarget(e.target)) return;
+    if (key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      performUndo();
+    } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+      e.preventDefault();
+      performRedo();
+    }
+  }
+
+  function showTooltip(el) {
+    const tip = document.getElementById('tooltip');
+    const text = el.getAttribute('data-tip');
+    if (!text) return;
+    if (tip.textContent !== text) tip.textContent = text;
+    const r = el.getBoundingClientRect();
+    tip.classList.add('show');
+    const tw = tip.offsetWidth;
+    const th = tip.offsetHeight;
+    let left = r.left + r.width / 2 - tw / 2;
+    left = clamp(left, 8, window.innerWidth - tw - 8);
+    let top = r.top - th - 8;
+    if (top < 8) top = r.bottom + 8;
+    tip.style.left = left + 'px';
+    tip.style.top = top + 'px';
+  }
+
+  function hideTooltip() {
+    const tip = document.getElementById('tooltip');
+    if (tip) tip.classList.remove('show');
+  }
+
   function bindGlobalEvents() {
     document.addEventListener('click', function (e) {
       if (e.target.closest('.modal-backdrop, #toast-root')) return;
@@ -2886,15 +3842,17 @@
       const el = e.target.closest('[data-input]');
       if (el) handleChange(el.getAttribute('data-input'), el);
     });
-    document.addEventListener('keydown', function (e) {
-      if (e.key === 'Escape' && modalStack.length) {
-        e.preventDefault();
-        modalStack[modalStack.length - 1].close('dismiss');
-      }
+    document.addEventListener('keydown', handleGlobalKeydown);
+    document.addEventListener('mouseover', function (e) {
+      const el = e.target.closest ? e.target.closest('[data-tip]') : null;
+      if (el) showTooltip(el);
+      else hideTooltip();
     });
+    document.addEventListener('scroll', hideTooltip, true);
     window.addEventListener('hashchange', handleRouteChange);
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'hidden' && saveTimer) persistNow();
+      if (document.visibilityState === 'visible') checkDayRollover();
     });
     window.addEventListener('pagehide', function () {
       if (saveTimer) persistNow();
@@ -2909,13 +3867,17 @@
     applyTheme('dark');
     bindGlobalEvents();
     requestPersistentStorage();
+    document.getElementById('palette-kbd').textContent = modShortcut('Ctrl K');
     loadState().then(function () {
       applyTheme(state.settings.theme);
       ui.route = parseRoute();
+      runInitialTick();
       if (persistenceBlocked) setSaveStatus('blocked');
       else if (!storageAvailable) setSaveStatus('memory');
       else if (saveStatus === 'loading') setSaveStatus('saved');
       renderApp();
+      flushPendingToasts();
+      setInterval(checkDayRollover, TICK_INTERVAL_MS);
     });
   }
 
