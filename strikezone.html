@@ -53,6 +53,13 @@ button { font: inherit; color: inherit; }
 .rd span { color: var(--text); font-weight: 500; }
 .rd b { margin-right: 6px; }
 
+/* menu de comandos de rádio (Z) */
+#radio-menu { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); min-width: 250px; background: var(--panel-strong); border-left: 3px solid var(--accent); padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 4px; }
+#radio-menu .rm-title { font-family: var(--display); font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 700; margin-bottom: 2px; }
+#radio-menu .rm-item { font-size: 15px; font-weight: 600; }
+#radio-menu .rm-item b { font-family: var(--display); color: var(--accent); margin-right: 8px; }
+#radio-menu .rm-foot { font-size: 12px; color: var(--faint); margin-top: 4px; }
+
 /* nomes dos aliados */
 #plates { position: absolute; inset: 0; overflow: hidden; }
 .plate { position: absolute; left: 0; top: 0; white-space: nowrap; font-size: 13px; font-weight: 700; will-change: transform; }
@@ -99,6 +106,15 @@ button { font: inherit; color: inherit; }
 
 /* mira (desenhada em canvas, alinhada ao pixel) */
 #xhair { position: absolute; left: 0; top: 0; will-change: transform; }
+#hitmark { position: absolute; left: 50%; top: 50%; width: 0; height: 0; }
+#hitmark i { position: absolute; left: -1px; top: -4px; width: 2px; height: 8px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55); }
+#hitmark i:nth-child(1) { transform: rotate(45deg) translateY(-10px); }
+#hitmark i:nth-child(2) { transform: rotate(135deg) translateY(-10px); }
+#hitmark i:nth-child(3) { transform: rotate(225deg) translateY(-10px); }
+#hitmark i:nth-child(4) { transform: rotate(315deg) translateY(-10px); }
+#hitmark.head i { height: 11px; top: -5.5px; }
+#hitmark.kill i { background: #ff4040; }
+#hitmark.wall i { background: #ffb347; }
 #target-name { position: absolute; left: 50%; top: calc(50% + 36px); transform: translateX(-50%); width: max-content; font-weight: 700; font-size: 15px; }
 
 /* mensagens centrais */
@@ -245,6 +261,18 @@ button { font: inherit; color: inherit; }
 .buy-item:disabled .bi-price { color: var(--muted); }
 .buy-item.owned { border-color: rgba(159, 220, 124, 0.55); }
 
+/* lista de exercícios do treino */
+.drill-list { display: flex; flex-direction: column; gap: 6px; }
+.drill-list button { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; text-align: left; padding: 10px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; }
+.drill-list button:hover, .drill-list button:focus-visible { background: rgba(216, 154, 60, 0.14); border-color: var(--accent); outline: none; }
+.drill-list .dl-name { font-family: var(--display); font-size: 20px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.drill-list .dl-rec { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--money); align-self: center; }
+.drill-list .dl-desc { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
+.me-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; }
+.me-stats div { background: rgba(255, 255, 255, 0.05); padding: 8px 12px; border-radius: 3px; }
+.me-stats b { display: block; font-family: var(--display); font-size: 28px; }
+.me-stats span { font-family: var(--display); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
 /* placar (Tab) */
 .board-box { background: var(--panel-strong); border: 1px solid var(--line); width: min(900px, 100%); max-height: calc(100% - 32px); overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
 .board-head { display: flex; justify-content: space-between; align-items: baseline; font-family: var(--display); font-size: 18px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
@@ -259,6 +287,7 @@ button { font: inherit; color: inherit; }
 .board-team .tag { font-family: var(--display); font-weight: 800; font-size: 11px; letter-spacing: 0.06em; padding: 1px 4px; border-radius: 2px; margin-left: 6px; }
 .tag.c4 { background: rgba(232, 80, 79, 0.85); color: #fff; }
 .tag.kit { background: rgba(120, 174, 227, 0.85); color: #0b1522; }
+.tag.role { background: rgba(255, 255, 255, 0.1); color: var(--muted); font-weight: 700; text-transform: uppercase; }
 
 #glerror .panel { margin: auto; }
 
@@ -287,6 +316,7 @@ button { font: inherit; color: inherit; }
       <div id="buy-hint">B · Loja aberta</div>
     </div>
     <div id="radio" aria-live="polite"></div>
+    <div id="radio-menu" hidden></div>
     <div id="plates"></div>
     <div id="fps" hidden></div>
 
@@ -297,15 +327,16 @@ button { font: inherit; color: inherit; }
     </div>
 
     <div id="practice" hidden>
-      <div class="ps"><span id="ps-kills" class="num">0</span><span class="lbl">Abates</span></div>
-      <div class="ps"><span id="ps-acc" class="num">0%</span><span class="lbl">Precisão</span></div>
-      <div class="ps"><span id="ps-hs" class="num">0%</span><span class="lbl">Na cabeça</span></div>
-      <div class="ps"><span id="ps-shots" class="num">0</span><span class="lbl">Tiros</span></div>
+      <div class="ps"><span id="ps-v1" class="num">0</span><span id="ps-l1" class="lbl">Abates</span></div>
+      <div class="ps"><span id="ps-v2" class="num">0%</span><span id="ps-l2" class="lbl">Precisão</span></div>
+      <div class="ps"><span id="ps-v3" class="num">0%</span><span id="ps-l3" class="lbl">Na cabeça</span></div>
+      <div class="ps"><span id="ps-v4" class="num">0</span><span id="ps-l4" class="lbl">Tiros</span></div>
     </div>
 
     <div id="killfeed"></div>
 
     <canvas id="xhair" width="1" height="1"></canvas>
+    <div id="hitmark" hidden><i></i><i></i><i></i><i></i></div>
     <div id="target-name"></div>
 
     <div id="center-msg" hidden><div id="cm-big"></div><div id="cm-small"></div></div>
@@ -370,6 +401,7 @@ button { font: inherit; color: inherit; }
       <p class="mobile-note">StrikeZone é um jogo de tiro para computador: precisa de teclado e mouse.</p>
       <nav class="menu-nav">
         <button id="btn-play" class="btn primary" type="button">Jogar partida</button>
+        <button id="btn-dm" class="btn" type="button">Mata-mata</button>
         <button id="btn-practice" class="btn" type="button">Treino de mira</button>
         <button id="btn-options" class="btn" type="button">Opções</button>
         <button id="btn-controls" class="btn" type="button">Controles</button>
@@ -400,7 +432,7 @@ button { font: inherit; color: inherit; }
           </div>
         </div>
       </div>
-      <p class="menu-foot">Você joga com 4 bots contra 5. Terroristas plantam a C4 no bomb A ou B; Contra-Terroristas defendem ou desarmam. Esc pausa a partida. No treino de mira os alvos voltam sozinhos e a loja fica sempre aberta.</p>
+      <p class="menu-foot">Você joga com 4 bots contra 5; no mata-mata todo mundo renasce e vence o primeiro time a 40 abates. Terroristas plantam a C4 no bomb A ou B; Contra-Terroristas defendem ou desarmam. Esc pausa a partida. No treino de mira os alvos voltam sozinhos e a loja fica sempre aberta.</p>
     </div>
   </div>
 
@@ -476,6 +508,7 @@ button { font: inherit; color: inherit; }
         <p class="opt-sub">Desempenho</p>
         <div class="opt-row"><label for="opt-rscale">Resolução interna</label><select id="opt-rscale" data-setting="renderScale"><option value="auto">Automática</option><option value="native">Nativa (nítida)</option><option value="1">100%</option><option value="0.85">85%</option><option value="0.7">70% (mais FPS)</option><option value="0.5">50% (máximo FPS)</option></select><output></output></div>
         <div class="opt-row"><label for="opt-shadows">Sombras</label><select id="opt-shadows" data-setting="shadows"><option value="high">Alta</option><option value="medium">Média</option><option value="off">Desligadas</option></select><output></output></div>
+        <div class="opt-row"><label for="opt-bloom">Brilho (bloom) e pós-processamento</label><input id="opt-bloom" type="checkbox" data-setting="bloom"><output></output></div>
         <div class="opt-row"><label for="opt-tex">Texturas</label><select id="opt-tex" data-setting="textures"><option value="high">Alta</option><option value="medium">Média</option></select><output></output></div>
         <div class="opt-row"><label for="opt-fps">Mostrar FPS</label><input id="opt-fps" type="checkbox" data-setting="showFps"><output></output></div>
         <div class="opt-row"><label for="opt-fullscreen">Tela cheia ao jogar</label><input id="opt-fullscreen" type="checkbox" data-setting="fullscreen"><output></output></div>
@@ -485,14 +518,29 @@ button { font: inherit; color: inherit; }
         <div class="opt-row"><label for="opt-ff">Fogo amigo (33%)</label><input id="opt-ff" type="checkbox" data-setting="friendlyFire"><output></output></div>
         <div class="opt-row"><label for="opt-plates">Nome dos aliados na tela</label><input id="opt-plates" type="checkbox" data-setting="nameplates"><output></output></div>
         <div class="opt-row"><label for="opt-report">Relatório de dano ao morrer</label><input id="opt-report" type="checkbox" data-setting="damageReport"><output></output></div>
+        <div class="opt-row"><label for="opt-hitmark">Marcador de acerto na mira</label><input id="opt-hitmark" type="checkbox" data-setting="hitmarker"><output></output></div>
+        <div class="opt-row"><label for="opt-skin">Pintura das suas armas</label><select id="opt-skin" data-setting="skin"></select><output></output></div>
+        <p class="opt-note">O marcador de acerto não existe no CS (vem desligado): mostra um X na mira quando você acerta — laranja através de parede, vermelho no abate.</p>
       </section>
 
       <section class="tab-page" data-page="audio" role="tabpanel" hidden>
         <div class="opt-row"><label for="opt-vol">Volume</label><input id="opt-vol" type="range" min="0" max="1" step="0.05" data-setting="volume"><output data-out="volume" data-fmt="pct"></output></div>
         <div class="opt-row"><label for="opt-voice">Voz do rádio</label><input id="opt-voice" type="checkbox" data-setting="voice"><output></output></div>
+        <div class="opt-row"><label for="opt-hitsound">Som de acerto (dink no capacete)</label><input id="opt-hitsound" type="checkbox" data-setting="hitSound"><output></output></div>
+        <div class="opt-row"><label for="opt-hrtf">Som 3D (HRTF)</label><input id="opt-hrtf" type="checkbox" data-setting="hrtf"><output></output></div>
+        <p class="opt-note">O som 3D diferencia frente, trás, cima e baixo — use fone de ouvido. Passos em areia, piso, madeira, metal e escada soam diferente.</p>
       </section>
 
       <div class="panel-actions"><button id="btn-opt-back" class="btn small primary" type="button">Voltar</button></div>
+    </div>
+  </div>
+
+  <div id="drills" class="screen dim" hidden>
+    <div class="panel" role="dialog" aria-label="Treino de mira">
+      <h2>Treino de mira</h2>
+      <p class="opt-note">Escolha o exercício. Os recordes ficam salvos neste navegador.</p>
+      <div id="drill-list" class="drill-list"></div>
+      <div class="panel-actions"><button id="btn-drill-back" class="btn small" type="button">Voltar</button></div>
     </div>
   </div>
 
@@ -511,6 +559,7 @@ button { font: inherit; color: inherit; }
         <dt><span class="kbd">E</span> (segurar)</dt><dd>Plantar a C4 no bomb · desarmar · pegar arma do chão</dd>
         <dt><span class="kbd">G</span></dt><dd>Largar a arma (ou a C4)</dd>
         <dt><span class="kbd">F</span></dt><dd>Inspecionar a arma</dd>
+        <dt><span class="kbd">Z</span></dt><dd>Comandos de rádio para os bots do time (depois o número): ir para A/B, segurar, seguir você, rush, pedir arma</dd>
         <dt><span class="kbd">B</span></dt><dd>Loja (na base, no começo da rodada) · números escolhem a categoria e depois o item</dd>
         <dt><span class="kbd">Tab</span></dt><dd>Placar</dd>
         <dt><span class="kbd">Esc</span></dt><dd>Pausar</dd>
@@ -543,7 +592,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.1.0';
+const GAME_VERSION = '1.2.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -601,19 +650,36 @@ const FIRE_RADIUS = 2.6;
 const FIRE_DURATION = 7;
 const FIRE_DPS = 40;
 const HIT_PUNCH = 0.004;
+// velocidade (fração da máxima) abaixo da qual a arma volta à precisão total: base do counter-strafe
+const ACCURATE_SPEED_FRAC = 0.34;
+// tag: multiplicador de velocidade logo após levar tiro (volta ao normal em TAG_TIME segundos)
+const TAG_TIME = 0.45;
+const TAG_SLOW = { pistol: 0.62, smg: 0.55, shotgun: 0.5, rifle: 0.4, sniper: 0.32, knife: 0.6, he: 0.6, fire: 0.8, other: 0.7 };
+const CLIMB_SPEED = 2.7;
+const LADDER_STEP = 0.55;
 const PRACTICE_RESPAWN = 1.4;
+// mata-mata em equipe: vence quem chegar primeiro a DM_KILL_TARGET abates ou tiver mais no fim do tempo
+const DM_KILL_TARGET = 40;
+const DM_TIME = 480;
+const DM_RESPAWN = 2.0;
+const DM_BUY_WINDOW = 10;
+const DM_PROTECT = 1.5;
+const RECORDS_KEY = 'strikezone.records.v1';
 const MAX_DECALS = 220;
 const MAX_PARTICLES = 2600;
 const HEADSHOT_MULT = 4;
 const STOMACH_MULT = 1.25;
 const LEG_MULT = 0.75;
 
-const MAT = { SAND: 0, SANDSTONE: 1, PLASTER: 2, CRATE: 3, METAL: 4, TILE: 5, BEAM: 6, CLOTH: 7, SKIN: 8, GUNMETAL: 9, GUNWOOD: 10, CONCRETE: 11, CAMO: 12, EMISSIVE: 13, BLUEWALL: 14, CURB: 15, BARREL: 16, SANDBAG: 17, PALLET: 18, VEST: 19 };
-const MAT_COUNT = 20;
+const MAT = { SAND: 0, SANDSTONE: 1, PLASTER: 2, CRATE: 3, METAL: 4, TILE: 5, BEAM: 6, CLOTH: 7, SKIN: 8, GUNMETAL: 9, GUNWOOD: 10, CONCRETE: 11, CAMO: 12, EMISSIVE: 13, BLUEWALL: 14, CURB: 15, BARREL: 16, SANDBAG: 17, PALLET: 18, VEST: 19,
+  SKIN_ASIIMOV: 20, SKIN_TIGER: 21, SKIN_DRAGON: 22, SKIN_CARBON: 23, SKIN_GOLD: 24, SKIN_HEX: 25, SKIN_DESERT: 26 };
+const MAT_COUNT = 27;
 // tamanho do ladrilho em metros (negativo = usa as coordenadas UV da face), relevo (m) e brilho especular por material
-const MAT_TILE = [4, 4, 4, -1, -1, 4, 4, 0.5, 0.5, 0.5, 0.5, 4, 1, 1, 4, 4, -1, -1, -1, 0.4];
-const MAT_BUMP = [0.012, 0.02, 0.012, 0.012, 0.006, 0.01, 0.015, 0.0006, 0, 0.001, 0.002, 0.01, 0.002, 0, 0.012, 0.014, 0.006, 0.02, 0.01, 0.004];
-const MAT_SPEC = [0, 0, 0, 0, 0.35, 0.12, 0, 0, 0.05, 1.0, 0.25, 0, 0, 0, 0, 0, 0.3, 0, 0, 0];
+const MAT_TILE = [4, 4, 4, -1, -1, 4, 4, 0.5, 0.5, 0.5, 0.5, 4, 1, 1, 4, 4, -1, -1, -1, 0.4, 0.3, 0.3, 0.3, 0.12, 0.4, 0.2, 0.35];
+const MAT_BUMP = [0.012, 0.02, 0.012, 0.012, 0.006, 0.01, 0.015, 0.0006, 0, 0.001, 0.002, 0.01, 0.002, 0, 0.012, 0.014, 0.006, 0.02, 0.01, 0.004, 0.0003, 0.0003, 0.0004, 0.0004, 0.0003, 0.0004, 0.0003];
+const MAT_SPEC = [0, 0, 0, 0, 0.35, 0.12, 0, 0, 0.05, 1.0, 0.25, 0, 0, 0, 0, 0, 0.3, 0, 0, 0, 0.45, 0.4, 0.55, 0.7, 1.0, 0.6, 0.25];
+// resistência à penetração por metro (quanto maior, mais difícil atravessar); 99 = impenetrável
+const MAT_PEN = [99, 99, 99, 1.0, 2.2, 99, 1.3, 99, 99, 99, 99, 99, 99, 99, 99, 99, 2.0, 7, 0.8, 99, 99, 99, 99, 99, 99, 99, 99];
 const MAT_DUST = { 0: [0.78, 0.66, 0.48], 1: [0.8, 0.69, 0.52], 2: [0.86, 0.8, 0.68], 3: [0.55, 0.4, 0.24], 4: [0.5, 0.52, 0.55], 5: [0.72, 0.65, 0.54], 6: [0.4, 0.3, 0.2], 11: [0.6, 0.58, 0.55], 14: [0.45, 0.58, 0.68], 15: [0.66, 0.58, 0.46], 16: [0.5, 0.25, 0.18], 17: [0.62, 0.55, 0.4], 18: [0.62, 0.5, 0.32] };
 
 const TEAM_INFO = {
@@ -661,6 +727,7 @@ const DEFAULT_SETTINGS = {
   chStyle: 'classic', chColor: '#5cf06a', chAlpha: 1, chSize: 4, chThick: 1, chGap: 1.5,
   chOutline: true, chOutlineThick: 1, chDot: false, chDotSize: 2, chDynamic: false, chFollowRecoil: false,
   friendlyFire: false, nameplates: true, damageReport: true, voice: true, volume: 0.7, fullscreen: true, showFps: false,
+  hitmarker: false, hitSound: true, hrtf: true, bloom: true, skin: 'none',
   team: 'CT', difficulty: 'normal', matchLength: 'short',
 };
 const LEGACY_KEEP = ['sensitivity', 'fov', 'volume', 'voice', 'invertY', 'fullscreen', 'showFps', 'friendlyFire', 'shadows', 'team', 'difficulty', 'matchLength'];
@@ -677,6 +744,17 @@ const CROSSHAIR_PRESETS = [
   { name: 'Grossa sem contorno', s: { chStyle: 'classic', chSize: 7, chThick: 3, chGap: 4, chOutline: false, chDot: false, chDynamic: false, chAlpha: 1 } },
 ];
 
+// pinturas de arma (só visual). mat = camada da textura; bots recebem uma aleatória
+const WEAPON_SKINS = {
+  none: { name: 'Padrão (sem pintura)', mat: -1 },
+  asiimov: { name: 'Asiimov (branco e laranja)', mat: MAT.SKIN_ASIIMOV },
+  tiger: { name: 'Dente de tigre', mat: MAT.SKIN_TIGER },
+  dragon: { name: 'Dragão (vermelho e dourado)', mat: MAT.SKIN_DRAGON },
+  carbon: { name: 'Fibra de carbono', mat: MAT.SKIN_CARBON },
+  gold: { name: 'Ouro', mat: MAT.SKIN_GOLD },
+  hex: { name: 'Hexágonos (ciano)', mat: MAT.SKIN_HEX },
+  desert: { name: 'Camuflagem do deserto', mat: MAT.SKIN_DESERT },
+};
 const BOT_NAMES = ['Capivara', 'Tatu', 'Jacaré', 'Onça', 'Sabiá', 'Tucano', 'Quati', 'Boto', 'Mico', 'Arara', 'Gambá', 'Jabuti', 'Lobo', 'Siriema', 'Carcará', 'Pacu', 'Tamanduá', 'Anta', 'Coruja', 'Piranha'];
 
 // acc = [parado, agachado, correndo (vel. máx.), no ar, por tiro, recuperação (s)] em radianos
@@ -699,6 +777,20 @@ const WEAPONS = {
   ssg08: { name: 'SSG 08', slot: 'primary', cls: 'sniper', price: 1700, damage: 88, pen: 0.85, rpm: 48, mag: 10, reserve: 90, reload: 3.7, speed: 230, scopedSpeed: 230, rangeMod: 0.99, auto: false, reward: 300, penPower: 1.2, draw: 0.9, snd: 'sniper', zoom: [40, 15], scopedAcc: 0.0012, acc: [0.03, 0.028, 0.08, 0.2, 0.02, 0.5], kick: [2.5, 1, 0.3] },
   awp: { name: 'AWP', slot: 'primary', cls: 'sniper', price: 4750, damage: 115, pen: 0.975, rpm: 41, mag: 5, reserve: 30, reload: 3.7, speed: 200, scopedSpeed: 100, rangeMod: 0.99, auto: false, reward: 100, penPower: 1.5, draw: 1.0, snd: 'awp', zoom: [40, 10], scopedAcc: 0.0008, acc: [0.06, 0.055, 0.2, 0.35, 0.05, 0.6], kick: [3.5, 1, 0.4] },
 };
+// Padrões de spray fixos (sempre iguais, dá para decorar): [tiro, subida acumulada (graus), desvio para a direita acumulado (graus)].
+// Entre os pontos o valor é interpolado. Armas sem padrão usam kick = [subida por tiro, tiros subindo, lateral].
+const SPRAY_PATTERNS = {
+  ak47: [[0, 0, 0], [1, 0.55, 0], [2, 1.35, 0.05], [3, 2.25, 0.12], [4, 3.15, 0.22], [5, 3.95, 0.36], [6, 4.65, 0.5], [7, 5.25, 0.56], [8, 5.75, 0.46], [9, 6.15, 0.2],
+    [10, 6.4, -0.25], [12, 6.65, -1.15], [14, 6.85, -1.95], [16, 6.95, -1.7], [18, 7.05, -0.7], [20, 7.1, 0.45], [22, 7.15, 1.35], [24, 7.2, 1.55], [26, 7.25, 0.85], [28, 7.25, -0.1], [29, 7.3, -0.45]],
+  m4a4: [[0, 0, 0], [1, 0.45, 0], [2, 1.1, 0], [3, 1.9, -0.05], [4, 2.7, -0.1], [5, 3.4, -0.15], [6, 4.0, -0.1], [7, 4.5, 0], [8, 4.9, 0.2], [9, 5.2, 0.45],
+    [11, 5.5, 1.0], [13, 5.7, 1.4], [15, 5.8, 1.0], [17, 5.9, 0.1], [19, 5.95, -0.8], [21, 6.0, -1.2], [23, 6.05, -0.7], [25, 6.1, 0.1], [27, 6.1, 0.6], [29, 6.15, 0.5]],
+  galil: [[0, 0, 0], [1, 0.45, 0], [3, 1.9, 0.1], [6, 4.1, 0.35], [9, 5.4, 0.1], [11, 5.75, -0.8], [14, 6.0, -1.6], [17, 6.15, -0.9], [20, 6.25, 0.4], [23, 6.3, 1.3], [26, 6.35, 0.9], [30, 6.4, -0.4], [34, 6.45, 0.2]],
+  famas: [[0, 0, 0], [1, 0.42, 0], [3, 1.8, -0.05], [6, 3.8, -0.2], [9, 5.0, 0.3], [12, 5.4, 1.1], [15, 5.6, 0.6], [18, 5.7, -0.6], [21, 5.75, -1.0], [24, 5.8, -0.2]],
+  mac10: [[0, 0, 0], [1, 0.4, 0], [3, 1.4, -0.1], [6, 2.7, -0.4], [9, 3.4, -1.2], [12, 3.7, -2.2], [15, 3.9, -2.6], [18, 4.0, -1.8], [21, 4.1, -0.6], [24, 4.15, 0.2], [27, 4.2, -0.3], [29, 4.2, -0.9]],
+  mp9: [[0, 0, 0], [1, 0.38, 0], [3, 1.3, 0.05], [6, 2.5, 0.3], [9, 3.2, 1.0], [12, 3.5, 1.8], [15, 3.7, 1.4], [18, 3.8, 0.4], [21, 3.9, -0.6], [24, 3.95, -1.0], [29, 4.0, -0.2]],
+  ump45: [[0, 0, 0], [1, 0.45, 0], [3, 1.6, -0.05], [6, 3.0, -0.2], [9, 3.8, 0.4], [12, 4.1, 1.2], [15, 4.3, 0.7], [18, 4.4, -0.5], [21, 4.45, -1.1], [24, 4.5, -0.6]],
+  p90: [[0, 0, 0], [1, 0.3, 0], [4, 1.5, 0.1], [8, 2.8, 0.3], [12, 3.4, -0.4], [16, 3.6, -1.2], [20, 3.75, -0.8], [24, 3.85, 0.3], [28, 3.9, 1.1], [32, 3.95, 0.8], [36, 4.0, -0.2], [40, 4.05, -0.9], [44, 4.1, -0.4], [49, 4.1, 0.3]],
+};
 const GRENADES = {
   he: { name: 'Granada HE', short: 'HE', price: 300, max: 1, fuse: 1.6, sub: 'Até 98 de dano' },
   flash: { name: 'Flashbang', short: 'Flash', price: 200, max: 2, fuse: 1.6, sub: 'Cega quem olhar' },
@@ -706,6 +798,7 @@ const GRENADES = {
   molotov: { name: 'Molotov', short: 'Molotov', price: 400, max: 1, fuse: 2.2, team: 'T', fire: true, sub: 'Fogo no chão por 7 s' },
   incgrenade: { name: 'Incendiária', short: 'Incend.', price: 600, max: 1, fuse: 2.0, team: 'CT', fire: true, sub: 'Fogo no chão por 7 s' },
 };
+const THROW_SPEED = { strong: 16.5, mid: 11, weak: 6.5 };
 const GRENADE_ORDER = ['he', 'flash', 'smoke', 'molotov', 'incgrenade'];
 const MAX_GRENADES = 4;
 const EQUIPMENT = {
@@ -787,7 +880,7 @@ const MAP_PROPS = [
   [76, 78, 77.3, 79.3, 0, 1.1, MAT.CRATE],
   [82, 70.1, 84.8, 70.35, 0, 3.2, MAT.METAL],
   [79, 44, 81, 46, 0, 1.1, MAT.CRATE],
-  [90, 50, 95, 52.6, 0, 2.5, MAT.METAL],
+  [90, 50, 95, 52.6, 0, 2.5, MAT.METAL, 'container'],
   [92, 36, 94, 38, 0, 1.1, MAT.CRATE],
   [77, 12, 79, 14, 1.2, 1.1, MAT.CRATE], [79, 12, 80.3, 13.3, 1.2, 1.1, MAT.CRATE], [79, 12, 80.3, 13.3, 2.3, 1.1, MAT.CRATE],
   [86, 18, 88, 19.3, 1.2, 1.1, MAT.CRATE],
@@ -821,6 +914,15 @@ const MAP_PROPS = [
   [90, 5, 93, 5.8, 1.2, 0.85, MAT.SANDBAG],
   [10, 26, 13, 26.8, 0, 0.85, MAT.SANDBAG],
   [85, 42, 87.6, 42.8, 0, 0.85, MAT.SANDBAG],
+  [5.2, 22, 7.8, 28, 0, 2.6, MAT.METAL, 'container'],
+  [88.6, 50.8, 90, 52.3, 0, 1.5, MAT.CRATE],
+  [44.1, 40, 45.5, 41.4, 0, 1.5, MAT.CRATE],
+  [66.3, 16.6, 67.7, 18, 1.2, 1.5, MAT.CRATE],
+];
+// escadas de mão: [x0, z0, x1, z1, base, topo, normal x, normal z] (a normal aponta para o lado de onde se sobe)
+const LADDERS = [
+  [92.1, 49.78, 92.9, 50, 0, 2.5, 0, -1],
+  [7.8, 24.6, 8.02, 25.4, 0, 2.6, 1, 0],
 ];
 const SITES = {
   A: { x0: 70, z0: 6, x1: 95, z1: 25, center: [82, 15] },
@@ -855,6 +957,37 @@ const CT_HOLDS = {
 const POSTPLANT = {
   A: [{ pos: [73, 23], look: [62, 10] }, { pos: [90, 10], look: [66, 8] }, { pos: [84, 23], look: [66, 23] }, { pos: [71, 12], look: [62, 8] }, { pos: [88, 20], look: [70, 24] }],
   B: [{ pos: [10, 10], look: [36, 12] }, { pos: [28, 26], look: [36, 12] }, { pos: [14, 28], look: [34, 12] }, { pos: [24, 10], look: [38, 12] }, { pos: [12, 22], look: [34, 12] }],
+};
+// Personalidades dos bots (a ordem define quem recebe o quê quando o time tem menos bots)
+const BOT_PERSONAS = { T: ['entry', 'support', 'awper', 'lurker', 'rifler'], CT: ['anchor', 'support', 'awper', 'rotator', 'anchor'] };
+const ECON_LABEL = { pistol: 'rodada de pistola', eco: 'economizar (eco)', force: 'compra forçada', full: 'compra completa' };
+const PERSONA_LABEL = { entry: 'entry', support: 'suporte', awper: 'AWP', lurker: 'lurker', rifler: 'rifler', anchor: 'âncora', rotator: 'rotação' };
+// Granadas com posição de lançamento fixa. when: exec (TR entrando), delay (CT atrasando), retake (CT voltando ao bomb)
+// from = onde o bot fica; to = [x, z, altura acima do chão] onde a granada deve cair/estourar
+const NADE_LINEUPS = [
+  { team: 'T', site: 'A', route: 'Long', kind: 'smoke', when: 'exec', from: [87, 36], to: [86, 24, 0] },
+  { team: 'T', site: 'A', route: 'Long', kind: 'flash', when: 'exec', from: [86, 35], to: [86, 23, 2] },
+  { team: 'T', site: 'A', route: 'Long', kind: 'molotov', when: 'exec', from: [88, 34], to: [85, 21, 0] },
+  { team: 'T', site: 'A', route: 'Short', kind: 'smoke', when: 'exec', from: [63, 25], to: [68, 12, 0] },
+  { team: 'T', site: 'A', route: 'Short', kind: 'flash', when: 'exec', from: [62, 28], to: [70, 19, 2] },
+  { team: 'T', site: 'B', route: '', kind: 'smoke', when: 'exec', from: [12, 34], to: [21, 24, 0] },
+  { team: 'T', site: 'B', route: '', kind: 'flash', when: 'exec', from: [13, 35], to: [14, 24, 2] },
+  { team: 'T', site: 'B', route: '', kind: 'molotov', when: 'exec', from: [14, 33], to: [21, 22, 0] },
+  { team: 'CT', site: 'A', kind: 'molotov', when: 'delay', from: [86, 28], to: [87, 39, 0] },
+  { team: 'CT', site: 'A', kind: 'smoke', when: 'delay', from: [85, 27], to: [86, 41, 0] },
+  { team: 'CT', site: 'B', kind: 'molotov', when: 'delay', from: [12, 24], to: [12, 34, 0] },
+  { team: 'CT', site: 'B', kind: 'smoke', when: 'delay', from: [14, 22], to: [12, 33, 0] },
+  { team: 'CT', site: 'A', kind: 'flash', when: 'retake', from: [63, 9], to: [71, 10, 2] },
+  { team: 'CT', site: 'A', kind: 'flash', when: 'retake', from: [61, 30], to: [69, 20, 2] },
+  { team: 'CT', site: 'B', kind: 'flash', when: 'retake', from: [40, 12], to: [30, 13, 2] },
+  { team: 'CT', site: 'B', kind: 'smoke', when: 'retake', from: [33, 13], to: [25, 20, 0] },
+];
+// pontos onde os CTs se juntam antes de voltar para o bomb
+const RETAKE_RALLY = { A: [[63, 9], [61, 30]], B: [[40, 12], [13, 38]] };
+// comandos de rádio do jogador (tecla Z e depois o número)
+const RADIO_COMMANDS = {
+  T: [{ id: 'goA', label: 'Vamos A' }, { id: 'goB', label: 'Vamos B' }, { id: 'hold', label: 'Esperem, segurem a posição' }, { id: 'follow', label: 'Sigam-me' }, { id: 'rush', label: 'Rush! Entrem agora' }, { id: 'drop', label: 'Preciso de uma arma' }],
+  CT: [{ id: 'goA', label: 'Reforcem o A' }, { id: 'goB', label: 'Reforcem o B' }, { id: 'hold', label: 'Segurem as posições' }, { id: 'follow', label: 'Sigam-me' }, { id: 'rush', label: 'Retake juntos, agora!' }, { id: 'drop', label: 'Preciso de uma arma' }],
 };
 const PLANT_SPOTS = { A: [[78, 16], [83, 14], [88, 12], [75, 20]], B: [[16, 17], [21, 11], [12, 22], [22, 20]] };
 const WALL_LETTERS = [
@@ -911,6 +1044,14 @@ const PLACES = [
   { name: 'Bomb B', r: [4, 4, 34, 32] },
 ];
 const PRACTICE_START = [49.5, 69.5];
+// exercícios do treino de mira. score: kills (maior é melhor) ou react (tempo médio em ms, menor é melhor)
+const DRILLS = {
+  free: { name: 'Livre', desc: 'Alvos parados e andando, sem tempo. Loja aberta e munição infinita.', time: 0, score: '' },
+  flick: { name: 'Flick', desc: 'Um alvo por vez em lugares aleatórios. Acerte antes que ele suma (1,5 s). 60 segundos.', time: 60, life: 1.5, score: 'kills' },
+  head: { name: 'Só na cabeça', desc: 'Como o flick, mas só o tiro na cabeça derruba o alvo. 60 segundos.', time: 60, life: 2.2, score: 'kills' },
+  track: { name: 'Tracking', desc: 'Um alvo correndo de um lado para o outro, com colete. Derrube o máximo em 45 segundos.', time: 45, score: 'kills' },
+  react: { name: 'Reflexo', desc: 'O alvo aparece de repente na sua frente: atire o mais rápido possível. 15 alvos; errar conta 1 s.', time: 0, count: 15, score: 'react' },
+};
 const PRACTICE_SPOTS = [[47.5, 60], [51, 55.5], [46, 50], [50.5, 45], [52, 40], [47, 35], [48, 32], [50, 22], [46.5, 64.5], [52.5, 62]];
 const RADIO_LINES = {
   spotted: ['Inimigo avistado — {place}', 'Contato: {place}!', 'Tem um inimigo em {place}'],
@@ -922,6 +1063,18 @@ const RADIO_LINES = {
   death: ['{name} caiu — {place}', 'Perdemos {name} em {place}'],
   lastAlive: ['Estou sozinho', 'Sobrei, me ajudem'],
   defusing: ['Desarmando! Me cubram', 'Estou no kit, cobre!'],
+  ack: ['Entendido!', 'Beleza, indo', 'Copiado', 'Tô contigo'],
+  eco: ['Eco nesta: guardem o dinheiro', 'Rodada de economia, só pistola'],
+  force: ['Força a compra, vamos com o que der', 'Force buy!'],
+  full: ['Compra completa, vamos!', 'Full buy, pega granada'],
+  smokeOut: ['Fumaça saindo!', 'Smoke no {place}'],
+  flashOut: ['Flash saindo!', 'Cegando, vira o rosto'],
+  fireOut: ['Molotov!', 'Fogo no {place}'],
+  drop: ['Toma, larguei uma {weapon} pra você', 'Pega essa {weapon}'],
+  noMoney: ['Tô sem grana pra dropar', 'Não dá, estou pobre'],
+  rotate: ['Rodando para o {site}', 'Indo ajudar no {site}'],
+  cmd: ['{text}'],
+  retakeWait: ['Esperem juntar pra retomar', 'Juntando no {place} pro retake'],
 };
 
 const SUN_DIR = [0.461, 0.781, 0.421];
@@ -932,7 +1085,11 @@ const FOG_COLOR = [0.64, 0.6, 0.52];
 const FOG_DENSITY = 0.0062;
 const MENU_FOG_DENSITY = 0.0035;
 
-const ATLAS = { SOFT: 0, SMOKE: 1, HOLE: 2, SPARK: 3, LETTER_A: 4, LETTER_B: 5, BLOOD: 6, FLASH: 7, CHUNK: 8, WINDOW: 9, DOOR: 10, ARROW: 11, DIRT: 12, CRACK: 13, FIRE: 14, SCORCH: 15 };
+// atlas de sprites: 8 colunas × 4 linhas
+const ATLAS = { SOFT: 0, SMOKE: 1, HOLE: 2, SPARK: 3, LETTER_A: 4, LETTER_B: 5, BLOOD: 6, FLASH: 7, CHUNK: 8, WINDOW: 9, DOOR: 10, ARROW: 11, DIRT: 12, CRACK: 13, FIRE: 14, SCORCH: 15,
+  HOLE_WOOD: 16, HOLE_METAL: 17, HOLE_STONE: 18, SPLAT: 19, POOL: 20, BLAST: 21, PUFF: 22, DEBRIS: 23 };
+const ATLAS_COLS = 8;
+const ATLAS_ROWS = 4;
 
 // Modelos: [forma ('b' caixa chanfrada, 'c' cilindro no eixo z), x, y, z, largura, altura, comprimento, material, cor, rotX, etiqueta]
 // etiquetas animadas: 'mag' (pente na recarga), 'slide' (ferrolho da pistola), 'bolt' (manivela), 'pump' (bomba da escopeta)
@@ -948,6 +1105,8 @@ const C_OLIVE = [0.35, 0.38, 0.26];
 const C_BLADE = [0.82, 0.84, 0.88];
 const C_SSG = [0.27, 0.3, 0.34];
 const C_LENS = [0.1, 0.2, 0.32];
+const SKIN_TINT = [1, 1, 1];
+const SKIN_TINT_DIM = [0.78, 0.78, 0.78];
 const GM = MAT.GUNMETAL;
 const GW = MAT.GUNWOOD;
 const RIFLE_LEFT = [0, -0.03, -0.32];
@@ -1059,6 +1218,19 @@ const GUN_MODELS = {
     ['b', 0.05, 0.061, 0.022, 0.06, 0.006, 0.035, GM, C_DARK], ['c', -0.03, 0.05, 0.07, 0.008, 0.008, 0.19, GM, [0.7, 0.15, 0.1]],
     ['c', -0.01, 0.05, 0.075, 0.008, 0.008, 0.19, GM, [0.1, 0.25, 0.7]], ['b', -0.12, 0.055, 0.02, 0.05, 0.02, 0.05, GM, [0.7, 0.15, 0.1]]] },
 };
+// Ragdoll: 15 pontos (pélvis, pescoço, cabeça, ombros, cotovelos, mãos, quadris, joelhos, pés) em coordenadas do corpo em pé
+const RAG_LOCAL = [[0, 0.92, 0], [0, 1.5, 0], [0, 1.66, -0.02], [-0.21, 1.42, 0], [0.21, 1.42, 0], [-0.3, 1.16, -0.12], [0.3, 1.16, -0.12], [-0.18, 1.28, -0.4], [0.14, 1.26, -0.34],
+  [-0.1, 0.92, 0], [0.1, 0.92, 0], [-0.1, 0.5, -0.03], [0.1, 0.5, -0.03], [-0.1, 0.08, 0], [0.1, 0.08, 0]];
+// ligações rígidas (tronco em bloco, cabeça, braços e pernas) e distâncias mínimas (evitam dobrar demais)
+const RAG_LINKS = [[0, 1], [0, 3], [0, 4], [1, 3], [1, 4], [3, 4], [9, 10], [0, 9], [0, 10], [1, 9], [1, 10], [3, 9], [4, 10], [3, 10], [4, 9],
+  [1, 2], [3, 2], [4, 2], [3, 5], [5, 7], [4, 6], [6, 8], [9, 11], [11, 13], [10, 12], [12, 14]];
+const RAG_MIN = [[0, 2, 0.62], [9, 13, 0.42], [10, 14, 0.42], [3, 7, 0.2], [4, 8, 0.2], [11, 12, 0.14], [13, 14, 0.12], [5, 0, 0.3], [6, 0, 0.3]];
+const RAG_ZONE_W = {
+  head: [0.3, 0.7, 1, 0.3, 0.3, 0.15, 0.15, 0.1, 0.1, 0.1, 0.1, 0.05, 0.05, 0.02, 0.02],
+  chest: [0.4, 0.6, 0.4, 0.8, 0.8, 0.3, 0.3, 0.2, 0.2, 0.3, 0.3, 0.1, 0.1, 0.05, 0.05],
+  stomach: [0.9, 0.3, 0.2, 0.3, 0.3, 0.2, 0.2, 0.1, 0.1, 0.6, 0.6, 0.3, 0.3, 0.1, 0.1],
+  legs: [0.3, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.5, 0.5, 0.9, 0.9, 0.5, 0.5],
+};
 const VM_POSE = {
   rifle: { pos: [0.19, -0.215, -0.56], yaw: 0.05, roll: -0.03 },
   smg: { pos: [0.175, -0.2, -0.53], yaw: 0.08, roll: -0.04 },
@@ -1098,6 +1270,7 @@ out vec3 vLocal;
 out vec3 vLocalN;
 out vec2 vUv;
 out vec3 vTint;
+out float vAo;
 flat out float vMat;
 out vec4 vShadow;
 out vec4 vShadowDyn;
@@ -1117,6 +1290,7 @@ void main() {
   vLocal = aPos * vec3(length(M[0].xyz), length(M[1].xyz), length(M[2].xyz));
   vLocalN = aNormal;
   vUv = aMat.yz;
+  vAo = 1.0 - aMat.w;
   vShadow = uLightVP * vec4(w.xyz + vNormal * 0.05, 1.0);
   vShadowDyn = uLightVPDyn * vec4(w.xyz + vNormal * 0.03, 1.0);
   gl_Position = uViewProj * w;
@@ -1132,6 +1306,7 @@ in vec3 vLocal;
 in vec3 vLocalN;
 in vec2 vUv;
 in vec3 vTint;
+in float vAo;
 flat in float vMat;
 in vec4 vShadow;
 in vec4 vShadowDyn;
@@ -1139,9 +1314,9 @@ uniform sampler2DShadow uShadow;
 uniform sampler2DShadow uShadowDyn;
 uniform sampler2D uGrid;
 uniform sampler2DArray uMatTex;
-uniform float uTile[20];
-uniform float uBump[20];
-uniform float uSpec[20];
+uniform float uTile[${MAT_COUNT}];
+uniform float uBump[${MAT_COUNT}];
+uniform float uSpec[${MAT_COUNT}];
 uniform vec3 uSunDir;
 uniform vec3 uSunColor;
 uniform vec3 uSkyColor;
@@ -1210,14 +1385,14 @@ void main() {
   vec2 gs = vec2(textureSize(uGrid, 0));
   vec2 gp = vWorld.xz + vNormal.xz * 0.45;
   float ground = texture(uGrid, gp / gs).r;
-  float aoV = mix(0.42, 1.0, smoothstep(0.0, 1.1, vWorld.y - ground));
-  float ao = mix(1.0, aoV, 1.0 - abs(vNormal.y));
+  float aoV = mix(0.6, 1.0, smoothstep(0.0, 1.1, vWorld.y - ground));
+  float ao = mix(1.0, aoV, 1.0 - abs(vNormal.y)) * vAo;
   float cov = 0.25 * (coverAt(gp + vec2(0.7, 0.0), gs) + coverAt(gp - vec2(0.7, 0.0), gs) + coverAt(gp + vec2(0.0, 0.7), gs) + coverAt(gp - vec2(0.0, 0.7), gs));
   float sky = 1.0 - 0.72 * cov;
   float sh = uShadowOn > 0.5 ? min(shadowStatic(), shadowDynamic()) : (1.0 - cov);
   float ndl = max(dot(N, uSunDir), 0.0);
   vec3 amb = mix(uGroundColor, uSkyColor, N.y * 0.5 + 0.5) * sky * ao;
-  vec3 light = uSunColor * ndl * sh + amb;
+  vec3 light = uSunColor * ndl * sh * mix(1.0, vAo, 0.45) + amb;
   for (int i = 0; i < 4; i++) {
     vec3 L = uLights[i].xyz - vWorld;
     float d2 = dot(L, L);
@@ -1330,6 +1505,46 @@ void main() {
   float a = t.a * vCol.a;
   if (a < 0.002) discard;
   outColor = vec4(t.rgb * vCol.rgb * vCol.a, a);
+}`;
+
+// Pós-processamento: brilho (bloom) em 1/4 da resolução + vinheta
+const SHADER_BRIGHT_FS = `#version 300 es
+precision mediump float;
+in vec2 vUv;
+uniform sampler2D uTex;
+uniform vec2 uTexel;
+out vec4 outColor;
+void main() {
+  vec3 c = texture(uTex, vUv + uTexel * vec2(-1.0, -1.0)).rgb + texture(uTex, vUv + uTexel * vec2(1.0, -1.0)).rgb
+    + texture(uTex, vUv + uTexel * vec2(-1.0, 1.0)).rgb + texture(uTex, vUv + uTexel * vec2(1.0, 1.0)).rgb;
+  c *= 0.25;
+  float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
+  outColor = vec4(c * smoothstep(0.86, 0.99, l), 1.0);
+}`;
+const SHADER_BLUR_FS = `#version 300 es
+precision mediump float;
+in vec2 vUv;
+uniform sampler2D uTex;
+uniform vec2 uDir;
+out vec4 outColor;
+void main() {
+  vec3 c = texture(uTex, vUv).rgb * 0.227;
+  c += (texture(uTex, vUv + uDir * 1.385).rgb + texture(uTex, vUv - uDir * 1.385).rgb) * 0.316;
+  c += (texture(uTex, vUv + uDir * 3.231).rgb + texture(uTex, vUv - uDir * 3.231).rgb) * 0.07;
+  outColor = vec4(c, 1.0);
+}`;
+const SHADER_COMPOSITE_FS = `#version 300 es
+precision mediump float;
+in vec2 vUv;
+uniform sampler2D uScene;
+uniform sampler2D uBloom;
+uniform float uStrength;
+out vec4 outColor;
+void main() {
+  vec3 c = texture(uScene, vUv).rgb + texture(uBloom, vUv).rgb * uStrength;
+  vec2 d = vUv - 0.5;
+  c *= 1.0 - dot(d, d) * 0.36;
+  outColor = vec4(c, 1.0);
 }`;
 
 // Gera as texturas dos materiais uma única vez (periódicas, com relevo no canal alfa).
@@ -1513,6 +1728,62 @@ void main() {
     float wv = 0.5 + 0.25 * (sin(uv.x * 6.2832 * 60.0) + sin(uv.y * 6.2832 * 60.0));
     c = vec3(0.84 + 0.12 * strip) * (0.94 + 0.06 * wv);
     h = strip * 0.7 + wv * 0.2;
+  } else if (L == 20) {
+    // Asiimov: branco, laranja e preto em faixas diagonais com linhas finas
+    vec2 g = fract(uv * 3.0);
+    float dg = fract((uv.x * 2.0 - uv.y) * 2.0);
+    c = vec3(0.93, 0.93, 0.9);
+    c = mix(c, vec3(1.0, 0.45, 0.08), step(dg, 0.3));
+    c = mix(c, vec3(0.08, 0.08, 0.09), step(0.3, dg) * step(dg, 0.4));
+    float line = step(0.965, max(g.x, g.y));
+    c = mix(c, vec3(0.1), line * 0.9);
+    h = 0.5 - line * 0.4;
+  } else if (L == 21) {
+    // dente de tigre: laranja dourado com listras escuras onduladas
+    float st = sin((uv.x * 5.0 + (pf(uv, 3.0, 3) - 0.5) * 1.4) * 6.2832);
+    float stripe = smoothstep(0.35, 0.6, st);
+    c = mix(vec3(0.98, 0.64, 0.18), vec3(0.22, 0.1, 0.04), stripe) * (0.9 + 0.12 * pn(vec2(uv.x * 120.0, uv.y * 4.0), vec2(120.0, 4.0)));
+    h = 0.5;
+  } else if (L == 22) {
+    // dragão: escamas vermelhas e chamas douradas
+    vec2 s = uv * vec2(16.0, 20.0);
+    vec2 fs = fract(s + vec2(0.5 * mod(floor(s.y), 2.0), 0.0));
+    float sc = smoothstep(0.38, 0.5, length(fs - vec2(0.5, 0.0)));
+    c = vec3(0.5, 0.05, 0.04) * (0.7 + 0.35 * sc);
+    float fl = smoothstep(0.58, 0.64, pf(uv + 0.13, 4.0, 5));
+    c = mix(c, vec3(1.0, 0.76, 0.28), fl);
+    h = sc * 0.6 + fl * 0.3;
+  } else if (L == 23) {
+    // fibra de carbono (trama sarja)
+    vec2 g = uv * 24.0;
+    float t = step(mod(floor(g.x) + floor(g.y), 4.0), 1.5);
+    float sheen = 0.5 + 0.5 * sin(fract(t > 0.5 ? g.x : g.y) * 3.14159);
+    c = vec3(0.1 + 0.07 * t + 0.06 * sheen) * vec3(0.95, 0.97, 1.0);
+    h = t * 0.5 + sheen * 0.2;
+  } else if (L == 24) {
+    // ouro escovado
+    float br = pn(vec2(uv.x * 200.0, uv.y * 4.0), vec2(200.0, 4.0));
+    c = vec3(1.0, 0.78, 0.34) * (0.82 + 0.18 * br);
+    h = br * 0.2;
+  } else if (L == 25) {
+    // hexágonos ciano sobre cinza escuro
+    vec2 p = uv * vec2(6.0, 4.0 * 1.7320508);
+    vec2 r = vec2(1.0, 1.7320508), hh = r * 0.5;
+    vec2 a = mod(p, r) - hh, b = mod(p - hh, r) - hh;
+    vec2 gv = dot(a, a) < dot(b, b) ? a : b;
+    vec2 q = abs(gv);
+    float hd = max(dot(q, normalize(vec2(1.0, 1.7320508))), q.x);
+    float edge = 1.0 - smoothstep(0.035, 0.07, 0.5 - hd);
+    c = mix(vec3(0.1, 0.12, 0.14), vec3(0.2, 0.85, 1.0), edge);
+    h = 0.5 + edge * 0.3;
+  } else if (L == 26) {
+    // camuflagem do deserto
+    float n1 = pf(uv, 3.0, 4), n2 = pf(uv + 0.37, 4.0, 4), n3 = pf(uv + 0.71, 6.0, 3);
+    c = vec3(0.8, 0.7, 0.52);
+    c = mix(c, vec3(0.56, 0.43, 0.28), step(0.55, n1));
+    c = mix(c, vec3(0.36, 0.28, 0.2), step(0.6, n2));
+    c = mix(c, vec3(0.9, 0.82, 0.64), step(0.64, n3));
+    h = 0.5;
   }
   outColor = vec4(lin(clamp(c, 0.0, 1.0)), clamp(h, 0.0, 1.0));
 }`;
@@ -1533,7 +1804,7 @@ const input = { keys: new Set(), pressed: new Set(), mouseL: false, mouseR: fals
 const world = {
   top: new Float32Array(MAP_N), ceil: new Float32Array(MAP_N), roofTop: new Float32Array(MAP_N),
   wall: new Uint8Array(MAP_N), wallMat: new Uint8Array(MAP_N), floorMat: new Uint8Array(MAP_N), roofMat: new Uint8Array(MAP_N),
-  props: [], cellProps: new Array(MAP_N).fill(null),
+  props: [], cellProps: new Array(MAP_N).fill(null), ladders: [],
 };
 const nav = {
   walk: new Uint8Array(MAP_N), h: new Float32Array(MAP_N), cost: new Float32Array(MAP_N), g: new Float32Array(MAP_N),
@@ -1549,6 +1820,7 @@ const game = {
   endTimer: 0, pendingHalftime: false, intel: { T: null, CT: null }, tPlan: null,
   spectate: null, deathCamUntil: 0, killerPos: null, nextId: 1, shake: 0, menuTime: 0, roundKills: null,
   matchOver: false,
+  debugLog: [], lastWinner: '', econ: { T: '', CT: '' }, teamBought: { T: false, CT: false }, usedLineups: new Set(), retake: null, tExec: null, flashWarn: null, threat: null, threatAt: -9,
 };
 const R = {
   gl: null, canvas: null, ok: false, width: 1, height: 1, dpr: 1, aniso: null, texSize: 0,
@@ -1613,6 +1885,7 @@ const ikH = [0, 0, 0];
 const ikE = [0, 0, 0];
 const ikTmp = [0, 0, 0];
 const ikTmp2 = [0, 0, 0];
+const RAG_PT = [];
 const INST_FLOATS = 20;
 const MESH_BOX = 0;
 const MESH_CYL = 1;
@@ -1797,6 +2070,7 @@ function loadSettings() {
   if (['auto', 'native', '1', '0.85', '0.7', '0.5'].indexOf(out.renderScale) < 0) out.renderScale = 'auto';
   if (['high', 'medium', 'off'].indexOf(out.shadows) < 0) out.shadows = 'high';
   if (['high', 'medium'].indexOf(out.textures) < 0) out.textures = 'high';
+  if (!WEAPON_SKINS[out.skin]) out.skin = 'none';
   return out;
 }
 function saveSettings() {
@@ -1838,7 +2112,7 @@ function buildWorld() {
   world.props.length = 0;
   world.cellProps.fill(null);
   MAP_PROPS.forEach((p, idx) => {
-    const prop = { min: [p[0], p[4], p[1]], max: [p[2], p[4] + p[5], p[3]], mat: p[6], shape: p[7] || 'box', pen: p[6] === MAT.CRATE || p[6] === MAT.PALLET || (p[6] === MAT.METAL && (p[2] - p[0] < 0.5 || p[3] - p[1] < 0.5)) };
+    const prop = { min: [p[0], p[4], p[1]], max: [p[2], p[4] + p[5], p[3]], mat: p[6], shape: p[7] || 'box', pen: MAT_PEN[p[6]] < 50 };
     world.props.push(prop);
     for (let z = Math.floor(p[1]); z < Math.ceil(p[3]); z++) {
       for (let x = Math.floor(p[0]); x < Math.ceil(p[2]); x++) {
@@ -1849,7 +2123,25 @@ function buildWorld() {
       }
     }
   });
+  world.ladders = LADDERS.map((l) => ({ min: [l[0], l[4], l[1]], max: [l[2], l[5], l[3]], nx: l[6], nz: l[7] }));
   buildNav();
+}
+// escada em contato com o corpo do jogador (caixa do corpo expandida um pouco)
+function ladderAt(p) {
+  const r = HULL_R + 0.12;
+  for (const L of world.ladders) {
+    if (p.pos[0] + r > L.min[0] && p.pos[0] - r < L.max[0] && p.pos[2] + r > L.min[2] && p.pos[2] - r < L.max[2] && p.pos[1] < L.max[1] + (p.onLadder ? 0.3 : 0.05) && p.pos[1] + p.height > L.min[1]) return L;
+  }
+  return null;
+}
+// ponto dentro de parede, chão, teto ou prop?
+function solidPoint(x, y, z) {
+  const i = cellIdx(Math.floor(x), Math.floor(z));
+  if (i < 0) return true;
+  if (y < world.top[i] || y > world.ceil[i]) return true;
+  const cp = world.cellProps[i];
+  if (cp) for (const k of cp) { const p = world.props[k]; if (x > p.min[0] && x < p.max[0] && y > p.min[1] && y < p.max[1] && z > p.min[2] && z < p.max[2]) return true; }
+  return false;
 }
 function floorAt(x, z) {
   const i = cellIdx(Math.floor(x), Math.floor(z));
@@ -2043,7 +2335,18 @@ function smokeBlocks(ax, ay, az, bx, by, bz) {
     let t = ((cx - ax) * dx + (cy - ay) * dy + (cz - az) * dz) / L2;
     t = clamp(t, 0, 1);
     const px = ax + dx * t - cx, py = (ay + dy * t - cy) * 1.25, pz = az + dz * t - cz;
-    if (px * px + py * py + pz * pz < rad * rad) return true;
+    if (px * px + py * py + pz * pz >= rad * rad) continue;
+    if (!s.holes || !s.holes.length) return true;
+    // com buracos (tiros/HE): percorre o trecho dentro da nuvem; bloqueia se houver fumaça contínua
+    const steps = Math.min(80, Math.ceil(Math.sqrt(L2) / 0.35));
+    let solid = 0;
+    for (let k = 0; k <= steps; k++) {
+      const u = k / steps, x = ax + dx * u, y = ay + dy * u, z = az + dz * u;
+      const ex = x - cx, ey = (y - cy) * 1.25, ez = z - cz;
+      if (ex * ex + ey * ey + ez * ez > rad * rad) continue;
+      if (inSmokeHole(s, x, y, z)) { solid = 0; continue; }
+      if (++solid >= 3) return true;
+    }
   }
   return false;
 }
@@ -2239,6 +2542,9 @@ function initRenderer() {
     R.progSky = makeProgram(SHADER_FULL_VS, SHADER_SKY_FS, ['uInvViewProj', 'uSunDir', 'uFogColor', 'uTime'], '');
     R.progPart = makeProgram(SHADER_PART_VS, SHADER_PART_FS, ['uViewProj', 'uAtlas'], '');
     R.progBake = makeProgram(SHADER_FULL_VS, SHADER_BAKE_FS, ['uLayer'], '');
+    R.progBright = makeProgram(SHADER_FULL_VS, SHADER_BRIGHT_FS, ['uTex', 'uTexel'], '');
+    R.progBlur = makeProgram(SHADER_FULL_VS, SHADER_BLUR_FS, ['uTex', 'uDir'], '');
+    R.progComposite = makeProgram(SHADER_FULL_VS, SHADER_COMPOSITE_FS, ['uScene', 'uBloom', 'uStrength'], '');
   } catch (err) {
     console.error(err);
     return false;
@@ -2393,11 +2699,15 @@ function buildInstancedMesh(mb) {
 function buildStaticMesh() {
   const gl = R.gl;
   const mb = meshBuilder();
-  const side = (x, z, dx, dz, y0, y1, mat) => {
+  const side0 = (x, z, dx, dz, y0, y1, mat) => {
     if (dx === 1) mb.quad([x + 1, y0, z], [x + 1, y0, z + 1], [x + 1, y1, z + 1], [x + 1, y1, z], [1, 0, 0], mat);
     else if (dx === -1) mb.quad([x, y0, z + 1], [x, y0, z], [x, y1, z], [x, y1, z + 1], [-1, 0, 0], mat);
     else if (dz === 1) mb.quad([x, y0, z + 1], [x + 1, y0, z + 1], [x + 1, y1, z + 1], [x, y1, z + 1], [0, 0, 1], mat);
     else mb.quad([x + 1, y0, z], [x, y0, z], [x, y1, z], [x + 1, y1, z], [0, 0, -1], mat);
+  };
+  const side = (x, z, dx, dz, y0, y1, mat) => {
+    if (y1 - y0 > 1.3) { side0(x, z, dx, dz, y0, y0 + 0.7, mat); side0(x, z, dx, dz, y0 + 0.7, y1, mat); return; }
+    side0(x, z, dx, dz, y0, y1, mat);
   };
   const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   for (let z = 0; z < MAP_D; z++) {
@@ -2430,9 +2740,61 @@ function buildStaticMesh() {
       mb.box(p.min[0], p.min[1], p.min[2], p.max[0], p.max[1], p.max[2], p.mat, false);
     }
   }
+  for (const p of world.props) if (p.shape === 'container') addContainerDetail(mb, p);
+  for (const L of world.ladders) addLadderMesh(mb, L);
+  bakeVertexAO(mb.verts);
   R.staticVao = makeMeshVao(new Float32Array(mb.verts), new Uint32Array(mb.idx));
   gl.bindVertexArray(null);
   R.staticCount = mb.idx.length;
+}
+// Oclusão de ambiente por vértice (assada uma vez): amostra pontos em volta do vértice e conta quantos caem dentro de algo sólido
+function bakeVertexAO(v) {
+  const n = v.length / 10;
+  const offs = [];
+  for (const a of [-0.42, 0, 0.42]) for (const b of [-0.42, 0, 0.42]) offs.push([a, b, a === 0 && b === 0 ? 0.55 : 0.28]);
+  for (let i = 0; i < n; i++) {
+    const o = i * 10;
+    const px = v[o], py = v[o + 1], pz = v[o + 2], nx = v[o + 3], ny = v[o + 4], nz = v[o + 5];
+    let tx, ty, tz;
+    if (Math.abs(ny) > 0.9) { tx = 1; ty = 0; tz = 0; } else { tx = 0; ty = 1; tz = 0; }
+    const bx = ny * tz - nz * ty, by = nz * tx - nx * tz, bz = nx * ty - ny * tx;
+    let solid = 0;
+    for (const s of offs) {
+      const qx = px + nx * s[2] + tx * s[0] + bx * s[1], qy = py + ny * s[2] + ty * s[0] + by * s[1], qz = pz + nz * s[2] + tz * s[0] + bz * s[1];
+      if (solidPoint(qx, qy, qz)) solid++;
+    }
+    v[o + 9] = Math.min(0.8, solid / offs.length * 1.35);
+  }
+}
+// quinas, frisos e travas das portas de um container (só visual; a colisão é a caixa do prop)
+function addContainerDetail(mb, p) {
+  const x0 = p.min[0], y0 = p.min[1], z0 = p.min[2], x1 = p.max[0], y1 = p.max[1], z1 = p.max[2], e = 0.03, w = 0.14;
+  for (const cx of [x0, x1]) for (const cz of [z0, z1]) mb.box(cx - (cx === x0 ? e : w - e), y0, cz - (cz === z0 ? e : w - e), cx + (cx === x0 ? w - e : e), y1 + e, cz + (cz === z0 ? w - e : e), MAT.METAL, false);
+  const alongX = x1 - x0 > z1 - z0;
+  if (alongX) { mb.box(x0, y1 - 0.12, z0 - e, x1, y1 + e, z0 + 0.1, MAT.METAL, false); mb.box(x0, y1 - 0.12, z1 - 0.1, x1, y1 + e, z1 + e, MAT.METAL, false); }
+  else { mb.box(x0 - e, y1 - 0.12, z0, x0 + 0.1, y1 + e, z1, MAT.METAL, false); mb.box(x1 - 0.1, y1 - 0.12, z0, x1 + e, y1 + e, z1, MAT.METAL, false); }
+  // portas na ponta: 4 barras verticais
+  for (let k = 0; k < 4; k++) {
+    const t = 0.2 + k * 0.2;
+    if (alongX) { const zz = z0 + (z1 - z0) * t; mb.box(x1, y0 + 0.1, zz - 0.025, x1 + 0.06, y1 - 0.15, zz + 0.025, MAT.METAL, false); }
+    else { const xx = x0 + (x1 - x0) * t; mb.box(xx - 0.025, y0 + 0.1, z1, xx + 0.025, y1 - 0.15, z1 + 0.06, MAT.METAL, false); }
+  }
+}
+// escada de mão: dois trilhos e degraus a cada 30 cm
+function addLadderMesh(mb, L) {
+  const tx = -L.nz, tz = L.nx;
+  const cx = (L.min[0] + L.max[0]) / 2, cz = (L.min[2] + L.max[2]) / 2;
+  const half = Math.abs(tx) * (L.max[0] - L.min[0]) / 2 + Math.abs(tz) * (L.max[2] - L.min[2]) / 2;
+  const bx = cx + L.nx * 0.07, bz = cz + L.nz * 0.07;
+  const top = L.max[1] + 0.9;
+  for (const s of [-1, 1]) {
+    const px = bx + tx * half * s, pz = bz + tz * half * s;
+    mb.box(px - 0.03, L.min[1], pz - 0.03, px + 0.03, top, pz + 0.03, MAT.GUNMETAL, false);
+  }
+  for (let y = L.min[1] + 0.3; y < L.max[1] + 0.05; y += 0.3) {
+    const ax = bx - tx * half, az = bz - tz * half, cx2 = bx + tx * half, cz2 = bz + tz * half;
+    mb.box(Math.min(ax, cx2) - 0.018, y - 0.018, Math.min(az, cz2) - 0.018, Math.max(ax, cx2) + 0.018, y + 0.018, Math.max(az, cz2) + 0.018, MAT.GUNMETAL, false);
+  }
 }
 function buildParticleBuffers() {
   const gl = R.gl;
@@ -2511,9 +2873,9 @@ function buildAtlas() {
   const gl = R.gl;
   const S = 256;
   const cv = document.createElement('canvas');
-  cv.width = cv.height = S * 4;
+  cv.width = S * ATLAS_COLS; cv.height = S * ATLAS_ROWS;
   const g = cv.getContext('2d');
-  const at = (k) => [(k % 4) * S, Math.floor(k / 4) * S];
+  const at = (k) => [(k % ATLAS_COLS) * S, Math.floor(k / ATLAS_COLS) * S];
   const soft = (cx, cy, r, color, a0) => {
     const grd = g.createRadialGradient(cx, cy, 0, cx, cy, r);
     grd.addColorStop(0, 'rgba(' + color + ',' + a0 + ')');
@@ -2632,6 +2994,50 @@ function buildAtlas() {
   g.restore();
   p = at(ATLAS.SCORCH);
   soft(p[0] + 128, p[1] + 128, 124, '18,14,12', 0.85);
+  const blob = (cx, cy, r, jag, color) => {
+    g.fillStyle = color;
+    g.beginPath();
+    for (let k = 0; k <= 18; k++) { const a = k / 18 * Math.PI * 2, rr = r * (1 - jag + Math.random() * jag * 2); if (k === 0) g.moveTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); else g.lineTo(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr); }
+    g.closePath(); g.fill();
+  };
+  // buraco em madeira: lascas claras em volta
+  p = at(ATLAS.HOLE_WOOD);
+  soft(p[0] + 128, p[1] + 128, 70, '40,28,16', 0.6);
+  g.strokeStyle = 'rgba(214,176,120,0.95)'; g.lineWidth = 7;
+  for (let k = 0; k < 9; k++) { const a = Math.random() * Math.PI * 2, r0 = 22, r1 = 40 + Math.random() * 44; g.beginPath(); g.moveTo(p[0] + 128 + Math.cos(a) * r0, p[1] + 128 + Math.sin(a) * r0); g.lineTo(p[0] + 128 + Math.cos(a) * r1, p[1] + 128 + Math.sin(a) * r1); g.stroke(); }
+  blob(p[0] + 128, p[1] + 128, 24, 0.35, 'rgba(14,9,6,0.97)');
+  // buraco em metal: amassado com borda brilhante
+  p = at(ATLAS.HOLE_METAL);
+  soft(p[0] + 128, p[1] + 128, 46, '40,42,46', 0.5);
+  g.strokeStyle = 'rgba(225,228,235,0.9)'; g.lineWidth = 8;
+  g.beginPath(); g.arc(p[0] + 128, p[1] + 128, 24, 0, Math.PI * 2); g.stroke();
+  blob(p[0] + 128, p[1] + 128, 16, 0.15, 'rgba(10,10,12,0.97)');
+  // buraco em pedra/reboco: cratera lascada com pó claro
+  p = at(ATLAS.HOLE_STONE);
+  soft(p[0] + 128, p[1] + 128, 96, '70,60,48', 0.55);
+  blob(p[0] + 128, p[1] + 128, 50, 0.3, 'rgba(120,104,84,0.85)');
+  blob(p[0] + 128, p[1] + 128, 26, 0.35, 'rgba(22,18,14,0.96)');
+  for (let k = 0; k < 16; k++) { const a = Math.random() * Math.PI * 2, r = 52 + Math.random() * 40; soft(p[0] + 128 + Math.cos(a) * r, p[1] + 128 + Math.sin(a) * r, 4 + Math.random() * 6, '235,225,205', 0.8); }
+  // respingo de sangue direcional (gotas alongadas para a direita)
+  p = at(ATLAS.SPLAT);
+  for (let k = 0; k < 10; k++) soft(p[0] + 80 + gauss() * 18, p[1] + 128 + gauss() * 18, 16 + Math.random() * 20, '118,6,5', 0.95);
+  for (let k = 0; k < 18; k++) { const x = p[0] + 100 + Math.random() * 140, y = p[1] + 128 + gauss() * 30, r = 10 - (x - p[0] - 100) / 18; if (r > 1.5) { g.fillStyle = 'rgba(110,5,4,0.9)'; g.beginPath(); g.ellipse(x, y, r * 1.8, r, 0, 0, Math.PI * 2); g.fill(); } }
+  // poça de sangue
+  p = at(ATLAS.POOL);
+  for (let k = 0; k < 9; k++) blob(p[0] + 128 + gauss() * 22, p[1] + 128 + gauss() * 22, 40 + Math.random() * 34, 0.18, 'rgba(84,4,3,0.55)');
+  blob(p[0] + 128, p[1] + 128, 64, 0.2, 'rgba(70,3,2,0.8)');
+  // marca de explosão com raios
+  p = at(ATLAS.BLAST);
+  soft(p[0] + 128, p[1] + 128, 126, '16,13,11', 0.9);
+  g.strokeStyle = 'rgba(14,11,9,0.7)';
+  for (let k = 0; k < 26; k++) { const a = Math.random() * Math.PI * 2, r1 = 70 + Math.random() * 55; g.lineWidth = 2 + Math.random() * 6; g.beginPath(); g.moveTo(p[0] + 128 + Math.cos(a) * 30, p[1] + 128 + Math.sin(a) * 30); g.lineTo(p[0] + 128 + Math.cos(a) * r1, p[1] + 128 + Math.sin(a) * r1); g.stroke(); }
+  // nuvem densa da fumaça (bolinhas sobrepostas)
+  p = at(ATLAS.PUFF);
+  soft(p[0] + 128, p[1] + 128, 110, '255,255,255', 0.55);
+  for (let k = 0; k < 16; k++) { const a = Math.random() * Math.PI * 2, r = Math.random() * 40; soft(p[0] + 128 + Math.cos(a) * r, p[1] + 128 + Math.sin(a) * r, 40 + Math.random() * 30, '255,255,255', 0.35); }
+  // estilhaço (colorido pela partícula)
+  p = at(ATLAS.DEBRIS);
+  blob(p[0] + 128, p[1] + 128, 70, 0.35, 'rgba(255,255,255,1)');
   R.atlasTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, R.atlasTex);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
@@ -2790,9 +3196,10 @@ function pushSeg(mesh, parent, a, b, sx, sy, mat, col) {
   m4Mul(SEG_MATRIX, parent, L);
   instPush(mesh, SEG_MATRIX, mat, col);
 }
-function pushGunModel(parent, id, scale, anim) {
+function pushGunModel(parent, id, scale, anim, skin) {
   const model = GUN_MODELS[id];
   if (!model) return;
+  const sk = skin && WEAPON_SKINS[skin] ? WEAPON_SKINS[skin].mat : -1;
   for (const pt of model.parts) {
     let x = pt[1], y = pt[2], z = pt[3];
     const tag = pt[10];
@@ -2802,8 +3209,16 @@ function pushGunModel(parent, id, scale, anim) {
       else if (tag === 'bolt') z += anim.bolt;
       else if (tag === 'pump') z += anim.pump;
     }
-    placePart(pt[0] === 'c' ? MESH_CYL : MESH_BOX, parent, x * scale, y * scale, z * scale, pt[4] * scale, pt[5] * scale, pt[6] * scale, pt[7], pt[8], pt[9] || 0, 0, 0);
+    let mat = pt[7], col = pt[8];
+    // pintura: só as peças de metal/madeira do corpo (aço, cromo, lâmina e lente continuam)
+    if (sk >= 0 && (mat === GM || mat === GW) && col !== C_STEEL && col !== C_CHROME && col !== C_BLADE && col !== C_LENS) { col = col === C_BLACK ? SKIN_TINT_DIM : SKIN_TINT; mat = sk; }
+    placePart(pt[0] === 'c' ? MESH_CYL : MESH_BOX, parent, x * scale, y * scale, z * scale, pt[4] * scale, pt[5] * scale, pt[6] * scale, mat, col, pt[9] || 0, 0, 0);
   }
+}
+function weaponSkinOf(p) {
+  const inst = currentWeapon(p);
+  if (inst) return inst.skin || 'none';
+  return p.slot === 'knife' ? (p.skin || 'none') : 'none';
 }
 // Resolve a articulação do meio (cotovelo/joelho) por dois ossos. S e H em coordenadas locais; resultado em ikE.
 function solveIK(S, H, l1, l2, px, py, pz) {
@@ -2906,8 +3321,66 @@ function drawHead(H, p, look, uni) {
     }
   }
 }
+// tronco a partir da pélvis (y para cima, -z para a frente)
+function drawTorso(T, p, look, uni) {
+  pushBox(T, 0, 0.05, 0, 0.36, 0.14, 0.22, MAT.CAMO, uni.pants);
+  pushBox(T, 0, 0.115, 0, 0.38, 0.045, 0.24, MAT.CLOTH, [0.16, 0.14, 0.12]);
+  pushBox(T, 0.12, 0.09, -0.12, 0.08, 0.07, 0.04, MAT.VEST, uni.vest);
+  pushBox(T, 0, 0.33, 0, 0.4, 0.42, 0.23, MAT.CLOTH, uni.shirt);
+  pushBox(T, 0, 0.34, 0, 0.43, 0.33, 0.27, MAT.VEST, uni.vest);
+  for (let i = -1; i <= 1; i++) pushBox(T, i * 0.12, 0.26, -0.145, 0.095, 0.11, 0.045, MAT.VEST, uni.vest);
+  pushBox(T, -0.13, 0.45, -0.14, 0.06, 0.08, 0.035, MAT.VEST, uni.vest);
+  if (p.team === 'CT') pushBox(T, 0, 0.38, 0.17, 0.26, 0.26, 0.08, MAT.VEST, uni.vest);
+  if (p.inv && p.inv.bomb && p.alive) {
+    pushBox(T, 0, 0.36, 0.19, 0.28, 0.2, 0.1, GM, [0.46, 0.36, 0.22]);
+    pushBox(T, 0.05, 0.4, 0.243, 0.08, 0.04, 0.01, MAT.EMISSIVE, [0.3, 1, 0.35]);
+  }
+  pushBox(T, 0.225, 0.5, 0, 0.12, 0.1, 0.16, MAT.CLOTH, uni.shirt);
+  pushBox(T, -0.225, 0.5, 0, 0.12, 0.1, 0.16, MAT.CLOTH, uni.shirt);
+  pushBox(T, 0, 0.575, 0, 0.11, 0.07, 0.11, MAT.SKIN, look.skin);
+}
+// matriz com origem o, eixo y = up e eixo x = right (ortogonalizado)
+function basisMatrix(out, o, up, right) {
+  let yl = Math.hypot(up[0], up[1], up[2]) || 1;
+  const yx = up[0] / yl, yy = up[1] / yl, yz = up[2] / yl;
+  const d = right[0] * yx + right[1] * yy + right[2] * yz;
+  let xx = right[0] - yx * d, xy = right[1] - yy * d, xz = right[2] - yz * d;
+  const xl = Math.hypot(xx, xy, xz) || 1;
+  xx /= xl; xy /= xl; xz /= xl;
+  yl = 1;
+  out[0] = xx; out[1] = xy; out[2] = xz; out[3] = 0;
+  out[4] = yx; out[5] = yy; out[6] = yz; out[7] = 0;
+  out[8] = xy * yz - xz * yy; out[9] = xz * yx - xx * yz; out[10] = xx * yy - xy * yx; out[11] = 0;
+  out[12] = o[0]; out[13] = o[1]; out[14] = o[2]; out[15] = yl;
+  return out;
+}
+function drawRagdoll(p) {
+  const P = p.rag.pos, look = TEAM_LOOK[p.team], uni = uniformOf(p);
+  const pt = (i) => RAG_PT[i] || (RAG_PT[i] = [0, 0, 0]);
+  for (let i = 0; i < 15; i++) { const q = pt(i); q[0] = P[i * 3]; q[1] = P[i * 3 + 1]; q[2] = P[i * 3 + 2]; }
+  const V = RAG_PT, sub = (a, b, out) => { out[0] = a[0] - b[0]; out[1] = a[1] - b[1]; out[2] = a[2] - b[2]; return out; };
+  const up = sub(V[1], V[0], ikTmp), right = sub(V[4], V[3], ikTmp2);
+  basisMatrix(TORSO_MATRIX, V[0], up, right);
+  drawTorso(TORSO_MATRIX, p, look, uni);
+  basisMatrix(HEAD_MATRIX, V[1], sub(V[2], V[1], ikTmp), right);
+  drawHead(HEAD_MATRIX, p, look, uni);
+  const fx = -TORSO_MATRIX[8], fy = -TORSO_MATRIX[9], fz = -TORSO_MATRIX[10];
+  for (const s of [0, 1]) {
+    const sh = V[3 + s], el = V[5 + s], ha = V[7 + s], hip = V[9 + s], kn = V[11 + s], ft = V[13 + s];
+    pushSeg(MESH_BOX, IDENTITY, sh, el, 0.1, 0.1, MAT.CLOTH, uni.shirt);
+    pushSeg(MESH_BOX, IDENTITY, el, ha, 0.085, 0.085, MAT.CLOTH, uni.shirt);
+    ikH[0] = ha[0] + (ha[0] - el[0]) * 0.3; ikH[1] = ha[1] + (ha[1] - el[1]) * 0.3; ikH[2] = ha[2] + (ha[2] - el[2]) * 0.3;
+    pushSeg(MESH_BOX, IDENTITY, ha, ikH, 0.08, 0.06, MAT.SKIN, look.glove);
+    pushSeg(MESH_BOX, IDENTITY, hip, kn, 0.165, 0.18, MAT.CAMO, uni.pants);
+    pushSeg(MESH_BOX, IDENTITY, kn, ft, 0.145, 0.155, MAT.CAMO, uni.pants);
+    ikH[0] = ft[0] - fx * 0.05; ikH[1] = ft[1] - fy * 0.05; ikH[2] = ft[2] - fz * 0.05;
+    ikE[0] = ft[0] + fx * 0.2; ikE[1] = ft[1] + fy * 0.2; ikE[2] = ft[2] + fz * 0.2;
+    pushSeg(MESH_BOX, IDENTITY, ikH, ikE, 0.13, 0.09, MAT.SKIN, look.boots);
+  }
+}
 function addPlayerModel(p) {
   const look = TEAM_LOOK[p.team], uni = uniformOf(p), now = game.time;
+  if (!p.alive && p.rag) { drawRagdoll(p); return; }
   let c = p.crouchAmt;
   const base = PLAYER_MATRIX;
   m4Identity(base);
@@ -2954,24 +3427,14 @@ function addPlayerModel(p) {
   T.set(base);
   m4Translate(T, 0, hipY, 0);
   m4RotX(T, -lean);
-  pushBox(T, 0, 0.05, 0, 0.36, 0.14, 0.22, MAT.CAMO, uni.pants);
-  pushBox(T, 0, 0.115, 0, 0.38, 0.045, 0.24, MAT.CLOTH, [0.16, 0.14, 0.12]);
-  pushBox(T, 0.12, 0.09, -0.12, 0.08, 0.07, 0.04, MAT.VEST, uni.vest);
-  pushBox(T, 0, 0.33, 0, 0.4, 0.42, 0.23, MAT.CLOTH, uni.shirt);
-  pushBox(T, 0, 0.34, 0, 0.43, 0.33, 0.27, MAT.VEST, uni.vest);
-  for (let i = -1; i <= 1; i++) pushBox(T, i * 0.12, 0.26, -0.145, 0.095, 0.11, 0.045, MAT.VEST, uni.vest);
-  pushBox(T, -0.13, 0.45, -0.14, 0.06, 0.08, 0.035, MAT.VEST, uni.vest);
-  if (p.team === 'CT') pushBox(T, 0, 0.38, 0.17, 0.26, 0.26, 0.08, MAT.VEST, uni.vest);
-  if (p.inv && p.inv.bomb && p.alive) {
-    pushBox(T, 0, 0.36, 0.19, 0.28, 0.2, 0.1, GM, [0.46, 0.36, 0.22]);
-    pushBox(T, 0.05, 0.4, 0.243, 0.08, 0.04, 0.01, MAT.EMISSIVE, [0.3, 1, 0.35]);
-  }
-  pushBox(T, 0.225, 0.5, 0, 0.12, 0.1, 0.16, MAT.CLOTH, uni.shirt);
-  pushBox(T, -0.225, 0.5, 0, 0.12, 0.1, 0.16, MAT.CLOTH, uni.shirt);
-  pushBox(T, 0, 0.575, 0, 0.11, 0.07, 0.11, MAT.SKIN, look.skin);
+  // reação ao levar tiro: o tronco cede para trás e gira um pouco
+  const fl = p.alive ? now - p.flinchAt : 9;
+  const fk = fl < 0.26 ? Math.sin(fl / 0.26 * Math.PI) : 0;
+  if (fk > 0) { m4RotX(T, fk * (p.flinchZone === 'head' ? 0.08 : 0.17)); m4RotY(T, fk * 0.22 * p.flinchSide); }
+  drawTorso(T, p, look, uni);
   HEAD_MATRIX.set(T);
   m4Translate(HEAD_MATRIX, 0, 0.6, 0);
-  m4RotX(HEAD_MATRIX, clamp(p.pitch, -0.7, 0.7) * 0.55 + lean);
+  m4RotX(HEAD_MATRIX, clamp(p.pitch, -0.7, 0.7) * 0.55 + lean + (p.flinchZone === 'head' ? fk * 0.45 : 0));
   drawHead(HEAD_MATRIX, p, look, uni);
   // arma principal nas costas quando outra arma está na mão
   if (p.alive && p.inv.primary && p.slot !== 'primary') {
@@ -2979,7 +3442,7 @@ function addPlayerModel(p) {
     m4Translate(GUN_WORLD, 0.02, 0.36, 0.2);
     m4RotY(GUN_WORLD, HALF_PI);
     m4RotZ(GUN_WORLD, 0.85);
-    pushGunModel(GUN_WORLD, p.inv.primary.id, 1, null);
+    pushGunModel(GUN_WORLD, p.inv.primary.id, 1, null, p.inv.primary.skin);
   }
   // braços com IK + arma
   const id = weaponModelId(p);
@@ -2999,7 +3462,7 @@ function addPlayerModel(p) {
     if (cls === 'knife' && now - p.ws.knifeAt < 0.35) m4RotY(GUN_MATRIX, Math.sin((now - p.ws.knifeAt) / 0.35 * Math.PI) * 0.9);
     m4Mul(GUN_WORLD, T, GUN_MATRIX);
     magAnim(rt, THIRD_ANIM);
-    pushGunModel(GUN_WORLD, id, 1, THIRD_ANIM);
+    pushGunModel(GUN_WORLD, id, 1, THIRD_ANIM, weaponSkinOf(p));
     m4Point(GUN_MATRIX, 0, model && model.pistol ? -0.06 : -0.06, model && model.pistol ? 0.01 : 0.045, ikH);
     if (cls === 'knife' || cls === 'grenade') m4Point(GUN_MATRIX, 0, 0, 0.02, ikH);
   } else {
@@ -3030,7 +3493,7 @@ function addItemModel(it) {
   m4RotY(ITEM_MATRIX, it.yaw);
   if (it.kind === 'bomb') { pushGunModel(ITEM_MATRIX, 'bomb', 1, null); return; }
   m4RotZ(ITEM_MATRIX, HALF_PI);
-  pushGunModel(ITEM_MATRIX, it.weapon, 1, null);
+  pushGunModel(ITEM_MATRIX, it.weapon, 1, null, it.skin);
 }
 function addWorldObjects() {
   const firstPersonOf = game.state === 'playing' ? cameraSubject() : null;
@@ -3115,7 +3578,7 @@ function buildViewmodel(p) {
   m4RotY(VM_BASE, pose.yaw + vm.swayYaw + yawOff);
   m4RotX(VM_BASE, vm.kickRot - dipRot + pitchOff);
   m4RotZ(VM_BASE, roll + (pose.roll || 0));
-  pushGunModel(VM_BASE, id, 1, anim);
+  pushGunModel(VM_BASE, id, 1, anim, weaponSkinOf(p));
   const glove = look.glove, sleeve = uni.shirt;
   // mão direita no punho
   const gz = model && model.pistol ? -0.042 : 0;
@@ -3205,8 +3668,8 @@ function writeVert(x, y, z, u, v, r, g, b, a) {
 }
 function writeQuad(cx, cy, cz, ax, ay, az, bx, by, bz, cell, r, g, b, a) {
   if (partWrite + 6 > R.partMaxQuads * 6) return;
-  const col = cell % 4, row = Math.floor(cell / 4), pad = 0.003;
-  const u0 = col * 0.25 + pad, u1 = (col + 1) * 0.25 - pad, v0 = row * 0.25 + pad, v1 = (row + 1) * 0.25 - pad;
+  const col = cell % ATLAS_COLS, row = Math.floor(cell / ATLAS_COLS), du = 1 / ATLAS_COLS, dv = 1 / ATLAS_ROWS, pad = 0.002;
+  const u0 = col * du + pad, u1 = (col + 1) * du - pad, v0 = row * dv + pad, v1 = (row + 1) * dv - pad;
   const x0 = cx - ax - bx, y0 = cy - ay - by, z0 = cz - az - bz;
   const x1 = cx + ax - bx, y1 = cy + ay - by, z1 = cz + az - bz;
   const x2 = cx + ax + bx, y2 = cy + ay + by, z2 = cz + az + bz;
@@ -3218,6 +3681,7 @@ function particleAlpha(p) {
   const t = p.life / p.max;
   let a = p.hold ? p.a * (t < 0.85 ? 1 : Math.max(0, 1 - (t - 0.85) / 0.15)) : p.a * (1 - t * t);
   if (p.fadeIn > 0 && p.life < p.fadeIn) a *= p.life / p.fadeIn;
+  if (p.clear) a *= 1 - p.clear;
   return a;
 }
 function writeBillboard(p) {
@@ -3349,7 +3813,7 @@ function gatherLights() {
   for (const f of game.fires) {
     if (!f.light) f.light = { x: 0, y: 0, z: 0, r: 1, g: 0.5, b: 0.18, intensity: 0, until: 0, dur: 1 };
     f.light.x = f.pos[0]; f.light.y = f.pos[1] + 0.8; f.light.z = f.pos[2];
-    f.light.intensity = 3.5 + Math.sin(now * 23 + f.pos[0]) * 0.8 + Math.sin(now * 37) * 0.5;
+    f.light.intensity = 5.5 + Math.sin(now * 23 + f.pos[0]) * 1.1 + Math.sin(now * 37) * 0.7 + (Math.random() - 0.5) * 0.6;
     f.light.until = now + 1;
     cand.push(f.light);
   }
@@ -3458,6 +3922,8 @@ function renderFrame() {
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
     dynOn = true;
   }
+  const post = settings.bloom && preparePost();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, post ? R.post.fbMsaa : null);
   gl.viewport(0, 0, R.width, R.height);
   gl.clearColor(0, 0, 0, 1);
   gl.depthMask(true);
@@ -3497,8 +3963,110 @@ function renderFrame() {
     gl.frontFace(gl.CCW);
     drawVmEffects();
   }
+  if (post) finishPost();
   gl.bindVertexArray(null);
   if (hud.flashCapture) captureFlashImage();
+}
+// ---------- pós-processamento ----------
+function makeColorTex(w, h) {
+  const gl = R.gl, t = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texStorage2D(gl.TEXTURE_2D, 1, gl.RGBA8, w, h);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  return t;
+}
+function texFbo(t) {
+  const gl = R.gl, fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0);
+  return fb;
+}
+function destroyPost(P) {
+  const gl = R.gl;
+  for (const fb of [P.fbMsaa, P.fbScene, P.fbA, P.fbB]) if (fb) gl.deleteFramebuffer(fb);
+  for (const rb of [P.rbColor, P.rbDepth]) if (rb) gl.deleteRenderbuffer(rb);
+  for (const t of [P.texScene, P.texA, P.texB]) if (t) gl.deleteTexture(t);
+}
+// alvos do pós-processamento no tamanho atual (refeitos quando a janela muda). false = sem bloom neste aparelho
+function preparePost() {
+  const gl = R.gl, w = R.width, h = R.height;
+  if (R.postFailed) return false;
+  if (R.post && R.post.w === w && R.post.h === h) return true;
+  if (R.post) { destroyPost(R.post); R.post = null; }
+  const P = { w, h, bw: Math.max(1, w >> 2), bh: Math.max(1, h >> 2) };
+  const samples = Math.min(4, gl.getParameter(gl.MAX_SAMPLES) || 0);
+  P.fbMsaa = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, P.fbMsaa);
+  P.rbColor = gl.createRenderbuffer();
+  gl.bindRenderbuffer(gl.RENDERBUFFER, P.rbColor);
+  if (samples > 0) gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.RGBA8, w, h); else gl.renderbufferStorage(gl.RENDERBUFFER, gl.RGBA8, w, h);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.RENDERBUFFER, P.rbColor);
+  P.rbDepth = gl.createRenderbuffer();
+  gl.bindRenderbuffer(gl.RENDERBUFFER, P.rbDepth);
+  if (samples > 0) gl.renderbufferStorageMultisample(gl.RENDERBUFFER, samples, gl.DEPTH_COMPONENT24, w, h); else gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT24, w, h);
+  gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, P.rbDepth);
+  const ok = gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE;
+  P.texScene = makeColorTex(w, h); P.fbScene = texFbo(P.texScene);
+  P.texA = makeColorTex(P.bw, P.bh); P.fbA = texFbo(P.texA);
+  P.texB = makeColorTex(P.bw, P.bh); P.fbB = texFbo(P.texB);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+  if (!ok) { destroyPost(P); R.postFailed = true; return false; }
+  R.post = P;
+  return true;
+}
+function fullPass(prog) {
+  const gl = R.gl;
+  gl.useProgram(prog.p);
+  gl.bindVertexArray(R.emptyVao);
+  return prog.u;
+}
+function finishPost() {
+  const gl = R.gl, P = R.post;
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, P.fbMsaa);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, P.fbScene);
+  gl.blitFramebuffer(0, 0, P.w, P.h, 0, 0, P.w, P.h, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+  gl.bindFramebuffer(gl.READ_FRAMEBUFFER, null);
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
+  gl.disable(gl.DEPTH_TEST); gl.disable(gl.BLEND); gl.disable(gl.CULL_FACE); gl.depthMask(false);
+  gl.activeTexture(gl.TEXTURE5);
+  // brilho → A (1/4)
+  gl.bindFramebuffer(gl.FRAMEBUFFER, P.fbA);
+  gl.viewport(0, 0, P.bw, P.bh);
+  let u = fullPass(R.progBright);
+  gl.bindTexture(gl.TEXTURE_2D, P.texScene);
+  gl.uniform1i(u.uTex, 5);
+  gl.uniform2f(u.uTexel, 1 / P.w, 1 / P.h);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  // desfoque separável (2 passadas)
+  u = fullPass(R.progBlur);
+  gl.uniform1i(u.uTex, 5);
+  for (let it = 0; it < 2; it++) {
+    gl.bindFramebuffer(gl.FRAMEBUFFER, P.fbB);
+    gl.bindTexture(gl.TEXTURE_2D, P.texA);
+    gl.uniform2f(u.uDir, (1 + it) / P.bw, 0);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, P.fbA);
+    gl.bindTexture(gl.TEXTURE_2D, P.texB);
+    gl.uniform2f(u.uDir, 0, (1 + it) / P.bh);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  }
+  // composição na tela
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, P.w, P.h);
+  u = fullPass(R.progComposite);
+  gl.bindTexture(gl.TEXTURE_2D, P.texScene);
+  gl.uniform1i(u.uScene, 5);
+  gl.activeTexture(gl.TEXTURE6);
+  gl.bindTexture(gl.TEXTURE_2D, P.texA);
+  gl.uniform1i(u.uBloom, 6);
+  gl.uniform1f(u.uStrength, 0.5);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.enable(gl.DEPTH_TEST); gl.enable(gl.CULL_FACE); gl.depthMask(true);
 }
 function captureFlashImage() {
   hud.flashCapture = false;
@@ -3539,10 +4107,11 @@ function initAudio() {
 }
 function setVolume(v) { if (audio.master) audio.master.gain.value = v; }
 // Cadeia de um som (atenuação, pan estéreo e abafamento atrás de paredes). null = inaudível.
+// Cadeia de um som: atenuação, direção 3D (HRTF: frente/trás/cima/baixo) ou pan estéreo, e abafamento atrás de paredes. null = inaudível.
 function soundDest(pos, gain, range) {
   const ctx = audio.ctx;
   if (!ctx || !audio.noise || game.paused) return null;
-  let g = gain, pan = 0, muffle = false;
+  let g = gain, pan = 0, muffle = false, rx = 0, ry = 0, rz = 0, dirOk = false;
   if (pos) {
     const lx = R.camPos[0], ly = R.camPos[1], lz = R.camPos[2];
     const dx = pos[0] - lx, dy = pos[1] - ly, dz = pos[2] - lz;
@@ -3550,15 +4119,26 @@ function soundDest(pos, gain, range) {
     if (d > range) return null;
     const k = 1 - d / range;
     g *= k * k;
-    if (d > 0.5) pan = clamp((dx * R.camRight[0] + dz * R.camRight[2]) / d, -1, 1) * 0.8;
+    if (d > 0.5) {
+      const r = dx * R.camRight[0] + dy * R.camRight[1] + dz * R.camRight[2];
+      const u = dx * R.camUp[0] + dy * R.camUp[1] + dz * R.camUp[2];
+      const f = dx * R.camFwd[0] + dy * R.camFwd[1] + dz * R.camFwd[2];
+      rx = r / d; ry = u / d; rz = -f / d; dirOk = true;
+      pan = clamp(r / d, -1, 1) * 0.8;
+    }
     if (d > 3 && g > 0.01 && !losClear(lx, ly, lz, pos[0], pos[1] + 0.3, pos[2], true)) { muffle = true; g *= 0.55; }
   }
   if (g < 0.004) return null;
   const out = ctx.createGain();
   out.gain.value = g;
   let node = out;
-  if (pan !== 0 && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; node.connect(p); node = p; }
-  if (muffle) { const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 650; node.connect(f); node = f; }
+  if (dirOk && settings.hrtf && ctx.createPanner) {
+    const p = ctx.createPanner();
+    p.panningModel = 'HRTF'; p.distanceModel = 'inverse'; p.refDistance = 1; p.rolloffFactor = 0;
+    if (p.positionX) { p.positionX.value = rx * 2; p.positionY.value = ry * 2; p.positionZ.value = rz * 2; } else p.setPosition(rx * 2, ry * 2, rz * 2);
+    node.connect(p); node = p;
+  } else if (pan !== 0 && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; node.connect(p); node = p; }
+  if (muffle) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 650; node.connect(fl); node = fl; }
   node.connect(audio.master);
   return out;
 }
@@ -3607,7 +4187,10 @@ function sfxStep(pos, isLocal, loud, surface) {
   const dest = soundDest(isLocal ? null : pos, isLocal ? 0.12 : 0.5 * (loud ? 1.3 : 1), 26);
   if (!dest) return;
   const t = now0();
-  if (surface === 'metal') {
+  if (surface === 'ladder') {
+    tone(dest, t, rand(210, 260), 0.14, 'triangle', 0.5);
+    noiseBurst(dest, t, 0.08, 'bandpass', rand(2200, 2800), 3, 0.7, 0.002);
+  } else if (surface === 'metal') {
     tone(dest, t, rand(300, 380), 0.09, 'triangle', 0.35);
     noiseBurst(dest, t, 0.06, 'bandpass', 1800, 2, 0.6, 0.003);
   } else if (surface === 'wood') {
@@ -3683,6 +4266,16 @@ function sfxHit(pos, headshot, helmet, localVictim) {
   } else {
     noiseBurst(dest, t, 0.1, 'lowpass', 650, 1, 1.1, 0.002);
   }
+}
+// confirmação de acerto para quem atirou (2D): "dink" no capacete, estalo na cabeça, baque no corpo
+function sfxHitConfirm(head, helmet, kill) {
+  const dest = soundDest(null, 0.42, 10);
+  if (!dest) return;
+  const t = now0();
+  if (head && helmet) { tone(dest, t, 2650, 0.22, 'sine', 0.55); tone(dest, t, 3980, 0.16, 'sine', 0.3); noiseBurst(dest, t, 0.03, 'highpass', 5000, 0.7, 0.4, 0.001); }
+  else if (head) { noiseBurst(dest, t, 0.09, 'bandpass', 1300, 1.2, 1.1, 0.002); noiseBurst(dest, t, 0.04, 'highpass', 3500, 0.8, 0.5, 0.001); }
+  else noiseBurst(dest, t, 0.08, 'lowpass', 560, 1, 0.9, 0.002);
+  if (kill) tone(dest, t + 0.03, 170, 0.16, 'sine', 0.6, 90);
 }
 function sfxBeep(pos, freq) {
   const dest = soundDest(pos, 0.45, 45);
@@ -3796,14 +4389,23 @@ function prepareWeaponData() {
     const d = WEAPONS[id];
     d.id = id;
     if (!d.kick) continue;
-    const up = d.kick[0], upShots = d.kick[1], side = d.kick[2];
     const n = Math.max(d.mag || 1, 2);
-    const seed = id.length * 1.37;
     const pat = [];
-    for (let i = 0; i < n; i++) {
-      const upStep = i < upShots ? up * (0.75 + 0.5 * Math.min(1, i / 3)) : up * 0.3;
-      const sideStep = i < upShots ? side * 0.08 * Math.sin(i * 1.7 + seed) : side * 0.42 * Math.sin((i - upShots) * 0.42 + seed);
-      pat.push([upStep * DEG, sideStep * DEG]);
+    const keys = SPRAY_PATTERNS[id];
+    if (keys) {
+      // passos por tiro a partir do padrão acumulado (interpolação linear entre os pontos)
+      const cum = [];
+      for (let i = 0; i <= n; i++) {
+        let k = 0;
+        while (k < keys.length - 1 && keys[k + 1][0] < i) k++;
+        const a = keys[k], b = keys[Math.min(k + 1, keys.length - 1)];
+        const t = b[0] > a[0] ? clamp((i - a[0]) / (b[0] - a[0]), 0, 1) : 0;
+        cum.push([a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]);
+      }
+      for (let i = 0; i < n; i++) pat.push([(cum[i + 1][0] - cum[i][0]) * DEG, -(cum[i + 1][1] - cum[i][1]) * DEG]);
+    } else {
+      const up = d.kick[0], upShots = d.kick[1];
+      for (let i = 0; i < n; i++) pat.push([(i < upShots ? up * (0.8 + 0.4 * Math.min(1, i / 3)) : up * 0.3) * DEG, 0]);
     }
     RECOIL[id] = pat;
   }
@@ -3827,12 +4429,14 @@ function createPlayer(name, team, isBot, squad) {
     dmgFrom: {}, dmgGiven: {}, dmgTaken: {}, deathTime: -99, deathDir: 1, variant: Math.floor(Math.random() * 3), viewSmoothY: 0,
     flashUntil: 0, flashDur: 0, tagUntil: 0, spottedUntil: 0,
     plantT: 0, plantBeepAt: 0, defuseT: 0,
-    resetLoadout: true, bot: null,
+    resetLoadout: true, bot: null, skin: isBot ? randomSkin() : settings.skin,
+    onLadder: false, climbAcc: 0, tagMult: 1, flinchAt: -9, flinchZone: '', flinchSide: 1, rag: null,
   };
   if (isBot) p.bot = createBotBrain();
   return p;
 }
-function makeWeapon(id) { const d = WEAPONS[id]; return { id, clip: d.mag || 0, reserve: d.reserve || 0 }; }
+function makeWeapon(id, skin) { const d = WEAPONS[id]; return { id, clip: d.mag || 0, reserve: d.reserve || 0, skin: skin || 'none' }; }
+function randomSkin() { const k = Object.keys(WEAPON_SKINS); return Math.random() < 0.3 ? 'none' : k[1 + Math.floor(Math.random() * (k.length - 1))]; }
 function defaultPistol(team) { return team === 'T' ? 'glock' : 'usp'; }
 function eyePos(p, out) { out[0] = p.pos[0]; out[1] = p.pos[1] + p.eyeH; out[2] = p.pos[2]; return out; }
 function currentWeapon(p) {
@@ -3898,7 +4502,7 @@ function maxSpeedOf(p) {
   let s = base * U;
   if (p.crouching) s *= CROUCH_MULT;
   else if (p.input.walk) s *= WALK_MULT;
-  if (game.time < p.tagUntil) s *= 0.55;
+  if (game.time < p.tagUntil) s *= lerp(p.tagMult || 1, 1, 1 - (p.tagUntil - game.time) / TAG_TIME);
   return s;
 }
 function addMoney(p, amt, show) {
@@ -3962,6 +4566,9 @@ function movePlayer(p, dt) {
   const wl = Math.hypot(wx, wz);
   if (wl > 0.001) { wx /= wl; wz /= wl; }
   const wish = wl > 0.001 ? maxSpeed * Math.min(1, wl) : 0;
+  const lad = p.isBot ? null : ladderAt(p);
+  if (lad && ladderMove(p, lad, wx * wl, wz * wl, dt)) return;
+  p.onLadder = false;
   if (p.onGround && inp.jump && p.jumpReady) {
     p.vel[1] = JUMP_SPEED; p.onGround = false; p.jumpReady = false; p.jumped = true;
     if (!p.input.walk) addNoise(p.pos[0], p.pos[1], p.pos[2], 14, p.team, 'step');
@@ -3996,6 +4603,42 @@ function movePlayer(p, dt) {
     if (moveAxis(p, 1, -STEP_HEIGHT)) { p.onGround = true; p.vel[1] = 0; p.viewSmoothY = (p.viewSmoothY || 0) + (y - p.pos[1]); } else p.pos[1] = y;
   }
   if (p.onGround && p.pos[1] > beforeY + 0.05) p.viewSmoothY = (p.viewSmoothY || 0) - (p.pos[1] - beforeY);
+}
+// Escada: sem gravidade; olhando para cima e andando para frente sobe, olhando para baixo desce.
+// Devolve false quando o jogador está no chão e não está indo em direção à escada (anda normalmente).
+function ladderMove(p, L, wx, wz, dt) {
+  const inp = p.input;
+  const into = -(wx * L.nx + wz * L.nz);
+  if (p.onGround && !p.onLadder && into < 0.3) return false;
+  if (inp.jump && p.jumpReady && p.onLadder) {
+    p.onLadder = false; p.jumpReady = false;
+    p.vel[0] = L.nx * 3.2; p.vel[2] = L.nz * 3.2; p.vel[1] = 2.6;
+    return false;
+  }
+  if (!p.onLadder) { p.onLadder = true; p.climbAcc = 0; }
+  p.onGround = false; p.jumped = false;
+  let up = 0;
+  if (inp.fwd !== 0) up = inp.fwd * (p.pitch > -0.42 ? 1 : -1);
+  else if (into > 0.3) up = 1;
+  const tx = -L.nz, tz = L.nx;
+  const rx = Math.cos(p.yaw), rz = -Math.sin(p.yaw);
+  const lateral = inp.side * (rx * tx + rz * tz) * 1.4;
+  let push = up > 0 ? 0.7 : 0.15;
+  if (up > 0 && p.pos[1] > L.max[1] - 0.12) push = 2.4;
+  p.vel[0] = tx * lateral - L.nx * push;
+  p.vel[2] = tz * lateral - L.nz * push;
+  p.vel[1] = up * CLIMB_SPEED * (p.crouching ? 0.6 : 1);
+  if (up > 0 && p.pos[1] > L.max[1] - 0.12) p.vel[1] = Math.max(p.vel[1], 1.6);
+  const y0 = p.pos[1];
+  slideMove(p, dt);
+  if (moveAxis(p, 1, p.vel[1] * dt) && p.vel[1] < 0) { p.onGround = true; p.onLadder = false; }
+  p.climbAcc += Math.abs(p.pos[1] - y0);
+  if (p.climbAcc > LADDER_STEP) {
+    p.climbAcc = 0;
+    sfxStep(p.pos, p === game.local, false, 'ladder');
+    addNoise(p.pos[0], p.pos[1], p.pos[2], 16, p.team, 'step');
+  }
+  return true;
 }
 function separatePlayers() {
   const ps = game.players;
@@ -4066,7 +4709,7 @@ function updateWeapon(p, dt, noFire) {
   ws.fireInacc *= Math.exp(-dt / tau);
   const interval = def && def.rpm ? 60 / def.rpm : 0.1;
   const firing = now - ws.lastShot < interval * 1.6;
-  const k = Math.exp(-dt * (firing ? 0.3 : 7.5));
+  const k = Math.exp(-dt * (firing ? 0.15 : 6.5));
   p.punchP *= k; p.punchY *= k;
   if (now - ws.lastShot > Math.max(0.3, interval * 2.5)) ws.shotIndex = 0;
   if (ws.rezoomAt && now >= ws.rezoomAt) { ws.zoom = ws.rezoomLevel; ws.rezoomAt = 0; }
@@ -4141,13 +4784,14 @@ function computeInaccuracy(p, def) {
   const scoped = def.zoom && p.ws.zoom > 0;
   let base = p.crouching ? a[1] : a[0];
   if (scoped) base = def.scopedAcc * (p.crouching ? 0.8 : 1);
-  let move = clamp((sp - maxS * 0.34) / (maxS * 0.66), 0, 1) * a[2];
+  let move = clamp((sp - maxS * ACCURATE_SPEED_FRAC) / (maxS * (1 - ACCURATE_SPEED_FRAC)), 0, 1) * a[2];
   if (scoped) move *= 1.4;
   const air = p.onGround ? 0 : a[3];
   return base + move + air + p.ws.fireInacc;
 }
 function fireWeapon(p, def) {
   const ws = p.ws, now = game.time;
+  p.protectUntil = 0;
   const inacc = computeInaccuracy(p, def);
   const eye = eyePos(p, [0, 0, 0]);
   const pellets = def.pellets || 1;
@@ -4163,9 +4807,12 @@ function fireWeapon(p, def) {
   const pat = RECOIL[def.id];
   if (pat) {
     const step = pat[Math.min(ws.shotIndex, pat.length - 1)];
-    const jitter = def.auto ? 1 : (0.85 + Math.random() * 0.3);
-    p.punchP += step[0] * jitter;
-    p.punchY += step[1] + (def.auto ? 0 : (Math.random() - 0.5) * step[0] * 0.3);
+    if (def.auto) { p.punchP += step[0]; p.punchY += step[1]; }
+    else {
+      // semiautomáticas: subida fixa e um desvio lateral pequeno (como no CS)
+      p.punchP += step[0] * (0.9 + Math.random() * 0.2);
+      p.punchY += (Math.random() - 0.5) * def.kick[2] * 0.5 * DEG;
+    }
   }
   ws.shotIndex++;
   ws.lastShot = now;
@@ -4251,7 +4898,7 @@ function traceBullet(shooter, def, eye, dir) {
       end[0] = ox + dx * t; end[1] = oy + dy * t; end[2] = oz + dz * t;
       fxBlood(end[0], end[1], end[2], dx, dy, dz, zone === 'head');
       const bt = raycastWorld(end[0], end[1], end[2], dx, dy, dz, 2.2, rayOut2);
-      if (bt < 2.2 && !rayOut2.sky && Math.random() < 0.85) addDecal(end[0] + dx * bt, end[1] + dy * bt, end[2] + dz * bt, rayOut2.nx, rayOut2.ny, rayOut2.nz, rand(0.16, zone === 'head' ? 0.42 : 0.3), ATLAS.BLOOD, 0.9, 0.9, 0.9, 0.85, false);
+      if (bt < 2.2 && !rayOut2.sky && Math.random() < 0.85) addDecal(end[0] + dx * bt, end[1] + dy * bt, end[2] + dz * bt, rayOut2.nx, rayOut2.ny, rayOut2.nz, rand(0.18, zone === 'head' ? 0.45 : 0.32), Math.random() < 0.6 ? ATLAS.SPLAT : ATLAS.BLOOD, 0.9, 0.9, 0.9, 0.85, false);
       if (game.mode === 'practice' && shooter === game.local) { game.practice.hits++; if (zone === 'head') game.practice.heads++; }
       applyBulletHit(victim, shooter, def, dmg, zone, traveled + t, dir, pens > 0);
       break;
@@ -4261,20 +4908,25 @@ function traceBullet(shooter, def, eye, dir) {
     end[0] = hx; end[1] = hy; end[2] = hz;
     const prop = rayOut.prop, far = rayOut.far;
     if (!rayOut.sky) fxImpact(hx, hy, hz, rayOut.nx, rayOut.ny, rayOut.nz, rayOut.mat, true);
-    if (prop >= 0 && world.props[prop].pen && (def.penPower || 0) >= 0.4 && pens < 2) {
-      const thick = far - tw;
-      if (thick < 0.75) {
+    if (prop >= 0 && world.props[prop].pen && (def.penPower || 0) > 0 && pens < 3) {
+      // penetração depende do material e da espessura atravessada (madeira fácil, metal médio, saco de areia quase nada)
+      const thick = far - tw, pm = world.props[prop].mat;
+      const eff = thick * MAT_PEN[pm];
+      const power = def.penPower * 1.4 * Math.sqrt(dmg / def.damage);
+      if (eff < power) {
         pens++;
-        dmg *= clamp(0.3 + def.penPower * 0.35 - thick * 0.4, 0.15, 0.85);
+        dmg *= clamp(1 - eff / (def.penPower * 1.6) - 0.1, 0.1, 0.85);
         const adv = far + 0.02;
         const ex = ox + dx * far, ey = oy + dy * far, ez = oz + dz * far;
         addDecal(ex, ey, ez, dx, dy, dz, 0.05, ATLAS.HOLE, 1, 1, 1, 0.8, false);
+        fxImpact(ex, ey, ez, dx, dy, dz, pm, false, true);
         ox += dx * adv; oy += dy * adv; oz += dz * adv; traveled += adv;
         continue;
       }
     }
     break;
   }
+  smokeCarve(eye[0], eye[1], eye[2], end[0], end[1], end[2]);
   return end;
 }
 function applyBulletHit(victim, attacker, def, dmg, zone, dist, dir, wallbang) {
@@ -4285,6 +4937,8 @@ function applyBulletHit(victim, attacker, def, dmg, zone, dist, dir, wallbang) {
 }
 function applyDamage(victim, attacker, dmg, zone, armorPen, weaponId, dir, flags) {
   if (!victim.alive) return;
+  if (game.mode === 'dm' && game.time < (victim.protectUntil || 0)) return;
+  if (game.mode === 'practice' && victim.headOnly && zone !== 'head') return;
   const armored = victim.armor > 0 && (zone === 'head' ? victim.helmet : zone !== 'legs');
   let hp = dmg;
   if (armored && armorPen < 1) {
@@ -4305,10 +4959,18 @@ function applyDamage(victim, attacker, dmg, zone, armorPen, weaponId, dir, flags
     const tk = victim.dmgTaken[attacker.id] || (victim.dmgTaken[attacker.id] = { d: 0, n: 0 });
     tk.d += dealt; tk.n++;
   }
-  victim.tagUntil = game.time + 0.35;
+  const wdef = WEAPONS[weaponId];
+  const slow = wdef ? TAG_SLOW[wdef.cls] : (weaponId === 'he' ? TAG_SLOW.he : (GRENADES[weaponId] && GRENADES[weaponId].fire ? TAG_SLOW.fire : TAG_SLOW.other));
+  const curMult = game.time < victim.tagUntil ? lerp(victim.tagMult || 1, 1, 1 - (victim.tagUntil - game.time) / TAG_TIME) : 1;
+  victim.tagMult = Math.min(curMult, slow || 0.7);
+  victim.tagUntil = game.time + TAG_TIME;
   victim.punchP += zone === 'head' ? HIT_PUNCH * 2 : HIT_PUNCH;
+  victim.lastHitDir = dir; victim.lastHitZone = zone; victim.lastHitForce = clamp(dmg / 18, 1.5, 6.5);
+  victim.flinchAt = game.time; victim.flinchZone = zone; victim.flinchSide = dir ? Math.sign((dir[0] * Math.cos(victim.yaw) - dir[2] * Math.sin(victim.yaw)) || 1) : 1;
   const hs = zone === 'head';
-  sfxHit(victim.pos, hs, hs && armored, victim === game.local);
+  const byLocal = attacker && attacker === game.local && victim !== attacker;
+  if (!(byLocal && settings.hitSound)) sfxHit(victim.pos, hs, hs && armored, victim === game.local);
+  if (byLocal && victim.team !== attacker.team) onLocalHit(hs, hs && armored, !!(flags && flags.wallbang), victim.hp <= 0);
   if (victim === game.local) {
     hud.hurt = Math.min(1, hud.hurt + 0.25 + dealt / 80);
     if (attacker && attacker !== victim) addDamageDir(attacker.pos[0], attacker.pos[2]);
@@ -4366,11 +5028,8 @@ function throwGrenade(p, strength) {
   const type = p.inv.grenades.splice(idx, 1)[0];
   if (!type) return;
   const eye = eyePos(p, [0, 0, 0]);
-  const dir = dirFromAngles(p.yaw, p.pitch + 0.06, [0, 0, 0]);
-  const speed = strength === 'strong' ? 16.5 : (strength === 'mid' ? 11 : 6.5);
-  let sx = eye[0] + dir[0] * 0.4, sy = eye[1] + dir[1] * 0.4 - 0.1, sz = eye[2] + dir[2] * 0.4;
-  if (raycastWorld(eye[0], eye[1], eye[2], dir[0], dir[1], dir[2], 0.5, rayOut2) < 0.5) { sx = eye[0]; sy = eye[1] - 0.1; sz = eye[2]; }
-  game.nades.push({ type, pos: [sx, sy, sz], vel: [dir[0] * speed + p.vel[0] * 0.7, dir[1] * speed + p.vel[1] * 0.5, dir[2] * speed + p.vel[2] * 0.7], t: 0, owner: p, spin: 0, rest: false, lastBounce: -1 });
+  const s = throwStart(eye, p.yaw, p.pitch, strength, p.vel, {});
+  game.nades.push({ type, pos: s.pos, vel: s.vel, t: 0, owner: p, spin: 0, rest: false, lastBounce: -1 });
   sfxThrow(p.pos, p === game.local);
   addNoise(p.pos[0], p.pos[1], p.pos[2], 16, p.team, 'nade');
   p.nadeIdx = 0;
@@ -4378,46 +5037,52 @@ function throwGrenade(p, strength) {
   if (p.inv.grenades.length) startDraw(p, 0.5);
   else switchSlot(p, hasSlot(p, p.lastSlot) && p.lastSlot !== 'grenade' ? p.lastSlot : bestSlot(p), true);
 }
+// Física de uma granada por um passo. Devolve 'land' quando uma incendiária toca o chão, senão null.
+// quiet = simulação (mira dos bots): sem sons.
+function nadePhysics(n, dt, quiet) {
+  if (n.rest) return null;
+  n.vel[1] -= GRAVITY * dt;
+  const sp = Math.hypot(n.vel[0], n.vel[1], n.vel[2]);
+  const step = sp * dt;
+  if (step > 1e-6) {
+    const dx = n.vel[0] / sp, dy = n.vel[1] / sp, dz = n.vel[2] / sp;
+    const t = raycastWorld(n.pos[0], n.pos[1], n.pos[2], dx, dy, dz, step + 0.05, rayOut2);
+    if (t < step + 0.05) {
+      const nx = rayOut2.nx, ny = rayOut2.ny, nz = rayOut2.nz;
+      const adv = Math.max(0, t - 0.05);
+      n.pos[0] += dx * adv + nx * 0.01; n.pos[1] += dy * adv + ny * 0.01; n.pos[2] += dz * adv + nz * 0.01;
+      if (GRENADES[n.type].fire && ny > 0.5 && n.t > 0.05) return 'land';
+      const vn = n.vel[0] * nx + n.vel[1] * ny + n.vel[2] * nz;
+      if (vn < 0) {
+        n.vel[0] -= 1.45 * vn * nx; n.vel[1] -= 1.45 * vn * ny; n.vel[2] -= 1.45 * vn * nz;
+        n.vel[0] *= 0.78; n.vel[1] *= 0.78; n.vel[2] *= 0.78;
+      }
+      if (!quiet && sp > 2.5 && n.t - n.lastBounce > 0.08) { sfxBounce(n.pos); n.lastBounce = n.t; }
+      if (ny > 0.5) {
+        if (Math.abs(n.vel[1]) < 1.1) n.vel[1] = 0;
+        const k = Math.exp(-dt * 3);
+        n.vel[0] *= k; n.vel[2] *= k;
+        if (Math.hypot(n.vel[0], n.vel[1], n.vel[2]) < 0.35) { n.rest = true; n.vel[0] = n.vel[1] = n.vel[2] = 0; }
+      }
+    } else {
+      n.pos[0] += n.vel[0] * dt; n.pos[1] += n.vel[1] * dt; n.pos[2] += n.vel[2] * dt;
+    }
+  }
+  n.spin += dt * Math.min(sp, 12) * 2;
+  return null;
+}
+function nadeBoomTime(n) {
+  if (n.type === 'smoke') return (n.rest && n.t > 0.6) || n.t > 3.5;
+  return n.t >= GRENADES[n.type].fuse;
+}
 function updateNades(dt) {
   for (let i = game.nades.length - 1; i >= 0; i--) {
     const n = game.nades[i];
     n.t += dt;
-    if (!n.rest) {
-      n.vel[1] -= GRAVITY * dt;
-      const sp = Math.hypot(n.vel[0], n.vel[1], n.vel[2]);
-      const step = sp * dt;
-      if (step > 1e-6) {
-        const dx = n.vel[0] / sp, dy = n.vel[1] / sp, dz = n.vel[2] / sp;
-        const t = raycastWorld(n.pos[0], n.pos[1], n.pos[2], dx, dy, dz, step + 0.05, rayOut2);
-        if (t < step + 0.05) {
-          const nx = rayOut2.nx, ny = rayOut2.ny, nz = rayOut2.nz;
-          const adv = Math.max(0, t - 0.05);
-          n.pos[0] += dx * adv + nx * 0.01; n.pos[1] += dy * adv + ny * 0.01; n.pos[2] += dz * adv + nz * 0.01;
-          if (GRENADES[n.type].fire && ny > 0.5 && n.t > 0.05) { game.nades.splice(i, 1); detonateFire(n, n.pos[0], n.pos[1] - 0.01, n.pos[2]); continue; }
-          const vn = n.vel[0] * nx + n.vel[1] * ny + n.vel[2] * nz;
-          if (vn < 0) {
-            n.vel[0] -= 1.45 * vn * nx; n.vel[1] -= 1.45 * vn * ny; n.vel[2] -= 1.45 * vn * nz;
-            n.vel[0] *= 0.78; n.vel[1] *= 0.78; n.vel[2] *= 0.78;
-          }
-          if (sp > 2.5 && n.t - n.lastBounce > 0.08) { sfxBounce(n.pos); n.lastBounce = n.t; }
-          if (ny > 0.5) {
-            if (Math.abs(n.vel[1]) < 1.1) n.vel[1] = 0;
-            const k = Math.exp(-dt * 3);
-            n.vel[0] *= k; n.vel[2] *= k;
-            if (Math.hypot(n.vel[0], n.vel[1], n.vel[2]) < 0.35) { n.rest = true; n.vel[0] = n.vel[1] = n.vel[2] = 0; }
-          }
-        } else {
-          n.pos[0] += n.vel[0] * dt; n.pos[1] += n.vel[1] * dt; n.pos[2] += n.vel[2] * dt;
-        }
-      }
-      n.spin += dt * Math.min(sp, 12) * 2;
-      if (n.pos[1] < -10) { game.nades.splice(i, 1); continue; }
-    }
+    if (nadePhysics(n, dt, false) === 'land') { game.nades.splice(i, 1); detonateFire(n, n.pos[0], n.pos[1] - 0.01, n.pos[2]); continue; }
+    if (n.pos[1] < -10) { game.nades.splice(i, 1); continue; }
     const info = GRENADES[n.type];
-    let boom = false;
-    if (n.type === 'smoke') boom = (n.rest && n.t > 0.6) || n.t > 3.5;
-    else boom = n.t >= info.fuse;
-    if (boom) {
+    if (nadeBoomTime(n)) {
       game.nades.splice(i, 1);
       if (n.type === 'he') detonateHE(n);
       else if (n.type === 'flash') detonateFlash(n);
@@ -4426,9 +5091,62 @@ function updateNades(dt) {
     }
   }
 }
+// Velocidade inicial de um lançamento (igual para jogador, bots e a simulação de mira)
+function throwStart(eye, yaw, pitch, strength, vel, out) {
+  const dir = dirFromAngles(yaw, pitch + 0.06, [0, 0, 0]);
+  const speed = THROW_SPEED[strength] || THROW_SPEED.strong;
+  let sx = eye[0] + dir[0] * 0.4, sy = eye[1] + dir[1] * 0.4 - 0.1, sz = eye[2] + dir[2] * 0.4;
+  if (raycastWorld(eye[0], eye[1], eye[2], dir[0], dir[1], dir[2], 0.5, rayOut2) < 0.5) { sx = eye[0]; sy = eye[1] - 0.1; sz = eye[2]; }
+  out.pos = [sx, sy, sz];
+  out.vel = [dir[0] * speed + vel[0] * 0.7, dir[1] * speed + vel[1] * 0.5, dir[2] * speed + vel[2] * 0.7];
+  return out;
+}
+// Onde a granada vai explodir/assentar se lançada assim (simulação sem efeitos)
+function simulateThrow(eye, yaw, pitch, strength, type) {
+  const s = throwStart(eye, yaw, pitch, strength, [0, 0, 0], {});
+  const n = { type, pos: s.pos, vel: s.vel, t: 0, spin: 0, rest: false, lastBounce: -1 };
+  const dt = 1 / 60;
+  for (let i = 0; i < 360; i++) {
+    n.t += dt;
+    if (nadePhysics(n, dt, true) === 'land') return n.pos;
+    if (n.pos[1] < -10) return null;
+    if (nadeBoomTime(n)) return n.pos;
+  }
+  return n.pos;
+}
+// Procura força e inclinação para a granada cair perto do alvo. Devolve { yaw, pitch, strength, err } ou null.
+function solveThrow(eye, tx, ty, tz, type) {
+  const yaw0 = Math.atan2(-(tx - eye[0]), -(tz - eye[2]));
+  const score = (yaw, pitch, strength) => {
+    const pos = simulateThrow(eye, yaw, pitch, strength, type);
+    return pos ? Math.hypot(pos[0] - tx, pos[2] - tz) + Math.abs(pos[1] - ty) * 0.5 : Infinity;
+  };
+  let best = null;
+  for (const strength of ['strong', 'mid', 'weak']) {
+    for (let pitch = -0.3; pitch <= 1.25; pitch += 0.06) {
+      const err = score(yaw0, pitch, strength);
+      if (!best || err < best.err) best = { yaw: yaw0, pitch, strength, err };
+    }
+  }
+  if (!best || !isFinite(best.err)) return null;
+  // refinamento local em volta do melhor
+  for (let pass = 0; pass < 2; pass++) {
+    const step = pass === 0 ? 0.02 : 0.008;
+    const b0 = best;
+    for (let dp = -2; dp <= 2; dp++) {
+      for (let dyw = -1; dyw <= 1; dyw++) {
+        const yaw = b0.yaw + dyw * step, pitch = b0.pitch + dp * step;
+        const err = score(yaw, pitch, b0.strength);
+        if (err < best.err) best = { yaw, pitch, strength: b0.strength, err };
+      }
+    }
+  }
+  return best;
+}
 function detonateHE(n) {
   const x = n.pos[0], y = n.pos[1] + 0.15, z = n.pos[2];
   fxExplosion(x, y, z, false);
+  smokeBlast(x, y + 0.8, z);
   sfxExplosion(n.pos, false);
   addLight(x, y + 0.5, z, 1, 0.6, 0.25, 6, 0.3);
   addNoise(x, y, z, 45, n.owner.team, 'shot');
@@ -4538,47 +5256,198 @@ function updateFires(dt) {
 }
 function inFireOf(p, f) { return Math.abs(p.pos[1] - f.pos[1]) < 1.3 && distXZ(p.pos[0], p.pos[2], f.pos[0], f.pos[2]) < f.radius + 0.3; }
 function detonateSmoke(n) {
-  const s = { pos: [n.pos[0], n.pos[1], n.pos[2]], t: 0, radius: 0 };
+  const s = { pos: [n.pos[0], n.pos[1], n.pos[2]], t: 0, radius: 0, puffs: [], holes: [] };
   game.smokes.push(s);
   sfxSmoke(n.pos);
   const cx = s.pos[0], cy = s.pos[1] + 1.2, cz = s.pos[2];
-  for (let k = 0; k < 52; k++) {
-    const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * SMOKE_RADIUS * 0.85;
-    let px = cx + Math.cos(a) * r, py = s.pos[1] + rand(0.3, 2.9), pz = cz + Math.sin(a) * r;
+  for (let k = 0; k < 92; k++) {
+    const a = Math.random() * Math.PI * 2, r = Math.pow(Math.random(), 0.6) * SMOKE_RADIUS * 0.9;
+    let px = cx + Math.cos(a) * r, py = s.pos[1] + rand(0.25, 3.0), pz = cz + Math.sin(a) * r;
     if (!losClear(cx, cy, cz, px, py, pz, true)) { px = lerp(cx, px, 0.35); py = lerp(cy, py, 0.35); pz = lerp(cz, pz, 0.35); }
-    const shade = rand(0.72, 0.86);
-    const pt = spawnParticle({ x: px, y: py, z: pz, vx: gauss() * 0.04, vy: rand(0, 0.03), vz: gauss() * 0.04, size: rand(1.4, 2.2), grow: 0.035, max: SMOKE_DURATION + rand(-0.8, 0.8), cell: ATLAS.SMOKE, r: shade, g: shade, b: shade * 0.97, a: 0.95, fadeIn: rand(0.5, 1.4), rotv: rand(-0.08, 0.08) });
+    // lado do sol mais claro: dá volume à nuvem
+    const ox = px - cx, oy = py - cy, oz = pz - cz, ol = Math.hypot(ox, oy, oz) || 1;
+    const lit = (ox * SUN_DIR[0] + oy * SUN_DIR[1] + oz * SUN_DIR[2]) / ol;
+    const shade = clamp(0.74 + lit * 0.12 + rand(-0.04, 0.04), 0.58, 0.92);
+    const pt = spawnParticle({ x: px, y: py, z: pz, vx: 0, vy: 0, vz: 0, size: rand(1.15, 1.75), grow: 0.02, max: SMOKE_DURATION + rand(-0.8, 0.8), cell: ATLAS.PUFF, r: shade, g: shade, b: shade * 0.98, a: 0.97, fadeIn: rand(0.4, 1.3), rotv: rand(-0.06, 0.06) });
     pt.hold = true;
+    pt.hx = px; pt.hy = py; pt.hz = pz; pt.clear = 0;
+    s.puffs.push(pt);
   }
 }
 function updateSmokes(dt) {
+  const now = game.time;
   for (let i = game.smokes.length - 1; i >= 0; i--) {
     const s = game.smokes[i];
     s.t += dt;
     const grow = clamp(s.t / 1.1, 0, 1);
     const fade = s.t > SMOKE_DURATION - 1.8 ? clamp((SMOKE_DURATION - s.t) / 1.8, 0, 1) : 1;
     s.radius = SMOKE_RADIUS * grow * fade;
+    for (let k = s.holes.length - 1; k >= 0; k--) if (now - s.holes[k].t0 > s.holes[k].life) s.holes.splice(k, 1);
+    // a fumaça volta a fechar: nuvens voltam ao lugar e ficam opacas de novo
+    const kb = Math.min(1, dt * 0.9);
+    for (const p of s.puffs) {
+      if (p.clear > 0) p.clear = Math.max(0, p.clear - dt * 0.42);
+      p.x += (p.hx - p.x) * kb; p.y += (p.hy - p.y) * kb; p.z += (p.hz - p.z) * kb;
+    }
     if (s.t > SMOKE_DURATION) game.smokes.splice(i, 1);
   }
+}
+// Tiro atravessando a fumaça abre um túnel fino por pouco tempo
+function smokeCarve(ax, ay, az, bx, by, bz) {
+  if (!game.smokes.length) return;
+  const dx = bx - ax, dy = by - ay, dz = bz - az, L2 = dx * dx + dy * dy + dz * dz;
+  if (L2 < 1e-4) return;
+  for (const s of game.smokes) {
+    if (s.radius < 1) continue;
+    const cx = s.pos[0], cy = s.pos[1] + 1.3, cz = s.pos[2];
+    const t = clamp(((cx - ax) * dx + (cy - ay) * dy + (cz - az) * dz) / L2, 0, 1);
+    if (Math.hypot(ax + dx * t - cx, ay + dy * t - cy, az + dz * t - cz) > s.radius + 0.6) continue;
+    s.holes.push({ ax, ay, az, bx, by, bz, r: 0.45, t0: game.time, life: 1.5, sphere: false });
+    if (s.holes.length > 24) s.holes.shift();
+    for (const p of s.puffs) {
+      const u = clamp(((p.x - ax) * dx + (p.y - ay) * dy + (p.z - az) * dz) / L2, 0, 1);
+      const qx = p.x - (ax + dx * u), qy = p.y - (ay + dy * u), qz = p.z - (az + dz * u);
+      const d = Math.hypot(qx, qy, qz);
+      if (d > 0.95) continue;
+      p.clear = Math.max(p.clear, 0.8 * (1 - d / 0.95));
+      const push = (0.95 - d) * 0.5 / (d || 1);
+      p.x += qx * push; p.y += qy * push; p.z += qz * push;
+    }
+  }
+}
+// HE dentro da fumaça abre um buraco grande que volta a fechar em ~2,5 s
+function smokeBlast(x, y, z) {
+  for (const s of game.smokes) {
+    if (s.radius < 1 || Math.hypot(s.pos[0] - x, s.pos[2] - z) > s.radius + 4) continue;
+    s.holes.push({ ax: x, ay: y, az: z, r: 3.9, t0: game.time, life: 3.2, sphere: true });
+    for (const p of s.puffs) {
+      const ox = p.x - x, oy = p.y - y, oz = p.z - z, d = Math.hypot(ox, oy, oz) || 0.01;
+      if (d > 4.5) continue;
+      p.clear = Math.max(p.clear, 0.9 * (1 - d / 4.5));
+      const push = Math.max(0, 4.2 - d) * 0.8 / d;
+      p.x += ox * push; p.y += oy * push * 0.5; p.z += oz * push;
+    }
+  }
+}
+function inSmokeHole(s, x, y, z) {
+  const now = game.time;
+  for (const h of s.holes) {
+    const k = 1 - (now - h.t0) / h.life;
+    if (k <= 0) continue;
+    const r = h.r * (0.35 + 0.65 * k);
+    if (h.sphere) { if (Math.hypot(x - h.ax, y - h.ay, z - h.az) < r) return true; continue; }
+    const dx = h.bx - h.ax, dy = h.by - h.ay, dz = h.bz - h.az, L2 = dx * dx + dy * dy + dz * dz || 1;
+    const u = clamp(((x - h.ax) * dx + (y - h.ay) * dy + (z - h.az) * dz) / L2, 0, 1);
+    if (Math.hypot(x - h.ax - dx * u, y - h.ay - dy * u, z - h.az - dz * u) < r) return true;
+  }
+  return false;
 }
 function shakeFrom(x, y, z, amount, range) {
   const d = Math.hypot(R.camPos[0] - x, R.camPos[1] - y, R.camPos[2] - z);
   if (d < range) game.shake = Math.max(game.shake, amount * (1 - d / range));
 }
 
+// ---------------- ragdoll (Verlet com ligações) ----------------
+function createRagdoll(p) {
+  const n = RAG_LOCAL.length;
+  const pos = new Float32Array(n * 3), prev = new Float32Array(n * 3);
+  m4Identity(tmpM3); m4Translate(tmpM3, p.pos[0], p.pos[1], p.pos[2]); m4RotY(tmpM3, p.yaw);
+  const c = p.crouchAmt || 0;
+  for (let i = 0; i < n; i++) {
+    const L = RAG_LOCAL[i];
+    let y = L[1], z = L[2];
+    if (c > 0) { if (i <= 10) y -= 0.42 * c; if (i === 11 || i === 12) { y -= 0.06 * c; z -= 0.3 * c; } }
+    m4Point(tmpM3, L[0], y, z, tmpEye);
+    pos[i * 3] = tmpEye[0]; pos[i * 3 + 1] = tmpEye[1]; pos[i * 3 + 2] = tmpEye[2];
+  }
+  const dir = p.lastHitDir, w = RAG_ZONE_W[p.lastHitZone] || RAG_ZONE_W.chest, force = p.lastHitForce || 2;
+  const dt = MAX_SUBSTEP;
+  for (let i = 0; i < n; i++) {
+    let vx = p.vel[0] * 0.8, vy = Math.max(0, p.vel[1]) * 0.5, vz = p.vel[2] * 0.8;
+    if (dir) { const k = force * w[i]; vx += dir[0] * k; vy += dir[1] * k + 0.4 * w[i]; vz += dir[2] * k; }
+    vx += (Math.random() - 0.5) * 0.3; vz += (Math.random() - 0.5) * 0.3;
+    prev[i * 3] = pos[i * 3] - vx * dt; prev[i * 3 + 1] = pos[i * 3 + 1] - vy * dt; prev[i * 3 + 2] = pos[i * 3 + 2] - vz * dt;
+  }
+  const rest = new Float32Array(RAG_LINKS.length);
+  RAG_LINKS.forEach((l, k) => { const a = l[0] * 3, b = l[1] * 3; rest[k] = Math.hypot(pos[a] - pos[b], pos[a + 1] - pos[b + 1], pos[a + 2] - pos[b + 2]); });
+  return { pos, prev, rest, t: 0, sleep: false };
+}
+function ragLink(P, a, b, len, minOnly) {
+  const ax = a * 3, bx = b * 3;
+  const dx = P[bx] - P[ax], dy = P[bx + 1] - P[ax + 1], dz = P[bx + 2] - P[ax + 2];
+  const d = Math.hypot(dx, dy, dz) || 1e-5;
+  if (minOnly && d >= len) return;
+  const k = (d - len) / d * 0.5;
+  P[ax] += dx * k; P[ax + 1] += dy * k; P[ax + 2] += dz * k;
+  P[bx] -= dx * k; P[bx + 1] -= dy * k; P[bx + 2] -= dz * k;
+}
+function ragCollide(P, Q, i) {
+  const o = i * 3, r = 0.07;
+  let ci = cellIdx(Math.floor(P[o]), Math.floor(P[o + 2]));
+  if (ci < 0 || world.wall[ci] || P[o + 1] < world.top[ci] - 0.3) {
+    P[o] = Q[o]; P[o + 2] = Q[o + 2];
+    ci = cellIdx(Math.floor(P[o]), Math.floor(P[o + 2]));
+    if (ci < 0) return;
+  }
+  let g = world.top[ci];
+  const cp = world.cellProps[ci];
+  if (cp) {
+    for (const k of cp) {
+      const pr = world.props[k];
+      if (P[o] < pr.min[0] || P[o] > pr.max[0] || P[o + 2] < pr.min[2] || P[o + 2] > pr.max[2]) continue;
+      if (P[o + 1] >= pr.max[1] - 0.25) g = Math.max(g, pr.max[1]);
+      else if (P[o + 1] > pr.min[1] - r) { P[o] = Q[o]; P[o + 2] = Q[o + 2]; }
+    }
+  }
+  if (P[o + 1] < g + r) {
+    P[o + 1] = g + r;
+    Q[o] = P[o] - (P[o] - Q[o]) * 0.55; Q[o + 2] = P[o + 2] - (P[o + 2] - Q[o + 2]) * 0.55;
+    if (Q[o + 1] < P[o + 1]) Q[o + 1] = P[o + 1];
+  }
+  if (P[o + 1] > world.ceil[ci] - r) P[o + 1] = world.ceil[ci] - r;
+}
+function stepRagdoll(r, dt) {
+  const P = r.pos, Q = r.prev, n = P.length / 3, g = 16 * dt * dt;
+  let moving = 0;
+  for (let i = 0; i < n; i++) {
+    const o = i * 3;
+    const vx = (P[o] - Q[o]) * 0.996, vy = (P[o + 1] - Q[o + 1]) * 0.996, vz = (P[o + 2] - Q[o + 2]) * 0.996;
+    moving += Math.abs(vx) + Math.abs(vy) + Math.abs(vz);
+    Q[o] = P[o]; Q[o + 1] = P[o + 1]; Q[o + 2] = P[o + 2];
+    P[o] += vx; P[o + 1] += vy - g; P[o + 2] += vz;
+  }
+  for (let it = 0; it < 5; it++) {
+    for (let k = 0; k < RAG_LINKS.length; k++) ragLink(P, RAG_LINKS[k][0], RAG_LINKS[k][1], r.rest[k], false);
+    for (const m of RAG_MIN) ragLink(P, m[0], m[1], m[2], true);
+    for (let i = 0; i < n; i++) ragCollide(P, Q, i);
+  }
+  r.t += dt;
+  if (r.t > 6 || (r.t > 1.5 && moving < n * 0.0004)) r.sleep = true;
+}
+
 // ---------------- efeitos ----------------
-function fxImpact(x, y, z, nx, ny, nz, mat, withDecal) {
+function fxImpact(x, y, z, nx, ny, nz, mat, withDecal, silent) {
   const c = MAT_DUST[mat] || [0.7, 0.65, 0.55];
-  for (let k = 0; k < 5; k++) {
-    spawnParticle({ x, y, z, vx: nx * rand(0.4, 2) + gauss() * 0.5, vy: ny * rand(0.4, 2) + rand(0, 0.9), vz: nz * rand(0.4, 2) + gauss() * 0.5, size: rand(0.04, 0.1), grow: 0.45, max: rand(0.4, 0.9), cell: ATLAS.SOFT, r: c[0], g: c[1], b: c[2], a: 0.55, drag: 3, grav: 1.2 });
+  const wood = mat === MAT.CRATE || mat === MAT.PALLET || mat === MAT.BEAM;
+  const metal = mat === MAT.METAL || mat === MAT.BARREL;
+  const stone = !wood && !metal && mat !== MAT.SANDBAG;
+  for (let k = 0; k < (stone ? 7 : 5); k++) {
+    spawnParticle({ x, y, z, vx: nx * rand(0.4, 2) + gauss() * 0.5, vy: ny * rand(0.4, 2) + rand(0, 0.9), vz: nz * rand(0.4, 2) + gauss() * 0.5, size: rand(0.04, 0.1), grow: stone ? 0.6 : 0.45, max: rand(0.4, stone ? 1.3 : 0.9), cell: ATLAS.SOFT, r: c[0], g: c[1], b: c[2], a: 0.55, drag: 3, grav: 1.2 });
   }
-  if (mat === MAT.METAL) {
-    for (let k = 0; k < 4; k++) spawnParticle({ x, y, z, vx: nx * 3 + gauss() * 2, vy: ny * 3 + rand(0.5, 3), vz: nz * 3 + gauss() * 2, size: 0.03, max: rand(0.15, 0.35), cell: ATLAS.SPARK, add: true, r: 1, g: 0.8, b: 0.45, grav: 9, stretch: 3 });
-  } else if (mat === MAT.CRATE) {
-    for (let k = 0; k < 3; k++) spawnParticle({ x, y, z, vx: nx * 2 + gauss(), vy: rand(1, 3), vz: nz * 2 + gauss(), size: 0.025, max: rand(0.5, 0.9), cell: ATLAS.CHUNK, r: 0.55, g: 0.4, b: 0.24, grav: 12 });
+  if (metal) {
+    for (let k = 0; k < 5; k++) spawnParticle({ x, y, z, vx: nx * 3 + gauss() * 2, vy: ny * 3 + rand(0.5, 3), vz: nz * 3 + gauss() * 2, size: 0.03, max: rand(0.15, 0.35), cell: ATLAS.SPARK, add: true, r: 1, g: 0.8, b: 0.45, grav: 9, stretch: 3 });
+  } else if (wood) {
+    for (let k = 0; k < 4; k++) spawnParticle({ x, y, z, vx: nx * 2 + gauss(), vy: rand(1, 3), vz: nz * 2 + gauss(), size: 0.022, max: rand(0.6, 1.1), cell: ATLAS.CHUNK, r: 0.62, g: 0.46, b: 0.28, grav: 12, bounce: true, stretch: 1.5, rotv: rand(-10, 10) });
+  } else if (stone) {
+    for (let k = 0; k < 3; k++) spawnParticle({ x, y, z, vx: nx * 2.2 + gauss() * 0.8, vy: rand(0.8, 2.6), vz: nz * 2.2 + gauss() * 0.8, size: rand(0.012, 0.022), max: rand(0.8, 1.4), cell: ATLAS.DEBRIS, r: c[0] * 0.8, g: c[1] * 0.8, b: c[2] * 0.8, grav: 12, bounce: true, rotv: rand(-12, 12) });
   }
-  if (withDecal) addDecal(x, y, z, nx, ny, nz, rand(0.045, 0.065), ATLAS.HOLE, 1, 1, 1, 0.9, false);
-  sfxImpact([x, y, z], mat);
+  if (withDecal) {
+    if (wood) addDecal(x, y, z, nx, ny, nz, rand(0.07, 0.1), ATLAS.HOLE_WOOD, 1, 1, 1, 0.95, false);
+    else if (metal) addDecal(x, y, z, nx, ny, nz, rand(0.045, 0.06), ATLAS.HOLE_METAL, 1, 1, 1, 0.95, false);
+    else if (stone) addDecal(x, y, z, nx, ny, nz, rand(0.07, 0.11), ATLAS.HOLE_STONE, 1, 1, 1, 0.9, false);
+    else addDecal(x, y, z, nx, ny, nz, rand(0.045, 0.065), ATLAS.HOLE, 1, 1, 1, 0.9, false);
+  }
+  if (!silent) sfxImpact([x, y, z], mat);
 }
 function fxBlood(x, y, z, dx, dy, dz, head) {
   const n = head ? 9 : 5;
@@ -4598,13 +5467,23 @@ function fxExplosion(x, y, z, big) {
   for (let k = 0; k < (big ? 40 : 18); k++) {
     spawnParticle({ x: x + gauss() * 0.3 * s, y: y + rand(0, 0.6) * s, z: z + gauss() * 0.3 * s, vx: gauss() * 3 * s, vy: rand(1, 4) * s, vz: gauss() * 3 * s, size: rand(0.5, 1.1) * s, grow: 1.6 * s, max: rand(0.35, 0.7), cell: ATLAS.SOFT, add: true, r: 1, g: rand(0.45, 0.7), b: 0.18, a: 0.9, drag: 3 });
   }
-  for (let k = 0; k < (big ? 30 : 12); k++) {
+  for (let k = 0; k < (big ? 30 : 14); k++) {
     spawnParticle({ x: x + gauss() * 0.4 * s, y: y + rand(0.2, 1) * s, z: z + gauss() * 0.4 * s, vx: gauss() * 1.5 * s, vy: rand(0.5, 2.5) * s, vz: gauss() * 1.5 * s, size: rand(0.8, 1.6) * s, grow: 0.9 * s, max: rand(2.5, 5), cell: ATLAS.SMOKE, r: 0.3, g: 0.28, b: 0.26, a: 0.75, drag: 1.2, fadeIn: 0.15 });
+  }
+  // anel de poeira baixo que se espalha
+  const d = MAT_DUST[MAT.SAND];
+  for (let k = 0; k < (big ? 28 : 16); k++) {
+    const a = k / (big ? 28 : 16) * Math.PI * 2 + Math.random() * 0.2, sp = rand(3, 6) * s;
+    spawnParticle({ x, y: y + 0.1, z, vx: Math.cos(a) * sp, vy: rand(0.2, 0.8), vz: Math.sin(a) * sp, size: rand(0.5, 0.9) * s, grow: 0.8 * s, max: rand(2.5, 4), cell: ATLAS.PUFF, r: d[0] * 0.9, g: d[1] * 0.9, b: d[2] * 0.9, a: 0.5, drag: 2.2, fadeIn: 0.1 });
+  }
+  // estilhaços e pedrinhas
+  for (let k = 0; k < (big ? 22 : 12); k++) {
+    spawnParticle({ x, y: y + 0.2, z, vx: gauss() * 5, vy: rand(2, 7), vz: gauss() * 5, size: rand(0.015, 0.035), max: rand(1.2, 2.2), cell: ATLAS.DEBRIS, r: 0.35, g: 0.3, b: 0.25, grav: 14, bounce: true, rotv: rand(-14, 14) });
   }
   for (let k = 0; k < (big ? 26 : 10); k++) {
     spawnParticle({ x, y: y + 0.2, z, vx: gauss() * 7, vy: rand(3, 9), vz: gauss() * 7, size: 0.05, max: rand(0.4, 1), cell: ATLAS.SPARK, add: true, r: 1, g: 0.7, b: 0.3, grav: 12, stretch: 4 });
   }
-  addDecal(x, floorAt(x, z) + 0.01, z, 0, 1, 0, big ? 3.2 : 1.3, ATLAS.HOLE, 0.3, 0.3, 0.3, 0.8, false);
+  addDecal(x, groundBelow(x, y + 0.3, z) + 0.01, z, 0, 1, 0, big ? 3.4 : 1.6, ATLAS.BLAST, 1, 1, 1, 0.85, false);
 }
 
 // ---------------- itens no chão ----------------
@@ -4612,7 +5491,7 @@ function dropWeaponItem(p, inst, thrown) {
   if (!inst) return;
   const dir = dirFromAngles(p.yaw, thrown ? p.pitch + 0.2 : 0, [0, 0, 0]);
   const sp = thrown ? 4.5 : 1.0;
-  game.items.push({ kind: 'weapon', weapon: inst.id, clip: inst.clip, reserve: inst.reserve, pos: [p.pos[0], p.pos[1] + Math.max(0.6, p.eyeH - 0.35), p.pos[2]], vel: [dir[0] * sp + p.vel[0] * 0.5, dir[1] * sp + 1.2, dir[2] * sp + p.vel[2] * 0.5], yaw: p.yaw + Math.PI / 2, rest: false, dropper: p.id, dropTime: game.time });
+  game.items.push({ kind: 'weapon', weapon: inst.id, clip: inst.clip, reserve: inst.reserve, skin: inst.skin || 'none', pos: [p.pos[0], p.pos[1] + Math.max(0.6, p.eyeH - 0.35), p.pos[2]], vel: [dir[0] * sp + p.vel[0] * 0.5, dir[1] * sp + 1.2, dir[2] * sp + p.vel[2] * 0.5], yaw: p.yaw + Math.PI / 2, rest: false, dropper: p.id, dropTime: game.time });
 }
 function dropBomb(p, thrown) {
   if (!p.inv.bomb) return;
@@ -4642,6 +5521,7 @@ function playerDropCurrent(p) {
   }
 }
 function dropOnDeath(p) {
+  if (game.mode === 'dm') { p.inv.primary = null; p.inv.secondary = null; p.inv.grenades = []; p.kit = false; return; }
   if (p.inv.primary) dropWeaponItem(p, p.inv.primary, false);
   else if (p.inv.secondary) dropWeaponItem(p, p.inv.secondary, false);
   p.inv.primary = null;
@@ -4683,7 +5563,7 @@ function updateItems(dt) {
       }
       const d = WEAPONS[it.weapon];
       if (!p.inv[d.slot]) {
-        p.inv[d.slot] = { id: it.weapon, clip: it.clip, reserve: it.reserve };
+        p.inv[d.slot] = { id: it.weapon, clip: it.clip, reserve: it.reserve, skin: it.skin || 'none' };
         game.items.splice(i, 1);
         if (p === game.local) { sfxUi('pickup'); flashHint('Pegou ' + d.name, 1.5); }
         if (p.isBot && d.slot === 'primary') switchSlot(p, 'primary', true);
@@ -4707,7 +5587,7 @@ function useAction(p) {
   const old = p.inv[d.slot];
   game.items.splice(game.items.indexOf(it), 1);
   if (old) dropWeaponItem(p, old, true);
-  p.inv[d.slot] = { id: it.weapon, clip: it.clip, reserve: it.reserve };
+  p.inv[d.slot] = { id: it.weapon, clip: it.clip, reserve: it.reserve, skin: it.skin || 'none' };
   if (p.slot === d.slot) p.slot = 'knife';
   switchSlot(p, d.slot, true);
   if (p === game.local) { sfxUi('pickup'); flashHint('Pegou ' + d.name, 1.5); }
@@ -4729,9 +5609,14 @@ function itemInReach(p) {
 
 // ---------------- compras ----------------
 function inBuyZone(p) { return inRect(p.pos[0], p.pos[2], BUY_ZONES[p.team]); }
-function canBuy(p) { return game.mode === 'practice' ? p.alive : (p.alive && game.buyTime > 0 && game.phase !== 'over' && inBuyZone(p)); }
+function canBuy(p) {
+  if (game.mode === 'practice') return p.alive;
+  if (game.mode === 'dm') return p.alive && game.time - (p.spawnAt || 0) < DM_BUY_WINDOW;
+  return p.alive && game.buyTime > 0 && game.phase !== 'over' && inBuyZone(p);
+}
 function grenadeCount(p, type) { let n = 0; for (const g of p.inv.grenades) if (g === type) n++; return n; }
 function itemPrice(p, id) {
+  if (game.mode === 'dm') return 0;
   if (WEAPONS[id]) return WEAPONS[id].price;
   if (GRENADES[id]) return GRENADES[id].price;
   if (id === 'helmet') return p.armor >= 100 ? 350 : 1000;
@@ -4745,6 +5630,7 @@ function buyBlockReason(p, id) {
     const cur = p.inv[d.slot];
     if (cur && cur.id === id) return 'Você já tem esta arma';
   } else if (GRENADES[id]) {
+    if (game.mode === 'dm') return 'Sem granadas no mata-mata';
     if (GRENADES[id].team && GRENADES[id].team !== p.team) return 'Granada do outro time';
     if (grenadeCount(p, id) >= GRENADES[id].max) return 'Limite desta granada';
     if (p.inv.grenades.length >= MAX_GRENADES) return 'Limite de 4 granadas';
@@ -4760,7 +5646,7 @@ function buyBlockReason(p, id) {
   return '';
 }
 function buyItem(p, id) {
-  if (!canBuy(p)) return inBuyZone(p) ? 'O tempo de compra acabou' : 'Você não está na zona de compra';
+  if (!canBuy(p)) return game.mode === 'dm' || inBuyZone(p) ? 'O tempo de compra acabou' : 'Você não está na zona de compra';
   const why = buyBlockReason(p, id);
   if (why) return why;
   const price = itemPrice(p, id);
@@ -4769,7 +5655,7 @@ function buyItem(p, id) {
     const d = WEAPONS[id];
     const cur = p.inv[d.slot];
     if (cur && !p.isBot) dropWeaponItem(p, cur, true);
-    p.inv[d.slot] = makeWeapon(id);
+    p.inv[d.slot] = makeWeapon(id, p.skin);
     if (p.slot === d.slot) { p.slot = 'knife'; }
     if (d.slot === 'primary' || p.slot !== 'primary') switchSlot(p, d.slot, true);
   } else if (GRENADES[id]) {
@@ -4783,7 +5669,8 @@ function buyItem(p, id) {
     p.kit = true;
   }
   if (p === game.local) sfxUi('buy');
-  if (game.mode === 'practice') p.money = MAX_MONEY;
+  if (game.mode === 'dm' && p === game.local && WEAPONS[id]) game.dmLoadout[WEAPONS[id].slot] = id;
+  if (game.mode !== 'match') p.money = MAX_MONEY;
   return '';
 }
 
@@ -4892,6 +5779,7 @@ function killPlayer(victim, attacker, weaponId, flags) {
   victim.plantT = 0;
   victim.defuseT = 0;
   victim.ws.zoom = 0;
+  if (!victim.hidden) victim.rag = createRagdoll(victim);
   victim.vel[0] = 0; victim.vel[2] = 0;
   if (game.bomb && game.bomb.defuser === victim) game.bomb.defuser = null;
   dropOnDeath(victim);
@@ -4918,9 +5806,35 @@ function killPlayer(victim, attacker, weaponId, flags) {
   victim.dmgFrom = {};
   addKillfeed(attacker, victim, weaponId, flags.headshot, flags.wallbang, tk);
   if (game.mode === 'practice') {
+    const pr = game.practice;
+    if (attacker === game.local && victim !== game.local) pr.kills++;
+    if (pr.drill !== 'free' && victim.isBot) {
+      if (victim === pr.target) {
+        pr.reactSum += game.time - pr.spawnAt; pr.reactN++;
+        if (pr.drill === 'react') pr.count++;
+        pr.target = null;
+        pr.nextAt = game.time + (pr.drill === 'react' ? rand(0.8, 2.2) : (pr.drill === 'track' ? 0.5 : 0.2));
+      }
+      victim.hideAt = game.time + 0.6; victim.respawnAt = 0;
+      return;
+    }
     victim.respawnAt = game.time + (victim === game.local ? 2.5 : PRACTICE_RESPAWN);
-    if (attacker === game.local && victim !== game.local) game.practice.kills++;
     if (victim === game.local) { game.deathCamUntil = game.time + 2.4; game.killerId = attacker && attacker !== victim ? attacker.id : null; }
+    return;
+  }
+  if (game.mode === 'dm') {
+    victim.respawnAt = game.time + DM_RESPAWN;
+    if (attacker && attacker !== victim && attacker.team !== victim.team) {
+      game.dm.kills[attacker.team]++;
+      game.score[squadOf(attacker.team)] = game.dm.kills[attacker.team];
+    }
+    if (victim === game.local) {
+      if (settings.damageReport) buildDamageReport(victim, attacker);
+      game.deathCamUntil = game.time + 1.9; game.killerId = attacker && attacker !== victim ? attacker.id : null; game.spectate = null;
+      closeBuyMenu(false);
+    }
+    victim.dmgGiven = {}; victim.dmgTaken = {};
+    if (game.dm.kills.T >= DM_KILL_TARGET || game.dm.kills.CT >= DM_KILL_TARGET) endMatch();
     return;
   }
   if (victim.isBot && game.local && victim.team === game.local.team && Math.random() < 0.6) {
@@ -4951,7 +5865,7 @@ function buildDamageReport(victim, killer) {
   hud.reportDirty = true;
 }
 function checkRoundEnd() {
-  if (game.mode === 'practice' || game.phase === 'over' || game.phase === 'freeze') return;
+  if (game.mode !== 'match' || game.phase === 'over' || game.phase === 'freeze') return;
   let tAlive = false, ctAlive = false;
   for (const p of game.players) { if (!p.alive) continue; if (p.team === 'T') tAlive = true; else ctAlive = true; }
   if (!ctAlive) endRound('T', 'elimT');
@@ -4961,6 +5875,7 @@ function endRound(side, reason) {
   if (game.phase === 'over') return;
   game.phase = 'over';
   game.endTimer = ROUND_END_DELAY;
+  game.lastWinner = side;
   const wSquad = squadOf(side), lSquad = 1 - wSquad;
   game.score[wSquad]++;
   const winReward = reason === 'bomb' ? WIN_REWARD.bomb : (reason === 'defuse' ? WIN_REWARD.defuse : (reason === 'time' ? WIN_REWARD.time : WIN_REWARD.elim));
@@ -5003,9 +5918,9 @@ function nextRound() {
   startRound();
   if (halftime) showCenter('Troca de lados', 'Agora você joga como ' + TEAM_INFO[game.local.team].name + ' · dinheiro volta para $800', game.local.team, 4.5);
 }
-function startMatch(mode) {
+function startMatch(mode, drill) {
   const s = settings;
-  game.mode = mode === 'practice' ? 'practice' : 'match';
+  game.mode = mode === 'practice' || mode === 'dm' ? mode : 'match';
   game.halfRounds = MATCH_LENGTHS[s.matchLength].half;
   const humanTeam = s.team === 'auto' ? (Math.random() < 0.5 ? 'T' : 'CT') : s.team;
   const enemyTeam = humanTeam === 'T' ? 'CT' : 'T';
@@ -5028,7 +5943,10 @@ function startMatch(mode) {
   game.spectate = null;
   game.deathCamUntil = 0;
   game.shake = 0;
-  game.practice = { shots: 0, hits: 0, heads: 0, kills: 0 };
+  game.practice = { drill: DRILLS[drill] ? drill : 'free', shots: 0, hits: 0, heads: 0, kills: 0, startAt: 0, reactSum: 0, reactN: 0, misses: 0, spawnAt: 0, nextAt: 0, count: 0, done: false, target: null, lastSpot: null };
+  game.dm = { kills: { T: 0, CT: 0 } };
+  game.dmLoadout = { primary: '', secondary: '' };
+  game.lastWinner = '';
   game.radioAt = { T: -9, CT: -9 };
   hud.feed.forEach((x) => x.el.remove());
   hud.feed.length = 0;
@@ -5042,7 +5960,9 @@ function startMatch(mode) {
   addMapDecals();
   game.state = 'playing';
   game.paused = false;
-  if (game.mode === 'practice') startPractice(); else startRound();
+  if (game.mode === 'practice') startPractice();
+  else if (game.mode === 'dm') startDeathmatch();
+  else startRound();
 }
 function addMapDecals() {
   for (const L of WALL_LETTERS) addDecal(L.pos[0], L.pos[1], L.pos[2], L.normal[0], L.normal[1], L.normal[2], L.size, L.cell, 1, 1, 1, L.cell === ATLAS.WINDOW || L.cell === ATLAS.DOOR ? 1 : 0.9, true, L.rot || 0);
@@ -5067,18 +5987,96 @@ function startPractice() {
   particles.length = 0;
   rebuildFireMask();
   game.bomb = { state: 'none', pos: [0, 0, 0], carrier: null, item: null, timer: 0, site: null, planter: null, defuser: null, yaw: 0, nextBeep: 0, plantedThisRound: false };
-  const l = game.local;
+  const l = game.local, pr = game.practice, d = DRILLS[pr.drill];
   l.money = MAX_MONEY;
   spawnPlayer(l, PRACTICE_START[0], PRACTICE_START[1]);
-  l.inv.primary = makeWeapon(l.team === 'T' ? 'ak47' : 'm4a4');
+  l.inv.primary = makeWeapon(l.team === 'T' ? 'ak47' : 'm4a4', l.skin);
   l.armor = 100; l.helmet = true;
   l.slot = 'primary';
   l.yaw = 0;
   startDraw(l, 0.6);
-  for (const p of game.players) if (p.isBot) practiceRespawn(p);
-  showCenter('Treino de mira', 'Alvos parados e se movendo · loja aberta em qualquer lugar · dinheiro e munição infinitos', l.team, 4);
+  if (pr.drill === 'free') {
+    for (const p of game.players) if (p.isBot) practiceRespawn(p);
+    showCenter('Treino de mira · livre', 'Alvos parados e se movendo · loja aberta em qualquer lugar · dinheiro e munição infinitos', l.team, 4);
+  } else {
+    for (const p of game.players) if (p.isBot) { p.alive = false; p.hidden = true; p.respawnAt = 0; }
+    pr.startAt = game.time + 3;
+    pr.nextAt = pr.startAt;
+    showCenter('Treino · ' + d.name, d.desc + ' Começa em 3 s.', l.team, 3);
+  }
   sfxRoundStart();
   cameraSubjectCached = l;
+}
+function startDeathmatch() {
+  game.roundNum = 1;
+  game.phase = 'live';
+  game.roundTime = DM_TIME;
+  game.buyTime = 1e9;
+  game.items.length = 0; game.nades.length = 0; game.smokes.length = 0; game.fires.length = 0; game.noises.length = 0;
+  particles.length = 0;
+  rebuildFireMask();
+  game.bomb = { state: 'none', pos: [0, 0, 0], carrier: null, item: null, timer: 0, site: null, planter: null, defuser: null, yaw: 0, nextBeep: 0, plantedThisRound: false };
+  game.intel = { T: null, CT: null };
+  assignPersonas();
+  for (const p of game.players) { p.roundKills = 0; p.roundDamage = 0; p.dmgFrom = {}; p.dmgGiven = {}; p.dmgTaken = {}; p.roundsPlayed = 1; dmSpawn(p); }
+  const l = game.local;
+  showCenter('Mata-mata em equipe', 'Primeiro time a ' + DM_KILL_TARGET + ' abates · renasce em 2 s · loja grátis nos primeiros ' + DM_BUY_WINDOW + ' s de cada vida', l.team, 4.5);
+  sfxRoundStart();
+  cameraSubjectCached = l;
+}
+// ponto de renascimento longe dos inimigos e fora da linha de visão deles
+function dmSpawnPoint(p) {
+  if (!game.dmCells) {
+    game.dmCells = [];
+    for (let i = 0; i < MAP_N; i++) if (nav.walk[i] && nav.cost[i] === 0) game.dmCells.push(i);
+  }
+  const cells = game.dmCells;
+  let best = null, bestScore = -1e9;
+  for (let k = 0; k < 28; k++) {
+    const i = cells[Math.floor(Math.random() * cells.length)];
+    const x = (i % MAP_W) + 0.5, z = Math.floor(i / MAP_W) + 0.5, y = world.top[i] + 1.6;
+    let minD = 60, seen = false;
+    for (const e of game.players) {
+      if (!e.alive || e.team === p.team || e === p) continue;
+      const d = distXZ(x, z, e.pos[0], e.pos[2]);
+      if (d < minD) minD = d;
+      if (d < 45 && !seen && losClear(x, y, z, e.pos[0], e.pos[1] + 1.6, e.pos[2], true)) seen = true;
+    }
+    const score = minD - (seen ? 40 : 0) + Math.random() * 4;
+    if (score > bestScore) { bestScore = score; best = [x, z]; }
+  }
+  return best;
+}
+function dmSpawn(p) {
+  const s = dmSpawnPoint(p);
+  p.resetLoadout = true;
+  spawnPlayer(p, s[0], s[1]);
+  p.armor = 100; p.helmet = true; p.money = MAX_MONEY;
+  p.spawnAt = game.time; p.protectUntil = game.time + DM_PROTECT; p.respawnAt = 0; p.hidden = false;
+  const T = p.team === 'T';
+  if (p.isBot) {
+    resetBotRound(p);
+    const per = p.bot.persona;
+    let id;
+    if (per === 'awper' && Math.random() < 0.6) id = 'awp';
+    else id = pick(T ? ['ak47', 'ak47', 'galil', 'mac10', 'p90', 'ump45', 'nova'] : ['m4a4', 'm4a4', 'famas', 'mp9', 'p90', 'ump45', 'nova']);
+    p.inv.primary = makeWeapon(id, p.skin);
+    if (Math.random() < 0.3) p.inv.secondary = makeWeapon(pick(['deagle', 'p250']), p.skin);
+  } else {
+    const lo = game.dmLoadout;
+    p.inv.primary = makeWeapon(lo.primary && WEAPONS[lo.primary] ? lo.primary : (T ? 'ak47' : 'm4a4'), p.skin);
+    if (lo.secondary && WEAPONS[lo.secondary]) p.inv.secondary = makeWeapon(lo.secondary, p.skin);
+  }
+  p.slot = 'primary';
+  const a = anglesTo(s[0], 0, s[1], 50, 0, 50);
+  p.yaw = a.yaw;
+  startDraw(p, 0.35);
+}
+function dmUpdate(dt) {
+  game.roundTime -= dt;
+  const now = game.time;
+  for (const p of game.players) if (!p.alive && p.respawnAt && now >= p.respawnAt) dmSpawn(p);
+  if (game.roundTime <= 0) { game.roundTime = 0; endMatch(); }
 }
 function practiceRespawn(p) {
   const taken = game.players.filter((q) => q !== p && q.alive && q.isBot).map((q) => q.practiceSpot);
@@ -5089,7 +6087,7 @@ function practiceRespawn(p) {
   spawnPlayer(p, s[0] + rand(-0.3, 0.3), s[1] + rand(-0.3, 0.3));
   p.armor = Math.random() < 0.5 ? 100 : 0;
   p.helmet = p.armor > 0 && Math.random() < 0.5;
-  p.inv.primary = makeWeapon(p.team === 'T' ? 'ak47' : 'm4a4');
+  p.inv.primary = makeWeapon(p.team === 'T' ? 'ak47' : 'm4a4', p.skin);
   p.slot = 'primary';
   p.yaw = Math.PI;
   p.respawnAt = 0;
@@ -5098,16 +6096,91 @@ function practiceRespawn(p) {
   p.bot.dummyCrouch = Math.random() < 0.2;
 }
 function practiceUpdate() {
+  const pr = game.practice, now = game.time, d = DRILLS[pr.drill];
   for (const p of game.players) {
-    if (p.alive || !p.respawnAt || game.time < p.respawnAt) continue;
+    if (p.hideAt && now >= p.hideAt) { p.hidden = true; p.hideAt = 0; }
+    if (p.alive || !p.respawnAt || now < p.respawnAt) continue;
     if (p.isBot) practiceRespawn(p);
     else {
       spawnPlayer(p, PRACTICE_START[0], PRACTICE_START[1]);
-      p.inv.primary = makeWeapon(p.team === 'T' ? 'ak47' : 'm4a4');
+      p.inv.primary = makeWeapon(p.team === 'T' ? 'ak47' : 'm4a4', p.skin);
       p.armor = 100; p.helmet = true; p.slot = 'primary'; p.yaw = 0; p.money = MAX_MONEY;
       p.respawnAt = 0;
     }
   }
+  if (pr.drill === 'free' || pr.done || now < pr.startAt) return;
+  if (d.time && now >= pr.startAt + d.time) { finishDrill(); return; }
+  const t = pr.target;
+  if (pr.drill === 'flick' || pr.drill === 'head') {
+    if (t && t.alive && now - pr.spawnAt > d.life) { despawnTarget(t); pr.misses++; pr.target = null; pr.nextAt = now + 0.15; }
+    if (!pr.target && now >= pr.nextAt) spawnDrillTarget(false, false);
+  } else if (pr.drill === 'track') {
+    if (!pr.target && now >= pr.nextAt) spawnDrillTarget(true, false);
+  } else if (pr.drill === 'react') {
+    if (t && t.alive && now - pr.spawnAt > 2) { despawnTarget(t); pr.misses++; pr.count++; pr.target = null; pr.nextAt = now + rand(0.8, 2.2); }
+    if (pr.count >= d.count) { finishDrill(); return; }
+    if (!pr.target && now >= pr.nextAt) spawnDrillTarget(false, true);
+  }
+}
+function despawnTarget(t) { t.alive = false; t.hidden = true; t.hideAt = 0; }
+// Um alvo por vez: em lugar aleatório à frente do ponto de partida (flick) ou bem na mira (reflexo)
+function spawnDrillTarget(moving, front) {
+  const pr = game.practice, l = game.local, now = game.time;
+  const bot = game.players.find((q) => q.isBot);
+  if (!bot || !l.alive) return;
+  const eye = eyePos(l, [0, 0, 0]);
+  let spot = null;
+  for (let k = 0; k < 60 && !spot; k++) {
+    const yaw = front ? l.yaw + rand(-0.22, 0.22) : rand(-0.95, 0.95);
+    const dist = front ? rand(9, 18) : (moving ? rand(9, 16) : rand(7, 30));
+    const x = eye[0] - Math.sin(yaw) * dist, z = eye[2] - Math.cos(yaw) * dist;
+    const i = cellIdx(Math.floor(x), Math.floor(z));
+    if (i < 0 || !nav.walk[i]) continue;
+    if (pr.lastSpot && distXZ(x, z, pr.lastSpot[0], pr.lastSpot[1]) < 3) continue;
+    if (!losClear(eye[0], eye[1], eye[2], x, world.top[i] + 1.5, z, true)) continue;
+    spot = [x, z];
+  }
+  if (!spot) { pr.nextAt = now + 0.1; return; }
+  pr.lastSpot = spot;
+  bot.resetLoadout = true;
+  spawnPlayer(bot, spot[0], spot[1]);
+  bot.hidden = false; bot.hideAt = 0; bot.respawnAt = 0;
+  bot.inv.primary = makeWeapon(bot.team === 'T' ? 'ak47' : 'm4a4', bot.skin);
+  bot.slot = 'primary';
+  bot.headOnly = pr.drill === 'head';
+  if (pr.drill === 'track') { bot.hp = 100; bot.armor = 100; bot.helmet = true; } else { bot.hp = 1; bot.armor = 0; bot.helmet = false; }
+  const a = anglesTo(spot[0], bot.pos[1] + 1.6, spot[1], eye[0], eye[1], eye[2]);
+  bot.yaw = a.yaw;
+  bot.bot.dummyMove = moving ? 'track' : false;
+  bot.bot.dummyCrouch = false;
+  bot.bot.dummyDir = Math.random() < 0.5 ? 1 : -1;
+  bot.bot.dummySwitch = now + rand(0.3, 1);
+  pr.target = bot;
+  pr.spawnAt = now;
+  sfxUi('click');
+}
+function drillScore(pr) {
+  const d = DRILLS[pr.drill];
+  if (d.score === 'react') return pr.count ? Math.round((pr.reactSum + pr.misses * 1) * 1000 / pr.count) : 0;
+  return pr.kills;
+}
+function finishDrill() {
+  const pr = game.practice;
+  pr.done = true;
+  if (pr.target) despawnTarget(pr.target);
+  const d = DRILLS[pr.drill];
+  const score = drillScore(pr);
+  const rec = loadRecords();
+  const old = rec[pr.drill];
+  const better = d.score === 'react' ? (score > 0 && (!old || score < old.best)) : (score > 0 && (!old || score > old.best));
+  if (better) { rec[pr.drill] = { best: score, date: new Date().toISOString().slice(0, 10) }; saveRecords(rec); }
+  showDrillResult(pr, score, old ? old.best : null, better);
+}
+function loadRecords() {
+  try { const r = JSON.parse(localStorage.getItem(RECORDS_KEY) || '{}'); return r && typeof r === 'object' ? r : {}; } catch (e) { return {}; }
+}
+function saveRecords(r) {
+  try { localStorage.setItem(RECORDS_KEY, JSON.stringify(r)); } catch (e) { /* armazenamento indisponível */ }
 }
 function startRound() {
   game.roundNum++;
@@ -5142,6 +6215,9 @@ function startRound() {
     p.roundKills = 0; p.roundDamage = 0; p.dmgFrom = {}; p.dmgGiven = {}; p.dmgTaken = {}; p.roundsPlayed++;
     if (p.isBot) resetBotRound(p);
   }
+  if (game.roundNum === 1 || game.roundNum === game.halfRounds + 1) assignPersonas();
+  game.econ = { T: '', CT: '' }; game.teamBought = { T: false, CT: false }; game.usedLineups = new Set();
+  game.retake = null; game.tExec = null; game.flashWarn = null; game.threat = null;
   planRound();
   announcePlans();
   const l = game.local;
@@ -5156,7 +6232,7 @@ function startRound() {
 function spawnPlayer(p, x, z) {
   if (p.resetLoadout || !p.alive) {
     p.inv.primary = null;
-    p.inv.secondary = makeWeapon(defaultPistol(p.team));
+    p.inv.secondary = makeWeapon(defaultPistol(p.team), p.skin);
     p.inv.grenades = [];
     p.armor = 0; p.helmet = false; p.kit = false;
   } else {
@@ -5172,6 +6248,7 @@ function spawnPlayer(p, x, z) {
   p.pitch = 0;
   p.onGround = true; p.crouching = false; p.height = STAND_H; p.eyeH = STAND_EYE; p.crouchAmt = 0; p.jumped = false;
   p.punchP = 0; p.punchY = 0;
+  p.rag = null; p.onLadder = false; p.tagUntil = 0;
   p.ws = freshWeaponState();
   p.slot = bestSlot(p);
   p.lastSlot = 'knife';
@@ -5181,6 +6258,7 @@ function spawnPlayer(p, x, z) {
 }
 function updateRound(dt) {
   if (game.mode === 'practice') return;
+  if (game.mode === 'dm') { dmUpdate(dt); return; }
   if (game.phase === 'freeze') {
     game.phaseTimer -= dt;
     if (game.phaseTimer <= 0) game.phase = 'live';
@@ -5210,6 +6288,16 @@ function simStep(dt) {
   updateSmokes(dt);
   updateFires(dt);
   updateItems(dt);
+  for (const p of game.players) {
+    if (!p.rag) continue;
+    if (!p.rag.sleep) stepRagdoll(p.rag, dt);
+    else if (!p.rag.pooled && !p.hidden) {
+      // poça de sangue embaixo do corpo quando ele para
+      p.rag.pooled = true;
+      const px = p.rag.pos[0], pz = p.rag.pos[2];
+      addDecal(px, groundBelow(px, p.rag.pos[1] + 0.3, pz) + 0.004, pz, 0, 1, 0, rand(0.45, 0.75), ATLAS.POOL, 1, 1, 1, 0.9, false);
+    }
+  }
   if (game.mode === 'practice') practiceUpdate();
   const cut = game.time - 3;
   while (game.noises.length && game.noises[0].t < cut) game.noises.shift();
@@ -5228,6 +6316,7 @@ function createBotBrain() {
     route: null, routeIdx: 0, hold: null, role: '', post: null, postSite: '', plantSpot: null,
     lookAt: null, moveYaw: 0, scan: Math.random() * 6.28, wantUse: false,
     progPos: [0, 0], progT: 0, stuck: 0, buyAt: 0, bought: false, rotateSeen: -1, offX: 0, offZ: 0,
+    persona: 'rifler', lurk: false, nadeTask: null, follow: null, followUntil: 0, holdLock: 0, rotatedAt: -99, saidRetake: false,
   };
 }
 function diffCfg() { return DIFFICULTIES[settings.difficulty] || DIFFICULTIES.normal; }
@@ -5238,7 +6327,15 @@ function resetBotRound(p) {
   b.route = null; b.routeIdx = 0; b.hold = null; b.post = null; b.postSite = ''; b.plantSpot = null; b.lookAt = null; b.wantUse = false;
   b.buyAt = rand(0.4, FREEZE_TIME - 1.5); b.bought = false; b.rotateSeen = -1; b.stuck = 0; b.progT = 0; b.burstTarget = 0;
   b.offX = rand(-1.3, 1.3); b.offZ = rand(-1.3, 1.3);
-  b.saidDefuse = false;
+  b.saidDefuse = false; b.saidRetake = false;
+  b.nadeTask = null; b.follow = null; b.followUntil = 0; b.holdLock = 0; b.rotatedAt = -99; b.lurk = false;
+}
+// Personalidade de cada bot por lado (entry, suporte, AWP, lurker, âncora...). Refeita na troca de lados.
+function assignPersonas() {
+  for (const team of ['T', 'CT']) {
+    const list = BOT_PERSONAS[team];
+    game.players.filter((q) => q.isBot && q.team === team).sort((a, b) => a.id - b.id).forEach((q, i) => { q.bot.persona = list[i % list.length]; });
+  }
 }
 function announcePlans() {
   const l = game.local;
@@ -5246,7 +6343,7 @@ function announcePlans() {
   const mates = game.players.filter((q) => q.isBot && q.team === l.team);
   if (!mates.length) return;
   if (l.team === 'T') {
-    const b = mates[0];
+    const b = mates.find((q) => !q.bot.lurk) || mates[0];
     const route = b.bot.route || T_ROUTES[game.tPlan.site][0];
     radioSay(b, 'planT', { site: game.tPlan.site, route: route.name });
   } else {
@@ -5256,54 +6353,108 @@ function announcePlans() {
 }
 function planRound() {
   const site = Math.random() < 0.5 ? 'A' : 'B';
-  game.tPlan = { site, execAt: ROUND_TIME - rand(14, 34) };
-  const routes = T_ROUTES[site];
-  const tBots = shuffle(game.players.filter((p) => p.isBot && p.team === 'T'));
-  tBots.forEach((p, i) => {
-    const b = p.bot;
-    b.route = i === 0 ? routes[0] : (i === 1 ? routes[1] : (Math.random() < 0.6 ? routes[0] : routes[1]));
-    b.routeIdx = 0;
-  });
-  const ctBots = shuffle(game.players.filter((p) => p.isBot && p.team === 'CT'));
-  const roles = shuffle(['A', 'A', 'B', 'B', 'mid']);
+  game.tPlan = { site, execAt: ROUND_TIME - rand(14, 34), holdUntil: 0, rush: false };
+  game.tExec = null;
+  for (const p of game.players) if (p.isBot && p.team === 'T') assignTRoute(p, site);
+  const ctBots = game.players.filter((p) => p.isBot && p.team === 'CT');
   const used = [];
-  ctBots.forEach((p, i) => {
-    const role = roles[i % roles.length];
-    const free = CT_HOLDS[role].filter((h) => used.indexOf(h) < 0);
-    const h = pick(free.length ? free : CT_HOLDS[role]);
+  let anchors = 0;
+  for (const p of ctBots) {
+    const per = p.bot.persona;
+    let role;
+    if (per === 'anchor') role = anchors++ === 0 ? 'A' : 'B';
+    else if (per === 'awper') role = Math.random() < 0.55 ? 'A' : 'mid';
+    else if (per === 'support') role = 'B';
+    else role = 'mid';
+    let holds = CT_HOLDS[role];
+    if (per === 'awper' && role === 'A') holds = [CT_HOLDS.A[1]];
+    const free = holds.filter((h) => used.indexOf(h) < 0);
+    const h = pick(free.length ? free : holds);
     used.push(h);
     p.bot.role = role;
     p.bot.hold = h;
-  });
+  }
 }
-function botBuy(p) {
+function assignTRoute(p, site) {
+  const b = p.bot, routes = T_ROUTES[site];
+  b.lurk = b.persona === 'lurker';
+  if (b.lurk) b.route = T_ROUTES[site === 'A' ? 'B' : 'A'][0];
+  else if (b.persona === 'entry' || b.persona === 'support' || b.persona === 'awper') b.route = routes[0];
+  else b.route = pick(routes);
+  b.routeIdx = 0;
+}
+// Economia do time: pistol, eco (guardar), force (compra forçada) ou full (compra completa)
+function fullBuyCost(team) { return team === 'T' ? 4200 : 4600; }
+function teamEconomy(team) {
+  if (game.roundNum === 1 || game.roundNum === game.halfRounds + 1) return 'pistol';
+  const mates = game.players.filter((q) => q.team === team);
+  const squad = squadOf(team);
+  const need = game.halfRounds + 1;
+  const lastOfHalf = game.roundNum === game.halfRounds || game.roundNum === game.halfRounds * 2;
+  const matchPoint = game.score[0] === need - 1 || game.score[1] === need - 1;
+  const full = fullBuyCost(team);
+  const ready = mates.filter((q) => q.money >= full || (q.inv.primary && q.money >= 1200)).length;
+  const avg = mates.reduce((s, q) => s + q.money, 0) / mates.length;
+  if (ready >= mates.length - 1) return 'full';
+  if (lastOfHalf || matchPoint) return 'force';
+  if (game.lastWinner === team && avg >= 2500) return 'force';
+  const bonus = LOSS_BONUS[Math.min(game.lossStreak[squad] + 1, LOSS_BONUS.length - 1)];
+  if (avg + bonus >= full + 200) return 'eco';
+  return avg >= 2300 ? 'force' : 'eco';
+}
+function teamBuy(team) {
+  const plan = teamEconomy(team);
+  game.econ[team] = plan;
+  const bots = game.players.filter((q) => q.isBot && q.team === team && q.alive).sort((a, b) => b.money - a.money);
+  for (const p of bots) botBuy(p, plan);
+  if (plan === 'full' || plan === 'force') {
+    const rifle = team === 'T' ? 'ak47' : 'm4a4';
+    for (const poor of bots.filter((q) => !q.inv.primary)) {
+      const donor = bots.find((q) => q !== poor && q.money >= WEAPONS[rifle].price + 300);
+      if (!donor) break;
+      dropGiftWeapon(donor, poor, rifle);
+    }
+  }
+  const l = game.local;
+  if (l && l.team === team && bots.length && plan !== 'pistol') radioSay(bots[0], plan, {});
+}
+function botBuy(p, plan) {
   const tryBuy = (id) => buyItem(p, id) === '';
-  const pistolRound = game.roundNum === 1 || game.roundNum === game.halfRounds + 1;
-  const mates = game.players.filter((q) => q.team === p.team);
-  const teamAvg = mates.reduce((s, q) => s + q.money, 0) / mates.length;
-  if (pistolRound) {
-    if (Math.random() < 0.55) tryBuy('kevlar');
-    else if (Math.random() < 0.5) tryBuy('p250');
-    if (p.team === 'CT' && Math.random() < 0.3) tryBuy('kit');
+  const per = p.bot.persona, T = p.team === 'T';
+  const rifle = T ? 'ak47' : 'm4a4', cheap = T ? 'galil' : 'famas', smg = T ? 'mac10' : 'mp9', fire = T ? 'molotov' : 'incgrenade';
+  if (plan === 'pistol') {
+    if (per === 'support') { tryBuy('smoke'); tryBuy('flash'); }
+    else if (Math.random() < 0.6) tryBuy('kevlar');
+    else tryBuy(Math.random() < 0.5 ? 'p250' : 'flash');
+    if (!T && Math.random() < 0.25) tryBuy('kit');
     return;
   }
-  const desperate = game.lossStreak[p.squad] >= 2 && p.money > 2200;
-  const eco = teamAvg < 2600 && p.money < 3800 && !desperate;
-  if (!p.inv.primary) {
-    const rifle = p.team === 'T' ? 'ak47' : 'm4a4';
-    const cheap = p.team === 'T' ? 'galil' : 'famas';
-    const smg = p.team === 'T' ? 'mac10' : 'mp9';
-    const hasAwp = mates.some((q) => q.inv.primary && q.inv.primary.id === 'awp');
-    if (p.money >= 5750 && !hasAwp && Math.random() < 0.22) tryBuy('awp');
-    else if (p.money >= WEAPONS[rifle].price + 650) tryBuy(rifle);
-    else if (!eco && p.money >= WEAPONS[cheap].price + 650) tryBuy(cheap);
-    else if (!eco && p.money >= 1900) tryBuy(Math.random() < 0.6 ? smg : 'ump45');
-    else if (eco && p.money >= 1200 && Math.random() < 0.35) tryBuy(Math.random() < 0.5 ? 'deagle' : 'p250');
+  if (plan === 'eco') {
+    if (!p.inv.primary && p.money >= 1400 && Math.random() < 0.3) tryBuy(Math.random() < 0.5 ? 'p250' : 'deagle');
+    if (per === 'support' && p.money >= 1600) tryBuy('flash');
+    return;
   }
-  if (p.inv.primary && p.money >= itemPrice(p, 'helmet')) tryBuy('helmet');
-  else if ((p.inv.primary || !eco) && p.money >= 650) tryBuy('kevlar');
-  if (p.team === 'CT' && p.money >= 400 && Math.random() < 0.6) tryBuy('kit');
+  if (!p.inv.primary) {
+    if (per === 'awper' && plan === 'full' && p.money >= WEAPONS.awp.price + 1000) tryBuy('awp');
+    else if (p.money >= WEAPONS[rifle].price + (plan === 'full' ? 1000 : 650)) tryBuy(rifle);
+    else if (p.money >= WEAPONS[cheap].price + 650) tryBuy(cheap);
+    else if (p.money >= 1900) tryBuy(Math.random() < 0.6 ? smg : 'ump45');
+    else if (p.money >= 1050) tryBuy(T ? 'mac10' : 'nova');
+  }
+  if (p.money >= itemPrice(p, 'helmet') && (plan === 'full' || p.inv.primary)) tryBuy('helmet');
+  else if (p.money >= 650 && p.armor < 100) tryBuy('kevlar');
+  const util = per === 'support' ? ['smoke', 'flash', fire, 'flash', 'he'] : (per === 'entry' ? ['flash', 'smoke', 'he'] : (per === 'awper' ? ['flash', 'smoke'] : ['smoke', fire, 'flash', 'he']));
+  for (const g of util) if (p.money >= itemPrice(p, g) + (plan === 'full' ? 100 : 400)) tryBuy(g);
+  if (!T && !p.kit && p.money >= 400 && Math.random() < 0.7) tryBuy('kit');
   if (p.inv.primary) switchSlot(p, 'primary', true);
+}
+// um colega rico compra uma arma e larga no pé de quem não tem
+function dropGiftWeapon(donor, target, id) {
+  const def = WEAPONS[id];
+  if (!def || donor.money < def.price) return false;
+  donor.money -= def.price;
+  game.items.push({ kind: 'weapon', weapon: id, clip: def.mag, reserve: def.reserve, skin: donor.skin || 'none', pos: [target.pos[0], target.pos[1] + 0.9, target.pos[2]], vel: [0, 0.5, 0], yaw: target.yaw + Math.PI / 2, rest: false, dropper: donor.id, dropTime: game.time });
+  return true;
 }
 function turnToward(p, wantY, wantP, dt, speed) {
   const dy = wrapAngle(wantY - p.yaw), dp = wantP - p.pitch;
@@ -5391,7 +6542,20 @@ function botThink(p) {
   }
   if (!b.target) {
     b.wantUse = false;
-    if (p.team === 'T') decideT(p); else decideCT(p);
+    if (game.mode === 'dm') decideDM(p);
+    else if (p.team === 'T') decideT(p); else decideCT(p);
+  }
+}
+// mata-mata: caça o último inimigo visto/ouvido; senão patrulha pontos do mapa
+function decideDM(p) {
+  const b = p.bot, now = game.time;
+  b.lookAt = null;
+  if (b.lastSeenPos && now - b.lastSeenTime < 4) { setGoal(b, b.lastSeenPos[0], b.lastSeenPos[2], 'hunt' + Math.round(b.lastSeenPos[0]) + ',' + Math.round(b.lastSeenPos[2])); return; }
+  if (b.heard && now - b.heardTime < 3) { setGoal(b, b.heard[0], b.heard[2], 'heard' + Math.round(b.heard[0]) + ',' + Math.round(b.heard[2])); return; }
+  if (!b.goal || b.goalKey.indexOf('roam') !== 0 || arrived(p, b.goal[0], b.goal[1], 2.2)) {
+    const keys = Object.keys(NAV_POINTS);
+    const k = pick(keys), pt = NAV_POINTS[k];
+    setGoal(b, pt[0] + 0.5 + rand(-1.5, 1.5), pt[1] + 0.5 + rand(-1.5, 1.5), 'roam' + k + Math.floor(now));
   }
 }
 function setGoal(b, x, z, key) {
@@ -5402,7 +6566,14 @@ function arrived(p, x, z, r) { return distXZ(p.pos[0], p.pos[2], x, z) < r; }
 function lookPoint(x, z) { return [x, floorAt(x, z) + 1.4, z]; }
 function decideT(p) {
   const b = p.bot, bomb = game.bomb, plan = game.tPlan, now = game.time;
+  if (followLeader(p)) return;
+  if (nadeTaskGoto(p)) return;
   if (bomb.state === 'planted') {
+    // molotov em cima de quem está desarmando
+    if (bomb.defuser && !b.nadeTask && grenadeCount(p, 'molotov') && distXZ(p.pos[0], p.pos[2], bomb.pos[0], bomb.pos[2]) < 15) {
+      b.nadeTask = { lu: null, type: 'molotov', to: [bomb.pos[0], bomb.pos[1], bomb.pos[2]], from: null, phase: 'throw', started: now };
+      return;
+    }
     if (!b.post || b.postSite !== bomb.site) { b.post = pick(POSTPLANT[bomb.site]); b.postSite = bomb.site; }
     setGoal(b, b.post.pos[0] + 0.5, b.post.pos[1] + 0.5, 'post' + bomb.site);
     b.lookAt = lookPoint(b.post.look[0], b.post.look[1]);
@@ -5414,17 +6585,33 @@ function decideT(p) {
     return;
   }
   const intel = game.intel.T;
-  const execute = game.roundTime <= plan.execAt || game.roundTime <= 35 || (intel && now - intel.time < 4 && game.roundTime < ROUND_TIME - 22);
+  let execute = plan.rush || game.roundTime <= plan.execAt || game.roundTime <= 35 || (intel && now - intel.time < 4 && game.roundTime < ROUND_TIME - 22);
+  if (now < plan.holdUntil && !plan.rush && game.roundTime > 30) execute = false;
+  if (execute && !game.tExec) startTExecute();
+  const ex = game.tExec;
+  // lurker: depois de um tempo da execução, abandona o outro bomb e vai ajudar
+  if (b.lurk && ex && (now > ex.start + 11 || game.roundTime < 30)) {
+    b.lurk = false;
+    b.route = T_ROUTES[plan.site][0];
+    b.routeIdx = b.route.path.length - 2;
+  }
   if (!b.route) b.route = T_ROUTES[plan.site][0];
   const r = b.route, last = r.path.length - 1;
   b.lookAt = null;
   if (b.routeIdx < last) {
     const pt = NAV_POINTS[r.path[b.routeIdx]];
-    if (arrived(p, pt[0], pt[1], 2.2) && (b.routeIdx < r.stage || execute)) b.routeIdx++;
+    let go = b.routeIdx < r.stage || (execute && !b.lurk);
+    // espera as granadas antes de entrar no bomb (o entry vai primeiro)
+    if (go && execute && ex && b.routeIdx >= last - 2 && game.roundTime > 22 && !plan.rush) {
+      const ready = (ex.pending <= 0 && now > ex.lastThrow + 1.1) || now > ex.start + 14;
+      if (!ready || now < ex.readyAt + (b.persona === 'entry' ? 0 : 0.9)) go = false;
+      if (ready && !ex.readyAt) ex.readyAt = now;
+    }
+    if (arrived(p, pt[0], pt[1], 2.2) && go) b.routeIdx++;
     const cur = NAV_POINTS[r.path[b.routeIdx]];
-    setGoal(b, cur[0] + 0.5 + b.offX, cur[1] + 0.5 + b.offZ, 'r' + b.routeIdx);
-    if (b.routeIdx === r.stage && !execute) {
-      const nx = NAV_POINTS[r.path[b.routeIdx + 1]];
+    setGoal(b, cur[0] + 0.5 + b.offX, cur[1] + 0.5 + b.offZ, 'r' + b.routeIdx + r.name);
+    if (!go || (b.routeIdx === r.stage && !execute)) {
+      const nx = NAV_POINTS[r.path[Math.min(last, b.routeIdx + 1)]];
       b.lookAt = lookPoint(nx[0], nx[1]);
     }
     return;
@@ -5444,8 +6631,31 @@ function decideT(p) {
   setGoal(b, b.post.pos[0] + 0.5, b.post.pos[1] + 0.5, 'hold' + site);
   b.lookAt = lookPoint(b.post.look[0], b.post.look[1]);
 }
+// Início da execução: distribui as granadas das posições fixas entre os TRs que as têm
+function startTExecute() {
+  const plan = game.tPlan, now = game.time;
+  const ex = { start: now, pending: 0, lastThrow: -99, readyAt: 0 };
+  game.tExec = ex;
+  const bots = game.players.filter((q) => q.isBot && q.alive && q.team === 'T' && !q.bot.lurk);
+  bots.sort((a, c) => (c.bot.persona === 'support' ? 1 : 0) - (a.bot.persona === 'support' ? 1 : 0));
+  const used = new Set();
+  for (const q of bots) {
+    if (q.bot.nadeTask) continue;
+    for (const lu of NADE_LINEUPS) {
+      if (lu.team !== 'T' || lu.when !== 'exec' || lu.site !== plan.site || used.has(lu)) continue;
+      if (lu.route && q.bot.route && q.bot.route.name !== lu.route) continue;
+      if (!grenadeCount(q, lu.kind)) continue;
+      used.add(lu);
+      q.bot.nadeTask = { lu, type: lu.kind, to: [lu.to[0], floorAt(lu.to[0], lu.to[1]) + lu.to[2], lu.to[1]], from: lu.from, phase: 'goto', started: now };
+      ex.pending++;
+      break;
+    }
+  }
+}
 function decideCT(p) {
   const b = p.bot, bomb = game.bomb, now = game.time;
+  if (followLeader(p)) return;
+  if (nadeTaskGoto(p)) return;
   if (bomb.state === 'planted') {
     const need = p.kit ? DEFUSE_KIT_TIME : DEFUSE_TIME;
     const bp = bomb.pos;
@@ -5467,18 +6677,196 @@ function decideCT(p) {
       b.lookAt = lookPoint(c[0] + (p.pos[0] - c[0]) * -1, c[1] + (p.pos[2] - c[1]) * -1);
       return;
     }
+    // retake coordenado: junta no ponto de encontro, joga flash e entra junto
+    const rt = game.retake || (game.retake = { site: bomb.site, start: now, goAt: 0, rush: false });
+    if (!rt.goAt && dist > 13) {
+      const rally = RETAKE_RALLY[bomb.site].slice().sort((u, v) => distXZ(p.pos[0], p.pos[2], u[0], u[1]) - distXZ(p.pos[0], p.pos[2], v[0], v[1]))[0];
+      const mates = game.players.filter((q) => q.alive && q.team === 'CT');
+      let atRally = 0;
+      for (const q of mates) for (const rp of RETAKE_RALLY[bomb.site]) if (distXZ(q.pos[0], q.pos[2], rp[0], rp[1]) < 5) { atRally++; break; }
+      const hurry = bomb.timer < DEFUSE_KIT_TIME + 13 + dist / 5.5;
+      if (rt.rush || hurry || now - rt.start > 10 || atRally >= Math.min(3, mates.length)) {
+        rt.goAt = now;
+        assignRetakeNades(bomb.site);
+      } else {
+        setGoal(b, rally[0] + b.offX * 0.6, rally[1] + b.offZ * 0.6, 'rally' + bomb.site);
+        b.lookAt = lookPoint(SITES[bomb.site].center[0], SITES[bomb.site].center[1]);
+        if (!b.saidRetake && game.local && game.local.team === 'CT') { b.saidRetake = true; if (Math.random() < 0.5) radioSay(p, 'retakeWait', { place: placeAt(rally[0], rally[1]) || 'bomb' }); }
+        return;
+      }
+    }
     setGoal(b, bp[0], bp[2], 'bomb');
     b.lookAt = null;
     return;
   }
+  // granadas para atrasar a entrada quando há TR perto do bomb
   const intel = game.intel.CT;
-  if (intel && intel.site && now - intel.time < 5 && b.rotateSeen !== intel.time && b.role !== intel.site) {
-    b.rotateSeen = intel.time;
-    if (Math.random() < 0.55) { b.role = intel.site; b.hold = pick(CT_HOLDS[intel.site]); }
+  if (!b.nadeTask && intel && now - intel.time < 3) {
+    for (const lu of NADE_LINEUPS) {
+      if (lu.team !== 'CT' || lu.when !== 'delay' || game.usedLineups.has(lu)) continue;
+      const type = lu.kind === 'molotov' ? 'incgrenade' : lu.kind;
+      if (!grenadeCount(p, type)) continue;
+      if (distXZ(intel.pos[0], intel.pos[2], lu.to[0], lu.to[1]) > 14 || distXZ(p.pos[0], p.pos[2], lu.from[0], lu.from[1]) > 14) continue;
+      game.usedLineups.add(lu);
+      b.nadeTask = { lu, type, to: [lu.to[0], floorAt(lu.to[0], lu.to[1]) + lu.to[2], lu.to[1]], from: lu.from, phase: 'goto', started: now };
+      return;
+    }
+  }
+  // rotação: vai ajudar o bomb onde há mais sinais de TR (a âncora não sai do lugar)
+  const th = ctThreat();
+  if (now > b.holdLock && b.persona !== 'anchor' && now - b.rotatedAt > 12) {
+    for (const s of ['A', 'B']) {
+      if (b.role === s || th[s] < 2 || th[s] < th[s === 'A' ? 'B' : 'A'] + 1) continue;
+      const helpers = game.players.filter((q) => q.isBot && q.alive && q.team === 'CT' && q.bot.role === s).length;
+      if (helpers >= 3) continue;
+      if (Math.random() < (b.persona === 'rotator' ? 0.9 : 0.55)) {
+        b.role = s; b.hold = pick(CT_HOLDS[s]); b.rotatedAt = now;
+        if (game.local && game.local.team === 'CT') radioSay(p, 'rotate', { site: s });
+      } else b.rotatedAt = now - 6;
+      break;
+    }
   }
   if (!b.hold) { b.role = 'mid'; b.hold = pick(CT_HOLDS.mid); }
   setGoal(b, b.hold.pos[0] + 0.5, b.hold.pos[1] + 0.5, 'hold' + b.hold.pos[0] + ',' + b.hold.pos[1]);
   b.lookAt = lookPoint(b.hold.look[0], b.hold.look[1]);
+}
+function assignRetakeNades(site) {
+  const now = game.time;
+  for (const lu of NADE_LINEUPS) {
+    if (lu.team !== 'CT' || lu.when !== 'retake' || lu.site !== site || game.usedLineups.has(lu)) continue;
+    let best = null, bd = 16;
+    for (const q of game.players) {
+      if (!q.isBot || !q.alive || q.team !== 'CT' || q.bot.nadeTask || !grenadeCount(q, lu.kind)) continue;
+      const d = distXZ(q.pos[0], q.pos[2], lu.from[0], lu.from[1]);
+      if (d < bd) { bd = d; best = q; }
+    }
+    if (!best) continue;
+    game.usedLineups.add(lu);
+    best.bot.nadeTask = { lu, type: lu.kind, to: [lu.to[0], floorAt(lu.to[0], lu.to[1]) + lu.to[2], lu.to[1]], from: lu.from, phase: 'goto', started: now };
+  }
+}
+// sinais de TR perto de cada bomb nos últimos segundos (vistos + barulho)
+function ctThreat() {
+  const now = game.time;
+  if (game.threat && now - game.threatAt < 0.5) return game.threat;
+  const t = { A: 0, B: 0 }, noise = { A: 0, B: 0 };
+  for (const q of game.players) if (q.alive && q.team === 'T' && q.spottedUntil > now - 3) { const s = siteNear(q.pos[0], q.pos[2]); if (s) t[s] += 1; }
+  for (const n of game.noises) {
+    if (n.team !== 'T' || now - n.t > 3) continue;
+    const s = siteNear(n.x, n.z);
+    if (s) noise[s] += n.kind === 'shot' || n.kind === 'nade' ? 0.5 : 0.2;
+  }
+  t.A += Math.min(2, noise.A); t.B += Math.min(2, noise.B);
+  game.threat = t; game.threatAt = now;
+  return t;
+}
+// Seguir o jogador (comando de rádio). Devolve true enquanto estiver seguindo.
+function followLeader(p) {
+  const b = p.bot, L = b.follow;
+  if (!L || game.time > b.followUntil || !L.alive) { b.follow = null; return false; }
+  const f = dirFromAngles(L.yaw, 0, tmpDir2);
+  const side = (p.id % 2 ? 1 : -1) * 1.3;
+  const tx = L.pos[0] - f[0] * 2.2 + Math.cos(L.yaw) * side, tz = L.pos[2] - f[2] * 2.2 - Math.sin(L.yaw) * side;
+  if (distXZ(p.pos[0], p.pos[2], tx, tz) > 1.6) setGoal(b, tx, tz, 'follow' + Math.round(tx) + ',' + Math.round(tz));
+  else { b.goal = null; b.path = null; b.goalKey = ''; }
+  const la = dirFromAngles(L.yaw, L.pitch, tmpDir2);
+  b.lookAt = [L.pos[0] + la[0] * 12, L.pos[1] + L.eyeH + la[1] * 12, L.pos[2] + la[2] * 12];
+  return true;
+}
+// Tarefa de granada: andar até a posição de lançamento. Devolve true enquanto estiver indo.
+function nadeTaskGoto(p) {
+  const b = p.bot, t = b.nadeTask;
+  if (!t) return false;
+  if (!grenadeCount(p, t.type) || game.time - t.started > (t.phase === 'goto' ? 22 : 30)) { finishNadeTask(p, false); return false; }
+  if (t.phase !== 'goto') return true;
+  if (arrived(p, t.from[0], t.from[1], 0.7)) { t.phase = 'throw'; t.throwAt = game.time; b.goal = null; b.path = null; b.goalKey = ''; return true; }
+  setGoal(b, t.from[0], t.from[1], 'nade' + t.from[0] + ',' + t.from[1]);
+  b.lookAt = [t.to[0], t.to[1] + 2, t.to[2]];
+  return true;
+}
+function finishNadeTask(p, thrown) {
+  const t = p.bot.nadeTask;
+  p.bot.nadeTask = null;
+  if (!t) return;
+  if (t.lu) game.usedLineups.add(t.lu);
+  const ex = game.tExec;
+  if (t.lu && t.lu.when === 'exec' && ex) { ex.pending = Math.max(0, ex.pending - 1); if (thrown) ex.lastThrow = game.time; }
+  if (debugMode) game.debugLog.push({ t: game.time, who: p.name, team: p.team, type: t.type, thrown, lineup: !!t.lu, when: t.lu ? t.lu.when : 'dyn' });
+  if (!thrown) return;
+  if (t.type === 'flash') game.flashWarn = { team: p.team, pos: t.to, until: game.time + 1.9 };
+  const kind = t.type === 'smoke' ? 'smokeOut' : (t.type === 'flash' ? 'flashOut' : (GRENADES[t.type].fire ? 'fireOut' : ''));
+  if (kind) radioSay(p, kind, { place: placeAt(t.to[0], t.to[2]) || 'bomb' });
+}
+// Mira e lança a granada da tarefa (força e inclinação calculadas por simulação)
+function botThrow(p, dt) {
+  const b = p.bot, t = b.nadeTask, inp = p.input, now = game.time;
+  if (t.throwAt && now - t.throwAt > 6) { finishNadeTask(p, false); return; }
+  if (!t.throwAt) t.throwAt = now;
+  if (!t.sol) {
+    t.sol = solveThrow(eyePos(p, [0, 0, 0]), t.to[0], t.to[1], t.to[2], t.type);
+    t.count0 = grenadeCount(p, t.type);
+    if (!t.sol || t.sol.err > 3.5) { finishNadeTask(p, false); return; }
+  }
+  if (grenadeCount(p, t.type) < t.count0) { finishNadeTask(p, true); return; }
+  const idx = p.inv.grenades.indexOf(t.type);
+  if (idx < 0) { finishNadeTask(p, false); return; }
+  if (p.slot !== 'grenade') { switchSlot(p, 'grenade', true); p.nadeIdx = idx; startDraw(p, 0.45); return; }
+  if (p.nadeIdx % p.inv.grenades.length !== idx) { p.nadeIdx = idx; startDraw(p, 0.35); return; }
+  turnToward(p, t.sol.yaw, t.sol.pitch, dt, 9);
+  if (now < p.ws.drawUntil || now < p.ws.nextFire) return;
+  const err = Math.abs(wrapAngle(t.sol.yaw - p.yaw)) + Math.abs(t.sol.pitch - p.pitch);
+  if (!t.holdAt) { if (err < 0.04) t.holdAt = now; else return; }
+  p.yaw = t.sol.yaw; p.pitch = t.sol.pitch;
+  const s = t.sol.strength;
+  if (now - t.holdAt < 0.22) { inp.fire = s !== 'weak'; inp.alt = s !== 'strong'; }
+  else { inp.fire = false; inp.alt = s === 'mid'; }
+}
+// Comandos de rádio do jogador para os bots do time
+function issueRadioCommand(id) {
+  const l = game.local, now = game.time;
+  if (!l || game.state !== 'playing' || game.mode !== 'match') return;
+  const cmd = RADIO_COMMANDS[l.team].find((c) => c.id === id);
+  if (!cmd) return;
+  radioSay(l, 'cmd', { text: cmd.label });
+  const mates = game.players.filter((q) => q.isBot && q.alive && q.team === l.team);
+  if (!mates.length) return;
+  const ack = (q) => radioSay(q || pick(mates), 'ack', {});
+  const bomb = game.bomb;
+  if (id === 'goA' || id === 'goB') {
+    const site = id === 'goA' ? 'A' : 'B';
+    if (l.team === 'T') {
+      if (bomb.state !== 'planted' && game.tPlan.site !== site) {
+        game.tPlan.site = site; game.tExec = null;
+        for (const q of mates) { q.bot.nadeTask = null; assignTRoute(q, site); q.bot.lurk = false; }
+      }
+      game.tPlan.holdUntil = 0;
+      game.tPlan.execAt = Math.max(game.tPlan.execAt, game.roundTime - 7);
+    } else {
+      const c = SITES[site].center;
+      const cands = mates.filter((q) => q.bot.role !== site).sort((u, v) => distXZ(u.pos[0], u.pos[2], c[0], c[1]) - distXZ(v.pos[0], v.pos[2], c[0], c[1])).slice(0, 2);
+      for (const q of cands) { q.bot.role = site; q.bot.hold = pick(CT_HOLDS[site]); q.bot.holdLock = now + 30; }
+    }
+    ack();
+  } else if (id === 'hold') {
+    if (l.team === 'T') game.tPlan.holdUntil = now + 20;
+    for (const q of mates) q.bot.holdLock = now + 25;
+    ack();
+  } else if (id === 'follow') {
+    const near = mates.slice().sort((u, v) => distXZ(u.pos[0], u.pos[2], l.pos[0], l.pos[2]) - distXZ(v.pos[0], v.pos[2], l.pos[0], l.pos[2])).slice(0, 2);
+    for (const q of near) { q.bot.follow = l; q.bot.followUntil = now + 30; }
+    ack(near[0]);
+  } else if (id === 'rush') {
+    if (l.team === 'T') { game.tPlan.rush = true; game.tPlan.holdUntil = 0; }
+    else if (game.retake) game.retake.rush = true;
+    else if (bomb.state === 'planted') game.retake = { site: bomb.site, start: now, goAt: 0, rush: true };
+    ack();
+  } else if (id === 'drop') {
+    const rifle = l.team === 'T' ? 'ak47' : 'm4a4';
+    const donor = mates.filter((q) => q.money >= WEAPONS[rifle].price + 200).sort((u, v) => v.money - u.money)[0];
+    if (l.inv.primary) ack();
+    else if (!donor || game.buyTime <= 0) radioSay(donor || pick(mates), 'noMoney', {});
+    else if (dropGiftWeapon(donor, l, rifle)) radioSay(donor, 'drop', { weapon: WEAPONS[rifle].name });
+  }
 }
 function botOnDamaged(p, attacker) {
   const b = p.bot;
@@ -5500,7 +6888,11 @@ function botDummy(p, dt) {
     const a = anglesTo(e[0], e[1], e[2], l.pos[0], l.pos[1] + 1.4, l.pos[2]);
     turnToward(p, a.yaw, a.pitch, dt, 4);
   }
-  if (b.dummyMove) inp.side = Math.sin(game.time * 1.3 + b.dummyPhase) > 0 ? 1 : -1;
+  if (b.dummyMove === 'track') {
+    if (game.time > b.dummySwitch) { b.dummyDir = -b.dummyDir; b.dummySwitch = game.time + rand(0.3, 1.1); }
+    inp.side = b.dummyDir;
+    if (Math.random() < 0.004) inp.jump = true;
+  } else if (b.dummyMove) inp.side = Math.sin(game.time * 1.3 + b.dummyPhase) > 0 ? 1 : -1;
   inp.crouch = !!b.dummyCrouch;
 }
 function escapeFire(p, f) {
@@ -5516,7 +6908,7 @@ function botUpdate(p, dt) {
   inp.fwd = 0; inp.side = 0; inp.jump = false; inp.walk = false; inp.fire = false; inp.alt = false; inp.reload = false; inp.use = false; inp.crouch = false;
   if (game.mode === 'practice') { botDummy(p, dt); return; }
   if (game.phase === 'freeze') {
-    if (!b.bought && FREEZE_TIME - game.phaseTimer >= b.buyAt) { b.bought = true; botBuy(p); }
+    if (!game.teamBought[p.team] && FREEZE_TIME - game.phaseTimer >= 0.8) { game.teamBought[p.team] = true; teamBuy(p.team); }
     return;
   }
   if (now >= b.thinkAt) { b.thinkAt = now + 0.09 + Math.random() * 0.05; botThink(p); }
@@ -5526,7 +6918,10 @@ function botUpdate(p, dt) {
     return;
   }
   if (b.target && b.target.alive) botCombat(p, dt);
-  else { b.target = null; botNavigate(p, dt); }
+  else {
+    b.target = null;
+    if (b.nadeTask && b.nadeTask.phase === 'throw') botThrow(p, dt); else botNavigate(p, dt);
+  }
   const fire = game.fires.length ? inFire(p) : null;
   if (fire) { escapeFire(p, fire); inp.use = false; }
 }
@@ -5648,6 +7043,12 @@ function botNavigate(p, dt) {
   } else if (moving) {
     ly = b.moveYaw; lp = 0;
   }
+  const fw = game.flashWarn;
+  if (fw && fw.team === p.team && now < fw.until && distXZ(p.pos[0], p.pos[2], fw.pos[0], fw.pos[2]) < 30) {
+    const a = anglesTo(eye[0], eye[1], eye[2], fw.pos[0], fw.pos[1], fw.pos[2]);
+    turnToward(p, a.yaw + Math.PI, 0.1, dt, 12);
+    return;
+  }
   if (ly !== null) turnToward(p, ly, lp, dt, d.turn * 0.55);
 }
 
@@ -5660,7 +7061,7 @@ function cacheUi() {
     app: $('app'), canvas: $('gl'), hud: $('hud'), radar: $('radar'), money: $('money'), moneyDelta: $('money-delta'), buyHint: $('buy-hint'), fps: $('fps'),
     scoreL: $('tb-score-l'), scoreR: $('tb-score-r'), pipsL: $('tb-pips-l'), pipsR: $('tb-pips-r'), timer: $('tb-timer'), round: $('tb-round'),
     killfeed: $('killfeed'), xhair: $('xhair'), targetName: $('target-name'), topbar: $('topbar'), place: $('place'), radio: $('radio'), plates: $('plates'), report: $('report'),
-    practice: $('practice'), psKills: $('ps-kills'), psAcc: $('ps-acc'), psHs: $('ps-hs'), psShots: $('ps-shots'), flashImg: $('flash-img'), buyBonus: $('buy-bonus'), xhPreview: $('xh-preview'),
+    practice: $('practice'), psV: [$('ps-v1'), $('ps-v2'), $('ps-v3'), $('ps-v4')], psL: [$('ps-l1'), $('ps-l2'), $('ps-l3'), $('ps-l4')], drills: $('drills'), drillList: $('drill-list'), moneyRow: $('money-row'), flashImg: $('flash-img'), hitmark: $('hitmark'), radioMenu: $('radio-menu'), buyBonus: $('buy-bonus'), xhPreview: $('xh-preview'),
     centerMsg: $('center-msg'), cmBig: $('cm-big'), cmSmall: $('cm-small'), hint: $('hint'), progress: $('progress'), progressLabel: $('progress-label'), progressFill: $('progress-fill'),
     hp: $('hp'), hpWrap: $('hp-wrap'), armor: $('armor'), helmet: $('helmet-icon'), bombIcon: $('bomb-icon'), kitIcon: $('kit-icon'),
     slots: $('slots'), weaponName: $('weapon-name'), ammoClip: $('ammo-clip'), ammoReserve: $('ammo-reserve'),
@@ -5710,6 +7111,27 @@ function weaponLabel(id) {
   if (id === 'c4') return 'C4';
   if (id === 'world') return 'Queda';
   return id || '?';
+}
+function onLocalHit(head, helmet, wall, kill) {
+  if (settings.hitSound) sfxHitConfirm(head, helmet, kill);
+  if (settings.hitmarker) {
+    hud.hitUntil = game.time + (kill ? 0.45 : 0.24);
+    hud.hitKind = kill ? 'kill' : (wall ? 'wall' : (head ? 'head' : ''));
+  }
+}
+function openRadioMenu() {
+  const l = game.local;
+  if (!l || game.mode !== 'match') return;
+  const cmds = RADIO_COMMANDS[l.team];
+  ui.radioMenu.innerHTML = '<div class="rm-title">Rádio · comandos</div>' + cmds.map((c, i) => '<div class="rm-item"><b>' + (i + 1) + '</b>' + escapeHtml(c.label) + '</div>').join('') + '<div class="rm-foot">Z ou Esc fecha</div>';
+  ui.radioMenu.hidden = false;
+  hud.radioMenu = true;
+  hud.radioMenuUntil = game.time + 5;
+  sfxUi('radio');
+}
+function closeRadioMenu() {
+  hud.radioMenu = false;
+  ui.radioMenu.hidden = true;
 }
 function radioSay(speaker, kind, vars) {
   const l = game.local;
@@ -5935,6 +7357,7 @@ function renderBoardHtml() {
       let tags = '';
       if (p.alive && p.inv.bomb && showMoney) tags += '<span class="tag c4">C4</span>';
       if (p.alive && p.kit && showMoney) tags += '<span class="tag kit">KIT</span>';
+      if (p.isBot && showMoney && p.bot && game.mode === 'match') tags += '<span class="tag role">' + escapeHtml(PERSONA_LABEL[p.bot.persona] || '') + '</span>';
       html += '<tr class="' + (p === game.local ? 'me ' : '') + (p.alive || game.state !== 'playing' ? '' : 'dead') + '"><td>' + escapeHtml(p.name) + tags + '</td><td>' + (showMoney ? '$' + p.money : '') + '</td><td>' + p.kills + '</td><td>' + p.assists + '</td><td>' + p.deaths + '</td><td>' + Math.round(p.totalDamage / Math.max(1, p.roundsPlayed)) + '</td><td>' + (p.kills ? Math.round(p.hsKills / p.kills * 100) + '%' : '—') + '</td><td>' + (p.mvps ? '★ ' + p.mvps : '') + '</td><td>' + p.score + '</td></tr>';
     }
     html += '</tbody></table></div>';
@@ -5943,7 +7366,7 @@ function renderBoardHtml() {
 }
 function renderBoard() {
   ui.boardBody.innerHTML = renderBoardHtml();
-  ui.boardRound.textContent = 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2 + ' · vence quem fizer ' + (game.halfRounds + 1);
+  ui.boardRound.textContent = game.mode === 'dm' ? 'Mata-mata · vence o primeiro time a ' + DM_KILL_TARGET + ' abates' : 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2 + ' · vence quem fizer ' + (game.halfRounds + 1);
 }
 function buildRadarImage() {
   const S = 4;
@@ -6097,7 +7520,8 @@ function refreshBuyMenu() {
   setText(ui.buyMoney, 'buyMoney', '$' + p.money);
   const practice = game.mode === 'practice';
   setText(ui.buyTime, 'buyTime', practice ? 'Treino: dinheiro infinito' : (canBuy(p) ? 'Tempo para comprar: ' + Math.ceil(game.buyTime) + ' s' : 'Compra encerrada'));
-  setText(ui.buyBonus, 'buyBonus', practice ? '' : 'Bônus de derrota do time: $' + LOSS_BONUS[Math.min(game.lossStreak[squadOf(p.team)], LOSS_BONUS.length - 1)]);
+  const plan = game.econ && game.econ[p.team];
+  setText(ui.buyBonus, 'buyBonus', practice ? '' : 'Bônus de derrota do time: $' + LOSS_BONUS[Math.min(game.lossStreak[squadOf(p.team)], LOSS_BONUS.length - 1)] + (plan ? ' · Plano dos bots: ' + ECON_LABEL[plan] : ''));
   const buyable = canBuy(p);
   const counters = [];
   for (const btn of ui.buyGrid.querySelectorAll('.buy-item')) {
@@ -6149,13 +7573,8 @@ function updateHud(dt) {
   const practice = game.mode === 'practice';
   setHidden(ui.topbar, 'topbar', practice);
   setHidden(ui.practice, 'practiceH', !practice);
-  if (practice) {
-    const s = game.practice;
-    setText(ui.psKills, 'psK', String(s.kills));
-    setText(ui.psAcc, 'psA', (s.shots ? Math.round(Math.min(1, s.hits / s.shots) * 100) : 0) + '%');
-    setText(ui.psHs, 'psH', (s.hits ? Math.round(s.heads / s.hits * 100) : 0) + '%');
-    setText(ui.psShots, 'psS', String(s.shots));
-  }
+  if (practice) updatePracticeHud();
+  setHidden(ui.moneyRow, 'moneyRow', game.mode === 'dm');
   const ctSquad = squadOf('CT');
   setText(ui.scoreL, 'sL', String(game.score[ctSquad]));
   setText(ui.scoreR, 'sR', String(game.score[1 - ctSquad]));
@@ -6166,7 +7585,7 @@ function updateHud(dt) {
   else timer = fmtTime(game.roundTime);
   setText(ui.timer, 'timer', timer);
   if (hud.cache.bombMode !== planted) { hud.cache.bombMode = planted; ui.timer.classList.toggle('bomb', planted); }
-  setText(ui.round, 'round', game.phase === 'freeze' ? 'Compra · rodada ' + game.roundNum : 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2);
+  setText(ui.round, 'round', game.mode === 'dm' ? 'Mata-mata · até ' + DM_KILL_TARGET : (game.phase === 'freeze' ? 'Compra · rodada ' + game.roundNum : 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2));
   const pk = game.players.map((p) => p.team + (p.alive ? 1 : 0)).join('');
   if (hud.pipsKey !== pk) {
     hud.pipsKey = pk;
@@ -6178,7 +7597,7 @@ function updateHud(dt) {
   if (hud.deltaTimer > 0) { hud.deltaTimer -= dt; if (hud.deltaTimer <= 0) ui.moneyDelta.classList.remove('show'); }
   const buyable = canBuy(l);
   setHidden(ui.buyHint, 'buyHint', !buyable);
-  if (buyable) setText(ui.buyHint, 'buyHintT', practice ? 'B · loja do treino' : 'B · loja · ' + Math.ceil(game.buyTime) + ' s');
+  if (buyable) setText(ui.buyHint, 'buyHintT', practice ? 'B · loja do treino' : (game.mode === 'dm' ? 'B · loja grátis · ' + Math.ceil(DM_BUY_WINDOW - (now - l.spawnAt)) + ' s' : 'B · loja · ' + Math.ceil(game.buyTime) + ' s'));
   setText(ui.place, 'place', subj.alive ? placeAt(subj.pos[0], subj.pos[2]) : '');
   setText(ui.hp, 'hp', String(Math.max(0, subj.hp)));
   const low = subj.alive && subj.hp <= 25;
@@ -6208,9 +7627,16 @@ function updateHud(dt) {
   setOpacity(ui.flash, 'flash', clamp(flashLeft / 1.3, 0, 1));
   setOpacity(ui.flashImg, 'flashImg', subj === l ? clamp(flashLeft / 2.4, 0, 0.8) : 0);
   updatePlates(l, subj);
+  const hm = hud.hitUntil > now && l.alive;
+  setHidden(ui.hitmark, 'hitm', !hm);
+  if (hm) {
+    if (ui.hitmark.className !== hud.hitKind) ui.hitmark.className = hud.hitKind;
+    setOpacity(ui.hitmark, 'hitmA', clamp((hud.hitUntil - now) / 0.12, 0, 1));
+  }
   if (hud.reportDirty) renderReport();
   setHidden(ui.report, 'report', !(hud.report && !l.alive && now < hud.reportUntil));
   while (hud.radio.length && hud.radio[0].until < now) hud.radio.shift().el.remove();
+  if (hud.radioMenu && now > hud.radioMenuUntil) closeRadioMenu();
   hud.hurt = Math.max(0, hud.hurt - dt * 1.3);
   setOpacity(ui.hurt, 'hurt', l.alive ? Math.max(hud.hurt * 0.8, l.hp <= 25 ? 0.25 : 0) : 0);
   updateDamageDirs();
@@ -6257,13 +7683,53 @@ function updateHud(dt) {
   if (settings.showFps) setText(ui.fps, 'fps', (hud.fps || 0) + ' FPS');
   if (hud.quitArmed && performance.now() > hud.quitArmed) { hud.quitArmed = 0; ui.btnQuit.textContent = 'Sair para o menu'; }
 }
+function updatePracticeHud() {
+  const pr = game.practice, d = DRILLS[pr.drill], now = game.time;
+  const acc = (pr.shots ? Math.round(Math.min(1, pr.hits / pr.shots) * 100) : 0) + '%';
+  const react = pr.reactN ? Math.round(pr.reactSum / pr.reactN * 1000) + ' ms' : '—';
+  let cells;
+  if (pr.drill === 'free') cells = [['Abates', String(pr.kills)], ['Precisão', acc], ['Na cabeça', (pr.hits ? Math.round(pr.heads / pr.hits * 100) : 0) + '%'], ['Tiros', String(pr.shots)]];
+  else if (pr.drill === 'react') cells = [['Alvos', pr.count + '/' + d.count], ['Reação média', react], ['Erros', String(pr.misses)], ['Precisão', acc]];
+  else {
+    const left = now < pr.startAt ? d.time : Math.max(0, pr.startAt + d.time - now);
+    cells = [['Tempo', fmtTime(left)], ['Abates', String(pr.kills)], ['Precisão', acc], [pr.drill === 'track' ? 'Na cabeça' : 'Reação média', pr.drill === 'track' ? (pr.hits ? Math.round(pr.heads / pr.hits * 100) : 0) + '%' : react]];
+  }
+  for (let i = 0; i < 4; i++) { setText(ui.psL[i], 'psL' + i, cells[i][0]); setText(ui.psV[i], 'psV' + i, cells[i][1]); }
+}
+function openDrills() {
+  const rec = loadRecords();
+  ui.drillList.innerHTML = Object.keys(DRILLS).map((k) => {
+    const d = DRILLS[k], r = rec[k];
+    const recText = !d.score ? '' : (r ? 'Recorde: ' + (d.score === 'react' ? r.best + ' ms' : r.best + ' abates') : 'Sem recorde');
+    return '<button type="button" data-drill="' + k + '"><span class="dl-name">' + escapeHtml(d.name) + '</span><span class="dl-rec">' + escapeHtml(recText) + '</span><span class="dl-desc">' + escapeHtml(d.desc) + '</span></button>';
+  }).join('');
+  ui.drills.hidden = false;
+}
+function showDrillResult(pr, score, oldBest, better) {
+  const d = DRILLS[pr.drill];
+  game.state = 'ended';
+  closeBuyMenu(false);
+  ui.board.hidden = true;
+  ui.hud.hidden = true;
+  const acc = pr.shots ? Math.round(Math.min(1, pr.hits / pr.shots) * 100) : 0;
+  const react = pr.reactN ? Math.round(pr.reactSum / pr.reactN * 1000) + ' ms' : '—';
+  const scoreText = d.score === 'react' ? score + ' ms de média' : score + ' abates';
+  ui.meResult.textContent = better ? 'Novo recorde!' : 'Treino concluído';
+  ui.meResult.style.color = better ? 'var(--money)' : 'var(--text)';
+  ui.meScore.textContent = d.name + ' · ' + scoreText + (oldBest !== null && !better ? ' · recorde: ' + oldBest + (d.score === 'react' ? ' ms' : '') : '');
+  const cell = (v, l) => '<div><b>' + escapeHtml(String(v)) + '</b><span>' + l + '</span></div>';
+  ui.meTable.innerHTML = '<div class="me-stats">' + cell(pr.kills, 'Abates') + cell(acc + '%', 'Precisão') + cell(pr.hits ? Math.round(pr.heads / pr.hits * 100) + '%' : '0%', 'Na cabeça') + cell(react, 'Reação média') + cell(pr.misses, 'Alvos perdidos') + cell(pr.shots, 'Tiros') + '</div>';
+  ui.matchend.hidden = false;
+  if (document.pointerLockElement) document.exitPointerLock();
+  sfxRoundEnd(better);
+}
 function endMatch() {
   game.state = 'ended';
   game.matchOver = true;
   const my = game.score[0], their = game.score[1];
   ui.meResult.textContent = my > their ? 'Vitória' : (my < their ? 'Derrota' : 'Empate');
   ui.meResult.style.color = my > their ? 'var(--money)' : (my < their ? 'var(--danger)' : 'var(--text)');
-  ui.meScore.textContent = my + ' × ' + their + ' · ' + game.roundNum + ' rodadas jogadas';
+  ui.meScore.textContent = my + ' × ' + their + (game.mode === 'dm' ? ' abates · mata-mata em equipe' : ' · ' + game.roundNum + ' rodadas jogadas');
   ui.meTable.innerHTML = renderBoardHtml();
   closeBuyMenu(false);
   ui.board.hidden = true;
@@ -6302,6 +7768,7 @@ function pauseGame() {
   if (game.state !== 'playing' || game.paused) return;
   game.paused = true;
   hud.pausedAt = performance.now();
+  closeRadioMenu();
   input.keys.clear();
   input.mouseL = false; input.mouseR = false;
   closeBuyMenu(false);
@@ -6325,7 +7792,7 @@ function enterFullscreen() {
     const r = el.requestFullscreen({ navigationUI: 'hide' });
     if (r && typeof r.then === 'function') {
       r.then(() => {
-        if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyG', 'KeyB', 'KeyC', 'Tab', 'Space', 'ControlLeft', 'ControlRight', 'KeyF', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5']).catch(() => {});
+        if (navigator.keyboard && navigator.keyboard.lock) navigator.keyboard.lock(['KeyW', 'KeyA', 'KeyS', 'KeyD', 'KeyQ', 'KeyE', 'KeyR', 'KeyG', 'KeyB', 'KeyC', 'Tab', 'Space', 'ControlLeft', 'ControlRight', 'KeyF', 'KeyZ', 'Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5']).catch(() => {});
       }).catch(() => {});
     }
   } catch (e) { /* tela cheia indisponível */ }
@@ -6333,7 +7800,7 @@ function enterFullscreen() {
 function exitFullscreen() {
   if (document.fullscreenElement && document.exitFullscreen) { try { document.exitFullscreen().catch(() => {}); } catch (e) { /* ignorar */ } }
 }
-function onPlay(mode) {
+function onPlay(mode, drill) {
   initAudio();
   if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
   ui.menu.hidden = true;
@@ -6342,7 +7809,8 @@ function onPlay(mode) {
   ui.options.hidden = true;
   ui.controls.hidden = true;
   ui.hud.hidden = false;
-  startMatch(mode === 'practice' ? 'practice' : 'match');
+  ui.drills.hidden = true;
+  startMatch(mode, drill);
   if (settings.fullscreen) enterFullscreen();
   requestLock();
 }
@@ -6359,8 +7827,10 @@ function toMenu() {
   hud.report = null;
   for (let i = decals.length - 1; i >= 0; i--) if (!decals[i].perm) decals.splice(i, 1);
   closeBuyMenu(false);
+  closeRadioMenu();
   ui.hud.hidden = true; ui.pause.hidden = true; ui.matchend.hidden = true; ui.board.hidden = true; ui.options.hidden = true; ui.controls.hidden = true;
   ui.menu.hidden = false;
+  ui.drills.hidden = true;
   if (document.pointerLockElement) document.exitPointerLock();
   exitFullscreen();
 }
@@ -6391,6 +7861,16 @@ function onKeyDown(e) {
   const code = e.code;
   const tag = e.target && e.target.tagName;
   if ((tag === 'INPUT' || tag === 'SELECT') && code !== 'Escape') return;
+  if (hud.radioMenu && game.state === 'playing' && !game.paused) {
+    if (code.length === 6 && code.indexOf('Digit') === 0) {
+      const cmd = RADIO_COMMANDS[game.local.team][parseInt(code.charAt(5), 10) - 1];
+      closeRadioMenu();
+      if (cmd) issueRadioCommand(cmd.id);
+      e.preventDefault();
+      return;
+    }
+    if (code === 'KeyZ' || code === 'Escape') { closeRadioMenu(); e.preventDefault(); return; }
+  }
   if (game.state === 'playing' && !game.paused && (code === 'Tab' || code === 'Space' || code === 'Enter' || code === 'Slash' || code === 'Quote')) e.preventDefault();
   if (!e.repeat) input.pressed.add(code);
   input.keys.add(code);
@@ -6405,6 +7885,8 @@ function onKeyDown(e) {
     } else if (hud.buyOpen && code === 'Backspace') {
       hud.buyCol = -1;
       markBuyCol();
+    } else if (code === 'KeyZ' && !e.repeat && !game.paused && !hud.buyOpen) {
+      openRadioMenu();
     } else if (code === 'KeyB' && !e.repeat && !game.paused) {
       if (hud.buyOpen) closeBuyMenu(true); else openBuyMenu();
     } else if (code === 'Tab' && !game.paused) {
@@ -6414,6 +7896,7 @@ function onKeyDown(e) {
   } else if (code === 'Escape') {
     if (!ui.options.hidden) closePanel('options');
     else if (!ui.controls.hidden) closePanel('controls');
+    else if (!ui.drills.hidden) ui.drills.hidden = true;
   }
 }
 function onKeyUp(e) {
@@ -6654,12 +8137,18 @@ function onSettingInput(e) {
 }
 function settingChanged(key) {
   saveSettings();
+  if (key === 'skin' && game.local) {
+    const l = game.local;
+    l.skin = settings.skin;
+    for (const w of [l.inv.primary, l.inv.secondary]) if (w) w.skin = settings.skin;
+  }
   if (key === 'volume') setVolume(settings.volume);
   if (R.ok && key === 'shadows') setupShadowMaps();
   if (R.ok && key === 'textures') bakeMaterials();
   applySettingsToUi();
 }
 function buildOptionsUi() {
+  document.getElementById('opt-skin').innerHTML = Object.keys(WEAPON_SKINS).map((k) => '<option value="' + k + '">' + escapeHtml(WEAPON_SKINS[k].name) + '</option>').join('');
   const sel = document.getElementById('opt-chstyle');
   sel.innerHTML = Object.keys(CROSSHAIR_STYLES).map((k) => '<option value="' + k + '">' + escapeHtml(CROSSHAIR_STYLES[k]) + '</option>').join('');
   const sw = document.getElementById('xh-swatches');
@@ -6677,7 +8166,10 @@ function buildOptionsUi() {
 function bindUi() {
   const on = (id, ev, fn) => document.getElementById(id).addEventListener(ev, fn);
   on('btn-play', 'click', () => onPlay('match'));
-  on('btn-practice', 'click', () => onPlay('practice'));
+  on('btn-practice', 'click', openDrills);
+  on('btn-dm', 'click', () => onPlay('dm'));
+  on('btn-drill-back', 'click', () => { ui.drills.hidden = true; });
+  ui.drillList.addEventListener('click', (e) => { const b = e.target.closest('button[data-drill]'); if (b) onPlay('practice', b.dataset.drill); });
   on('btn-options', 'click', () => openPanel('options'));
   on('btn-controls', 'click', () => openPanel('controls'));
   on('btn-resume', 'click', resumeGame);
@@ -6686,7 +8178,7 @@ function bindUi() {
   on('btn-quit', 'click', onQuit);
   on('btn-opt-back', 'click', () => closePanel('options'));
   on('btn-ctrl-back', 'click', () => closePanel('controls'));
-  on('btn-again', 'click', () => onPlay(game.mode));
+  on('btn-again', 'click', () => onPlay(game.mode, game.practice && game.practice.drill));
   on('btn-menu', 'click', toMenu);
   ui.buyClose.addEventListener('click', () => closeBuyMenu(true));
   for (const [segId, key] of [['seg-team', 'team'], ['seg-diff', 'difficulty'], ['seg-len', 'matchLength']]) {
@@ -6770,10 +8262,11 @@ function frame(ts) {
 function exposeDebug() {
   window.__SZ = {
     version: GAME_VERSION, game, R, input, hud, settings: () => settings, world, nav,
-    play: (mode) => onPlay(mode),
+    play: (mode, drill) => onPlay(mode, drill),
     set(key, value) { settings[key] = value; settingChanged(key); },
     crosshairKey: () => hud.chKey,
     vmPose: VM_POSE,
+    issueRadioCommand, solveThrow, simulateThrow, floorAt, lineups: NADE_LINEUPS,
     simulate(seconds, step) {
       const h = step || 1 / 60;
       let t = 0;
