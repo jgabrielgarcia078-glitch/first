@@ -187,8 +187,12 @@ button { font: inherit; color: inherit; }
 .mk.enemy { width: 12px; height: 12px; background: #e8504f; transform-origin: center; border: 1px solid #000; }
 .mk.revive { color: #6fe06f; font-size: 22px; }
 .mk.zone { color: #fff; }
-.mk.ping { color: var(--pc); font-size: 20px; text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 0 10px var(--pc); }
-.mk.ping small { color: #f2f2f2; font-size: 11px; }
+#markers { --ps: 1; --po: 0.9; }
+.mk.ping { color: var(--pc); font-size: calc(20px * var(--ps)); opacity: var(--po); text-shadow: 0 0 4px rgba(0, 0, 0, 0.9); }
+.mk.ping small { color: #f2f2f2; font-size: calc(11px * var(--ps)); }
+#markers.pc-custom .mk.ping { --pc: var(--pcc); }
+.mk.enemy { opacity: var(--po); }
+.opt-sub { margin: 14px 0 4px; font-family: var(--display); font-size: 15px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent); }
 .br-board { display: flex; flex-direction: column; gap: 2px; min-width: min(640px, 92vw); }
 .br-row { display: grid; grid-template-columns: 1fr 70px 70px 80px; gap: 8px; padding: 6px 10px; background: rgba(255, 255, 255, 0.04); align-items: center; font-family: var(--display); font-size: 16px; }
 .br-row small { display: block; font-family: var(--body, sans-serif); font-size: 11px; color: var(--muted); }
@@ -196,8 +200,6 @@ button { font: inherit; color: inherit; }
 .br-row.mine { background: rgba(90, 170, 255, 0.18); border-left: 3px solid #5ad1ff; }
 .br-row.out { opacity: 0.55; }
 .mk.p-enemy { --pc: #ff4a3d; } .mk.p-go { --pc: #5ad1ff; } .mk.p-hold { --pc: #7dff8a; } .mk.p-watch { --pc: #ffd84a; } .mk.p-danger { --pc: #ff9a3d; } .mk.p-regroup { --pc: #c49bff; } .mk.p-loot { --pc: #ffe9a8; }
-.mk.ping.fresh { animation: pingpop 0.5s ease-out; }
-@keyframes pingpop { from { font-size: 34px; } to { font-size: 20px; } }
 #pingwheel { position: absolute; left: 50%; top: 50%; width: 340px; height: 340px; margin: -170px 0 0 -170px; border-radius: 50%; background: radial-gradient(circle, rgba(10, 12, 16, 0.25) 22%, rgba(10, 12, 16, 0.72) 23%, rgba(10, 12, 16, 0.72) 70%, rgba(10, 12, 16, 0) 71%); pointer-events: none; z-index: 6; }
 #pingwheel .pw-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-family: var(--display); font-weight: 800; color: #ddd; font-size: 14px; text-transform: uppercase; letter-spacing: 0.08em; }
 #pingwheel .pw-opt { position: absolute; width: 96px; margin-left: -48px; margin-top: -22px; text-align: center; font-family: var(--display); font-weight: 700; font-size: 13px; color: #cfd3d8; line-height: 1.1; }
@@ -755,6 +757,17 @@ button { font: inherit; color: inherit; }
         <div class="opt-row"><label for="opt-hitmark">Marcador de acerto na mira</label><input id="opt-hitmark" type="checkbox" data-setting="hitmarker"><output></output></div>
         <div class="opt-row"><label for="opt-skin">Pintura das suas armas</label><select id="opt-skin" data-setting="skin"></select><output></output></div>
         <p class="opt-note">O marcador de acerto não existe no CS (vem desligado): mostra um X na mira quando você acerta — laranja através de parede, vermelho no abate.</p>
+        <h3 class="opt-sub">Marcações (T / botão do meio)</h3>
+        <div class="opt-row"><label for="opt-pshow">Mostrar marcações na tela</label><input id="opt-pshow" type="checkbox" data-setting="pingShow"><output></output></div>
+        <div class="opt-row"><label for="opt-pbots">Mostrar as marcações dos bots</label><input id="opt-pbots" type="checkbox" data-setting="pingBots"><output></output></div>
+        <div class="opt-row"><label for="opt-ptext">Texto junto da marcação</label><select id="opt-ptext" data-setting="pingText"><option value="full">Completo (quem, o quê, distância)</option><option value="short">Só a distância</option><option value="none">Nenhum (só o ponto)</option></select><output></output></div>
+        <div class="opt-row"><label for="opt-psize">Tamanho</label><input id="opt-psize" type="range" min="0.4" max="1.5" step="0.05" data-setting="pingSize"><output data-out="pingSize" data-fmt="x"></output></div>
+        <div class="opt-row"><label for="opt-popa">Opacidade</label><input id="opt-popa" type="range" min="0.15" max="1" step="0.05" data-setting="pingOpacity"><output data-out="pingOpacity" data-fmt="pct"></output></div>
+        <div class="opt-row"><label for="opt-pcmode">Cores</label><select id="opt-pcmode" data-setting="pingColorMode"><option value="type">Uma cor por tipo</option><option value="custom">Cor única (escolha ao lado)</option></select><output></output></div>
+        <div class="opt-row"><label for="opt-pcolor">Cor única</label><input id="opt-pcolor" type="color" data-setting="pingColor"><output></output></div>
+        <div class="opt-row"><label for="opt-pradar">Marcações no radar</label><input id="opt-pradar" type="checkbox" data-setting="pingRadar"><output></output></div>
+        <div class="opt-row"><label for="opt-pchat">Avisos das marcações no canto da tela</label><input id="opt-pchat" type="checkbox" data-setting="pingChat"><output></output></div>
+        <p class="opt-note">Desligar só esconde as marcações para você: elas continuam funcionando e os bots continuam entendendo e reagindo.</p>
       </section>
 
       <section class="tab-page" data-page="audio" role="tabpanel" hidden>
@@ -1058,6 +1071,7 @@ const DEFAULT_SETTINGS = {
   chStyle: 'classic', chColor: '#5cf06a', chAlpha: 1, chSize: 4, chThick: 1, chGap: 1.5,
   chOutline: true, chOutlineThick: 1, chDot: false, chDotSize: 2, chDynamic: false, chFollowRecoil: false,
   friendlyFire: false, nameplates: true, damageReport: true, voice: true, volume: 0.7, fullscreen: true, showFps: false,
+  pingShow: true, pingBots: true, pingText: 'full', pingSize: 1, pingOpacity: 0.9, pingColorMode: 'type', pingColor: '#ffd84a', pingRadar: true, pingChat: true,
   hitmarker: false, hitSound: true, hrtf: true, bloom: true, skin: 'none',
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna',
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
@@ -8566,6 +8580,11 @@ function loadSettings() {
   if (['2', '3'].indexOf(out.arenaSize) < 0) out.arenaSize = '3';
   if (['cs', 'war', 'apex'].indexOf(out.menuTab) < 0) out.menuTab = 'cs';
   if (BR_SQUAD_OPTS.indexOf(out.brSquads) < 0) out.brSquads = '10';
+  if (['full', 'short', 'none'].indexOf(out.pingText) < 0) out.pingText = 'full';
+  if (['type', 'custom'].indexOf(out.pingColorMode) < 0) out.pingColorMode = 'type';
+  if (!/^#[0-9a-f]{6}$/i.test(out.pingColor)) out.pingColor = DEFAULT_SETTINGS.pingColor;
+  out.pingSize = clamp(Number(out.pingSize) || 1, 0.4, 1.5);
+  out.pingOpacity = clamp(Number(out.pingOpacity) || 0.9, 0.15, 1);
   out.classIdx = clamp(Math.round(out.classIdx) || 0, 0, DEFAULT_CLASSES.length - 1);
   if (!MODES[out.cgMode] || out.cgMode === 'practice') out.cgMode = 'match';
   if (!MAPS[out.map]) out.map = MAP_ORDER[0];
@@ -18842,6 +18861,8 @@ function suppressAlong(shooter, eye, end) {
 //     e mudam a tática (flanquear, segurar posição, recuar, trocar de bomb, reagrupar, ir até o ponto)
 // =====================================================================
 function pingsReset() { game.pings = []; game.botPingAt = {}; }
+// marcações dos bots podem ser escondidas nas opções (continuam valendo para os bots)
+function pingVisible(pg) { return settings.pingBots || !pg.by || !pg.by.isBot; }
 function pingLabel(pg) {
   const T = PING_TYPES[pg.type];
   if (pg.type === 'enemy') return pg.n > 1 ? (pg.n >= 3 ? '3+ inimigos' : pg.n + ' inimigos') : (pg.target ? 'Inimigo' : 'Inimigo aqui');
@@ -18856,9 +18877,9 @@ function placePing(p, type, pos, n, target) {
   const pg = { type, x: pos[0], y: pos[1], z: pos[2], n: n || 1, target: target || null, by: p, team: p.team, t: now, until: now + T.life };
   game.pings.push(pg);
   const place = placeAt(pos[0], pos[2]);
-  if (game.local && p.team === game.local.team) {
-    radioSay(p, 'comm', { text: T.icon + ' ' + pingLabel(pg) + (place ? ' · ' + place : '') });
-    sfxPing(type, p === game.local);
+  if (game.local && p.team === game.local.team && pingVisible(pg)) {
+    if (settings.pingChat) radioSay(p, 'comm', { text: T.icon + ' ' + pingLabel(pg) + (place ? ' · ' + place : '') });
+    if (settings.pingShow) sfxPing(type, p === game.local);
   }
   pingReact(pg);
   return pg;
@@ -19191,11 +19212,19 @@ function updateMarkers(l, subj) {
     const z = game.hpZone;
     if (z && z.pos && z.active) put(z.pos[0], z.pos[1] + 2.8, z.pos[2], 'zone' + (z.holder ? ' ' + TEAM_INFO[z.holder].cls : ''), '◆', Math.round(distXZ(sx, sz, z.pos[0], z.pos[2])) + ' m', true);
     for (const e of game.players) if (e.alive && e.team !== l.team && e.markedUntil > now && e.markedBy === l.team) put(e.pos[0], e.pos[1] + e.height + 0.45, e.pos[2], 'enemy', '', '', false);
-    if (game.pings) for (const pg of game.pings) {
-      if (pg.team !== l.team) continue;
-      const T = PING_TYPES[pg.type], fresh = now - pg.t < 0.5;
-      const sub = (pg.by && pg.by !== l ? pg.by.name + ' · ' : '') + pingLabel(pg) + ' · ' + Math.round(distXZ(sx, sz, pg.x, pg.z)) + ' m';
-      put(pg.x, pg.y + (pg.target ? pg.target.height + 0.9 : 1.2), pg.z, 'ping p-' + pg.type + (fresh ? ' fresh' : ''), T.icon, sub, true);
+    const pk = settings.pingSize + '|' + settings.pingOpacity + '|' + settings.pingColorMode + '|' + settings.pingColor;
+    if (hud.cache.pingStyle !== pk) {
+      hud.cache.pingStyle = pk;
+      ui.markers.style.setProperty('--ps', String(settings.pingSize));
+      ui.markers.style.setProperty('--po', String(settings.pingOpacity));
+      ui.markers.style.setProperty('--pcc', settings.pingColor);
+      ui.markers.classList.toggle('pc-custom', settings.pingColorMode === 'custom');
+    }
+    if (game.pings && settings.pingShow) for (const pg of game.pings) {
+      if (pg.team !== l.team || !pingVisible(pg)) continue;
+      const T = PING_TYPES[pg.type], dist = Math.round(distXZ(sx, sz, pg.x, pg.z)) + ' m';
+      const sub = settings.pingText === 'none' ? '' : (settings.pingText === 'short' ? dist : (pg.by && pg.by !== l ? pg.by.name + ' · ' : '') + pingLabel(pg) + ' · ' + dist);
+      put(pg.x, pg.y + (pg.target ? pg.target.height + 0.9 : 1.2), pg.z, 'ping p-' + pg.type, T.icon, sub, true);
     }
     if (modeDef().revive) for (const q of game.players) if (!q.alive && q.team === l.team && q.downUntil > now && q.rag && q !== l) put(q.rag.pos[0], q.rag.pos[1] + 0.9, q.rag.pos[2], 'revive', '✚', l.role === 'medic' ? q.name : '', false);
   }
@@ -19597,15 +19626,17 @@ function closePingWheel(p, apply) {
 }
 // radar: marcações do time
 function drawPingRadar(g, l, s) {
-  if (!game.pings || !l) return;
+  if (!game.pings || !l || !settings.pingRadar || !settings.pingShow) return;
   g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.globalAlpha = settings.pingOpacity;
   for (const pg of game.pings) {
-    if (pg.team !== l.team) continue;
+    if (pg.team !== l.team || !pingVisible(pg)) continue;
     const T = PING_TYPES[pg.type];
-    g.fillStyle = T.col; g.font = '800 ' + (5 * s).toFixed(1) + 'px Arial, sans-serif';
+    g.fillStyle = settings.pingColorMode === 'custom' ? settings.pingColor : T.col; g.font = '800 ' + (5 * s).toFixed(1) + 'px Arial, sans-serif';
     g.fillText(T.icon, pg.x, pg.z);
     if (pg.type === 'enemy' && pg.n > 1) { g.font = '800 ' + (3.2 * s).toFixed(1) + 'px Arial, sans-serif'; g.fillText(pg.n >= 3 ? '3+' : String(pg.n), pg.x + 3.6 * s, pg.z - 3.6 * s); }
   }
+  g.globalAlpha = 1;
 }
 // ---------------- Battle Royale: HUD, radar, placar e tela final ----------------
 function brAliveSquads() { const br = game.br; return br.ids.filter((id) => !br.squads[id].place).length; }
