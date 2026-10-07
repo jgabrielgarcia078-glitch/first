@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "auvp": {
+      "type": "http",
+      "url": "https://financas-api.auvp.com.br/mcp",
+      "headers": {
+        "x-api-key": "${AUVP_API_KEY}"
+      }
+    }
+  }
+}
