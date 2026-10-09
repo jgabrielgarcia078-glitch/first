@@ -937,7 +937,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.9.1';
+const GAME_VERSION = '1.9.2';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -968,7 +968,8 @@ const DOME_DOOR_W = 2.4; // vagão girado: tamanho dos quadradinhos do colisor
 const TRAIN_TANK_SLICES = [8, 20, 32, 45, 58, 70, 82]; // vagão-tanque: ângulos das fatias inscritas no cilindro
 const TRAIN_UNDER = 0.78; // vão embaixo do vagão (entre os truques): dá para ver e atirar por baixo, não para passar
 const STEP_SMOOTH_RATE = 14; // degraus: a câmera e o corpo alcançam a altura nova suavemente (1/s)
-const STEP_SMOOTH_MAX = 0.7;
+const STEP_SMOOTH_MAX = 0.6;
+const STEP_SMOOTH_UP = 0.2; // descendo degrau: a câmera fica no máximo isto acima (não parece voar)
 // maior degrau que os bots sobem andando, medido na borda entre duas células
 const NAV_EDGE_STEP = 0.5;
 // deslocamentos de lado tentados ao bater na pontinha de uma quina (escorrega em volta dela)
@@ -12127,7 +12128,7 @@ function addPlayerModel(p) {
   let c = p.crouchAmt;
   const base = PLAYER_MATRIX;
   m4Identity(base);
-  m4Translate(base, p.pos[0], p.pos[1] + (p.alive ? p.bodySmoothY || 0 : 0), p.pos[2]);
+  m4Translate(base, p.pos[0], p.pos[1], p.pos[2]);
   m4RotY(base, p.yaw);
   let dying = 0;
   if (!p.alive) {
@@ -13936,7 +13937,7 @@ function createPlayer(name, team, isBot, squad) {
     vm: { bobY: 0, swayX: 0, swayY: 0, swayYaw: 0, kick: 0, kickRot: 0, roll: 0, bobPhase: 0 },
     walkPhase: 0, stepDist: 0,
     kills: 0, deaths: 0, assists: 0, mvps: 0, score: 0, roundKills: 0, roundDamage: 0, hsKills: 0, totalDamage: 0, roundsPlayed: 0,
-    dmgFrom: {}, dmgGiven: {}, dmgTaken: {}, deathTime: -99, deathDir: 1, variant: Math.floor(Math.random() * 3), viewSmoothY: 0, bodySmoothY: 0,
+    dmgFrom: {}, dmgGiven: {}, dmgTaken: {}, deathTime: -99, deathDir: 1, variant: Math.floor(Math.random() * 3), viewSmoothY: 0,
     flashUntil: 0, flashDur: 0, tagUntil: 0, spottedUntil: 0,
     plantT: 0, plantBeepAt: 0, defuseT: 0,
     resetLoadout: true, bot: null, skin: isBot ? randomSkin() : settings.skin,
@@ -14087,10 +14088,9 @@ function updateCrouch(p, dt) {
 }
 function movePlayer(p, dt) {
   const inp = p.input;
-  // suavização dos degraus (câmera e corpo visto pelos outros) volta a zero com o tempo para todo mundo, não só para quem está sendo assistido
+  // suavização dos degraus na câmera volta a zero com o tempo para todo mundo, não só para quem está sendo assistido
   const sk = Math.exp(-dt * STEP_SMOOTH_RATE);
   p.viewSmoothY = clamp((p.viewSmoothY || 0) * sk, -STEP_SMOOTH_MAX, STEP_SMOOTH_MAX);
-  p.bodySmoothY = clamp((p.bodySmoothY || 0) * sk, -STEP_SMOOTH_MAX, STEP_SMOOTH_MAX);
   const maxSpeed = maxSpeedOf(p);
   const sy = Math.sin(p.yaw), cy = Math.cos(p.yaw);
   let wx = -sy * inp.fwd + cy * inp.side, wz = -cy * inp.fwd - sy * inp.side;
@@ -14146,12 +14146,14 @@ function movePlayer(p, dt) {
   }
   if (!p.onGround && wasGround && !p.jumped && p.vel[1] <= 0) {
     const y = p.pos[1];
-    if (moveAxis(p, 1, -STEP_HEIGHT)) { p.onGround = true; p.vel[1] = 0; p.viewSmoothY += y - p.pos[1]; p.bodySmoothY += y - p.pos[1]; } else p.pos[1] = y;
+    if (moveAxis(p, 1, -STEP_HEIGHT)) { p.onGround = true; p.vel[1] = 0; p.viewSmoothY += y - p.pos[1]; } else p.pos[1] = y;
   }
   if (world.hv) terrainGround(p, wasGround);
   if (!p.onGround && p.vel[1] <= 0) standOnHeads(p, wasGround);
   depenetrate(p);
-  if (p.onGround && p.pos[1] > beforeY + 0.05) { p.viewSmoothY -= p.pos[1] - beforeY; p.bodySmoothY -= p.pos[1] - beforeY; }
+  if (p.onGround && p.pos[1] > beforeY + 0.05) p.viewSmoothY -= p.pos[1] - beforeY;
+  // limite no fim do passo: a câmera nunca fica mais que STEP_SMOOTH_UP acima dos olhos de verdade (o corpo é sempre desenhado na posição real)
+  p.viewSmoothY = clamp(p.viewSmoothY, -STEP_SMOOTH_MAX, STEP_SMOOTH_UP);
 }
 // como spaceFree, mas com o corpo inteiro (sem a folga de 1 cm): usado para grudar no chão sem afundar num bloco vizinho
 function hullFree(x, y, z, h) {
