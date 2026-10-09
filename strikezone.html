@@ -937,7 +937,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.9.0';
+const GAME_VERSION = '1.9.1';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -960,8 +960,9 @@ const TERRAIN_BLOCK_DROP = 0.45;
 const TERRAIN_STEP_EXTRA = 0.2;
 const TRAIN_SUBCELL = 0.25;
 // decorações cujo colisor sai da própria malha desenhada (colunas de DECOR_COLLIDE_CELL): bala e visão param onde se vê algo
-const DECOR_MESH_COLLIDE = new Set(['rock', 'wreck', 'tanktrap', 'rubblepile', 'car', 'tank', 'stall', 'heliwreck', 'dropship', 'fountain', 'gun', 'pillar', 'column', 'pump', 'bin', 'tent', 'haybale', 'log', 'silo', 'mast', 'boat', 'crate', 'pipe', 'grave', 'beam', 'balcony', 'sign', 'ac', 'plant']);
+const DECOR_MESH_COLLIDE = new Set(['rock', 'wreck', 'tanktrap', 'car', 'tank', 'stall', 'heliwreck', 'dropship', 'fountain', 'gun', 'pillar', 'column', 'pump', 'bin', 'tent', 'haybale', 'log', 'silo', 'mast', 'boat', 'crate', 'pipe', 'grave', 'beam', 'balcony', 'sign', 'ac', 'plant']);
 const DECOR_COLLIDE_CELL = 0.25;
+const DECOR_MIN_BUMP = 0.25; // colunas da malha mais baixas que isto (acima do chão) não colidem
 const DOME_HEADROOM = 2.3; // cúpula no chão: altura livre da porta e de onde a casca deixa andar dentro
 const DOME_DOOR_W = 2.4; // vagão girado: tamanho dos quadradinhos do colisor
 const TRAIN_TANK_SLICES = [8, 20, 32, 45, 58, 70, 82]; // vagão-tanque: ângulos das fatias inscritas no cilindro
@@ -1297,6 +1298,14 @@ const BUY_MENU = [
 ];
 const CLASS_LABEL = { pistol: 'Pistola', smg: 'SMG', shotgun: 'Escopeta', rifle: 'Rifle', sniper: 'Rifle de precisão', lmg: 'Metralhadora', launcher: 'Lança-foguetes' };
 
+// áudio: vozes simultâneas, quantas com HRTF (caro), relógio parado por quanto tempo recria o contexto, corte de agudos do ar
+const AUDIO_MAX_VOICES = 40;
+const AUDIO_MAX_HRTF = 10;
+const AUDIO_STALL_SEC = 1.5;
+const AUDIO_AIR_CUT = 22000;
+const SHOT_TRANSIENT_HZ = 4800; // estalo inicial do tiro
+const SHOT_ECHO_DIST = 28; // a partir daqui o tiro ganha eco
+const STEP_CLICK_HZ = 3600; // clique do calcanhar no passo
 const SHOT_SOUNDS = {
   pistol: { crack: 2600, body: 2400, decay: 0.08, thump: 170, tail: 0.25, gain: 0.75, range: 80 },
   usp: { crack: 3200, body: 1500, decay: 0.045, thump: 0, tail: 0.08, gain: 0.3, range: 30 },
@@ -7721,7 +7730,7 @@ const MAPS = {
     loot: [[102.6, 158, 1.1], [107, 143.7, 1.1], [85.9, 126.1, 1.1], [121.9, 135.6, 1.1], [104.6, 134.2, 1.1], [121.5, 127.5, 1.1], [78.7, 159.7, 1.1], [94.3, 137.9, 1.1], [99.4, 133.9, 1.1], [80.9, 127.4, 1.1], [131.8, 128.8, 1.1], [69.2, 122.2, 1.1], [127.2, 132.9, 1.1], [81.8, 143.5, 1.1], [85.9, 119.4, 1.1], [132.9, 132.7, 1.1], [129.5, 121.7, 1.1], [109.6, 141.6, 1.1], [115.1, 137.4, 1.1], [99.2, 119.6, 1.1], [66.4, 116.1, 1.1], [88.2, 131.3, 1.1], [67.9, 155.5, 1.1], [116.3, 144.1, 1.1], [121.1, 143.4, 1.1], [78.4, 124.8, 1.1], [92.1, 121.4, 1.1], [83.9, 139, 1.1], [105.4, 136.3, 1.1], [83.7, 122.8, 1.1], [107.5, 160, 1.1], [67, 132.9, 1.1], [122.9, 122.5, 1.1], [90, 104.1, 1.1], [106.9, 122.8, 1.1], [101.7, 161.2, 1.1], [87.1, 142, 1.1], [85.5, 106.1, 1.1], [97.7, 135.8, 1.1], [84.2, 150.5, 1.1], [75.6, 130.5, 1.1], [83.7, 117.5, 1.1], [180.4, 76.5, 1.1], [219.5, 83.9, 1.1], [188.6, 50.2, 1.1], [210.9, 77.8, 1.1], [192, 83.4, 1.1], [213.7, 72.5, 1.1], [193.5, 70.3, 1.1], [202.1, 85.1, 1.1], [220.6, 79.9, 1.1], [194, 67.5, 1.1], [208.2, 65.9, 1.1], [193.6, 44.8, 1.1], [201.5, 60.7, 1.1], [186.2, 49.9, 1.1], [168.7, 85.3, 1.1], [165.7, 79.2, 1.1], [185.6, 79.9, 1.1], [188, 67.6, 1.1], [211.6, 84.3, 1.1], [193.4, 74.7, 1.1], [173.1, 84, 1.1], [175.9, 73.1, 1.1], [216, 85.3, 1.1], [184.1, 71.8, 1.1], [172.8, 61.8, 1.1], [171.7, 65, 1.1], [179.8, 72.8, 1.1], [183.4, 79.6, 1.1], [193, 53.2, 1.1], [211.3, 81.1, 1.1], [286.3, 88.5, 1.4], [285.6, 74.2, 1.4], [287.5, 71.6, 1.4], [303.1, 65.4, 1.4], [291, 76.3, 1.4], [309.6, 69.5, 1.4], [293.6, 70, 1.4], [308.3, 79.7, 1.4], [306.6, 73.7, 1.4], [311, 82.6, 1.4], [301.1, 67.9, 1.4], [288.3, 78.7, 1.4], [312, 85.9, 1.4], [286.4, 85.1, 1.4], [178.4, 188.6, 1.3], [197.5, 179.4, 1.3], [184.2, 170.5, 1.3], [187.8, 175.9, 1.3], [205.3, 184.8, 1.3], [183.8, 175.8, 1.3], [189.7, 201.5, 1.3], [175.5, 175.2, 1.3], [198.9, 184, 1.3], [176.8, 182.6, 1.3], [181.4, 196.3, 1.3], [209.6, 201.7, 1.3], [171.2, 208.8, 1.3], [212.1, 173.6, 1.3], [170.3, 201.5, 1.3], [165.2, 183.2, 1.3], [194.7, 202.2, 1.3], [185.2, 208.8, 1.3], [179.1, 198.8, 1.3], [204.9, 210.1, 1.3], [167.8, 189, 1.3], [193.3, 174.3, 1.3], [188.8, 172, 1.3], [204, 213.8, 1.3], [212.8, 201.7, 1.3], [197.4, 209.6, 1.3], [191.7, 177.8, 1.3], [187.5, 210.8, 1.3], [202.7, 197.4, 1.3], [209.5, 197.4, 1.3], [166, 194, 1.3], [200, 181, 1.3], [207.3, 174.1, 1.3], [202.8, 171.4, 1.3], [355.5, 236.5, 1.3], [317.9, 263.1, 1.3], [339.8, 234.2, 1.3], [337.7, 253.5, 1.3], [333.8, 239.9, 1.3], [304.4, 239.1, 1.3], [296.6, 234.5, 1.3], [324.1, 242.3, 1.3], [346.8, 243.3, 1.3], [318.1, 220, 1.3], [297.1, 237.2, 1.3], [292.2, 241.4, 1.3], [315.3, 237.5, 1.3], [299.1, 213.4, 1.3], [334.6, 262.2, 1.3], [348.7, 259.6, 1.3], [320.9, 236.3, 1.3], [354.9, 248.2, 1.3], [288.4, 219.4, 1.3], [326.5, 233.8, 1.3], [335.9, 255.2, 1.3], [306.6, 240.5, 1.3], [316.1, 230.8, 1.3], [303.6, 241.3, 1.3], [319, 259.4, 1.3], [288, 240.2, 1.3], [292.4, 262.3, 1.3], [352.7, 236.7, 1.3], [315.6, 215.6, 1.3], [310, 258.8, 1.3], [352.6, 260, 1.3], [306.3, 263, 1.3], [352.5, 242.3, 1.3], [352.1, 263.5, 1.3], [337.4, 214.5, 1.3], [307.7, 253, 1.3], [305.5, 234.5, 1.3], [327.5, 240.1, 1.3], [339.8, 241.9, 1.3], [330.9, 256.4, 1.3], [333, 351, 1.2], [332.6, 315.1, 1.2], [311.1, 348.8, 1.2], [316, 354.9, 1.2], [254.5, 342.4, 1.2], [298.5, 340.4, 1.2], [314.9, 343.8, 1.2], [293.5, 308.5, 1.2], [311.1, 328.1, 1.2], [323.4, 327.6, 1.2], [334.8, 308.4, 1.2], [269.8, 344.1, 1.2], [252.8, 308.6, 1.2], [323.1, 339.5, 1.2], [320.5, 332.6, 1.2], [288.6, 337.9, 1.2], [269.9, 354.8, 1.2], [309.8, 306.2, 1.2], [297.2, 343.4, 1.2], [304.3, 329.3, 1.2], [267.6, 337.4, 1.2], [331.1, 326.4, 1.2], [251.4, 324.5, 1.2], [299.6, 347.8, 1.2], [310.4, 311.2, 1.2], [291.3, 340.1, 1.2], [313.8, 354.4, 1.2], [254, 335.4, 1.2], [309.4, 346, 1.2], [278.8, 334.7, 1.2], [320.2, 339.5, 1.2], [334.5, 347.2, 1.2], [283.5, 306.8, 1.2], [288.4, 312.1, 1.2], [329.6, 316.1, 1.2], [329.3, 343.5, 1.2], [310, 341.4, 1.2], [292.4, 347.4, 1.2], [250.7, 327.5, 1.2], [333.2, 321, 1.2], [120.3, 255.8, 1], [136.2, 243.7, 1], [132.7, 227.4, 1], [102.5, 252.9, 1], [136.5, 273.3, 1], [126.3, 241.1, 1], [128, 255.1, 1], [113.4, 250.6, 1], [140.8, 256.8, 1], [111.5, 253.7, 1], [159.8, 253.3, 1], [146.3, 272.2, 1], [149.5, 253.3, 1], [101.7, 228.5, 1], [153.7, 248.8, 1], [135.6, 268.9, 1], [155.5, 261.5, 1], [155.9, 277.6, 1], [143.8, 261.7, 1], [114.2, 258.2, 1], [131.2, 225.3, 1], [101.6, 238.8, 1], [104.7, 247.1, 1], [142.6, 253.6, 1], [135.4, 251.2, 1], [135.9, 281.7, 1], [143, 274.3, 1], [102.9, 280.6, 1], [151.7, 254, 1], [127.5, 230.8, 1], [227, 354.5, 1], [232.2, 356.6, 1], [219.5, 361.7, 1], [227.3, 334.3, 1], [241.3, 362.4, 1], [205.7, 345.4, 1], [221.3, 343.7, 1], [214.7, 335.6, 1], [211.6, 370.3, 1], [198.1, 346.5, 1], [195.6, 353.6, 1], [238.9, 357.9, 1], [186.6, 335, 1], [222.7, 347.2, 1], [231.2, 370.5, 1], [201.5, 371.6, 1], [206.8, 369.5, 1], [221, 349.2, 1], [207.1, 358.6, 1], [228, 370.8, 1], [207.6, 350.1, 1], [206.5, 366, 1], [199.9, 355.6, 1], [209, 354.3, 1], [232.3, 332.1, 1], [204.3, 364.2, 1], [205.7, 241.7, 0.9], [219.4, 241.4, 0.9], [215, 256.6, 0.9], [224.8, 250, 0.9], [214.9, 263.9, 0.9], [262.2, 291.8, 0.9], [247.4, 295.7, 0.9], [208.4, 257.7, 0.9], [265.9, 277.2, 0.9], [211.1, 241.4, 0.9], [265.1, 293.5, 0.9], [220.6, 251.1, 0.9], [287.6, 24.7, 0.7], [103.9, 249.5, 0.7], [118.3, 174.5, 0.7], [188.9, 139.8, 0.7], [101.9, 289.9, 0.7], [265.4, 302.6, 0.7], [141.1, 332, 0.7], [222, 148.8, 0.7], [349.2, 103.2, 0.7], [329.7, 334.2, 0.7], [64.1, 230.4, 0.7], [184.2, 347.5, 0.7], [100.5, 236.6, 0.7], [112.5, 211.5, 0.7], [356.8, 35, 0.7], [335.1, 39.4, 0.7], [291.1, 72.5, 0.7], [224.7, 253.5, 0.7], [226.1, 326.1, 0.7], [296.2, 142.6, 0.7], [167.7, 330, 0.7], [223.8, 206.3, 0.7], [353.9, 41.1, 0.7], [83.7, 144.2, 0.7], [98.1, 340.4, 0.7], [250.5, 155.4, 0.7], [128.3, 199.7, 0.7], [242.4, 193.3, 0.7], [295.6, 186.1, 0.7], [332.4, 356.3, 0.7], [150.9, 182.7, 0.7], [354.4, 273.3, 0.7], [96.6, 288.3, 0.7], [110.1, 292.1, 0.7], [298.4, 234.1, 0.7], [353.2, 95.3, 0.7], [123.6, 132.5, 0.7], [351.7, 337.5, 0.7], [283.7, 220.9, 0.7], [262.6, 180.6, 0.7], [225.3, 51.7, 0.7], [102.3, 146, 0.7], [202.5, 248, 0.7], [66.9, 229, 0.7], [287.8, 253.5, 0.7], [297.9, 128.3, 0.7], [224, 127, 0.7], [201.6, 112.7, 0.7], [164.7, 252.6, 0.7], [81.5, 350.1, 0.7], [127.1, 337.3, 0.7], [37.6, 42.2, 0.7], [245.2, 112.9, 0.7], [122.5, 258.6, 0.7], [66.9, 359.9, 0.7], [197.7, 112.5, 0.7], [230.4, 87.7, 0.7], [342.9, 30.4, 0.7], [352.8, 122.2, 0.7], [62, 187.7, 0.7], [195.4, 36.2, 0.7], [308.4, 176.8, 0.7], [293.7, 296.5, 0.7], [132.5, 338.6, 0.7], [182.9, 240.3, 0.7], [284.5, 159.7, 0.7], [221.4, 355.4, 0.7], [180.2, 132.5, 0.7], [243.3, 299.7, 0.7], [136.5, 281.7, 0.7]],
     beacons: [[150, 176], [246, 154], [124, 196], [262, 296], [176, 300], [334, 150], [84, 86], [222, 112], [60, 250], [350, 300]],
     jumpPads: [[300, 140, 22, 0], [118, 92, 18, 0], [168, 120, 16, 0], [330, 270, 14, 0], [60, 200, 16, 3], [234, 196, 14, 2]],
-    ziplines: [[299.5, "g10.5", 77.5, 302, "g2.8", 140], [109, "g2.8", 59, 112, "g2.8", 100], [190, "g9", 190, 230, "g2.8", 224], [333, "g12.5", 247, 352, "g2.8", 300], [127.5, "g13.5", 145.5, 150, "g2.8", 176]],
+    ziplines: [[299.5, "g2.8", 77.5, 302, "g2.8", 140], [109, "g2.8", 59, 112, "g2.8", 100], [190, "g5.5", 190, 230, "g2.8", 224], [333, "g2.8", 247, 352, "g2.8", 300], [127.5, "g2.8", 145.5, 150, "g2.8", 176]],
     radarLabels: [],
   },
 };
@@ -8095,6 +8104,9 @@ const GRAPPLE_RANGE = 40;
 const GRAPPLE_SPEED = 19;
 const ZIP_SPEED = 13;
 const ZIP_GRAB = 1.6;
+const ZIP_CLEAR = 2.4; // folga mínima do cabo sobre o chão (quem desce fica 1,95 m abaixo)
+const ZIP_SAMPLE = 1.0;
+const ZIP_BOT_GAIN = 8; // bot só pega tirolesa que o deixa pelo menos isto mais perto do objetivo // passo das amostras do terreno ao montar o cabo
 const LIFT_TIME = 10;
 const LIFT_R = 2.2;
 const LIFT_H = 11;
@@ -8914,7 +8926,7 @@ const R = {
   meshes: [], batchWorld: null, batchVm: null, curBatch: null, fog: FOG_DENSITY, drawViewmodel: false, vmMirror: false, vmFlash: null,
   tileArr: new Float32Array(MAT_TILE), bumpArr: new Float32Array(MAT_BUMP), specArr: new Float32Array(MAT_SPEC),
 };
-const audio = { ctx: null, master: null, noise: null, ringGain: null };
+const audio = { ctx: null, master: null, bus: null, noise: null, ringGain: null, voices: [], unlocked: false, failed: false, lastClock: -1, lastClockAt: 0, lastResume: 0 };
 const particles = [];
 const decals = [];
 const hud = { cache: {}, markers: [], classes: null, feed: [], radio: [], moneyShown: -1, deltaTimer: 0, hurt: 0, dirs: [], boardTimer: 0, radarTimer: 0, msgUntil: 0, targetTimer: 0, spotTimer: 0, quitArmed: 0, buyCol: -1, chKey: '', plates: [], flashCapture: false, report: null, reportUntil: 0 };
@@ -9547,6 +9559,8 @@ function meshColliders(parts, p0, addProp) {
           if (y > hi) hi = y;
         }
         if (hi - lo < 0.02) continue;
+        // pedacinho rente ao chão: sem colisão (senão o chão fica cheio de degrauzinhos)
+        if (hi < floorAt(sx, sz) + DECOR_MIN_BUMP) continue;
         const key = gz * 100000 + gx;
         const list = cols.get(key) || [];
         // junta com intervalo que encosta (mesma coluna, peças empilhadas)
@@ -10632,6 +10646,7 @@ function buildNav() {
   if (M.navDrop) pruneNavTraps();
   for (let i = 0; i < world.n; i++) navCost(i);
   for (let i = world.n; i < world.n + nav.U; i++) nav.cost[i] = 0;
+  buildNavComps();
 }
 // objetos finos na borda entre duas células (cerca, guarda-corpo): bloqueiam a passagem mesmo sem ocupar o centro da célula
 // bits: 1 = +x, 2 = -x, 4 = +z, 8 = -z
@@ -10656,6 +10671,30 @@ function buildNavEdges() {
         }
       }
     }
+  }
+}
+// pedaços da navegação (chão): bots numa ilha sem caminho para o objetivo procuram uma tirolesa para sair
+function buildNavComps() {
+  const W = world.w, D = world.d, N = world.n;
+  if (!nav.comp || nav.comp.length !== N) nav.comp = new Int32Array(N);
+  nav.comp.fill(-1);
+  const q = new Int32Array(N);
+  let c = 0;
+  for (let s = 0; s < N; s++) {
+    if (!nav.walk[s] || nav.comp[s] >= 0) continue;
+    let qh = 0, qt = 0;
+    q[qt++] = s; nav.comp[s] = c;
+    while (qh < qt) {
+      const i = q[qh++], x = i % W, z = Math.floor(i / W);
+      for (const nb of NAV_NEIGHBORS) {
+        const nx = x + nb[0], nz = z + nb[1];
+        if (nx < 0 || nz < 0 || nx >= W || nz >= D) continue;
+        const j = nz * W + nx;
+        if (!nav.walk[j] || nav.comp[j] >= 0 || navStep(i, j, nb) < 0) continue;
+        nav.comp[j] = c; q[qt++] = j;
+      }
+    }
+    c++;
   }
 }
 function navCell(i) {
@@ -10805,7 +10844,9 @@ function navStep(c, n, nb) {
   const drop = dh < -lim && M.navDrop && -dh <= M.navDrop && (nb[0] === 0 || nb[1] === 0) && !(n < N && world.ceil[ni] < ch + 1.8) && !(n < N && nav.upOf[ni]);
   if (!drop && Math.abs(dh) > lim) return -1;
   // relevo íngreme entre centros (fora dos mapas com rampas exatas) continua limitado
-  if (!drop && Math.abs(nav.h[n] - ch) > Math.max(navStepTerr(), lim) + 0.2) return -1;
+  // relevo contínuo dos dois lados (borda sem degrau): vale a inclinação que o corpo sobe; senão o desnível entre centros é limitado
+  const bothTerr = c < N && n < N && world.terr[ci] && world.terr[ni];
+  if (!drop && Math.abs(nav.h[n] - ch) > (bothTerr ? (M.terrSteep || TERRAIN_STEEP) : Math.max(navStepTerr(), lim)) + 0.2) return -1;
   if (drop && dropBlocked(ci, ni, nav.h[n], ch)) return -1;
   if (nb[0] !== 0 && nb[1] !== 0) {
     const W = world.w, cx = ci % W, cz = Math.floor(ci / W);
@@ -10887,7 +10928,7 @@ function findPath(sx, sz, tx, tz, sy) {
     }
   }
   nav.calls = (nav.calls || 0) + 1; nav.iters = (nav.iters || 0) + iter;
-  if (!found) { nav.fails = (nav.fails || 0) + 1; return null; }
+  if (!found) { nav.fails = (nav.fails || 0) + 1; nav.lastFail = [sx, sz, tx, tz]; return null; }
   const pts = [];
   let c = end, guard = 0;
   while (c >= 0 && guard++ < N + nav.U) { const ci = navCellOf(c); pts.push([(ci % W) + 0.5, Math.floor(ci / W) + 0.5]); c = nav.parent[c]; }
@@ -13097,7 +13138,10 @@ function addArenaObjects() {
     if (Math.random() < 0.25) spawnParticle({ x: pd.x + rand(-0.6, 0.6), y: pd.y + 0.2, z: pd.z + rand(-0.6, 0.6), vy: rand(2, 4), size: 0.05, max: 0.7, cell: ATLAS.SPARK, add: true, r: 0.3, g: 1, b: 0.6, a: 1 });
   }
   for (const z of A.zips) {
-    pushSeg(MESH_CYL, I, z.a, z.b, 0.03, 0.03, MAT.CLOTH, [0.05, 0.05, 0.06]);
+    const P = z.pts || [z.a, z.b];
+    for (let k = 1; k < P.length; k++) pushSeg(MESH_CYL, I, P[k - 1], P[k], 0.03, 0.03, MAT.CLOTH, [0.05, 0.05, 0.06]);
+    // postes de apoio onde o cabo passa por cima do morro
+    for (let k = 1; k < P.length - 1; k++) { const q = P[k], gy = floorAt(q[0], q[2]); pushSeg(MESH_CYL, I, [q[0], gy - 0.2, q[2]], [q[0], q[1] + 0.15, q[2]], 0.1, 0.1, MAT.GUNMETAL, [0.6, 0.45, 0.25]); }
     for (const e of [z.a, z.b]) {
       const gy = floorAt(e[0], e[2]);
       if (e[1] - gy < 8) pushSeg(MESH_CYL, I, [e[0], gy, e[2]], [e[0], e[1] + 0.3, e[2]], 0.14, 0.14, MAT.GUNMETAL, [0.85, 0.5, 0.15]);
@@ -13394,21 +13438,29 @@ function drawLegendHead(H, p, look, uni) {
 // 7. ÁUDIO (sintetizado com WebAudio, sem arquivos)
 // =====================================================================
 function initAudio() {
+  audio.unlocked = true;
   if (audio.ctx) {
-    if (audio.ctx.state === 'suspended') audio.ctx.resume().catch(() => {});
+    if (audio.ctx.state !== 'running' && audio.ctx.state !== 'closed') audio.ctx.resume().catch(() => {});
     return;
   }
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return;
   try {
-    const ctx = new AC();
+    const ctx = new AC({ latencyHint: 'interactive' });
     audio.ctx = ctx;
+    // erro do renderizador/dispositivo de áudio (sobrecarga, troca de fone): o contexto não volta sozinho — recria no próximo quadro
+    if (ctx.addEventListener) ctx.addEventListener('error', () => { audio.failed = true; });
+    audio.failed = false;
+    audio.voices = []; audio.lastClock = -1; audio.lastClockAt = performance.now(); audio.lastResume = 0;
     audio.master = ctx.createGain();
     audio.master.gain.value = settings.volume;
+    // ônibus: volume automático (abaixa quando há muitos sons ao mesmo tempo) → compressor suave → limitador
+    audio.bus = ctx.createGain();
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14; comp.knee.value = 10; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.2;
-    audio.master.connect(comp);
-    comp.connect(ctx.destination);
+    comp.threshold.value = -20; comp.knee.value = 12; comp.ratio.value = 3; comp.attack.value = 0.004; comp.release.value = 0.12;
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.06;
+    audio.bus.connect(audio.master); audio.master.connect(comp); comp.connect(lim); lim.connect(ctx.destination);
     const len = ctx.sampleRate * 2;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = buf.getChannelData(0);
@@ -13419,16 +13471,54 @@ function initAudio() {
   }
 }
 function setVolume(v) { if (audio.master) audio.master.gain.value = v; }
-// Cadeia de um som (atenuação, pan estéreo e abafamento atrás de paredes). null = inaudível.
-// Cadeia de um som: atenuação, direção 3D (HRTF: frente/trás/cima/baixo) ou pan estéreo, e abafamento atrás de paredes. null = inaudível.
-function soundDest(pos, gain, range) {
+// cão de guarda (todo quadro): retoma o contexto suspenso/interrompido e, se o relógio do áudio parar com ele
+// "rodando" (thread de áudio travada), recria o contexto do zero
+function audioWatchdog() {
   const ctx = audio.ctx;
-  if (!ctx || !audio.noise || game.paused) return null;
-  let g = gain, pan = 0, muffle = false, rx = 0, ry = 0, rz = 0, dirOk = false;
+  if (!ctx || !audio.unlocked) return;
+  const t = performance.now();
+  if (ctx.state === 'closed' || audio.failed) { try { if (ctx.state !== 'closed') ctx.close(); } catch (e) { /* já fechado */ } audio.ctx = null; audio.voices = []; initAudio(); return; }
+  if (ctx.state !== 'running') {
+    if (t - audio.lastResume > 1000) { audio.lastResume = t; ctx.resume().catch(() => {}); }
+    audio.lastClockAt = t;
+    return;
+  }
+  if (ctx.currentTime !== audio.lastClock) { audio.lastClock = ctx.currentTime; audio.lastClockAt = t; return; }
+  if (t - audio.lastClockAt > AUDIO_STALL_SEC * 1000 && !document.hidden) {
+    try { ctx.close(); } catch (e) { /* já fechado */ }
+    audio.ctx = null; audio.voices = [];
+    initAudio();
+  }
+}
+// limite de vozes: sons vencidos saem da lista; cheio, o som novo só entra se for mais alto que o mais baixo (que é cortado)
+function voiceSlot(g, dur) {
+  const now = audio.ctx.currentTime, v = audio.voices;
+  for (let i = v.length - 1; i >= 0; i--) if (v[i].end < now) v.splice(i, 1);
+  if (v.length >= AUDIO_MAX_VOICES) {
+    let q = 0;
+    for (let i = 1; i < v.length; i++) if (v[i].g < v[q].g) q = i;
+    if (v[q].g >= g) return null;
+    const old = v[q];
+    v.splice(q, 1);
+    try { old.out.gain.cancelScheduledValues(now); old.out.gain.setTargetAtTime(0, now, 0.008); } catch (e) { /* nó já parado */ }
+    window.setTimeout(() => { try { old.out.disconnect(); } catch (e) { /* já desligado */ } }, 80);
+  }
+  const slot = { end: now + dur, g, out: null, hrtf: false };
+  v.push(slot);
+  // muitos sons juntos: abaixa o ônibus um pouco (evita estourar o limitador)
+  audio.bus.gain.setTargetAtTime(v.length > 14 ? Math.sqrt(14 / v.length) : 1, now, 0.05);
+  return slot;
+}
+// Cadeia de um som: atenuação, direção (HRTF nos mais próximos; pan estéreo nos outros), som atrás um pouco abafado,
+// absorção do ar com a distância e oclusão gradual atrás de paredes. null = inaudível. dur: quanto tempo o som dura.
+function soundDest(pos, gain, range, dur) {
+  const ctx = audio.ctx;
+  if (!ctx || !audio.noise || game.paused || ctx.state === 'closed') return null;
+  let g = gain, pan = 0, occl = 0, rx = 0, ry = 0, rz = 0, dirOk = false, d = 0;
   if (pos) {
     const lx = R.camPos[0], ly = R.camPos[1], lz = R.camPos[2];
     const dx = pos[0] - lx, dy = pos[1] - ly, dz = pos[2] - lz;
-    const d = Math.hypot(dx, dy, dz);
+    d = Math.hypot(dx, dy, dz);
     if (d > range) return null;
     const k = 1 - d / range;
     g *= k * k;
@@ -13437,22 +13527,40 @@ function soundDest(pos, gain, range) {
       const u = dx * R.camUp[0] + dy * R.camUp[1] + dz * R.camUp[2];
       const f = dx * R.camFwd[0] + dy * R.camFwd[1] + dz * R.camFwd[2];
       rx = r / d; ry = u / d; rz = -f / d; dirOk = true;
-      pan = clamp(r / d, -1, 1) * 0.8;
+      pan = clamp(r / d, -1, 1) * 0.95;
     }
-    if (d > 3 && g > 0.01 && !losClear(lx, ly, lz, pos[0], pos[1] + 0.3, pos[2], true)) { muffle = true; g *= 0.55; }
+    // oclusão: parede no meio abafa; se dá para ver um pouco ao lado (quina, porta), abafa menos
+    if (d > 2.5 && g > 0.01 && !losClear(lx, ly, lz, pos[0], pos[1] + 0.3, pos[2], true)) {
+      const sx = R.camRight[0] * 1.2, sz = R.camRight[2] * 1.2;
+      const side = losClear(lx, ly, lz, pos[0] + sx, pos[1] + 0.8, pos[2] + sz, true) || losClear(lx, ly, lz, pos[0] - sx, pos[1] + 0.8, pos[2] - sz, true);
+      occl = side ? 0.5 : 1;
+      g *= side ? 0.75 : 0.55;
+    }
   }
   if (g < 0.004) return null;
+  const slot = voiceSlot(g, dur || 0.6);
+  if (!slot) return null;
   const out = ctx.createGain();
   out.gain.value = g;
+  slot.out = out;
   let node = out;
-  if (dirOk && settings.hrtf && ctx.createPanner) {
-    const p = ctx.createPanner();
-    p.panningModel = 'HRTF'; p.distanceModel = 'inverse'; p.refDistance = 1; p.rolloffFactor = 0;
-    if (p.positionX) { p.positionX.value = rx * 2; p.positionY.value = ry * 2; p.positionZ.value = rz * 2; } else p.setPosition(rx * 2, ry * 2, rz * 2);
-    node.connect(p); node = p;
-  } else if (pan !== 0 && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; node.connect(p); node = p; }
-  if (muffle) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = 650; node.connect(fl); node = fl; }
-  node.connect(audio.master);
+  // timbre pela distância/oclusão: o ar e as paredes comem os agudos (som perto fica nítido)
+  const cut = Math.min(20000, AUDIO_AIR_CUT / (1 + d * 0.06)) * (occl ? (occl < 1 ? 0.14 : 0.06) : 1);
+  if (cut < 16000) { const fl = ctx.createBiquadFilter(); fl.type = 'lowpass'; fl.frequency.value = Math.max(500, cut); fl.Q.value = 0.5; node.connect(fl); node = fl; }
+  if (dirOk) {
+    const hrtfN = audio.voices.reduce((n, q) => n + (q.hrtf ? 1 : 0), 0);
+    if (settings.hrtf && ctx.createPanner && hrtfN < AUDIO_MAX_HRTF) {
+      const p = ctx.createPanner();
+      p.panningModel = 'HRTF'; p.distanceModel = 'inverse'; p.refDistance = 1; p.rolloffFactor = 0;
+      if (p.positionX) { p.positionX.value = rx * 2; p.positionY.value = ry * 2; p.positionZ.value = rz * 2; } else p.setPosition(rx * 2, ry * 2, rz * 2);
+      node.connect(p); node = p; slot.hrtf = true;
+    } else {
+      // estéreo: atrás fica mais escuro (sombra da cabeça) para diferenciar frente e trás
+      if (rz > 0.2) { const sh = ctx.createBiquadFilter(); sh.type = 'highshelf'; sh.frequency.value = 2500; sh.gain.value = -9 * Math.min(1, (rz - 0.2) / 0.6); node.connect(sh); node = sh; }
+      if (pan !== 0 && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = pan; node.connect(p); node = p; }
+    }
+  }
+  node.connect(audio.bus);
   return out;
 }
 function noiseBurst(dest, t, dur, type, freq, q, gain, attack) {
@@ -13488,18 +13596,25 @@ function now0() { return audio.ctx.currentTime; }
 function sfxShot(snd, pos, isLocal) {
   const s = SHOT_SOUNDS[snd];
   if (!s) return;
-  const dest = soundDest(isLocal ? null : pos, s.gain * (isLocal ? 0.5 : 0.9), s.range);
+  const dist = pos && !isLocal ? Math.hypot(pos[0] - R.camPos[0], pos[1] - R.camPos[1], pos[2] - R.camPos[2]) : 0;
+  const dest = soundDest(isLocal ? null : pos, s.gain * (isLocal ? 0.5 : 0.9), s.range, s.tail + 0.35);
   if (!dest) return;
   const t = now0();
-  noiseBurst(dest, t, s.decay, 'bandpass', s.crack * rand(0.92, 1.08), 0.9, 1.0);
+  // estalo inicial bem curto e agudo (dá a nitidez e marca a direção), corpo, soco grave e cauda
+  noiseBurst(dest, t, 0.012, 'highpass', SHOT_TRANSIENT_HZ, 0.7, 0.75, 0.0005);
+  noiseBurst(dest, t, s.decay, 'bandpass', s.crack * rand(0.92, 1.08), 0.9, 1.0, 0.001);
   noiseBurst(dest, t, s.decay * 1.7, 'lowpass', s.body, 0.7, 0.7);
   if (s.thump) tone(dest, t, s.thump * rand(0.95, 1.05), 0.14, 'sine', 0.9, s.thump * 0.45);
   noiseBurst(dest, t + 0.015, s.tail, 'lowpass', 750, 0.5, 0.2, 0.02);
+  // longe: eco do tiro rebatendo no mapa (atraso cresce com a distância)
+  if (dist > SHOT_ECHO_DIST) noiseBurst(dest, t + 0.06 + dist * 0.0025, s.tail * 1.3, 'lowpass', 520, 0.5, 0.22, 0.03);
 }
 function sfxStep(pos, isLocal, loud, surface) {
-  const dest = soundDest(isLocal ? null : pos, isLocal ? 0.12 : 0.5 * (loud ? 1.3 : 1), 26);
+  const dest = soundDest(isLocal ? null : pos, isLocal ? 0.12 : 0.55 * (loud ? 1.3 : 1), 26, 0.3);
   if (!dest) return;
   const t = now0();
+  // batida do calcanhar: clique curto e agudo antes do corpo do passo (deixa o passo nítido e fácil de localizar)
+  if (surface !== 'water') noiseBurst(dest, t, 0.014, 'bandpass', STEP_CLICK_HZ * rand(0.9, 1.1), 1.4, 0.45, 0.0008);
   if (surface === 'ladder') {
     tone(dest, t, rand(210, 260), 0.14, 'triangle', 0.5);
     noiseBurst(dest, t, 0.08, 'bandpass', rand(2200, 2800), 3, 0.7, 0.002);
@@ -13530,7 +13645,7 @@ function sfxLand(pos, isLocal) {
   noiseBurst(dest, t, 0.12, 'lowpass', 300, 1, 1, 0.003);
 }
 function sfxReload(pos, isLocal, dur) {
-  const dest = soundDest(isLocal ? null : pos, isLocal ? 0.35 : 0.45, 18);
+  const dest = soundDest(isLocal ? null : pos, isLocal ? 0.35 : 0.45, 18, dur + 0.15);
   if (!dest) return;
   const t = now0();
   const clicks = [0.08, dur * 0.35, dur * 0.62, dur * 0.88];
@@ -13602,7 +13717,7 @@ function sfxBeep(pos, freq) {
   tone(dest, now0(), freq || 2200, 0.11, 'sine', 0.8);
 }
 function sfxExplosion(pos, big) {
-  const dest = soundDest(pos, big ? 1.6 : 1.1, big ? 200 : 110);
+  const dest = soundDest(pos, big ? 1.6 : 1.1, big ? 200 : 110, big ? 2.8 : 1.5);
   if (!dest) return;
   const t = now0();
   const ctx = audio.ctx;
@@ -13621,7 +13736,7 @@ function sfxCasing(pos) {
   tone(dest, t + 0.06, f0 * 1.05, 0.05, 'sine', 0.2);
 }
 function sfxFireStart(pos) {
-  const dest = soundDest(pos, 0.8, 60);
+  const dest = soundDest(pos, 0.8, 60, 0.7);
   if (!dest) return;
   const t = now0();
   noiseBurst(dest, t, 0.6, 'lowpass', 1400, 0.7, 1.0, 0.02);
@@ -13647,7 +13762,7 @@ function sfxFlashbang(pos) {
   tone(dest, t, 180, 0.3, 'sine', 0.8, 60);
 }
 function sfxRing(dur) {
-  const dest = soundDest(null, 0.18, 10);
+  const dest = soundDest(null, 0.18, 10, Math.max(0.5, dur) + 0.1);
   if (!dest) return;
   tone(dest, now0(), 3600, Math.max(0.5, dur), 'sine', 0.5, 3300, 0.02);
 }
@@ -13694,7 +13809,7 @@ function sfxStreak(mine) {
   tone(dest, t + 0.18, mine ? 880 : 247, 0.3, 'triangle', 0.5);
 }
 function sfxSmoke(pos) {
-  const dest = soundDest(pos, 0.5, 40);
+  const dest = soundDest(pos, 0.5, 40, 2.3);
   if (!dest) return;
   noiseBurst(dest, now0(), 2.2, 'highpass', 1800, 0.5, 0.7, 0.05);
 }
@@ -13721,7 +13836,7 @@ function sfxUi(kind) {
   else tone(dest, t, 1000, 0.04, 'triangle', 0.3);
 }
 function sfxRoundEnd(win) {
-  const dest = soundDest(null, 0.3, 10);
+  const dest = soundDest(null, 0.3, 10, 0.9);
   if (!dest) return;
   const t = now0();
   const notes = win ? [523, 659, 784, 1046] : [392, 349, 311, 262];
@@ -13746,7 +13861,7 @@ function radio(text) {
 
 // sons das habilidades das Arenas (sintetizados)
 function sfxAbility(kind, pos, isLocal) {
-  const dest = soundDest(isLocal ? null : pos, isLocal ? 0.45 : 0.6, 45);
+  const dest = soundDest(isLocal ? null : pos, isLocal ? 0.45 : 0.6, 45, 1.5);
   if (!dest) return;
   const t = now0();
   if (kind === 'phase') { tone(dest, t, 900, 0.5, 'sine', 0.4, 120); noiseBurst(dest, t, 0.5, 'bandpass', 600, 2, 0.5, 0.05); }
@@ -17108,12 +17223,7 @@ function arenaRoundStart() {
   A.phase = 'buy'; A.timer = ARENA_BUY_TIME; A.ring = null; A.winner = '';
   A.pads = []; A.zips = []; A.domes = []; A.drones = []; A.lifts = []; A.holes = []; A.portals = []; A.packs = []; A.timers = []; A.scans = [];
   legendGadgetsReset(A);
-  for (const pd of M.jumpPads || []) A.pads.push({ x: pd[0], z: pd[1], y: floorAt(pd[0], pd[1]), power: pd[2] || PAD_POWER, yaw: pd[3] === undefined ? null : pd[3] * HALF_PI, map: true });
-  for (const zp of M.ziplines || []) {
-    const ay = typeof zp[1] === 'string' ? floorAt(zp[0], zp[2]) + (parseFloat(zp[1].slice(1)) || 0) : zp[1];
-    const by = typeof zp[4] === 'string' ? floorAt(zp[3], zp[5]) + (parseFloat(zp[4].slice(1)) || 0) : zp[4];
-    A.zips.push({ a: [zp[0], ay, zp[2]], b: [zp[3], by, zp[5]], map: true });
-  }
+  mapGadgets(A);
   game.phase = 'freeze';
   game.phaseTimer = ARENA_BUY_TIME;
   game.roundTime = ARENA_ROUND_TIME;
@@ -17444,7 +17554,7 @@ function useUltimate(p) {
     case 'rastro': {
       const t = raycastWorld(eye[0], eye[1], eye[2], f[0], f[1], f[2], 70, rayOut);
       if (t >= 70 || t < 6) { ok = false; if (p === game.local) flashHint('Tirolesa: mire num ponto entre 6 e 70 m', 1.4); break; }
-      game.arena.zips.push({ a: [p.pos[0], p.pos[1] + 2.6, p.pos[2]], b: [eye[0] + f[0] * (t - 0.3), eye[1] + f[1] * (t - 0.3) + 1.2, eye[2] + f[2] * (t - 0.3)] });
+      game.arena.zips.push(zipPrep({ a: [p.pos[0], p.pos[1] + 2.6, p.pos[2]], b: [eye[0] + f[0] * (t - 0.3), eye[1] + f[1] * (t - 0.3) + 1.2, eye[2] + f[2] * (t - 0.3)] }));
       break;
     }
     case 'fumaca': {
@@ -17590,33 +17700,84 @@ function arenaPlayerTick(p, dt) {
   // tirolesa
   if (p.zip) {
     const z = p.zip, a = z.zip.a, b = z.zip.b, L = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) || 1;
-    z.t += z.dir * ZIP_SPEED * (p.legend === 'rastro' ? 1.3 : 1) * dt / L;
+    z.t += z.dir * ZIP_SPEED * (p.legend === 'rastro' ? 1.3 : 1) * dt / (z.zip.len || L);
     if (p.input.jump && game.time - z.since > 0.3 || z.t <= 0 || z.t >= 1) {
       const tx = (b[0] - a[0]) / L * z.dir, tz = (b[2] - a[2]) / L * z.dir;
       p.vel[0] = tx * 8; p.vel[2] = tz * 8; p.vel[1] = p.input.jump ? 5 : 1;
       p.zip = null; p.zipCd = now + 0.5;
     } else {
-      const t = clamp(z.t, 0, 1);
-      p.pos[0] = a[0] + (b[0] - a[0]) * t; p.pos[1] = a[1] + (b[1] - a[1]) * t - 1.95; p.pos[2] = a[2] + (b[2] - a[2]) * t;
+      const q = zipAt(z.zip, clamp(z.t, 0, 1), tmpZip);
+      p.pos[0] = q[0]; p.pos[1] = q[1] - 1.95; p.pos[2] = q[2];
       p.vel[0] = p.vel[1] = p.vel[2] = 0; p.onGround = false;
     }
   }
 }
+// plataformas de salto e tirolesas fixas do mapa (Arenas e Battle Royale)
+function mapGadgets(A) {
+  for (const pd of M.jumpPads || []) A.pads.push({ x: pd[0], z: pd[1], y: floorAt(pd[0], pd[1]), power: pd[2] || PAD_POWER, yaw: pd[3] === undefined ? null : pd[3] * HALF_PI, map: true });
+  for (const zp of M.ziplines || []) {
+    const ay = typeof zp[1] === 'string' ? floorAt(zp[0], zp[2]) + (parseFloat(zp[1].slice(1)) || 0) : zp[1];
+    const by = typeof zp[4] === 'string' ? floorAt(zp[3], zp[5]) + (parseFloat(zp[4].slice(1)) || 0) : zp[4];
+    A.zips.push(zipPrep({ a: [zp[0], ay, zp[2]], b: [zp[3], by, zp[5]], map: true }));
+  }
+}
+// cabo esticado: onde a reta entre as pontas afundaria no terreno, o cabo passa por cima apoiado em postes
+// (casca convexa de cima dos pontos com folga ZIP_CLEAR); pts = vértices do cabo, cum = comprimento acumulado
+const tmpZip = [0, 0, 0];
+function zipPrep(z) {
+  const a = z.a, b = z.b, H = Math.hypot(b[0] - a[0], b[2] - a[2]), n = Math.max(2, Math.ceil(H / ZIP_SAMPLE)), hull = [];
+  for (let k = 0; k <= n; k++) {
+    const t = k / n, x = a[0] + (b[0] - a[0]) * t, zz = a[2] + (b[2] - a[2]) * t;
+    let y = a[1] + (b[1] - a[1]) * t;
+    if (k > 0 && k < n) y = Math.max(y, floorAt(x, zz) + ZIP_CLEAR);
+    const q = [x, y, zz, t * H];
+    while (hull.length >= 2) {
+      const o = hull[hull.length - 2], m = hull[hull.length - 1];
+      if ((m[1] - o[1]) * (q[3] - o[3]) <= (q[1] - o[1]) * (m[3] - o[3])) hull.pop(); else break;
+    }
+    hull.push(q);
+  }
+  z.pts = hull.map((q) => [q[0], q[1], q[2]]);
+  z.cum = [0];
+  for (let k = 1; k < z.pts.length; k++) { const u = z.pts[k - 1], v = z.pts[k]; z.cum.push(z.cum[k - 1] + Math.hypot(v[0] - u[0], v[1] - u[1], v[2] - u[2])); }
+  z.len = z.cum[z.cum.length - 1] || 1;
+  return z;
+}
+// ponto do cabo na fração t (0..1) do comprimento
+function zipAt(z, t, out) {
+  if (!z.pts) { const a = z.a, b = z.b; out[0] = a[0] + (b[0] - a[0]) * t; out[1] = a[1] + (b[1] - a[1]) * t; out[2] = a[2] + (b[2] - a[2]) * t; return out; }
+  const s = t * z.len, c = z.cum;
+  let k = 1;
+  while (k < c.length - 1 && c[k] < s) k++;
+  const u = z.pts[k - 1], v = z.pts[k], f = c[k] > c[k - 1] ? clamp((s - c[k - 1]) / (c[k] - c[k - 1]), 0, 1) : 0;
+  out[0] = u[0] + (v[0] - u[0]) * f; out[1] = u[1] + (v[1] - u[1]) * f; out[2] = u[2] + (v[2] - u[2]) * f;
+  return out;
+}
 // pega a tirolesa mais perto (E); a direção segue para onde o jogador olha
-function tryZip(p) {
+// goal (bots): só pega se a ponta de chegada fica mais perto do objetivo (e escolhe a direção por ela)
+function tryZip(p, goal) {
   const A = game.arena;
   if (!A || p.zip || game.time < (p.zipCd || 0)) return false;
   const hx = p.pos[0], hy = p.pos[1] + 1.4, hz = p.pos[2];
   let best = null, bd = ZIP_GRAB, bt = 0;
   for (const z of A.zips) {
-    const a = z.a, b = z.b, dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], L2 = dx * dx + dy * dy + dz * dz;
-    const t = clamp(((hx - a[0]) * dx + (hy - a[1]) * dy + (hz - a[2]) * dz) / L2, 0.02, 0.98);
-    const d = Math.hypot(a[0] + dx * t - hx, a[1] + dy * t - hy, a[2] + dz * t - hz);
-    if (d < bd) { bd = d; best = z; bt = t; }
+    const P = z.pts || [z.a, z.b];
+    for (let k = 1; k < P.length; k++) {
+      const a = P[k - 1], b = P[k], dx = b[0] - a[0], dy = b[1] - a[1], dz = b[2] - a[2], L2 = dx * dx + dy * dy + dz * dz || 1;
+      const u = clamp(((hx - a[0]) * dx + (hy - a[1]) * dy + (hz - a[2]) * dz) / L2, 0, 1);
+      const d = Math.hypot(a[0] + dx * u - hx, a[1] + dy * u - hy, a[2] + dz * u - hz);
+      const t = clamp(z.cum ? (z.cum[k - 1] + (z.cum[k] - z.cum[k - 1]) * u) / z.len : u, 0.02, 0.98);
+      if (d < bd) { bd = d; best = z; bt = t; }
+    }
   }
   if (!best) return false;
   const f = dirFromAngles(p.yaw, 0, tmpDir2), a = best.a, b = best.b;
-  const dir = (b[0] - a[0]) * f[0] + (b[2] - a[2]) * f[2] >= 0 ? 1 : -1;
+  let dir = (b[0] - a[0]) * f[0] + (b[2] - a[2]) * f[2] >= 0 ? 1 : -1;
+  if (goal) {
+    const here = distXZ(p.pos[0], p.pos[2], goal[0], goal[1]), da = distXZ(a[0], a[2], goal[0], goal[1]), db = distXZ(b[0], b[2], goal[0], goal[1]);
+    dir = db < da ? 1 : -1;
+    if (Math.min(da, db) > here - ZIP_BOT_GAIN) return false;
+  }
   p.zip = { zip: best, t: bt, dir, since: game.time };
   p.healing = null; p.grapple = null;
   sfxAbility('zip', p.pos, p === game.local);
@@ -18171,7 +18332,7 @@ function botAbilities(p) {
     if (use) useUltimate(p);
   }
   // tirolesa por perto no caminho: pega
-  if (!e && !p.zip && far) tryZip(p);
+  if (!e && !p.zip && far && b.goal) tryZip(p, b.goal);
 }
 // =====================================================================
 // 8e. BATTLE ROYALE (estilo Apex): esquadrões de 3 saltam da nave, planam até o chão, juntam armas por raridade,
@@ -18184,6 +18345,7 @@ function startBR() {
   game.roundNum = 1;
   const A = game.arena = { phase: 'live', timer: 0, ring: null, pads: [], zips: [], domes: [], drones: [], lifts: [], holes: [], portals: [], packs: [], timers: [], scans: [], winner: '' };
   legendGadgetsReset(A);
+  mapGadgets(A);
   game.bomb = { state: 'none', pos: [0, 0, 0], carrier: null, item: null, timer: 0, site: null, planter: null, defuser: null, yaw: 0, nextBeep: 0, plantedThisRound: false };
   freshModeState();
   dangerReset();
@@ -18986,6 +19148,28 @@ function setGoal(b, x, z, key) {
   b.goal = [x, z]; b.goalKey = key; b.path = null; b.repathAt = 0;
 }
 const tmpSteer = [0, 0];
+// sem caminho porque o bot está numa ilha (platô, torre): caminho até a ponta de tirolesa da ilha mais perto
+function botIslandEscape(p) {
+  const b = p.bot, A = game.arena;
+  if (!nav.comp || !A || !A.zips.length || !b.goal) return false;
+  const ci = nearestWalkable(p.pos[0], p.pos[2]), gi = nearestWalkable(b.goal[0], b.goal[1]);
+  if (ci < 0 || gi < 0 || nav.comp[ci] === nav.comp[gi]) return false;
+  let best = null, bd = 1e9;
+  for (const z of A.zips) {
+    for (const [e, o] of [[z.a, z.b], [z.b, z.a]]) {
+      const ei = nearestWalkable(e[0], e[2]);
+      if (ei < 0 || nav.comp[ei] !== nav.comp[ci] || e[1] - nav.h[ei] > ZIP_GRAB + 1.6) continue;
+      const d = distXZ(e[0], e[2], p.pos[0], p.pos[2]);
+      if (d < bd) { bd = d; best = { e, o }; }
+    }
+  }
+  if (!best) return false;
+  b.path = findPath(p.pos[0], p.pos[2], best.e[0], best.e[2], p.pos[1]);
+  b.pathIdx = 1;
+  if (!b.path) return false;
+  b.escape = { e: best.e, o: best.o, until: game.time + 40 };
+  return true;
+}
 function steerDir(p, dx, dz, out) {
   const ms = maxSpeedOf(p) || 1, lat = (p.vel[0] * -dz + p.vel[2] * dx) / ms * STEER_LATERAL;
   let x = dx + dz * lat, z = dz - dx * lat;
@@ -19520,6 +19704,13 @@ function botNavigate(p, dt) {
   const inst = currentWeapon(p);
   if (inst && !p.ws.reloading && inst.clip < (WEAPONS[inst.id].mag || 1) * 0.6 && inst.reserve > 0 && now - b.lastSeenTime > 2.5) inp.reload = true;
   let moving = false, mvx = 0, mvz = 0;
+  // saindo de uma ilha pela tirolesa: perto da ponta, olha para a outra ponta e pega
+  if (b.escape && p.zip) b.escape = null;
+  if (b.escape && !p.zip) {
+    const e = b.escape.e, o = b.escape.o;
+    if (now > b.escape.until) b.escape = null;
+    else if (distXZ(p.pos[0], p.pos[2], e[0], e[2]) < 1.4) { p.yaw = Math.atan2(-(o[0] - e[0]), -(o[2] - e[2])); if (tryZip(p, [o[0], o[2]])) { b.escape = null; b.path = null; b.repathAt = 0; } }
+  }
   if (b.detour && (now > b.detourUntil || distXZ(p.pos[0], p.pos[2], b.detour[0], b.detour[1]) < 0.6)) { b.detour = null; b.path = null; b.repathAt = 0; }
   if (b.detour) {
     mvx = b.detour[0] - p.pos[0]; mvz = b.detour[1] - p.pos[2]; moving = true;
@@ -19534,6 +19725,7 @@ function botNavigate(p, dt) {
       b.pathIdx = 1;
       b.repathAt = now + (b.path ? rand(2.5, 4) * (M.big ? 1.5 : 1) : 0.8);
       // sem caminho duas vezes seguidas: o objetivo escolhe outro ponto
+      if (!b.path && game.arena && botIslandEscape(p)) b.repathAt = now + 5;
       if (!b.path) { b.failN = (b.failN || 0) + 1; if (b.failN > 1) { b.failN = 0; b.flagOff = [0, 0]; b.goalKey = ''; b.flagUntil = 0; b.assistUntil = 0; b.coverUntil = 0; } } else b.failN = 0;
     }
     const path = b.path;
@@ -22791,6 +22983,7 @@ function frame(ts) {
   if (lim > 0 && lastDrawTs && ts - lastDrawTs < 1000 / lim - 1) return;
   lastDrawTs = lim > 0 && lastDrawTs && ts - lastDrawTs < 2000 / lim ? lastDrawTs + 1000 / lim : ts;
   const t0 = performance.now();
+  audioWatchdog();
   const now = ts / 1000;
   let dt = lastFrame ? now - lastFrame : 1 / 60;
   lastFrame = now;
@@ -22868,7 +23061,7 @@ function exposeDebug() {
       out.pos = p.pos.slice();
       return out;
     },
-    raycastWorld: (a, b, c, d, e, f, t, o) => raycastWorld(a, b, c, d, e, f, t, o || {}),
+    raycastWorld: (a, b, c, d, e, f, t, o) => raycastWorld(a, b, c, d, e, f, t, o || {}), modeList: () => Object.keys(MODES), mapSupports, hullFree, spaceFree, audio, audioWatchdog, initAudio, navStepDbg: navStep, zipPrep, zipAt,
     tacticList, applyTactic, applyCtSetup, openTacticMenu, pickTacticFromMenu, CT_SETUPS,
     useTactical, useUltimate, tryZip, startHeal, bestHeal, applyDamage, LEGENDS, placePing, smartPing,
     br: { jump: (p) => brJump(p || game.local), use: (p) => brLocalUse(p || game.local), nearestWeapon: (p) => brNearestWeapon(p || game.local), lootNear },
