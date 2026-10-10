@@ -262,7 +262,7 @@
       if (rng.chance(0.15)) { var k0 = rng.next() * 0.5; tline(k0, 0.05, k0 + 0.2, 0.45, sh(0.75), 1); }
     } else if (f === F.WOOD) {
       // tábuas compridas, tons variados, juntas desencontradas e veios
-      var NP = 4;
+      var NP = 6;
       for (i = 0; i < NP; i++) {
         var y0p = i / NP, y1p = (i + 1) / NP, cut = rng.range(0.2, 0.8);
         [[0, cut], [cut, 1]].forEach(function (seg) {
@@ -487,9 +487,16 @@
       }
       if (!cut) {
         if (st.brick) {
-          for (var r = 0; r < H / 6; r++) {
-            wline(g, side, 0, r * 6, 1, r * 6, U.shade(st.base, faceF * 0.8), 1, ox, oy);
-            for (var b = 0; b < 4; b++) { var u = (b + (r % 2) * 0.5) / 4; if (u < 1) { wline(g, side, u, r * 6, u, r * 6 + 6, U.shade(st.base, faceF * 0.8), 1, ox, oy); } }
+          // tijolos com tons variados e rejunte claro
+          var brng = new U.Rng(style * 31 + side * 7 + (extra || 0) * 3 + grime * 101);
+          var mort = U.shade('#a89a8a', faceF * 0.95);
+          wquad(g, side, 0, 1, 0, H, mort, ox, oy);
+          for (var r = 0; r < H / 5; r++) {
+            for (var b = -1; b < 8; b++) {
+              var u0b = (b + (r % 2) * 0.5) / 8 + 0.008, u1b = (b + 1 + (r % 2) * 0.5) / 8 - 0.008;
+              if (u1b <= 0 || u0b >= 1) { continue; }
+              wquad(g, side, Math.max(0, u0b), Math.min(1, u1b), r * 5 + 1, r * 5 + 4.6, U.shade(st.base, faceF * (0.82 + brng.next() * 0.3)), ox, oy);
+            }
           }
         } else if (st.tiles) {
           for (var r2 = 0; r2 < H / 10; r2++) { wline(g, side, 0, r2 * 10, 1, r2 * 10, U.shade(st.base, faceF * 0.88), 1, ox, oy); }
@@ -660,7 +667,7 @@
       case O.DUMPSTER: box(g, 0.04, 0.12, 0.92, 0.76, 0, 34, '#3f6b4a'); break;
       case O.LAMPPOST: drawLamp(g); break;
       case O.MAILBOX: box(g, 0.46, 0.46, 0.08, 0.08, 0, 22, '#555'); box(g, 0.36, 0.38, 0.28, 0.24, 22, 12, '#2f4f8f'); break;
-      case O.SHOP_SHELF: bw = (dir === 1 || dir === 3) ? [0.25, 0.02, 0.5, 0.96] : [0.02, 0.25, 0.96, 0.5]; box(g, bw[0], bw[1], bw[2], bw[3], 0, 48, '#9ea3a6'); drawProducts(g, bw, rng); break;
+      case O.SHOP_SHELF: bw = (dir === 1 || dir === 3) ? [0.25, 0.04, 0.5, 0.92] : [0.04, 0.25, 0.92, 0.5]; drawRack(g, bw, rng); break;
       case O.CASH: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#5a5a5e'); box(g, 0.32, 0.32, 0.36, 0.36, 30, 12, '#2c2c30'); break;
       case O.PUMP: box(g, 0.3, 0.3, 0.4, 0.4, 0, 50, '#c8c4bc'); box(g, 0.32, 0.32, 0.36, 0.36, 50, 8, '#b33a2c'); break;
       case O.CAR: drawCar(g, dir, rng); break;
@@ -863,6 +870,40 @@
       }
     }
   }
+  /* estante de metal aberta (como em depósitos e lojas): 4 colunas, 3 prateleiras com caixas, latas e potes */
+  function drawRack(g, bw, rng) {
+    var metal = '#3a3c40', posts = [[0, 0], [1, 0], [0, 1], [1, 1]];
+    function post(px, py) { box(g, bw[0] + bw[2] * px - (px ? 0.04 : 0), bw[1] + bw[3] * py - (py ? 0.04 : 0), 0.04, 0.04, 0, 56, metal, { outline: false }); }
+    post(0, 0); post(1, 0); post(0, 1);
+    var levels = [4, 22, 40];
+    levels.forEach(function (h, li) {
+      box(g, bw[0], bw[1], bw[2], bw[3], h, 2, '#55585c');
+      // coisas na prateleira
+      var n = 3 + rng.int(0, 3);
+      for (var i = 0; i < n; i++) {
+        if (rng.chance(0.2)) { continue; }
+        var long = bw[2] > bw[3];
+        var u = (i + 0.15) / n, w = 0.7 / n;
+        var x0 = long ? bw[0] + bw[2] * u : bw[0] + 0.06, y0 = long ? bw[1] + 0.06 : bw[1] + bw[3] * u;
+        var kind = rng.next();
+        if (kind < 0.45) { // caixa de papelão
+          var bh = rng.range(8, 14);
+          box(g, x0, y0, long ? bw[2] * w : bw[2] - 0.12, long ? bw[3] - 0.12 : bw[3] * w, h + 2, bh, rng.pick(['#b0905e', '#a4845a', '#c2a070', '#8e7048']));
+        } else if (kind < 0.8) { // latas / potes
+          for (var k = 0; k < 3; k++) {
+            var cx = long ? x0 + bw[2] * w * (0.2 + k * 0.3) : x0 + (bw[2] - 0.12) * (0.2 + k * 0.3), cy = long ? y0 + (bw[3] - 0.12) * 0.5 : y0 + bw[3] * w * 0.5;
+            var cp = ip(cx, cy, h + 2), ch2 = rng.range(5, 9), cc = rng.pick(['#c8ccd0', '#a83a2a', '#3a6aa8', '#e8e2d0', '#d8a83a', '#5a8a4a']);
+            g.fillStyle = U.shade(cc, 0.8); g.fillRect(cp[0] - 2.5, cp[1] - ch2, 5, ch2);
+            g.fillStyle = cc; g.fillRect(cp[0] - 2.5, cp[1] - ch2, 3, ch2);
+            ellipseAt(g, cp[0], cp[1] - ch2, 2.5, 1.2, U.shade(cc, 1.15));
+          }
+        } else { // ferramentas / sacos
+          box(g, x0, y0, long ? bw[2] * w : bw[2] - 0.14, long ? bw[3] - 0.14 : bw[3] * w, h + 2, 4, rng.pick(['#6a6a5a', '#8a3a2a', '#4a5a6a']));
+        }
+      }
+    });
+    post(1, 1);
+  }
   function drawProducts(g, bw, rng) {
     var cols = ['#c0392b', '#e67e22', '#f1c40f', '#27ae60', '#2980b9', '#8e44ad', '#ecf0f1', '#d35400'];
     for (var sh = 0; sh < 3; sh++) {
@@ -1045,7 +1086,7 @@
    * pose: { ang (radianos, mundo), phase (0..1 ciclo de passos), moving, run, crouch, attack (0..1), shove (0..1), weapon, aim,
    *   down, dead, crawl, lunge, reach }
    * lightF: multiplicador de cor (luz do lugar) */
-  var OUT = 'rgba(14,11,9,0.72)';
+  var OUT = 'rgba(14,11,9,0.4)';
   var TAU = Math.PI * 2;
   var SHT = {};
   /* cor sombreada com cache por cor e nível de luz quantizado (não cria strings por quadro) */
@@ -1076,6 +1117,13 @@
     capsule(g, a, b, ra, rb);
     g.fillStyle = c; g.fill();
     g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
+    // volume: faixa clara do lado da luz (alto à esquerda) e escura do outro
+    if (ra > 1.4) {
+      capsule(g, [a[0] - ra * 0.35, a[1] - ra * 0.2], [b[0] - rb * 0.35, b[1] - rb * 0.2], ra * 0.45, rb * 0.45);
+      g.fillStyle = 'rgba(255,250,235,0.13)'; g.fill();
+      capsule(g, [a[0] + ra * 0.45, a[1] + ra * 0.2], [b[0] + rb * 0.45, b[1] + rb * 0.2], ra * 0.4, rb * 0.4);
+      g.fillStyle = 'rgba(0,0,10,0.16)'; g.fill();
+    }
   }
   function blob(g, x, y, rx, ry, c, outline) {
     g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU);
@@ -1143,7 +1191,7 @@
     var sleeve = look.sleeve || 'long', legsT = look.legs || 'long';
     var shirt = look.shirt || skin, outer = look.jacket || shirt;
     var sleeveCol = look.sleeveCol || outer;
-    var H = (F ? 50 : 54) * (pose.crouch ? 0.8 : 1);
+    var H = (F ? 52 : 56) * (pose.crouch ? 0.8 : 1);
     var ph = pose.phase * TAU;
     var mv = pose.moving ? 1 : 0;
     var amp = pose.run ? 0.36 : (Zb ? 0.2 : 0.25);
@@ -1384,13 +1432,17 @@
       // sangue (visto de frente ou de costas)
       var bl = look.blood;
       if (bl) {
-        g.fillStyle = col('#5e0f0f');
         for (var i = 0; i < bl.length; i++) {
           var bh = hipH + bl[i][1] * (shH - hipH - 2), bsd = bl[i][0] * waW * 0.9;
           var bp2 = frontPt(bh, dWa, bsd);
-          var rr = bl[i][2] * 0.75;
-          g.beginPath(); g.ellipse(bp2[0], bp2[1], rr, rr * 0.8, 0, 0, TAU); g.fill();
-          if (Zb) { g.fillRect(bp2[0] - 0.4, bp2[1], 0.9, rr + 2.5); }
+          var rr = bl[i][2] * 0.9;
+          // respingos pontilhados (não uma bola)
+          for (var bd = 0; bd < 9; bd++) {
+            var ba = (bd * 2.39 + i) % TAU, brr = rr * ((bd * 37 + i * 11) % 10) / 10;
+            g.fillStyle = col(bd % 3 ? '#6a1010' : '#8a1a14');
+            g.fillRect(bp2[0] + Math.cos(ba) * brr - 0.5, bp2[1] + Math.sin(ba) * brr * 0.8 - 0.5, bd < 3 ? 1.6 : 1, bd < 3 ? 1.6 : 1);
+          }
+          if (Zb) { g.fillStyle = col('#5e0f0f'); g.fillRect(bp2[0] - 0.4, bp2[1], 0.9, rr + 2.5); }
         }
       }
       if (look.scarf) {
@@ -1407,7 +1459,7 @@
     var hSide = Zb ? (((seed >> 1) % 3) - 1) * 0.04 : 0;
     var headF = leanAt(shH) + 0.035 + (Zb ? 0.07 : 0);
     var HC = P(headF, hSide, headH);
-    var rX = F ? 4.1 : 4.4, rY = F ? 4.8 : 5.1;
+    var rX = F ? 3.8 : 4.1, rY = F ? 4.5 : 4.8;
     var hs = look.hairStyle || 'curto';
     var longHair = hs === 'longo' || hs === 'rabo' || (hs === 'médio' && F);
     function hairBack() {

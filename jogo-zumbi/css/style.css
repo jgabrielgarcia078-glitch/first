@@ -250,3 +250,27 @@ h3 { font-family: var(--font-c); font-size: 14px; text-transform: uppercase; let
 #hud-right button.sb.on { background: rgba(0,0,0,0.45); color: #ffe6a6; box-shadow: inset 2px 0 0 #d6bf86; border: none; }
 #hud-right .equip .slot.hand { width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(rgba(30,30,28,0.85), rgba(0,0,0,0.85)); border: 1px solid rgba(220,214,196,0.35); font-size: 22px; }
 #hud-right .equip .slot.hand .k { top: auto; bottom: -2px; left: 50%; transform: translateX(-50%); font-size: 9px; }
+
+/* janelas do inventário como no original: cinza translúcido, abas de recipiente em cima */
+#p-inv { background: transparent; border: none; box-shadow: none; }
+#p-inv > .head { background: rgba(20,20,20,0.6); border: 1px solid rgba(255,255,255,0.08); }
+.pane-wrap { display: flex; flex-direction: column; min-width: 0; }
+.tabs-h { display: flex; gap: 2px; padding: 0 2px; }
+.tabs-h .tab-v { width: 32px; height: 26px; border-bottom: none; background: rgba(50,50,48,0.8); border-color: rgba(255,255,255,0.12); }
+.tabs-h .tab-v.on { background: rgba(70,68,62,0.92); border-color: rgba(255,255,255,0.25); color: #fff; }
+.pane { background: rgba(48,48,46,0.82); border: 1px solid rgba(255,255,255,0.1); }
+.pane-h { background: rgba(22,22,21,0.92); border-bottom: 1px solid rgba(255,255,255,0.08); }
+.cols-h { background: rgba(0,0,0,0.18); border-bottom-color: rgba(255,255,255,0.08); color: #c8c4b8; }
+.pane .item .cat { color: #b0aca0; }
+.pane .item:hover { background: rgba(255,255,255,0.08); }
+/* saúde: silhueta clara com ferimentos em vermelho; tabela de proteção */
+.bodyfig { background: #050505; border: 1px solid #2a2a2a; }
+.bodyfig polygon, .bodyfig ellipse { stroke: rgba(0,0,0,0.85); stroke-width: 1; }
+table.prot { border-collapse: collapse; font-size: 11px; margin-top: 4px; }
+table.prot th { text-align: left; color: #c8c4b8; font-weight: 600; padding: 1px 10px 1px 0; }
+table.prot td { padding: 0 10px 0 0; color: #d8d2c2; font-variant-numeric: tabular-nums; }
+table.prot td.p0 { color: #e04a3a; }
+table.prot td.pv { color: #e8e4d8; }
+
+#p-health { background: rgba(0,0,0,0.9); }
+.pane-main { min-height: 150px; }

@@ -30,6 +30,27 @@
   FX.floatText = function (x, y, z, text, color) { if (text) { CP.Game.effects.push({ type: 'text', x: x, y: y, z: z, text: text, color: color || '#fff', t: 0, life: 1.1 }); } };
   FX.lightning = function () { FX.flash = 0.6; };
 
+  /* respingo de sangue pontilhado (8 formas × 9 níveis de luz, em cache) */
+  var splats = [];
+  function splat(v, li) {
+    var k = v * 9 + li;
+    if (splats[k]) { return splats[k]; }
+    var c = document.createElement('canvas'); c.width = 48; c.height = 24;
+    var g = c.getContext('2d'), rng = new U.Rng(v * 97 + 11);
+    var b = 0.25 + 0.75 * li / 8;
+    function col(k2) { return 'rgba(' + Math.round((100 + k2 * 60) * b) + ',' + Math.round((8 + k2 * 10) * b) + ',' + Math.round((8 + k2 * 8) * b) + ',' + (0.55 + k2 * 0.35).toFixed(2) + ')'; }
+    // miolo + pingos em volta, mais esparsos para fora (perspectiva achatada)
+    for (var i = 0; i < 70; i++) {
+      var a = rng.range(0, Math.PI * 2), r = Math.pow(rng.next(), 1.6) * 22;
+      var x = 24 + Math.cos(a) * r, y = 12 + Math.sin(a) * r * 0.5;
+      g.fillStyle = col(rng.next());
+      var w = r < 7 ? 2 + rng.int(0, 2) : 1 + rng.int(0, 1);
+      g.fillRect(x | 0, y | 0, w, Math.max(1, w - 1));
+    }
+    for (var j = 0; j < 3; j++) { var a2 = rng.range(0, Math.PI * 2); g.fillStyle = col(0.4); for (var t = 0; t < 8; t++) { g.fillRect((24 + Math.cos(a2) * (6 + t * 2)) | 0, (12 + Math.sin(a2) * (3 + t)) | 0, 1, 1); } }
+    splats[k] = c;
+    return c;
+  }
   /* manchas no chão (chamado pelo renderizador depois dos pisos) */
   FX.drawDecals = function (g) {
     var G = CP.Game, p = G.player;
@@ -43,10 +64,9 @@
         if (d.z !== 0 && d.z !== lv) { continue; }
         if (Math.abs(d.x - p.x) > 40 || Math.abs(d.y - p.y) > 40) { continue; }
         var b = CP.Vis.brightness(Math.floor(d.x), Math.floor(d.y), d.z, lv);
-        g.fillStyle = 'rgba(' + Math.round(110 * b) + ',' + Math.round(12 * b) + ',' + Math.round(12 * b) + ',0.78)';
-        g.beginPath();
-        g.ellipse(sx(d.x, d.y), sy(d.x, d.y, d.z), d.s, d.s * 0.5, 0, 0, Math.PI * 2);
-        g.fill();
+        var sp = splat(((d.r * 1000) | 0) % 8, Math.min(8, Math.round(b * 8)));
+        var sc = d.s / 5;
+        g.drawImage(sp, sx(d.x, d.y) - 24 * sc, sy(d.x, d.y, d.z) - 12 * sc, 48 * sc, 24 * sc);
       }
     }
   };

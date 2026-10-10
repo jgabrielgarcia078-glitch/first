@@ -60,10 +60,10 @@
   }
   /* silhueta do corpo (frente): partes em retângulos arredondados; esq./dir. do personagem */
   var BODY_SHAPES = {
-    head: 'c60,22,14', neck: 'r54,35,12,10', torso: 'r37,44,46,40', belly: 'r39,84,42,22', groin: 'r41,106,38,16',
-    uarmR: 'r21,46,14,37', uarmL: 'r85,46,14,37', farmR: 'r17,84,13,35', farmL: 'r90,84,13,35',
-    handR: 'r15,120,14,15', handL: 'r91,120,14,15', thighR: 'r41,124,18,45', thighL: 'r61,124,18,45',
-    shinR: 'r42,171,16,42', shinL: 'r62,171,16,42', footR: 'r37,214,20,10', footL: 'r63,214,20,10'
+    head: 'e60,20,11,13', neck: 'p55,32 65,32 66,40 54,40', torso: 'p40,41 80,41 82,64 78,82 42,82 38,64', belly: 'p42,82 78,82 79,98 41,98', groin: 'p41,98 79,98 74,114 60,118 46,114',
+    uarmR: 'p37,43 30,47 25,80 34,82 39,62', uarmL: 'p83,43 90,47 95,80 86,82 81,62', farmR: 'p25,82 34,84 30,112 22,111', farmL: 'p95,82 86,84 90,112 98,111',
+    handR: 'e25,118,5,7', handL: 'e95,118,5,7', thighR: 'p45,114 60,118 58,165 46,165', thighL: 'p75,114 60,118 62,165 74,165',
+    shinR: 'p46,167 58,167 56,206 48,206', shinL: 'p74,167 62,167 64,206 72,206', footR: 'p47,208 57,208 58,216 42,216', footL: 'p73,208 63,208 62,216 78,216'
   };
 
   function h(tag, attrs, html) {
@@ -455,9 +455,9 @@
   }
   /* janela no estilo do original: título, colunas e abas verticais de recipiente à direita */
   function invPane(title, info, btn, tabs, side, cur, rows) {
-    var tb = tabs.map(function (t, i) { return '<button class="tab-v pe' + (i === cur ? ' on' : '') + (t.empty ? ' empty' : '') + '" data-a="invtab" data-side="' + side + '" data-i="' + i + '" title="' + esc(t.name) + '">' + svgIcon(t.icon, 20) + '</button>'; }).join('');
-    return '<div class="pane"><div class="pane-h"><b>' + esc(title) + '</b><span class="pane-i">' + info + '</span>' + (btn || '') + '</div>' +
-      '<div class="pane-main"><div class="pane-list"><div class="cols-h"><span>Tipo</span><span>Categoria</span><span>Peso</span></div>' + rows + '</div><div class="tabs-v">' + tb + '</div></div></div>';
+    var tb = tabs.map(function (t, i) { return '<button class="tab-v pe' + (i === cur ? ' on' : '') + (t.empty ? ' empty' : '') + '" data-a="invtab" data-side="' + side + '" data-i="' + i + '" title="' + esc(t.name) + '">' + svgIcon(t.icon, 18) + '</button>'; }).join('');
+    return '<div class="pane-wrap"><div class="tabs-h">' + tb + '</div><div class="pane"><div class="pane-h"><b>' + esc(title) + '</b><span class="pane-i">' + info + '</span>' + (btn || '') + '</div>' +
+      '<div class="pane-main"><div class="pane-list"><div class="cols-h"><span>Tipo</span><span>Categoria</span><span>Peso</span></div>' + rows + '</div></div></div></div>';
   }
   function renderInv() {
     var b = body('inv');
@@ -636,23 +636,23 @@
     });
     if (!any) { html += '<div class="good" style="margin-top:8px">Nenhum ferimento.</div>'; }
     html += '</div></div>';
-    html += '<h3>Proteção das roupas</h3><div class="muted" style="font-size:12px">' + ['head', 'neck', 'torso', 'farmR', 'handR', 'thighL', 'shinL', 'footL'].map(function (id) { var pr = CP.Body.protection(p, id); return D.PART[id].name + ': ' + Math.round(pr.bite) + '/' + Math.round(pr.scratch); }).join(' · ') + ' <i>(mordida/arranhão)</i></div>';
+    html += '<h3>Proteção das roupas</h3><table class="prot"><tr><th>Parte</th><th>Mordida</th><th>Arranhão</th></tr>' + D.BODY_PARTS.map(function (bp) { var pr = CP.Body.protection(p, bp.id); return '<tr><td>' + bp.name + '</td><td class="' + (pr.bite > 0 ? 'pv' : 'p0') + '">' + Math.round(pr.bite) + '%</td><td class="' + (pr.scratch > 0 ? 'pv' : 'p0') + '">' + Math.round(pr.scratch) + '%</td></tr>'; }).join('') + '</table>';
     b.innerHTML = html;
     UI.sigs.health = healthSig();
   }
   function bodyFigure(bd) {
-    var out = '<svg class="bodyfig" viewBox="0 0 120 228" width="120" height="228">';
+    var out = '<svg class="bodyfig" viewBox="0 0 120 222" width="120" height="222">';
     D.BODY_PARTS.forEach(function (bp) {
       var part = bd.parts[bp.id], sh = BODY_SHAPES[bp.id];
       if (!sh) { return; }
       var sev = 0, bleed = false, band = false;
       part.wounds.forEach(function (w) { sev = Math.max(sev, w.sev); if (w.bleeding && !w.bandage) { bleed = true; } if (w.bandage) { band = true; } });
-      var fill = !part.wounds.length ? '#3b3d38' : U.mix('#a08a3a', '#b02418', Math.min(1, sev));
-      if (band) { fill = U.mix(fill, '#d8d2c0', 0.55); }
+      var fill = !part.wounds.length ? '#d8d2c6' : U.mix('#d8a060', '#c0201a', Math.min(1, sev));
+      if (band) { fill = U.mix(fill, '#f4f0e8', 0.6); }
       var cls = bleed ? ' class="bleed"' : '';
       var t = '<title>' + bp.name + (part.wounds.length ? ' — ' + part.wounds.map(function (w) { return D.WOUND_NAMES[w.type]; }).join(', ') : '') + '</title>';
-      var a = sh.slice(1).split(',').map(Number);
-      if (sh[0] === 'c') { out += '<circle' + cls + ' cx="' + a[0] + '" cy="' + a[1] + '" r="' + a[2] + '" fill="' + fill + '">' + t + '</circle>'; } else { out += '<rect' + cls + ' x="' + a[0] + '" y="' + a[1] + '" width="' + a[2] + '" height="' + a[3] + '" rx="4" fill="' + fill + '">' + t + '</rect>'; }
+      var body = sh.slice(1);
+      if (sh[0] === 'e') { var a = body.split(',').map(Number); out += '<ellipse' + cls + ' cx="' + a[0] + '" cy="' + a[1] + '" rx="' + a[2] + '" ry="' + a[3] + '" fill="' + fill + '">' + t + '</ellipse>'; } else { out += '<polygon' + cls + ' points="' + body + '" fill="' + fill + '">' + t + '</polygon>'; }
     });
     return out + '</svg>';
   }

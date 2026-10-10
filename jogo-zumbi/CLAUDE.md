@@ -1,7 +1,9 @@
 # Condado Perdido — contexto para desenvolvimento
 
 Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquisa está em `01-PESQUISA.md`, o plano em `02-PLANO.md` e as instruções para o jogador em `LEIA-ME.md`.
-**Nunca usar nome, arte, mapa, textos ou sons do Project Zomboid.** Só ideias de mecânica.
+**Nunca usar nome, arte, mapa, textos ou sons do Project Zomboid.** Só ideias de mecânica. Prints do original servem só de referência visual (cores, proporções, luz, layout da interface): tudo é redesenhado por código.
+
+Referências de visual já aplicadas: dia claro e colorido (grama verde viva, asfalto cinza médio); noite azul-arroxeada (`C.NIGHT`, `lightColor`); fora da visão mais escuro; interiores não vistos pretos (`voidAt`); madeira em tábuas estreitas, tijolo com rejunte, papel de parede estampado; móveis com frente detalhada; janelas do inventário cinza com abas em cima; saúde com silhueta e tabela de proteção.
 
 ## Formato
 
