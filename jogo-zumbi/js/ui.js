@@ -21,6 +21,8 @@
     return e;
   }
   function G() { return CP.Game; }
+  /* troca o HTML só quando mudou (evita refazer o DOM a cada 0,2 s) */
+  function setHtml(el, html) { if (el._h !== html) { el._h = html; el.innerHTML = html; } }
   function P() { return CP.Game.player; }
 
   /* ================= INICIALIZAÇÃO ================= */
@@ -167,12 +169,8 @@
     var cr = UI.creation;
     var occOut = D.OCC_OUTFIT[cr.occupation] || (cr.female ? 'civil_f' : 'civil_m');
     var outfit = D.OUTFITS[occOut][0];
-    var look = { skin: cr.look.skin, hair: cr.look.hair, hairStyle: cr.look.hairStyle, beard: cr.look.beard && !cr.female, shirt: '#3d5a80', pants: '#2f4f7f', shoes: '#e0e0e0', jacket: null };
-    outfit.forEach(function (id) {
-      var d = D.ITEMS[id]; if (!d || !d.cloth) { return; }
-      var c = d.cloth.colors ? d.cloth.colors[0] : '#777';
-      if (d.cloth.slot === 'shirt') { look.shirt = c; if (id === 'dress') { look.pants = c; } } else if (d.cloth.slot === 'jacket') { look.jacket = c; } else if (d.cloth.slot === 'pants') { look.pants = c; } else if (d.cloth.slot === 'shoes') { look.shoes = c; }
-    });
+    var look = CP.Spr.buildLook({ skin: cr.look.skin, hair: cr.look.hair, hairStyle: cr.look.hairStyle, beard: cr.look.beard, female: cr.female },
+      outfit.map(function (id) { var d = D.ITEMS[id]; return { id: id, color: d && d.cloth && d.cloth.colors ? d.cloth.colors[0] : '#777777' }; }));
     g.save(); g.scale(2.4, 2.4);
     var t = performance.now() / 1000;
     CP.Spr.drawHuman(g, 33, 72, look, { ang: Math.PI * 0.25 + Math.sin(t * 0.6) * 0.6, phase: (t * 0.8) % 1, moving: true }, 1);
@@ -222,20 +220,20 @@
     if (!p || !p.body) { return; }
     var wt = T.weather();
     var temp = Math.round(T.temperature(true));
-    $['hud-top'].innerHTML = '<div class="hud-box"><div class="clock">' + T.clockText() + '</div><div class="clock-sub">Dia ' + (Math.floor(T.daysSurvived()) + 1) + ' · ' + esc(T.dateText()) + '</div><div class="clock-sub">' + wt.name + ' · ' + temp + '°C · ' + T.season() + (T.powerOn() ? '' : ' · <span class="warn">sem energia</span>') + '</div>' +
-      '<div class="speed pe">' + C.GAME_SPEEDS.map(function (s, i) { return '<button class="pe' + (G().speedIndex === i ? ' on' : '') + '" data-a="speed" data-i="' + i + '">' + (i === 0 ? '▶' : '▶'.repeat(Math.min(3, i + 1))) + '</button>'; }).join('') + (p.sleeping ? ' <span class="warn">dormindo...</span>' : '') + '</div></div>';
+    setHtml($['hud-top'], '<div class="hud-box"><div class="clock">' + T.clockText() + '</div><div class="clock-sub">Dia ' + (Math.floor(T.daysSurvived()) + 1) + ' · ' + esc(T.dateText()) + '</div><div class="clock-sub">' + wt.name + ' · ' + temp + '°C · ' + T.season() + (T.powerOn() ? '' : ' · <span class="warn">sem energia</span>') + '</div>' +
+      '<div class="speed pe">' + C.GAME_SPEEDS.map(function (s, i) { return '<button class="pe' + (G().speedIndex === i ? ' on' : '') + '" data-a="speed" data-i="' + i + '">' + (i === 0 ? '▶' : '▶'.repeat(Math.min(3, i + 1))) + '</button>'; }).join('') + (p.sleeping ? ' <span class="warn">dormindo...</span>' : '') + '</div></div>');
     var ms = CP.Body.moodles(p);
-    $.moodles.innerHTML = ms.map(function (m) {
+    setHtml($.moodles, ms.map(function (m) {
       return '<div class="moodle pe" title="' + esc(m.name + ' — ' + m.desc) + '"><span class="lbl">' + esc(m.name) + '</span><div class="ic ' + (m.good ? 'good' : 'l' + m.level) + '">' + (MOODLE_ICONS[m.id] || '❔') + '</div></div>';
-    }).join('');
+    }).join(''));
     var b = p.body;
     var maxH = CP.Body.maxHealth(p);
     var cap = CP.Items.Inv.capacity(p), car = CP.Items.Inv.carried(p);
-    $['hud-left'].innerHTML = '<div class="hud-box">' +
+    setHtml($['hud-left'], '<div class="hud-box">' +
       '<div style="display:flex;justify-content:space-between;font-size:12px"><span>❤ Vida</span><span>' + Math.round(b.health) + '%</span></div><div class="statbar"><i style="width:' + Math.max(0, b.health) + '%;background:' + (b.health > 60 ? '#7ec46a' : (b.health > 30 ? '#e0a64a' : '#d9534f')) + '"></i></div>' +
       '<div style="display:flex;justify-content:space-between;font-size:12px"><span>💨 Fôlego</span><span>' + Math.round(b.stats.endurance * 100) + '%</span></div><div class="statbar"><i style="width:' + (b.stats.endurance * 100) + '%;background:#6aa8d8"></i></div>' +
       '<div style="display:flex;justify-content:space-between;font-size:12px"><span>🎒 Peso</span><span>' + U.round1(car) + ' / ' + U.round1(cap) + ' kg</span></div><div class="statbar"><i style="width:' + Math.min(100, car / cap * 100) + '%;background:' + (car > cap ? '#d9534f' : '#c9a24a') + '"></i></div>' +
-      '<div style="font-size:12px" class="muted">' + (p.sneaking ? '🐾 Agachado · ' : '') + (p.running ? '🏃 Correndo · ' : '') + (p.flashlightOn ? '🔦 · ' : '') + 'Mortos: ' + G().state.kills + (maxH < 99 ? ' · vida máx. ' + Math.round(maxH) + '%' : '') + '</div></div>';
+      '<div style="font-size:12px" class="muted">' + (p.sneaking ? '🐾 Agachado · ' : '') + (p.running ? '🏃 Correndo · ' : '') + (p.flashlightOn ? '🔦 · ' : '') + 'Mortos: ' + G().state.kills + (maxH < 99 ? ' · vida máx. ' + Math.round(maxH) + '%' : '') + '</div></div>');
     // mãos e atalhos
     var hb = p.hotbar || ['', '', '', '', ''];
     function slot(it, k, cls) {
@@ -253,7 +251,7 @@
       var d = D.ITEMS[id];
       return '<div class="slot pe" data-a="hot" data-i="' + i + '" title="' + esc(d.name) + (f ? '' : ' (não está com você)') + '" style="' + (f ? '' : 'opacity:0.4') + '"><span class="k">' + (i + 1) + '</span>' + d.icon + '</div>';
     }).join('');
-    $['hud-bottom'].innerHTML = slot(p.hand1, 'mão', 'hand') + slot(p.hand2, '2ª', 'hand') + '<div style="width:10px"></div>' + hotHtml;
+    setHtml($['hud-bottom'], slot(p.hand1, 'mão', 'hand') + slot(p.hand2, '2ª', 'hand') + '<div style="width:10px"></div>' + hotHtml);
     // ação em andamento
     var al = $['action-label'];
     if (p.action && p.action.time > 0.4) { al.style.display = 'block'; al.textContent = p.action.opts.name + ' — ' + Math.round(p.action.t / p.action.time * 100) + '%' + (p.queue.length ? ' (+' + p.queue.length + ')' : ''); } else if (p.reloadT > 0) { al.style.display = 'block'; al.textContent = 'Recarregando...'; } else { al.style.display = 'none'; }

@@ -46,6 +46,11 @@
   C.EDGE = {
     NONE: 0, WALL: 1, DOOR: 2, WINDOW: 3, FENCE: 4, FENCE_TALL: 5, DOORWAY: 6, GARAGE: 7
   };
+  /* Telhados: inclinação (px de altura por tile), altura máxima da cumeeira e maior largura com telhado de duas águas */
+  C.ROOF_SLOPE = 17;
+  C.ROOF_MAX_H = 84;
+  C.ROOF_PITCH_MAX = 14;
+
   /* Estilos de parede: índice em C.WALL_STYLES */
   C.WALL_STYLES = [
     { name: 'branca', base: '#d9d4c7', trim: '#a9a395' },
@@ -167,6 +172,8 @@
 
   /* ---------- Zumbis (equivalente às opções de sandbox do PZ) ---------- */
   C.ZOMBIE = {
+    ACTIVE_IN: 40,             // zumbis "acordam" (são simulados) a esta distância do jogador
+    ACTIVE_OUT: 50,            // e voltam a ser só dados além desta
     RADIUS: 0.28,
     SPEED_SHAMBLER: 0.95,      // tiles/s perseguindo
     SPEED_FAST: 1.9,

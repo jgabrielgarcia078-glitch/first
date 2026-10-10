@@ -25,7 +25,7 @@
   };
   R.resize = function () {
     if (!R.canvas) { return; }
-    R.dpr = Math.min(window.devicePixelRatio || 1, 2);
+    R.dpr = R.hiDpi ? Math.min(window.devicePixelRatio || 1, 2) : 1;
     R.w = window.innerWidth; R.h = window.innerHeight;
     R.canvas.width = Math.round(R.w * R.dpr); R.canvas.height = Math.round(R.h * R.dpr);
     R.canvas.style.width = R.w + 'px'; R.canvas.style.height = R.h + 'px';
@@ -102,7 +102,7 @@
         var sx = HW * (x - y), sy = HH * (x + y);
         if (sy > camSY + hh + 40 || sy < camSY - hh - 80) { continue; }
         var b = V.brightness(x, y, 0, viewZ);
-        drawSprite(g, S.floor(f, L0.fvar[i0]), S.lightIndex(b), sx, sy);
+        drawSprite(g, S.floor(f, fv(f, L0.fvar[i0], x, y)), S.lightIndex(b), sx, sy);
         tiles++;
       }
     }
@@ -124,7 +124,7 @@
           var fade = zz > viewZ ? fadeAlpha(x, y, view) : 1;
           if (zz > 0) {
             var fz = L.floor[ii];
-            if (fz) { drawSprite(g, S.floor(fz, L.fvar[ii]), li, bx, by, fade); }
+            if (fz === F.ROOF) { drawSprite(g, S.roof(roofCode(ch, zz, ii)), li, bx, by, fade); } else if (fz) { drawSprite(g, S.floor(fz, fv(fz, L.fvar[ii], x, y)), li, bx, by, fade); }
           }
           // paredes
           var wwT = L.ww[ii], wnT = L.wn[ii];
@@ -155,6 +155,53 @@
     R.stats.tiles = tiles; R.stats.ents = ents.length;
     R.stats.ms = performance.now() - t0;
   };
+
+  /* variação de textura por posição nos pisos "naturais" (a cor continua vindo de fvar) */
+  var NATURAL = [];
+  [F.GRASS, F.DARKGRASS, F.DIRT, F.ASPHALT, F.SIDEWALK, F.SAND, F.GRAVEL, F.CONCRETE, F.FIELD].forEach(function (f) { NATURAL[f] = 1; });
+  function fv(f, v, x, y) {
+    if (!NATURAL[f]) { return v; }
+    var h = (x * 374761393 + y * 668265263) | 0;
+    h = (h ^ (h >>> 13)) * 1274126177;
+    return (v & 3) | (((h >>> 16) & 7) << 2);
+  }
+
+  /* ---------- telhados (formato calculado uma vez por chunk e nível) ---------- */
+  function roofCode(ch, z, i) {
+    var rc = ch._roof || (ch._roof = []);
+    return (rc[z] || (rc[z] = computeRoof(ch, z)))[i];
+  }
+  function qh(h) { return Math.min(63, Math.round(h / 2)); }
+  function computeRoof(ch, z) {
+    var N = C.CHUNK, out = new Int32Array(AREA);
+    var L = ch.levels[z], fl = L.floor, Lb = z > 0 ? ch.levels[z - 1] : null, RF = F.ROOF;
+    for (var i = 0; i < AREA; i++) {
+      if (fl[i] !== RF) { continue; }
+      var lx = i % N, ly = (i / N) | 0;
+      var dN = 0, dS = 0, dW = 0, dE = 0;
+      while (ly - dN - 1 >= 0 && fl[i - (dN + 1) * N] === RF) { dN++; }
+      while (ly + dS + 1 < N && fl[i + (dS + 1) * N] === RF) { dS++; }
+      while (lx - dW - 1 >= 0 && fl[i - dW - 1] === RF) { dW++; }
+      while (lx + dE + 1 < N && fl[i + dE + 1] === RF) { dE++; }
+      var wid = dW + dE + 1, dep = dN + dS + 1, col = L.fvar[i] & 7;
+      var small = Math.min(wid, dep);
+      if (small > C.ROOF_PITCH_MAX || small < 3) {
+        out[i] = 3 | (col << 20) | (((dN === 0 ? 1 : 0) | (dE === 0 ? 2 : 0) | (dS === 0 ? 4 : 0) | (dW === 0 ? 8 : 0)) << 28);
+        continue;
+      }
+      var alongX = wid >= dep;
+      var d0 = alongX ? dN : dW, d1 = alongX ? dS : dE, half = (d0 + d1 + 1) / 2;
+      var s = Math.min(C.ROOF_SLOPE, C.ROOF_MAX_H / half);
+      var a = s * Math.min(d0, d1 + 1), b = s * Math.min(d0 + 1, d1), p = d0 === d1 ? s * (d0 + 0.5) : 0;
+      var gable = alongX ? dE === 0 : dS === 0, style = 0;
+      if (gable && Lb) {
+        if (alongX && lx + 1 < N) { style = Lb.wws[i + 1]; } else if (!alongX && ly + 1 < N) { style = Lb.wns[i + N]; }
+      }
+      var eav = alongX ? ((d0 === 0 ? 1 : 0) | (d1 === 0 ? 4 : 0)) : ((d0 === 0 ? 8 : 0) | (d1 === 0 ? 2 : 0));
+      out[i] = (alongX ? 1 : 2) | (qh(a) << 2) | (qh(b) << 8) | (qh(p) << 14) | (col << 20) | ((gable ? 1 : 0) << 23) | ((style & 15) << 24) | (eav << 28);
+    }
+    return out;
+  }
 
   /* telhados/andares de cima ficam transparentes perto do jogador (quando ele está do lado de fora) */
   function fadeAlpha(x, y, view) {

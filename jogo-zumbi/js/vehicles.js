@@ -180,7 +180,7 @@
         var killed = CP.Zombies.damage(zb, sp * 0.22, car.ang, { knockdown: true, knock: sp * 0.15, cause: 'car' });
         car.cond = Math.max(0, car.cond - 0.004 * sp);
         car.speed *= killed ? 0.92 : 0.8;
-        if (CP.Audio) { CP.Audio.hit('blunt_long', killed); }
+        if (CP.Audio) { CP.Audio.hit('blunt_long', killed, zb.x, zb.y, zb.z); }
       }
     }
     // barulho do motor

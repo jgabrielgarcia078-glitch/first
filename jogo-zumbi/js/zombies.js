@@ -43,20 +43,10 @@
       target: null, memT: 0, path: null, pathI: 0, repathT: 0, thinkT: Math.random() * ZC.THINK_INTERVAL,
       attackT: 0, attackCd: 0, staggerT: 0, downT: 0, climbT: 0, climb: null, bash: null, bashT: 0,
       vx: 0, vy: 0, phase: Math.random(), moving: false, seesPlayer: false, idleT: U.randRange(2, 10),
-      groanT: U.randRange(3, 20), lastSeenT: 99
+      groanT: U.randRange(8, 40), lastSeenT: 99
     };
-    zb.look = {
-      skin: d.skin, hair: d.hair, hairStyle: d.hairStyle, zombie: true, female: d.female,
-      shirt: '#777', pants: '#555', shoes: '#333', jacket: null, hat: null, blood: d.blood
-    };
-    (d.outfit || []).forEach(function (o) {
-      var it = D.ITEMS[o.id];
-      if (!it || !it.cloth) { return; }
-      var col = U.mix(o.color, '#5a5a4a', 0.35);
-      var s = it.cloth.slot;
-      if (s === 'shirt') { zb.look.shirt = col; if (o.id === 'dress') { zb.look.pants = col; } } else if (s === 'jacket') { zb.look.jacket = col; } else if (s === 'pants') { zb.look.pants = col; } else if (s === 'shoes') { zb.look.shoes = col; } else if (s === 'hat') { zb.look.hat = col; }
-    });
-    if (zb.look.shirt === '#777' && !zb.look.jacket) { zb.look.shirt = U.mix(d.skin, '#555', 0.5); }
+    zb.look = CP.Spr.buildLook({ skin: d.skin, hair: d.hair, hairStyle: d.hairStyle, female: d.female, zombie: true, seed: d.seed || zb.id, blood: d.blood },
+      (d.outfit || []).map(function (o) { return { id: o.id, color: U.mix(o.color, '#5a5a4a', 0.35) }; }));
     zb.draw = drawZombie;
     return zb;
   }
@@ -70,10 +60,29 @@
   Z.toData = toData;
   Z.fromData = fromData;
 
-  Z.activateChunk = function (ch) {
-    var G = CP.Game;
-    for (var i = 0; i < ch.zombies.length; i++) { G.zombies.push(fromData(ch.zombies[i])); }
-    ch.zombies = [];
+  /* chunk ficou ativo: os zumbis dele só viram entidades quando chegam perto (Z.syncActive) */
+  Z.activateChunk = function (ch) { Z.syncT = 0; };
+  /* converte dados ↔ entidades conforme a distância ao jogador (só os próximos gastam CPU) */
+  Z.syncActive = function () {
+    var G = CP.Game, p = G.player;
+    var rin = ZC.ACTIVE_IN, rout = ZC.ACTIVE_OUT;
+    var i, zb;
+    for (i = G.zombies.length - 1; i >= 0; i--) {
+      zb = G.zombies[i];
+      if (zb.state === 'chase' || zb.state === 'attack' || zb.state === 'bash') { continue; }
+      if (Math.abs(zb.x - p.x) > rout || Math.abs(zb.y - p.y) > rout) {
+        var ch = W.chunkAt(Math.floor(zb.x), Math.floor(zb.y));
+        if (ch) { ch.zombies.push(toData(zb)); ch.saveDirty = true; G.zombies.splice(i, 1); }
+      }
+    }
+    for (var k in G.activeChunks) {
+      var c = G.activeChunks[k];
+      var arr = c.zombies;
+      for (i = arr.length - 1; i >= 0; i--) {
+        var d = arr[i];
+        if (Math.abs(d.x - p.x) < rin && Math.abs(d.y - p.y) < rin) { G.zombies.push(fromData(d)); arr.splice(i, 1); }
+      }
+    }
   };
   Z.deactivateChunk = function (ch) {
     var G = CP.Game;
@@ -173,6 +182,19 @@
       if (zb.state === 'fakedead' && d < 4) { zb.state = 'down'; zb.downT = 0.8; } else if (zb.state !== 'down' && zb.state !== 'stagger' && zb.state !== 'fakedead' && zb.state !== 'bash' && zb.state !== 'climb') { zb.state = 'investigate'; zb.path = null; zb.repathT = U.randRange(0, 0.4); }
       if (zb.state === 'bash' && type !== 'bash') { zb.path = null; zb.state = 'investigate'; }
     }
+    if (r >= 20) {
+      for (var k in G.activeChunks) {
+        var arr = G.activeChunks[k].zombies;
+        for (var j = 0; j < arr.length; j++) {
+          var d = arr[j];
+          var ddx = x - d.x, ddy = y - d.y, dd = Math.sqrt(ddx * ddx + ddy * ddy);
+          if (dd > r || dd < 1) { continue; }
+          var step = Math.min(dd - 2, dd * 0.35);
+          var nx = d.x + ddx / dd * step, ny = d.y + ddy / dd * step;
+          if (W.tileWalkable(Math.floor(nx), Math.floor(ny), d.z)) { d.x = nx; d.y = ny; d.state = 'wander'; }
+        }
+      }
+    }
     if (CP.FX && radius >= 12) { CP.FX.noiseRing(x, y, z, radius); }
   };
 
@@ -207,7 +229,7 @@
     var G = CP.Game;
     var p = G.player;
     rebuildHash();
-    Z.nodeBudget = 3500;
+    Z.nodeBudget = 1500;
     Z.tickN = (Z.tickN || 0) + 1;
     var zs = G.zombies;
     var attackers = 0;
@@ -228,6 +250,8 @@
     Z.attackers = attackers;
     strayT -= dt;
     if (strayT <= 0) { strayT = 2; Z.storeStrays(); }
+    Z.syncT = (Z.syncT || 0) - dt;
+    if (Z.syncT <= 0) { Z.syncT = 0.5; Z.syncActive(); }
   };
 
   function speedOf(zb) {
@@ -284,7 +308,11 @@
       }
     }
     zb.groanT -= dt;
-    if (zb.groanT <= 0) { zb.groanT = U.randRange(6, 22); if (CP.Audio) { CP.Audio.groan(zb, false); } }
+    if (zb.groanT <= 0) {
+      // só os mais próximos gemem (evita um coro constante)
+      zb.groanT = U.randRange(12, 35);
+      if (CP.Audio && U.dist2(zb.x, zb.y, p.x, p.y) < 20 * 20 && Math.random() < 0.6) { CP.Audio.groan(zb, zb.state === 'chase'); }
+    }
     // memória
     if (zb.target && !zb.seesPlayer) {
       zb.memT -= dt;
@@ -492,6 +520,7 @@
     zb.attackCd = ZC.ATTACK_COOLDOWN * U.randRange(0.85, 1.2);
     zb.state = 'chase';
     var d = U.dist(zb.x, zb.y, p.x, p.y);
+    if (CP.Audio && Math.random() < 0.7) { CP.Audio.zombieAttack(zb); }
     if (p.dead || d > ZC.ATTACK_RANGE + 0.35 || Math.abs(zb.z - p.z) > 0.45) { return; }
     if (CP.Combat) { CP.Combat.zombieHits(zb, p); }
   }
@@ -528,6 +557,7 @@
     if (ch) { ch.corpses.push(corpse); ch.dirty = true; }
     G.state.kills++;
     G.player.kills++;
+    if (CP.Audio && cause !== 'car') { CP.Audio.zombieDie(zb); }
     if (CP.FX) { CP.FX.blood(zb.x, zb.y, zb.z, 4); }
     U.emit('zombie:killed', { zombie: zb, cause: cause });
   };
@@ -581,7 +611,7 @@
       ang: zb.ang, phase: zb.phase, moving: zb.moving, run: zb.speedType === 'sprinter' && zb.state === 'chase',
       attack: zb.state === 'attack' ? 1 - zb.attackT / ZC.ATTACK_WINDUP * 0.6 : 0,
       down: zb.state === 'down' || zb.state === 'fakedead', crawl: zb.crawler && zb.state !== 'down' && zb.state !== 'fakedead',
-      lunge: zb.state === 'attack'
+      lunge: zb.state === 'attack', reach: zb.state === 'chase' || zb.state === 'attack' || zb.state === 'bash'
     };
     if (zb.state === 'stagger') { pose.ang += Math.sin(zb.staggerT * 20) * 0.2; }
     if (zb.state === 'climb') { sy -= 10 * Math.sin((1 - zb.climbT / 2.4) * Math.PI); }

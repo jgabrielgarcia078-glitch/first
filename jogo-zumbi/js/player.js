@@ -214,19 +214,10 @@
   P.lookFor = function (p) {
     var w = p.worn;
     var l = p.look;
-    var out = {
-      skin: l.skin, hair: l.hair, hairStyle: l.hairStyle, beard: l.beard && !p.female,
-      shirt: w.shirt ? w.shirt.color : l.skin,
-      jacket: w.jacket ? w.jacket.color : (w.vest ? w.vest.color : null),
-      pants: w.pants ? w.pants.color : U.shade(l.skin, 0.9),
-      shoes: w.shoes ? w.shoes.color : U.shade(l.skin, 0.8),
-      hat: w.hat ? w.hat.color : null,
-      blood: p.bloodSpots || null,
-      female: p.female,
-      bag: w.back ? (CP.Items.def(w.back).id === 'military_bag' ? '#4a5a3a' : (CP.Items.def(w.back).id === 'schoolbag' ? '#8a2f2f' : '#5a4a3a')) : null
-    };
-    if (w.shirt && CP.Items.def(w.shirt).id === 'dress') { out.pants = w.shirt.color; }
-    return out;
+    var bag = null;
+    if (w.back) { var bid = w.back.id; bag = bid === 'military_bag' ? '#4a5a3a' : (bid === 'schoolbag' ? '#8a2f2f' : '#5a4a3a'); }
+    return CP.Spr.buildLook({ skin: l.skin, hair: l.hair, hairStyle: l.hairStyle, beard: l.beard, female: p.female, blood: p.bloodSpots || null, bag: bag, seed: 0 },
+      [w.hat, w.neck, w.shirt, w.jacket, w.vest, w.pants, w.shoes, w.gloves]);
   };
   P.draw = function (g, sx, sy, bright) {
     var p = this;

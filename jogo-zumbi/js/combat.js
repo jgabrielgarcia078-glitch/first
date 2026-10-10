@@ -128,7 +128,7 @@
       var killed = CP.Zombies.damage(zb, dmg, p.ang, { stagger: Math.random() < 0.55 + knock * 0.2, knockdown: knockdown, knock: knock, cause: 'weapon' });
       CP.Player.addXp(p, w.skill, killed ? 3 : 1.5);
       if (killed) { CP.Player.addXp(p, 'strength', 0.3); }
-      if (CP.Audio) { CP.Audio.hit(w.type, killed); }
+      if (CP.Audio) { CP.Audio.hit(w.type, killed, zb.x, zb.y, zb.z); if (!killed && Math.random() < 0.4) { CP.Audio.groan(zb, true); } }
       CP.Zombies.noise(zb.x, zb.y, zb.z, C.NOISE.HIT, 'hit');
       if (crit && CP.FX) { CP.FX.floatText(zb.x, zb.y, zb.z, killed ? '' : 'Crítico!', '#ffcc66'); }
       // desgaste da arma
@@ -189,7 +189,7 @@
     if (zb.state === 'fakedead') { zb.state = 'down'; zb.downT = 1.5; }
     if (zb.state === 'down') { zb.downT = Math.max(zb.downT, 1.2); }
     var killed = CP.Zombies.damage(zb, dmg, p.ang, { cause: 'stomp' });
-    if (CP.Audio) { CP.Audio.hit('stomp', killed); }
+    if (CP.Audio) { CP.Audio.hit('stomp', killed, zb.x, zb.y, zb.z); }
     CP.Player.addXp(p, 'strength', 0.4);
     CP.Zombies.noise(p.x, p.y, p.z, C.NOISE.HIT, 'stomp');
     if (Math.random() < 0.35 && CP.Body) { CP.Body.addBloodOnClothes(p, 0.08, 'shoes'); }

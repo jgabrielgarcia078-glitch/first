@@ -478,7 +478,7 @@
         if (type === E.DOOR) { W.setEdgeState(t.x, t.y, z, t.side, { open: false, locked: false, hp: 30, bar: 0, barHp: 0, broken: false, ext: true, built: true }); }
         if (type === E.WALL) { W.setEdgeState(t.x, t.y, z, t.side, { hp: 40, built: true }); }
       } else if (t.kind === 'floor') {
-        var l = W.lvl(t.x, t.y, z); l.floor[W.idx(t.x, t.y)] = F.WOOD; W.chunkAt(t.x, t.y).dirty = true;
+        var l = W.lvl(t.x, t.y, z); l.floor[W.idx(t.x, t.y)] = F.WOOD; W.chunkAt(t.x, t.y).dirty = true; W.chunkAt(t.x, t.y)._roof = null;
       } else {
         var lv = W.lvl(t.x, t.y, z); lv.obj[W.idx(t.x, t.y)] = O[b.obj]; lv.odir[W.idx(t.x, t.y)] = 0; W.chunkAt(t.x, t.y).dirty = true;
         if (b.obj === 'CRATE' || b.obj === 'WORKBENCH') { var c = W.chunkAt(t.x, t.y); c.containers[W.key(t.x, t.y, z)] = { items: [], gen: true }; }
