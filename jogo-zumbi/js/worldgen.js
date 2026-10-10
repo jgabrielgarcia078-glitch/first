@@ -195,6 +195,8 @@
     nature(ctx, type);
     roadProps(ctx, m, cx, cy, type);
     spawnZombies(ctx, type, feat);
+    stories(ctx, m, cx, cy, type);
+    chunk.initialZ = chunk.zombies.length;
     chunk.dirty = true;
     return chunk;
   };
@@ -1010,6 +1012,106 @@
       var bldKind = room ? ctx.c.buildings[room.bld].kind : null;
       ctx.c.zombies.push(CP.Zombies ? CP.Zombies.makeData(ctx.rng, ctx.ox + lx + 0.5, ctx.oy + ly + 0.5, z, bldKind, room && room.type) : { x: ctx.ox + lx + 0.5, y: ctx.oy + ly + 0.5, z: z });
       n--;
+    }
+  }
+
+  /* ================= HISTÓRIAS ALEATÓRIAS ================= */
+  function addZombie(ctx, x, y, z, kind, extra) {
+    if (!CP.Zombies) { return; }
+    var d = CP.Zombies.makeData(ctx.rng, ctx.ox + x + 0.5, ctx.oy + y + 0.5, z, kind, null);
+    if (extra) { for (var k in extra) { d[k] = extra[k]; } }
+    ctx.c.zombies.push(d);
+  }
+  function nearStairs(ctx, x, y) {
+    for (var dy = -2; dy <= 2; dy++) { for (var dx = -1; dx <= 1; dx++) { if (ctx.obj(x + dx, y + dy, 0) === O.STAIRS || ctx.obj(x + dy, y + dx, 0) === O.STAIRS) { return true; } } }
+    return false;
+  }
+  function makeItem(ctx, id, opts) { return CP.Items ? CP.Items.make(id, opts, ctx.rng) : { id: id }; }
+  function stories(ctx, m, cx, cy, type) {
+    var rng = ctx.rng;
+    var c = ctx.c;
+    // casa de sobrevivente: janelas e portas barricadas, estoque de comida, sobreviventes que viraram zumbis
+    c.buildings.forEach(function (b, bi) {
+      if (b.kind !== 'house' || !rng.chance(CP.C.EVENTS.SURVIVOR_HOUSE_CHANCE * 2)) { return; }
+      b.story = 'survivor';
+      var x0 = b.x - ctx.ox, y0 = b.y - ctx.oy;
+      for (var z = 0; z < b.floors; z++) {
+        for (var y = y0; y <= y0 + b.h; y++) {
+          for (var x = x0; x <= x0 + b.w; x++) {
+            for (var side = 0; side < 2; side++) {
+              var t = ctx.getEdge(x, y, z, side);
+              if (t !== E.WINDOW && t !== E.DOOR) { continue; }
+              var key = (z * CH * CH + ctx.i(x, y)) * 2 + side;
+              var st = c.edges[key];
+              if (!st || !st.ext && t === E.DOOR) { if (t === E.DOOR && (!st || !st.ext)) { continue; } }
+              st = st || { open: false, locked: false, hp: 8, bar: 0, barHp: 0, broken: false, glass: true };
+              st.open = false; st.bar = rng.int(2, 4); st.barHp = 12;
+              c.edges[key] = st;
+            }
+          }
+        }
+      }
+      // estoque em caixotes
+      var placed = 0;
+      for (var tries = 0; tries < 30 && placed < 2; tries++) {
+        var lx = x0 + rng.int(0, b.w - 1), ly = y0 + rng.int(0, b.h - 1);
+        if (!ctx.inside(lx, ly) || ctx.obj(lx, ly, 0) || !ctx.room(lx, ly, 0) || isDoorTile(ctx, lx, ly, 0) || nearStairs(ctx, lx, ly)) { continue; }
+        ctx.setObj(lx, ly, 0, O.CRATE, 0);
+        if (!roomOk(ctx, { x: x0, y: y0, w: b.w, h: b.h }, 0, ctx.room(lx, ly, 0))) { ctx.setObj(lx, ly, 0, 0, 0); continue; }
+        var items = [];
+        var stock = ['beans', 'soup', 'tuna', 'water_bottle', 'water_bottle', 'crackers', 'peanutbutter', 'bandage', 'painkillers', 'nails', 'plank', 'hammer', 'flashlight', 'battery', 'candy'];
+        for (var n = 0; n < rng.int(5, 9); n++) { var id = rng.pick(stock); items.push(makeItem(ctx, id, id === 'nails' ? { n: 20 } : null)); }
+        if (rng.chance(0.4)) { items.push(makeItem(ctx, rng.pick(['shotgun', 'pistol', 'axe', 'crowbar']), null)); }
+        if (rng.chance(0.3)) { items.push(makeItem(ctx, 'shells', { n: 12 })); }
+        c.containers[ctx.i(lx, ly)] = { items: items, gen: true };
+        placed++;
+      }
+      for (var zn = 0; zn < rng.int(1, 3); zn++) {
+        var zx = x0 + rng.int(0, b.w - 1), zy = y0 + rng.int(0, b.h - 1);
+        if (ctx.inside(zx, zy) && ctx.room(zx, zy, 0) && !ctx.obj(zx, zy, 0)) { addZombie(ctx, zx, zy, 0, 'house', null); }
+      }
+    });
+    // festa em casa: muitos zumbis numa sala
+    c.buildings.forEach(function (b) {
+      if (b.kind !== 'house' || b.story || !rng.chance(0.025)) { return; }
+      b.story = 'party';
+      var x0 = b.x - ctx.ox, y0 = b.y - ctx.oy;
+      for (var k = 0; k < rng.int(6, 11); k++) {
+        var zx = x0 + rng.int(0, b.w - 1), zy = y0 + rng.int(0, b.h - 1);
+        if (ctx.inside(zx, zy) && ctx.room(zx, zy, 0) && !ctx.obj(zx, zy, 0)) { addZombie(ctx, zx, zy, 0, 'house', null); }
+      }
+    });
+    // acidente de carro na estrada: carro, corpos com loot, sangue e alguns zumbis
+    var rn = G.macroRoadN(m, cx, cy), rw = G.macroRoadW(m, cx, cy);
+    if ((rn || rw) && rng.chance(G.isTownType(type) ? 0.06 : 0.12)) {
+      var horiz = rn && (!rw || rng.chance(0.5));
+      var ax = horiz ? rng.int(RW + 3, CH - 6) : rng.int(0, 2), ay = horiz ? rng.int(0, 2) : rng.int(RW + 3, CH - 6);
+      if (placeCar(ctx, ax, ay, horiz ? 0 : 1)) {
+        c.decals = c.decals || [];
+        for (var bdx = 0; bdx < 10; bdx++) { c.decals.push({ x: ctx.ox + ax + rng.range(-1, 3), y: ctx.oy + ay + rng.range(-1, 3), z: 0, s: rng.range(3, 7), r: 0 }); }
+        for (var cn = 0; cn < rng.int(1, 2); cn++) {
+          var crx = ctx.ox + ax + rng.range(0, 2), cry = ctx.oy + ay + (horiz ? 1.6 : rng.range(0, 2));
+          if (horiz) { cry = ctx.oy + ay + 1.6; } else { crx = ctx.ox + ax + 1.6; }
+          var dz = CP.Zombies ? CP.Zombies.makeData(rng, crx, cry, 0, null, null) : null;
+          if (dz) {
+            var look = CP.Zombies.fromData(dz).look;
+            look.zombie = false; look.skin = rng.pick(CP.C.SKIN_TONES);
+            c.corpses.push({ x: crx, y: cry, z: 0, ang: rng.range(0, 6.28), look: look, items: [makeItem(ctx, rng.pick(['wallet', 'car_key', 'water_bottle', 'map', 'first_aid_kit', 'cigarettes']), null)], t: -86400 });
+          }
+        }
+        for (var zz = 0; zz < rng.int(1, 3); zz++) { addZombie(ctx, Math.min(CH - 1, ax + rng.int(-2, 3)), Math.min(CH - 1, Math.max(0, ay + rng.int(-2, 3))), 0, null, { crawler: rng.chance(0.3) }); }
+      }
+    }
+    // bloqueio policial na rodovia (fora da cidade)
+    if (!G.isTownType(type) && type !== T.BORDER && (rn || rw) && rng.chance(0.05)) {
+      var hz = rn && (!rw || rng.chance(0.5));
+      for (var bk = 0; bk < RW; bk++) {
+        var bx = hz ? 14 : bk, by = hz ? bk : 14;
+        if (bk === 2) { continue; }
+        if (!ctx.obj(bx, by, 0)) { ctx.setObj(bx, by, 0, rng.chance(0.5) ? O.BARREL : O.CRATE, 0); }
+      }
+      placeCar(ctx, hz ? 16 : 1, hz ? 1 : 16, hz ? 0 : 1);
+      for (var pz = 0; pz < rng.int(2, 4); pz++) { addZombie(ctx, (hz ? 12 : 2) + rng.int(0, 4), (hz ? 2 : 12) + rng.int(0, 4), 0, 'police', null); }
     }
   }
 

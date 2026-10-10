@@ -367,7 +367,7 @@
     var missing = [];
     (r.needs || []).forEach(function (n) {
       var have = countFor(p, n);
-      if (have < n.n) { missing.push((n.item ? D.ITEMS[n.item].name : (n.tag ? 'ferramenta: ' + n.tag : 'item: ' + n.cat)) + ' (' + have + '/' + n.n + ')'); }
+      if (have < n.n) { missing.push((n.item ? D.ITEMS[n.item].name : (n.tag ? D.tagName(n.tag) : ({ food: 'ingrediente', clothing: 'roupa' }[n.cat] || n.cat))) + ' (' + have + '/' + n.n + ')'); }
     });
     if (r.learned && p.knownRecipes.indexOf(r.id) < 0) { missing.unshift('Receita desconhecida (leia a revista)'); }
     if (r.needsHeat && !Use.nearHeat(p)) { missing.push('Fonte de calor por perto'); }
@@ -422,7 +422,7 @@
     init();
     var missing = [];
     b.mats.forEach(function (m) { var have = Inv.count(p, m.item); if (have < m.n) { missing.push(D.ITEMS[m.item].name + ' (' + have + '/' + m.n + ')'); } });
-    if (b.tool && !Inv.findTag(p, b.tool)) { missing.push('Ferramenta: ' + b.tool); }
+    if (b.tool && !Inv.findTag(p, b.tool)) { missing.push('Ferramenta: ' + D.tagName(b.tool)); }
     if (CP.Player.skillLevel(p, 'carpentry') < b.skill) { missing.push('Carpintaria ' + b.skill); }
     if (b.recipe && p.knownRecipes.indexOf(b.recipe) < 0) { missing.push('Projeto desconhecido (revista)'); }
     return { ok: missing.length === 0, missing: missing };

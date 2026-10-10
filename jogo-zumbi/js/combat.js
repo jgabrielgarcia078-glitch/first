@@ -234,7 +234,7 @@
       var endX = p.x + Math.cos(a) * (best ? bd : g.range), endY = p.y + Math.sin(a) * (best ? bd : g.range);
       if (CP.FX) { CP.FX.tracer(p.x, p.y, p.z, endX, endY); }
       if (best) {
-        var hitChance = g.acc + aim * 0.03 - (bd / g.range) * 0.3 - panic / 300;
+        var hitChance = g.acc + 0.08 + aim * 0.03 - (bd / g.range) * 0.3 - panic / 400;
         if (Math.random() < hitChance) {
           var dmg = U.randRange(g.dmin, g.dmax) * (0.8 + aim * 0.04);
           var crit = Math.random() < 0.1 + aim * 0.02;

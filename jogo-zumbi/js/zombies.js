@@ -77,6 +77,7 @@
   };
   Z.deactivateChunk = function (ch) {
     var G = CP.Game;
+    ch.lastActive = G.state.time;
     var x0 = ch.cx * C.CHUNK, y0 = ch.cy * C.CHUNK;
     for (var i = G.zombies.length - 1; i >= 0; i--) {
       var zb = G.zombies[i];
@@ -560,8 +561,11 @@
     corpseEnts.length = 0;
     for (var k in G.activeChunks) {
       var ch = G.activeChunks[k];
-      for (var i = 0; i < ch.corpses.length; i++) {
+      for (var i = ch.corpses.length - 1; i >= 0; i--) {
         var c = ch.corpses[i];
+        var ageDays = (G.state.time - c.t) / 86400;
+        if (ageDays > 25 && !c.items.length) { ch.corpses.splice(i, 1); continue; }
+        c.decay = Math.min(1, Math.max(0, (ageDays - 2) / 12));
         if (Math.abs(c.x - p.x) > 40 || Math.abs(c.y - p.y) > 40) { continue; }
         if (W.levelOf(c.z) === W.levelOf(p.z) && !CP.Vis.isVisible(Math.floor(c.x), Math.floor(c.y), W.levelOf(c.z)) && U.dist2(c.x, c.y, p.x, p.y) > 9) { continue; }
         if (!c.draw) { c.draw = drawCorpse; }
@@ -584,8 +588,51 @@
     CP.Spr.drawHuman(g, sx, sy, zb.look, pose, Math.max(0.25, bright));
   }
   function drawCorpse(g, sx, sy, bright) {
-    CP.Spr.drawHuman(g, sx, sy, this.look, { ang: this.ang, dead: true, phase: 0 }, Math.max(0.2, bright * 0.9));
+    var look = this.look;
+    if (this.decay > 0.05) {
+      if (!this.dLook || this.dLookAt !== Math.round(this.decay * 10)) {
+        this.dLookAt = Math.round(this.decay * 10);
+        this.dLook = Object.assign({}, look, { skin: U.mix(look.skin, '#5a4f3a', this.decay * 0.8), shirt: U.mix(look.shirt || '#777', '#3a342a', this.decay * 0.6) });
+      }
+      look = this.dLook;
+    }
+    CP.Spr.drawHuman(g, sx, sy, look, { ang: this.ang, dead: true, phase: 0 }, Math.max(0.2, bright * 0.9));
   }
+
+  /* ---------- migração e reaparecimento (chamado uma vez por dia de jogo) ---------- */
+  Z.daily = function () {
+    var G = CP.Game;
+    var all = W.allChunks();
+    var rng = U.rng;
+    var settings = G.settings || {};
+    for (var i = 0; i < all.length; i++) {
+      var ch = all[i];
+      if (ch.active || ch.type === 0) { continue; }
+      // migração: alguns andam para um chunk vizinho
+      if (ch.zombies.length > 3) {
+        var move = Math.floor(ch.zombies.length * 0.12);
+        for (var k = 0; k < move; k++) {
+          var dir = rng.int(0, 3);
+          var nx = ch.cx + [1, -1, 0, 0][dir], ny = ch.cy + [0, 0, 1, -1][dir];
+          var nb = W.chunkByIndex(nx, ny);
+          if (!nb || nb.active || nb.type === 0) { continue; }
+          var zd = ch.zombies.pop();
+          zd.x = nx * C.CHUNK + rng.range(2, C.CHUNK - 2); zd.y = ny * C.CHUNK + rng.range(2, C.CHUNK - 2); zd.z = 0;
+          if (!W.tileWalkable(Math.floor(zd.x), Math.floor(zd.y), 0)) { ch.zombies.push(zd); continue; }
+          nb.zombies.push(zd);
+        }
+      }
+      // reaparecimento lento onde o jogador limpou, se faz mais de 3 dias que não passa por lá
+      if (settings.respawn !== false && ch.initialZ && ch.zombies.length < ch.initialZ * 0.4 && (G.state.time - (ch.lastActive || 0)) > 3 * 86400) {
+        var add = rng.int(1, 3);
+        for (var a = 0; a < add; a++) {
+          var x = ch.cx * C.CHUNK + rng.int(0, C.CHUNK - 1), y = ch.cy * C.CHUNK + rng.int(0, C.CHUNK - 1);
+          if (!W.tileWalkable(x, y, 0) || W.isIndoor(x, y, 0)) { continue; }
+          ch.zombies.push(Z.makeData(rng, x + 0.5, y + 0.5, 0, null, null));
+        }
+      }
+    }
+  };
 
   CP.Zombies = Z;
 })(window.CP = window.CP || {});

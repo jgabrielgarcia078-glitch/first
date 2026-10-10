@@ -389,6 +389,10 @@
   bag('toolbox', 'Caixa de ferramentas', '🧰', 1.0, 6, 0.3, 'hand');
   bag('first_aid_kit', 'Kit de primeiros socorros', '🧰', 0.5, 2, 0.3, 'hand');
 
+  /* nomes das ferramentas (tags) para a interface */
+  D.TAG_NAMES = { hammer: 'martelo', saw: 'serrote', screwdriver: 'chave de fenda', knife: 'faca', crowbar: 'pé de cabra', axe: 'machado', chop: 'machado', shovel: 'pá', trowel: 'pá de jardim', canopener: 'abridor de latas', lighter: 'isqueiro', pot: 'panela', gas: 'galão com gasolina', gas_empty: 'galão vazio', needle: 'agulha', thread: 'linha', wrench: 'chave de roda', fishing_rod: 'vara de pescar', bottle: 'garrafa' };
+  D.tagName = function (t) { return D.TAG_NAMES[t] || t; };
+
   /* aparência da arma na mão (tipo usado pelo desenho) */
   D.weaponLook = function (id) {
     var it = I[id];

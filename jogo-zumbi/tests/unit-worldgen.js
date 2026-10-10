@@ -1,7 +1,6 @@
 'use strict';
 const { load } = require('./harness');
-const files = ['js/config.js', 'js/util.js', 'js/world.js', 'js/worldgen.js'];
-const g = load(files);
+const g = load(); // todos os scripts (zumbis e itens influenciam a geração)
 const CP = g.CP, W = CP.W, C = CP.C;
 let fails = 0;
 function check(cond, msg) { if (!cond) { fails++; if (fails < 40) console.log('FALHA:', msg); } }

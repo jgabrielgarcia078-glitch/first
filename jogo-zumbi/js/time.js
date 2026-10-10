@@ -187,6 +187,7 @@
   function daily(day) {
     var p = G().player;
     p.daysSurvived = day;
+    CP.Zombies.daily();
     if (CP.UI) { CP.UI.toast('Dia ' + (day + 1) + ' — ' + T.dateText(), 'info'); }
   }
 

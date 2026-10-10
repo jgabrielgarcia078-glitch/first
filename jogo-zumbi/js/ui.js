@@ -576,7 +576,7 @@
       D.BUILDS.forEach(function (bd) {
         if (bd.recipe && p.knownRecipes.indexOf(bd.recipe) < 0) { return; }
         var st = CP.Build.status(p, bd);
-        html += '<div class="recipe"><div><b>' + esc(bd.name) + '</b> <span class="muted" style="font-size:11px">' + bd.mats.map(function (m) { return m.n + '× ' + D.ITEMS[m.item].name; }).join(', ') + (bd.tool ? ' · ' + bd.tool : '') + (bd.skill ? ' · Carpintaria ' + bd.skill : '') + '</span>' + (st.ok ? '' : '<div class="miss">' + st.missing.map(esc).join(' · ') + '</div>') + '</div><button class="small' + (st.ok ? ' primary' : '') + '" data-a="build" data-id="' + bd.id + '"' + (st.ok ? '' : ' disabled') + '>Construir</button></div>';
+        html += '<div class="recipe"><div><b>' + esc(bd.name) + '</b> <span class="muted" style="font-size:11px">' + bd.mats.map(function (m) { return m.n + '× ' + D.ITEMS[m.item].name; }).join(', ') + (bd.tool ? ' · ' + D.tagName(bd.tool) : '') + (bd.skill ? ' · Carpintaria ' + bd.skill : '') + '</span>' + (st.ok ? '' : '<div class="miss">' + st.missing.map(esc).join(' · ') + '</div>') + '</div><button class="small' + (st.ok ? ' primary' : '') + '" data-a="build" data-id="' + bd.id + '"' + (st.ok ? '' : ' disabled') + '>Construir</button></div>';
       });
     } else {
       var heat = CP.Use.nearHeat(p);
