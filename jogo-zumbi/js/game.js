@@ -250,7 +250,7 @@
     if (onStairs) { bld = W.building(Math.floor(p.x), Math.floor(p.y), 0); }
     var indoor = !!bld;
     drawList.length = 0;
-    if (!p.vehicle) { drawList.push(p); }
+    if (!p.vehicle && !p.hidden) { drawList.push(p); }
     if (CP.Vehicles) {
       var cars = CP.Vehicles.active;
       for (var ci = 0; ci < cars.length; ci++) {
@@ -285,6 +285,7 @@
     if (CP.FX) { CP.FX.drawOverlay(g); }
     var p = G.player;
     if (CP.UI && CP.UI.drawBuildGhost) { CP.UI.drawBuildGhost(g); }
+    G.drawHover(g, p);
     if (p.aiming && !p.dead) {
       var wp = CP.Combat.weaponOf(p);
       var HW = C.TILE_W / 2, HH = C.TILE_H / 2;
@@ -297,6 +298,26 @@
       g.beginPath(); g.moveTo(sx, sy); g.lineTo(HW * (ex - ey), HH * (ex + ey) - p.z * C.WALL_H - 32); g.stroke();
       g.setLineDash([]);
     }
+  };
+
+  /* destaca o tile sob o mouse quando há algo para interagir ao alcance */
+  G.drawHover = function (g, p) {
+    if (p.dead || p.vehicle || (CP.Build && CP.Build.mode) || p.aiming) { return; }
+    var lv = W.levelOf(p.z);
+    var m = CP.Render.toWorld(CP.Input.mouse.x, CP.Input.mouse.y, lv);
+    var x = Math.floor(m.x), y = Math.floor(m.y);
+    if (U.dist(p.x, p.y, x + 0.5, y + 0.5) > 1.9) { return; }
+    var o = W.obj(x, y, lv);
+    var ch = W.chunkAt(x, y);
+    var interesting = (o && (C.OBJ_INFO[o].cap || C.OBJ_INFO[o].bed || C.OBJ_INFO[o].water || C.OBJ_INFO[o].tv || C.OBJ_INFO[o].stove || C.OBJ_INFO[o].tree)) ||
+      (ch && ((ch.items[W.key(x, y, lv)] || []).length || ch.corpses.some(function (c) { return Math.floor(c.x) === x && Math.floor(c.y) === y; })));
+    var ed = [W.edgeType(x, y, lv, 0), W.edgeType(x, y, lv, 1), W.edgeType(x, y + 1, lv, 0), W.edgeType(x + 1, y, lv, 1)];
+    if (ed.some(function (t) { return t === C.EDGE.DOOR || t === C.EDGE.WINDOW || t === C.EDGE.FENCE; })) { interesting = true; }
+    if (!interesting) { return; }
+    var HW = C.TILE_W / 2, HH = C.TILE_H / 2, zo = lv * C.WALL_H;
+    var a = [HW * (x - y), HH * (x + y) - zo];
+    g.strokeStyle = 'rgba(255,230,150,0.55)'; g.lineWidth = 1.5;
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(a[0] + HW, a[1] + HH); g.lineTo(a[0], a[1] + HH * 2); g.lineTo(a[0] - HW, a[1] + HH); g.closePath(); g.stroke();
   };
 
   CP.Game = G;

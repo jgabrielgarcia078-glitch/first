@@ -436,6 +436,17 @@
     p.body.health = 0;
     var G = CP.Game;
     G.over = true;
+    if (/infec/.test(p.deathCause) && CP.Zombies) {
+      var look = CP.Player.lookFor(p);
+      var d = CP.Zombies.makeData(new U.Rng(7), p.x, p.y, p.z, null, null);
+      d.crawler = false; d.fakeDead = false;
+      var zb = CP.Zombies.fromData(d);
+      zb.look = Object.assign({}, look, { zombie: true, skin: U.mix(look.skin, '#7f8c75', 0.6) });
+      zb.state = 'down'; zb.downT = 2.5;
+      G.zombies.push(zb);
+      p.deathCause += ' (e levantou outra vez...)';
+      p.hidden = true;
+    }
     U.emit('player:dead', { cause: p.deathCause });
   };
 

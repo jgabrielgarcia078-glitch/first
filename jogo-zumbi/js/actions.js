@@ -178,8 +178,14 @@
       CP.Game.updateFov(true);
     } });
   }
+  function destFree(dest, z) {
+    var x = Math.floor(dest.x), y = Math.floor(dest.y);
+    if (z > 0 && !W.tileWalkable(x, y, z)) { return true; } // queda para o térreo (tratada no pulo)
+    return W.tileWalkable(x, y, z);
+  }
   function climbWindow(p, e, z, st) {
     var dest = otherSide(p, e);
+    if (!destFree(dest, z)) { msg('Tem algo bloqueando o outro lado.', 'warn'); return; }
     face(p, dest.x, dest.y);
     A.start(p, { name: 'Pulando a janela', time: 1.6 - CP.Player.skillLevel(p, 'nimble') * 0.05, anim: 'climb', onDone: function () {
       if (W.blockedBetween(Math.floor(p.x), Math.floor(p.y), Math.floor(dest.x), Math.floor(dest.y), z, false) && !(st.broken || st.open)) { return; }
@@ -200,6 +206,7 @@
   }
   function vault(p, e, z, time) {
     var dest = otherSide(p, e);
+    if (!W.tileWalkable(Math.floor(dest.x), Math.floor(dest.y), z)) { msg('Tem algo bloqueando o outro lado.', 'warn'); return; }
     face(p, dest.x, dest.y);
     A.start(p, { name: 'Pulando', time: time - CP.Player.skillLevel(p, 'nimble') * 0.04, anim: 'climb', onDone: function () {
       p.x = dest.x; p.y = dest.y; CP.Zombies.noise(p.x, p.y, p.z, 5, 'vault'); CP.Player.addXp(p, 'nimble', 1);
@@ -460,6 +467,10 @@
       if (corpses.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) { out.push({ label: 'Revistar corpo', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } }); }
       var fi = W.floorItems(x, y, z);
       if (fi && fi.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) { out.push({ label: 'Ver itens no chão (' + fi.length + ')', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } }); }
+    }
+    if (x === Math.floor(p.x) && y === Math.floor(p.y) && !p.vehicle) {
+      out.push({ label: 'Dormir no chão', disabled: p.body.stats.fatigue < 0.3, hint: 'Sem sono', fn: function () { A.sleepAt(p, 0.5); } });
+      out.push({ label: p.sitting ? 'Levantar' : 'Sentar no chão', fn: function () { p.sitting = !p.sitting; } });
     }
     if (CP.Farm) { CP.Farm.tileOptions(p, x, y, z, out); }
     if (CP.Build && CP.Build.tileOptions) { CP.Build.tileOptions(p, x, y, z, out); }

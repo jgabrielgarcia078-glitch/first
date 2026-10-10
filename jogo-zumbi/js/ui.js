@@ -682,6 +682,8 @@
   function showDeath() {
     if (UI.deathShown) { return; }
     UI.deathShown = true;
+    Object.keys(UI.open).forEach(function (n) { if (UI.open[n]) { UI.toggle(n, false); } });
+    closeCtx();
     var p = P();
     CP.Save.deleteSave();
     var days = CP.Time.daysSurvived();
@@ -730,7 +732,7 @@
     var a = t.getAttribute('data-a');
     var cr = UI.creation;
     switch (a) {
-      case 'menu-new': UI.creation = null; UI.toggle('pause', false); UI.showCreate(); break;
+      case 'menu-new': UI.creation = null; UI.toggle('pause', false); G().running = false; clearHud(); UI.showCreate(); break;
       case 'menu-continue': continueGame(); break;
       case 'to-menu': UI.showMenu(); G().running = false; break;
       case 'help': UI.toggle('help', true); break;
@@ -883,6 +885,32 @@
     if (p.sayT > 0) { p.sayT -= 1 / 60; }
   };
 
+  /* ================= DICAS (uma vez por partida) ================= */
+  var HINTS = [
+    ['zombie', function (p) { return CP.Game.zombies.some(function (z) { return z.state !== 'fakedead' && CP.Zombies.visibleToPlayer(z) && U.dist2(z.x, z.y, p.x, p.y) < 200; }); }, 'Dica: zumbis ouvem seus passos — agache com C. Clique para atacar, Espaço empurra, e pise (Espaço) nos caídos.'],
+    ['hunger', function (p) { return p.body.stats.hunger >= C.MOODLE_LEVELS.hunger[0]; }, 'Dica: abra o inventário (I), clique na comida → Comer. Latas precisam de abridor (ou faca).'],
+    ['thirst', function (p) { return p.body.stats.thirst >= C.MOODLE_LEVELS.thirst[0]; }, 'Dica: beba da garrafa ou de uma pia/banheira (clique direito). A água encanada vai acabar — encha garrafas!'],
+    ['bleed', function (p) { return CP.Body.bleeding(p) > 0; }, 'Dica: você está sangrando! Aperte H e faça um curativo. Sem bandagem? Rasgue roupa ou lençol (B → Receitas).'],
+    ['night', function () { return CP.Time.isNight(); }, 'Dica: à noite você enxerga pouco. F liga a lanterna (precisa de pilha). Durma numa cama: clique direito nela.'],
+    ['tired', function (p) { return p.body.stats.fatigue >= C.MOODLE_LEVELS.fatigue[1]; }, 'Dica: durma numa cama ou sofá (clique direito). Dormindo, o tempo passa rápido.'],
+    ['heavy', function (p) { return CP.Body.carryLevel(p) >= 1; }, 'Dica: muito peso deixa você lento. Vista uma mochila (inventário → Vestir) ou largue coisas.'],
+    ['panic', function (p) { return p.body.stats.panic > 60; }, 'Dica: pânico atrapalha a mira e a visão. Afaste-se, ou tome betabloqueador.']
+  ];
+  var hintT = 0;
+  function checkHints(dt) {
+    hintT -= dt;
+    if (hintT > 0) { return; }
+    hintT = 1;
+    var p = P(), st = G().state;
+    if (!p || p.dead || !p.body) { return; }
+    st.hints = st.hints || {};
+    for (var i = 0; i < HINTS.length; i++) {
+      var hnt = HINTS[i];
+      if (st.hints[hnt[0]]) { continue; }
+      if (hnt[1](p)) { st.hints[hnt[0]] = 1; UI.toast(hnt[2], 'info'); return; }
+    }
+  }
+
   /* ================= QUADRO ================= */
   UI.frame = function (dt) {
     UI.hurtT = Math.max(0, UI.hurtT - dt);
@@ -894,6 +922,7 @@
     if (UI.screen !== 'game' || !P()) { return; }
     UI.hudT -= dt;
     if (UI.hudT <= 0) { UI.hudT = 0.2; updateHud(); }
+    checkHints(dt);
     UI.panelT -= dt;
     if (UI.panelT <= 0) {
       UI.panelT = 0.35;
