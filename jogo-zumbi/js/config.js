@@ -59,11 +59,11 @@
     { name: 'tijolo', base: '#9a5444', trim: '#6e3a2f', brick: true },
     { name: 'verde', base: '#9cb08e', trim: '#6c805f' },
     { name: 'cinza', base: '#9a9a96', trim: '#6c6c69' },
-    { name: 'papel bege', base: '#cdbb9a', trim: '#9e8d6d', interior: true },
-    { name: 'papel rosa', base: '#c9a3a3', trim: '#9b7777', interior: true },
-    { name: 'papel azul', base: '#a4b4c4', trim: '#77879a', interior: true },
+    { name: 'papel bege', base: '#d2c3a0', trim: '#8a6a48', interior: true, pattern: 'stripes' },
+    { name: 'papel rosa', base: '#d0aaa8', trim: '#7a5a50', interior: true, pattern: 'floral' },
+    { name: 'papel azul', base: '#a8b8c4', trim: '#e2ddd0', interior: true, pattern: 'diamond' },
     { name: 'azulejo', base: '#d7dee0', trim: '#a7b0b3', interior: true, tiles: true },
-    { name: 'madeira', base: '#8a6440', trim: '#5f432a', interior: true },
+    { name: 'madeira', base: '#8a6440', trim: '#5f432a', interior: true, pattern: 'boards' },
     { name: 'concreto', base: '#8d8d88', trim: '#62625e' }
   ];
   C.EXTERIOR_STYLES = [0, 1, 2, 3, 4, 5];
@@ -157,8 +157,8 @@
   C.VISION_RADIUS = 34;         // tiles (dia)
   C.VISION_CONE_DEG = 150;      // ângulo do cone de visão (total)
   C.VISION_NEAR = 2.2;          // dentro desta distância enxerga até pelas costas
-  C.FOG_DIM = 0.5;              // brilho de tiles fora da visão
-  C.FOG_DESAT = 0.85;           // quanto a cor some nos tiles fora da visão
+  C.FOG_DIM = 0.55;             // brilho de tiles fora da visão
+  C.FOG_DESAT = 0.35;           // quanto a cor some nos tiles fora da visão
   C.HEARING_RADIUS = 7;         // percebe zumbis "ouvindo" pelas costas
   C.CARRY_BASE = 8;             // kg sem penalidade (ajustado pela Força)
   C.CARRY_PER_STRENGTH = 0.8;
@@ -302,7 +302,9 @@
   ];
 
   /* ---------- Gradação de cor (aplicada uma vez em cada sprite e nas cores dos personagens; ver sprites.js) ---------- */
-  C.GRADE = { DESAT: 0.3, TINT: '#b8a878', TINT_ALPHA: 0.3 };
+  C.GRADE = { DESAT: 0.06, TINT: '#c8b88a', TINT_ALPHA: 0.1 };
+  /* noite: abaixo de TINT_FROM de luz as sprites puxam para COLOR (multiplicar); FLOOR = brilho mínimo multiplicado */
+  C.NIGHT = { COLOR: '#6c66d8', TINT_FROM: 0.75, FLOOR: 0.6 };
 
   /* ---------- Trilha sonora (js/music.js) ---------- */
   C.MUSIC = {

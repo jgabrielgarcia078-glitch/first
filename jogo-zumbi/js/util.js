@@ -105,6 +105,7 @@
   /* ---------- Cores ---------- */
   var colorCache = {};
   U.hexToRgb = function (hex) {
+    if (hex.charCodeAt(0) === 114) { var m = hex.match(/[\d.]+/g); return [+m[0], +m[1], +m[2]]; } // 'rgb(r,g,b)'
     var h = hex.replace('#', '');
     if (h.length === 3) { h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2]; }
     var n = parseInt(h, 16);

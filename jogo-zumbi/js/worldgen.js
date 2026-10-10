@@ -356,7 +356,8 @@
     for (var y = r.y; y < r.y + r.h; y++) {
       for (var x = r.x; x < r.x + r.w; x++) {
         if (!ctx.inside(x, y)) { continue; }
-        ctx.setFloor(x, y, z, floorType);
+        ctx.rng.next(); // mantém a sequência do RNG; a cor do piso é a mesma no cômodo todo
+        ctx.setFloor(x, y, z, floorType, (roomId * 7 + z) % 4);
         ctx.L(z).room[ctx.i(x, y)] = roomId;
         if (z === 0) { ctx.reserved[ctx.i(x, y)] = 1; }
         ctx.L(z).obj[ctx.i(x, y)] = 0;

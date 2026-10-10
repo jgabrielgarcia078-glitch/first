@@ -66,6 +66,11 @@
     }
     g.globalAlpha = 1;
   }
+  /* interior de outra construção fora da sua visão: não é desenhado (preto, como no original) */
+  function voidAt(x, y, z, view) {
+    if (view.noCut || V.isVisible(x, y, z) || !W.isIndoor(x, y, z)) { return false; }
+    return W.building(x, y, z) !== view.bld || z !== view.viewZ;
+  }
   /* luz + névoa do tile (x, y, z) vista do andar viewZ */
   function tileCode(x, y, z, viewZ) {
     if (z > viewZ) { return S.lightIndex(V.brightness(x, y, z, viewZ)); }
@@ -73,7 +78,8 @@
     var lv = V.lightAt(x, y, z);
     var n = (V.isVisible(x + 1, y, z) ? 1 : 0) + (V.isVisible(x - 1, y, z) ? 1 : 0) + (V.isVisible(x, y + 1, z) ? 1 : 0) + (V.isVisible(x, y - 1, z) ? 1 : 0);
     var q = V.isVisible(x, y, z) ? (n >= 4 ? 0 : 1) : (n >= 2 ? 2 : (n === 1 ? 3 : 4));
-    return lcode(S.lightIndex(lv), S.lightIndex(lv * C.FOG_DIM), q);
+    var lv0 = S.lightIndex(lv);
+    return lcode(lv0, lv0, q);
   }
 
   /* ---------- quadro ---------- */
@@ -122,6 +128,7 @@
         if (!f) { continue; }
         var sx = HW * (x - y), sy = HH * (x + y);
         if (sy > camSY + hh + 40 || sy < camSY - hh - 80) { continue; }
+        if (voidAt(x, y, 0, view)) { continue; } // interior que você não está vendo: fica preto
         var lia = tileCode(x, y, 0, viewZ);
         drawSprite(g, S.floor(f, fv(f, L0.fvar[i0], x, y)), lia, sx, sy);
         var lk = litterAt(f, x, y);
@@ -145,7 +152,8 @@
           var br = V.brightness(x, y, zz, viewZ);
           var li = tileCode(x, y, zz, viewZ);
           var fade = zz > viewZ ? fadeAlpha(x, y, view) : 1;
-          if (zz > 0) {
+          var vd = zz <= viewZ && voidAt(x, y, zz, view);
+          if (zz > 0 && !vd) {
             var fz = L.floor[ii];
             if (fz === F.ROOF) { drawSprite(g, S.roof(roofCode(ch, zz, ii)), li, bx, by, fade); } else if (fz) { drawSprite(g, S.floor(fz, fv(fz, L.fvar[ii], x, y)), li, bx, by, fade); }
           }
@@ -155,10 +163,10 @@
           if (wnT) { drawEdge(g, x, y, zz, 0, wnT, L.wns[ii], bx, by, view, li, fade); }
           // objeto
           var o = L.obj[ii];
-          if (o) { drawObject(g, x, y, zz, o, L.odir[ii], bx, by, li, view, ch); }
+          if (o && !vd) { drawObject(g, x, y, zz, o, L.odir[ii], bx, by, li, view, ch); }
           // itens no chão
           var its = ch.items[zz * AREA + ii];
-          if (its && its.length) { drawSprite(g, S.groundItems(its.length), li, bx, by); }
+          if (its && its.length && !vd) { drawSprite(g, S.groundItems(its.length), li, bx, by); }
           // entidades
           var list = bk[zz].size ? bk[zz].get((x & 0xffff) | ((y & 0xffff) << 16)) : null;
           if (list) {
@@ -181,7 +189,7 @@
 
   /* variação de textura por posição nos pisos "naturais" (a cor continua vindo de fvar) */
   var NATURAL = [];
-  [F.GRASS, F.DARKGRASS, F.DIRT, F.ASPHALT, F.SIDEWALK, F.SAND, F.GRAVEL, F.CONCRETE, F.FIELD].forEach(function (f) { NATURAL[f] = 1; });
+  [F.GRASS, F.DARKGRASS, F.DIRT, F.ASPHALT, F.SIDEWALK, F.SAND, F.GRAVEL, F.CONCRETE, F.FIELD, F.WOOD, F.CARPET, F.TILE, F.LINOLEUM].forEach(function (f) { NATURAL[f] = 1; });
   function fv(f, v, x, y) {
     if (!NATURAL[f]) { return v; }
     var h = (x * 374761393 + y * 668265263) | 0;

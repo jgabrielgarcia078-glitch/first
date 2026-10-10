@@ -8,7 +8,6 @@
   var F = C.FLOOR, E = C.EDGE, O = C.OBJ;
 
   var LIGHT_STEPS = [0.10, 0.18, 0.27, 0.37, 0.48, 0.60, 0.73, 0.86, 1.0];
-  var NIGHT_TINT = [10, 14, 32];
 
   var S = { LIGHT_STEPS: LIGHT_STEPS, cache: {}, count: 0 };
 
@@ -54,13 +53,26 @@
     gradeMemo[hex] = r;
     return r;
   };
-  function store(key, canvas, ax, ay) {
+  /* bordas sem meio-transparente (tiles que se encaixam: senão a luz/névoa "vaza" e aparece uma grade) */
+  function hardEdges(c) {
+    var g = c.getContext('2d'), im = g.getImageData(0, 0, c.width, c.height), d = im.data;
+    for (var i = 3; i < d.length; i += 4) { d[i] = d[i] >= 96 ? 255 : 0; }
+    g.putImageData(im, 0, 0);
+  }
+  function store(key, canvas, ax, ay, hard) {
     gradeCanvas(canvas);
+    if (hard) { hardEdges(canvas); }
     var s = { base: canvas, ax: ax, ay: ay, lv: new Array(LIGHT_STEPS.length) };
     S.cache[key] = s; S.count++;
     return s;
   }
-  /* versão escurecida da sprite (nível de luz li) */
+  /* cor de "luz" multiplicada na sprite: neutra com luz alta, azul-arroxeada no escuro */
+  function lightColor(b) {
+    var N = C.NIGHT, k = U.clamp((N.TINT_FROM - b) / (N.TINT_FROM - 0.15), 0, 1);
+    return U.shade(U.mix('#ffffff', N.COLOR, k), N.FLOOR + (1 - N.FLOOR) * b);
+  }
+  S.lightColor = lightColor;
+  /* versão escurecida da sprite (nível de luz li): no escuro tudo puxa para o azul-arroxeado (como a noite do original) */
   S.lit = function (s, li) {
     if (li >= LIGHT_STEPS.length - 1) { return s.base; }
     var c = s.lv[li];
@@ -68,31 +80,31 @@
     c = mk(s.base.width, s.base.height);
     var g = c.getContext('2d');
     g.drawImage(s.base, 0, 0);
-    g.globalCompositeOperation = 'source-atop';
-    var b = LIGHT_STEPS[li];
-    g.fillStyle = 'rgba(' + NIGHT_TINT[0] + ',' + NIGHT_TINT[1] + ',' + NIGHT_TINT[2] + ',' + (1 - b).toFixed(3) + ')';
+    g.globalCompositeOperation = 'multiply';
+    g.fillStyle = lightColor(LIGHT_STEPS[li]);
     g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(s.base, 0, 0);
     s.lv[li] = c;
     return c;
   };
-  /* versão fora do campo de visão: quase sem cor e escurecida (memória do lugar) */
+  /* versão fora do campo de visão: mais escura e com menos cor (memória do lugar) */
   S.litFog = function (s, li) {
     var arr = s.fv || (s.fv = new Array(LIGHT_STEPS.length));
     var c = arr[li];
     if (c) { return c; }
     c = mk(s.base.width, s.base.height);
     var g = c.getContext('2d');
-    g.drawImage(s.base, 0, 0);
+    g.drawImage(S.lit(s, li), 0, 0);
+    g.globalCompositeOperation = 'multiply';
+    g.fillStyle = U.shade('#ffffff', C.FOG_DIM);
+    g.fillRect(0, 0, c.width, c.height);
     g.globalCompositeOperation = 'saturation';
     g.globalAlpha = C.FOG_DESAT;
     g.fillStyle = '#808080'; g.fillRect(0, 0, c.width, c.height);
     g.globalAlpha = 1;
     g.globalCompositeOperation = 'destination-in';
     g.drawImage(s.base, 0, 0);
-    g.globalCompositeOperation = 'source-atop';
-    var b = LIGHT_STEPS[li];
-    g.fillStyle = 'rgba(14,16,22,' + (1 - b).toFixed(3) + ')';
-    g.fillRect(0, 0, c.width, c.height);
     arr[li] = c;
     return c;
   };
@@ -153,15 +165,15 @@
 
   /* ---------- Pisos ---------- */
   var FLOOR_COLORS = {};
-  FLOOR_COLORS[F.GRASS] = ['#5c6c3a', '#596938', '#5f703c', '#5a6a39'];
-  FLOOR_COLORS[F.DARKGRASS] = ['#4a5a30', '#46562e', '#4d5d33', '#43532b'];
+  FLOOR_COLORS[F.GRASS] = ['#5b8a2e', '#57852b', '#5f8f31', '#55822a'];
+  FLOOR_COLORS[F.DARKGRASS] = ['#4c7426', '#487023', '#4f7829', '#456c22'];
   FLOOR_COLORS[F.DIRT] = ['#7b6449', '#806a4e', '#756046', '#7e6650'];
-  FLOOR_COLORS[F.ASPHALT] = ['#434447', '#414245', '#45464a', '#404144'];
-  FLOOR_COLORS[F.ASPHALT_LINE] = ['#434447', '#434447', '#434447', '#434447'];
-  FLOOR_COLORS[F.SIDEWALK] = ['#9a978f', '#97948c', '#9c9991', '#959289'];
-  FLOOR_COLORS[F.WOOD] = ['#8c6339', '#875f37', '#90673c', '#855d35'];
-  FLOOR_COLORS[F.TILE] = ['#cfd3cf', '#ccd0cc', '#d2d6d2', '#c9cdc9'];
-  FLOOR_COLORS[F.CARPET] = ['#7a4f5d', '#5d6a85', '#6b7a55', '#8a7550'];
+  FLOOR_COLORS[F.ASPHALT] = ['#5d5e60', '#5a5b5d', '#606163', '#58595b'];
+  FLOOR_COLORS[F.ASPHALT_LINE] = ['#5d5e60', '#5d5e60', '#5d5e60', '#5d5e60'];
+  FLOOR_COLORS[F.SIDEWALK] = ['#b4b0a6', '#b1ada3', '#b7b3a9', '#aeaaa0'];
+  FLOOR_COLORS[F.WOOD] = ['#8a5a32', '#7c5230', '#946238', '#6c4a2e'];
+  FLOOR_COLORS[F.TILE] = ['#d8dcd8', '#cfd6da', '#ddd6c8', '#d4d0c8'];
+  FLOOR_COLORS[F.CARPET] = ['#7a4a52', '#4f5f7c', '#5f6e4a', '#8a6e48'];
   FLOOR_COLORS[F.WATER] = ['#2f5f7a', '#2c5c77', '#32637e', '#2d5a74'];
   FLOOR_COLORS[F.SAND] = ['#c9b588', '#c5b184', '#cdb98c', '#c2ae81'];
   FLOOR_COLORS[F.FARM] = ['#5b4632', '#58432f', '#5e4934', '#56412e'];
@@ -170,7 +182,7 @@
   FLOOR_COLORS[F.ROOF] = ['#6e3b2e', '#4a4a50', '#5a4636', '#3d4a5a', '#6a6a62', '#5c5048', '#4f5a4a', '#705a40'];
   FLOOR_COLORS[F.CONCRETE] = ['#8a8984', '#878681', '#8d8c87', '#84837e'];
   FLOOR_COLORS[F.GRAVEL] = ['#86807a', '#827c76', '#8a847e', '#7e7872'];
-  FLOOR_COLORS[F.LINOLEUM] = ['#b9b29a', '#b5ae96', '#bdb69e', '#b1aa92'];
+  FLOOR_COLORS[F.LINOLEUM] = ['#d6c9a8', '#c9c4b8', '#d8cfb6', '#e2ddd2'];
 
   function diamondPath(g) {
     g.beginPath(); g.moveTo(HW, 0); g.lineTo(TW, HH); g.lineTo(HW, TH); g.lineTo(0, HH); g.closePath();
@@ -249,19 +261,32 @@
       tline(0, 0.02, 1, 0.02, sh(1.07), 1); tline(0.02, 0, 0.02, 1, sh(1.07), 1);
       if (rng.chance(0.15)) { var k0 = rng.next() * 0.5; tline(k0, 0.05, k0 + 0.2, 0.45, sh(0.75), 1); }
     } else if (f === F.WOOD) {
-      for (i = 0; i < 5; i++) {
-        var pk = U.shade(base, 0.9 + rng.next() * 0.2);
-        poly(g, [ip(0, i / 5, 0), ip(1, i / 5, 0), ip(1, (i + 1) / 5, 0), ip(0, (i + 1) / 5, 0)].map(function (q) { return [q[0] + HW, q[1]]; }), pk);
-        for (var gI = 0; gI < 2; gI++) { var gy = (i + 0.3 + gI * 0.4) / 5, gx = rng.next() * 0.5; tline(gx, gy, gx + 0.3 + rng.next() * 0.2, gy, U.shade(pk, 0.88), 1); }
+      // tábuas compridas, tons variados, juntas desencontradas e veios
+      var NP = 4;
+      for (i = 0; i < NP; i++) {
+        var y0p = i / NP, y1p = (i + 1) / NP, cut = rng.range(0.2, 0.8);
+        [[0, cut], [cut, 1]].forEach(function (seg) {
+          var pk = U.mix(base, rng.chance(0.5) ? '#a87a4a' : '#5a3a22', rng.next() * 0.22);
+          poly(g, [ip(seg[0], y0p, 0), ip(seg[1], y0p, 0), ip(seg[1], y1p, 0), ip(seg[0], y1p, 0)].map(function (q) { return [q[0] + HW, q[1]]; }), pk);
+          for (var gI = 0; gI < 2; gI++) { var gy = y0p + (gI + 0.5) / 2 / NP + rng.range(-0.02, 0.02); tline(seg[0] + 0.05, gy, seg[1] - 0.05, gy + rng.range(-0.01, 0.01), U.mix(pk, rng.chance(0.5) ? '#3a2412' : '#c09060', 0.12), 1); }
+        });
+        tline(cut, y0p, cut, y1p, sh(0.74), 1);
       }
-      for (i = 0; i <= 5; i++) { tline(0, i / 5, 1, i / 5, sh(0.66), 1); }
-      for (i = 0; i < 5; i++) { var px = rng.next(); tline(px, i / 5, px, (i + 1) / 5, sh(0.7), 1); }
+      for (i = 0; i <= NP; i++) { tline(0, i / NP, 1, i / NP, sh(0.76), 1); }
+      for (i = 0; i < 3; i++) { var sc = ip(rng.next(), rng.next(), 0); g.fillStyle = 'rgba(30,20,10,0.12)'; g.beginPath(); g.ellipse(sc[0] + HW, sc[1], rng.range(3, 8), rng.range(1.5, 3), 0, 0, Math.PI * 2); g.fill(); }
     } else if (f === F.TILE || f === F.LINOLEUM) {
+      // piso de cerâmica: quadrados grandes alternados (cozinha) ou pequenos com rejunte (banheiro)
       var n = f === F.TILE ? 4 : 2;
-      for (i = 0; i <= n; i++) { tline(0, i / n, 1, i / n, U.shade(base, 0.85), 1); tline(i / n, 0, i / n, 1, U.shade(base, 0.85), 1); }
-      if (f === F.LINOLEUM) { for (i = 0; i < 2; i++) { for (var j = 0; j < 2; j++) { if ((i + j) % 2) { var a = ip(i / 2, j / 2, 0); poly(g, [[a[0] + HW, a[1]], [a[0] + HW + HW / 2, a[1] + HH / 2], [a[0] + HW, a[1] + HH], [a[0] + HW / 2, a[1] + HH / 2]], U.shade(base, 0.9)); } } } }
+      var alt = f === F.LINOLEUM && (v & 3) === 3 ? '#4a4844' : U.mix(base, '#3a3020', f === F.TILE ? 0.07 : 0.16);
+      for (i = 0; i < n; i++) { for (var j = 0; j < n; j++) {
+        var col0 = (i + j) % 2 ? alt : base;
+        poly(g, [ip(i / n, j / n, 0), ip((i + 1) / n, j / n, 0), ip((i + 1) / n, (j + 1) / n, 0), ip(i / n, (j + 1) / n, 0)].map(function (q) { return [q[0] + HW, q[1]]; }), U.shade(col0, 0.97 + rng.next() * 0.06));
+      } }
+      for (i = 0; i <= n; i++) { tline(0, i / n, 1, i / n, 'rgba(60,55,45,0.35)', 1); tline(i / n, 0, i / n, 1, 'rgba(60,55,45,0.35)', 1); }
+      for (i = 0; i < 18; i++) { g.fillStyle = 'rgba(80,70,50,0.08)'; g.fillRect(rng.next() * TW, rng.next() * TH, 2, 1); }
     } else if (f === F.CARPET) {
-      for (i = 0; i < 90; i++) { g.fillStyle = U.shade(base, rng.chance(0.5) ? 1.1 : 0.9); g.fillRect(rng.next() * TW, rng.next() * TH, 1, 1); }
+      for (i = 0; i < 160; i++) { g.fillStyle = U.shade(base, 0.86 + rng.next() * 0.26); g.fillRect(rng.next() * TW, rng.next() * TH, 1, 1); }
+      if (rng.chance(0.2)) { var cs = ip(rng.next(), rng.next(), 0); g.fillStyle = 'rgba(40,25,15,0.15)'; g.beginPath(); g.ellipse(cs[0] + HW, cs[1], rng.range(4, 9), rng.range(2, 4), 0, 0, Math.PI * 2); g.fill(); }
     } else if (f === F.WATER) {
       for (i = 0; i < 6; i++) { x = rng.next() * TW; y = rng.next() * TH; g.strokeStyle = 'rgba(200,230,255,0.25)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 8, y); g.stroke(); }
     } else if (f === F.ROOF) {
@@ -269,7 +294,7 @@
       for (i = 0; i < 8; i++) { for (var k = 0; k < 4; k++) { var ox = (k + (i % 2) * 0.5) / 4; tline(ox, i / 8, ox, (i + 1) / 8, U.shade(base, 0.85), 1); } }
     }
     g.restore();
-    return (floorArr[nk] = store(key, c, HW + 1, 1));
+    return (floorArr[nk] = store(key, c, HW + 1, 1, true));
   }
   S.floor = floorSprite;
 
@@ -410,7 +435,7 @@
         g.stroke();
       }
     }
-    var sr = store('r' + code, c, ax, ay);
+    var sr = store('r' + code, c, ax, ay, true);
     roofMap.set(code, sr);
     return sr;
   };
@@ -472,8 +497,22 @@
         } else if (!st.interior) {
           for (var r3 = 1; r3 < H / 7; r3++) { wline(g, side, 0, r3 * 7, 1, r3 * 7, U.shade(st.base, faceF * 0.9), 1, ox, oy); }
         } else {
-          // rodapé
-          wquad(g, side, 0, 1, 0, 5, U.shade(st.trim, faceF), ox, oy);
+          // papel de parede estampado (por estilo), rodapé e moldura no alto
+          var pc = U.shade(st.base, faceF * 0.88), pl = U.shade(st.base, faceF * 1.08);
+          var pr = new U.Rng(style * 13 + side);
+          if (st.pattern === 'stripes') {
+            for (var sI2 = 0; sI2 < 8; sI2++) { wquad(g, side, sI2 / 8 + 0.02, sI2 / 8 + 0.055, 6, H - 4, pc, ox, oy); }
+          } else if (st.pattern === 'floral') {
+            for (var fr = 0; fr < H / 10; fr++) { for (var fc = 0; fc < 5; fc++) { var fp = wp(side, (fc + (fr % 2) * 0.5 + 0.25) / 5, 10 + fr * 10); g.fillStyle = (fr + fc) % 3 ? pc : U.shade('#8a5a6a', faceF); g.fillRect(fp[0] + ox - 1, fp[1] + oy - 1, 2, 2); g.fillStyle = pl; g.fillRect(fp[0] + ox, fp[1] + oy - 2, 1, 1); } }
+          } else if (st.pattern === 'diamond') {
+            for (var dr = 0; dr < H / 12; dr++) { for (var dc = 0; dc < 4; dc++) { var u0 = (dc + (dr % 2) * 0.5) / 4, h0 = 8 + dr * 12; wline(g, side, u0, h0, u0 + 0.125, h0 + 6, pc, 1, ox, oy); wline(g, side, u0 + 0.125, h0 + 6, u0 + 0.25, h0, pc, 1, ox, oy); } }
+          } else if (st.pattern === 'boards') {
+            for (var bI = 1; bI < 6; bI++) { wline(g, side, bI / 6, 5, bI / 6, H, U.shade(st.base, faceF * 0.72), 1, ox, oy); }
+            for (var gI2 = 0; gI2 < 10; gI2++) { var gu = pr.next(); wline(g, side, gu, pr.range(8, H * 0.5), gu, pr.range(H * 0.55, H - 4), U.shade(st.base, faceF * (pr.chance(0.5) ? 0.9 : 1.08)), 1, ox, oy); }
+          }
+          wquad(g, side, 0, 1, 0, 6, U.shade(st.trim, faceF), ox, oy);
+          wline(g, side, 0, 6, 1, 6, U.shade(st.trim, faceF * 0.7), 1, ox, oy);
+          wquad(g, side, 0, 1, H - 3, H, U.shade(st.trim, faceF * 1.05), ox, oy);
         }
       }
       // sujeira: manchas de água escorrendo, mofo na base, tinta descascada
@@ -596,25 +635,27 @@
       case O.TALL_GRASS: drawGrass(g, rng); break;
       case O.BED_HEAD:
       case O.BED_FOOT: drawBed(g, o === O.BED_HEAD, dir, rng); break;
-      case O.FRIDGE: bw = againstWall(dir, 0.72, 0.12); box(g, bw[0], bw[1], bw[2], bw[3], 0, 72, '#e4e2dc'); break;
-      case O.STOVE: bw = againstWall(dir, 0.75, 0.1); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#e2e0da');
+      case O.FRIDGE: bw = againstWall(dir, 0.72, 0.12); box(g, bw[0], bw[1], bw[2], bw[3], 0, 72, '#e4e2dc'); furnitureDetail(g, o, bw, dir, rng); break;
+      case O.STOVE: bw = againstWall(dir, 0.75, 0.1); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#e2e0da'); furnitureDetail(g, o, bw, dir, rng);
         for (var bi = 0; bi < 4; bi++) { var pp = ip(bw[0] + bw[2] * (0.28 + (bi % 2) * 0.44), bw[1] + bw[3] * (0.28 + Math.floor(bi / 2) * 0.44), 30); ellipseAt(g, pp[0], pp[1], 5, 2.6, '#2a2a2a'); }
         break;
-      case O.COUNTER: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0'); break;
-      case O.SINK: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0');
-        var sc = ip(bw[0] + bw[2] / 2, bw[1] + bw[3] / 2, 31); ellipseAt(g, sc[0], sc[1], 10, 5, '#9aa4a8'); ellipseAt(g, sc[0], sc[1] + 1, 7, 3.4, '#6e787c'); break;
+      case O.COUNTER: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0'); furnitureDetail(g, o, bw, dir, rng); break;
+      case O.SINK: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0'); furnitureDetail(g, o, bw, dir, rng);
+        var sc = ip(bw[0] + bw[2] / 2, bw[1] + bw[3] / 2, 31); ellipseAt(g, sc[0], sc[1], 10, 5, '#9aa4a8'); ellipseAt(g, sc[0], sc[1] + 1, 7, 3.4, '#6e787c');
+        var fc2 = ip(bw[0] + bw[2] / 2 + (dir === 1 ? -0.3 : 0), bw[1] + bw[3] / 2 + (dir === 2 ? -0.3 : 0), 31); g.strokeStyle = '#b8bcc0'; g.lineWidth = 2; g.beginPath(); g.moveTo(fc2[0], fc2[1]); g.lineTo(fc2[0], fc2[1] - 9); g.lineTo(fc2[0] + (dir === 2 ? -2 : 2), fc2[1] - 7); g.stroke(); break;
       case O.TABLE: drawTable(g, '#8a5f38', 25); break;
       case O.CHAIR: drawChair(g, dir, '#7a5432'); break;
       case O.SOFA: drawSofa(g, dir, ['#6b4a3a', '#3e5c76', '#6b6b45', '#8a4b4b'][(extra || rng.int(0, 3)) % 4]); break;
       case O.SHELF: bw = againstWall(dir, 0.35, 0.06); box(g, bw[0], bw[1], bw[2], bw[3], 0, 70, '#6e4b2c'); drawBooks(g, bw, dir, rng); break;
-      case O.WARDROBE: bw = againstWall(dir, 0.55, 0.05); box(g, bw[0], bw[1], bw[2], bw[3], 0, 76, '#7a5634'); doorLines(g, bw, dir, 76); break;
-      case O.DRESSER: bw = againstWall(dir, 0.5, 0.08); box(g, bw[0], bw[1], bw[2], bw[3], 0, 32, '#80583a'); drawerLines(g, bw, dir, 32); break;
-      case O.NIGHTSTAND: bw = againstWall(dir, 0.5, 0.22); box(g, bw[0], bw[1], bw[2], bw[3], 0, 18, '#80583a'); break;
-      case O.DESK: bw = againstWall(dir, 0.6, 0.05); box(g, bw[0], bw[1], bw[2], bw[3], 0, 25, '#6e5032'); break;
+      case O.WARDROBE: bw = againstWall(dir, 0.55, 0.05); box(g, bw[0], bw[1], bw[2], bw[3], 0, 76, '#7a5634'); furnitureDetail(g, o, bw, dir, rng); break;
+      case O.DRESSER: bw = againstWall(dir, 0.5, 0.08); box(g, bw[0], bw[1], bw[2], bw[3], 0, 32, '#80583a'); drawerLines(g, bw, dir, 32); furnitureDetail(g, o, bw, dir, rng); break;
+      case O.NIGHTSTAND: bw = againstWall(dir, 0.5, 0.22); box(g, bw[0], bw[1], bw[2], bw[3], 0, 18, '#80583a'); drawerLines(g, bw, dir, 18); furnitureDetail(g, o, bw, dir, rng);
+        var lp = ip(bw[0] + bw[2] * 0.5, bw[1] + bw[3] * 0.5, 18); g.fillStyle = '#6a6a5a'; g.fillRect(lp[0] - 1, lp[1] - 12, 2, 12); poly(g, [[lp[0] - 6, lp[1] - 12], [lp[0] + 6, lp[1] - 12], [lp[0] + 4, lp[1] - 20], [lp[0] - 4, lp[1] - 20]], '#d8cca0', 'rgba(0,0,0,0.3)'); break;
+      case O.DESK: bw = againstWall(dir, 0.6, 0.05); box(g, bw[0], bw[1], bw[2], bw[3], 0, 25, '#6e5032'); furnitureDetail(g, o, bw, dir, rng); break;
       case O.TOILET: bw = againstWall(dir, 0.3, 0.3); box(g, bw[0], bw[1], bw[2], bw[3], 0, 26, '#eeeeea');
         var tc = ip(0.5, 0.5, 13); ellipseAt(g, tc[0], tc[1], 9, 5, '#f2f2ee'); ellipseAt(g, tc[0], tc[1], 6, 3, '#c9d2d6'); break;
       case O.BATHTUB: box(g, 0.06, 0.06, 0.88, 0.88, 0, 18, '#efefea'); topRect(g, 0.16, 0.16, 0.68, 0.68, 18.5, '#bfcbd0'); break;
-      case O.TV: bw = againstWall(dir, 0.45, 0.15); box(g, bw[0], bw[1], bw[2], bw[3], 0, 14, '#4a3828'); box(g, bw[0] + 0.08, bw[1] + 0.06, bw[2] - 0.16, bw[3] - 0.12, 14, 24, '#232326'); break;
+      case O.TV: bw = againstWall(dir, 0.45, 0.15); box(g, bw[0], bw[1], bw[2], bw[3], 0, 14, '#4a3828'); box(g, bw[0] + 0.08, bw[1] + 0.06, bw[2] - 0.16, bw[3] - 0.12, 14, 24, '#3a3a3c'); furnitureDetail(g, o, [bw[0] + 0.08, bw[1] + 0.06, bw[2] - 0.16, bw[3] - 0.12], dir, rng); break;
       case O.CRATE: box(g, 0.14, 0.14, 0.72, 0.72, 0, 24, '#9c7a4c'); topRect(g, 0.14, 0.45, 0.72, 0.06, 24.5, '#7a5c36'); break;
       case O.DUMPSTER: box(g, 0.04, 0.12, 0.92, 0.76, 0, 34, '#3f6b4a'); break;
       case O.LAMPPOST: drawLamp(g); break;
@@ -632,7 +673,7 @@
       case O.CROP: drawCrop(g, extra || 0, rng); break;
       case O.MED_CABINET: bw = againstWall(dir, 0.3, 0.18); box(g, bw[0], bw[1], bw[2], bw[3], 0, 44, '#f0eeea');
         var mc = ip(bw[0] + bw[2] / 2, bw[1] + bw[3], 26); g.fillStyle = '#c0392b'; g.fillRect(mc[0] - 4, mc[1] - 1, 8, 3); g.fillRect(mc[0] - 1, mc[1] - 4, 3, 8); break;
-      case O.LOCKER: bw = againstWall(dir, 0.45, 0.12); box(g, bw[0], bw[1], bw[2], bw[3], 0, 70, '#6f7a85'); doorLines(g, bw, dir, 70); break;
+      case O.LOCKER: bw = againstWall(dir, 0.45, 0.12); box(g, bw[0], bw[1], bw[2], bw[3], 0, 70, '#6f7a85'); furnitureDetail(g, o, bw, dir, rng); break;
       case O.GENERATOR: box(g, 0.15, 0.25, 0.7, 0.5, 0, 22, '#d1a52a'); box(g, 0.2, 0.3, 0.2, 0.2, 22, 6, '#333'); break;
       case O.FENCE_POST: box(g, 0.42, 0.42, 0.16, 0.16, 0, 30, '#6b5034'); break;
       case O.CORPSE_PILE: drawRock(g, rng); break;
@@ -683,6 +724,37 @@
     poly(g, [[x + 1, y + 1], [x + 1, y - h], [x + w1 / 2, y - h], [x + w0 / 2 + 2, y + 1]], U.shade(bark, 0.7));
     g.strokeStyle = U.shade(bark, 0.62); g.lineWidth = 1;
     for (var i = 0; i < 4; i++) { var bx = x - w0 / 2 + 1 + i * (w0 / 4); g.beginPath(); g.moveTo(bx, y - 2); g.lineTo(bx + (w1 - w0) * 0.25, y - h * (0.5 + (i % 2) * 0.3)); g.stroke(); }
+  }
+  /* detalhes na face da frente de um móvel encostado na parede (só quando a frente aparece: dir 2 = sul, dir 1 = leste) */
+  function front(g, bw, dir) {
+    if (dir !== 1 && dir !== 2) { return null; }
+    function P(u, h) { return dir === 2 ? ip(bw[0] + bw[2] * u, bw[1] + bw[3] + 0.003, h) : ip(bw[0] + bw[2] + 0.003, bw[1] + bw[3] * u, h); }
+    return {
+      quad: function (u0, u1, h0, h1, fill, stroke) { poly(g, [P(u0, h0), P(u1, h0), P(u1, h1), P(u0, h1)], fill, stroke || 'rgba(0,0,0,0.35)', 1); },
+      line: function (u0, h0, u1, h1, col, w) { var a = P(u0, h0), b = P(u1, h1); g.strokeStyle = col; g.lineWidth = w || 1; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); },
+      knob: function (u, h, col, r) { var a = P(u, h); ellipseAt(g, a[0], a[1], r || 1.5, r || 1.5, col || '#c8c0a0'); }
+    };
+  }
+  function furnitureDetail(g, o, bw, dir, rng) {
+    var f = front(g, bw, dir);
+    if (!f) { return; }
+    var i;
+    switch (o) {
+      case O.FRIDGE: f.line(0.04, 52, 0.96, 52, 'rgba(0,0,0,0.35)', 1); f.quad(0.82, 0.88, 56, 68, '#9a9a96'); f.quad(0.82, 0.88, 28, 48, '#9a9a96');
+        if (rng.chance(0.6)) { f.quad(0.2, 0.36, 36, 44, rng.pick(['#d84a3a', '#3a7ad8', '#e8c83a'])); f.quad(0.42, 0.58, 30, 40, '#f2f0e8'); } break;
+      case O.STOVE: f.quad(0.12, 0.88, 4, 20, '#2e2e30'); f.quad(0.2, 0.8, 7, 17, 'rgba(120,130,135,0.6)'); f.line(0.25, 21.5, 0.75, 21.5, '#bbb', 1.5);
+        for (i = 0; i < 4; i++) { f.knob(0.2 + i * 0.2, 26, '#3a3a3a', 1.6); } break;
+      case O.COUNTER: case O.SINK: f.quad(0.03, 0.97, 27, 31, U.shade('#cfc6b0', 0.85)); f.line(0.5, 3, 0.5, 26, 'rgba(0,0,0,0.4)', 1);
+        f.quad(0.06, 0.47, 4, 24, 'rgba(255,255,255,0.05)'); f.quad(0.53, 0.94, 4, 24, 'rgba(255,255,255,0.05)'); f.knob(0.43, 20, '#d8d0b0', 1.3); f.knob(0.57, 20, '#d8d0b0', 1.3); break;
+      case O.WARDROBE: case O.LOCKER: f.line(0.5, 3, 0.5, o === O.LOCKER ? 68 : 74, 'rgba(0,0,0,0.45)', 1); f.knob(0.44, 38, '#d8c27a', 1.4); f.knob(0.56, 38, '#d8c27a', 1.4);
+        if (o === O.LOCKER) { for (i = 0; i < 3; i++) { f.line(0.15, 60 - i * 3, 0.35, 60 - i * 3, 'rgba(0,0,0,0.35)', 1); f.line(0.65, 60 - i * 3, 0.85, 60 - i * 3, 'rgba(0,0,0,0.35)', 1); } } break;
+      case O.DRESSER: case O.NIGHTSTAND: var hh = o === O.DRESSER ? 32 : 18, nd = o === O.DRESSER ? 3 : 2;
+        for (i = 0; i < nd; i++) { f.knob(0.5, hh * (i + 0.5) / nd, '#d8c27a', 1.3); } break;
+      case O.DESK: f.quad(0.6, 0.95, 4, 22, 'rgba(0,0,0,0.12)'); f.knob(0.78, 18, '#d8c27a', 1.2); f.knob(0.78, 10, '#d8c27a', 1.2); break;
+      case O.TV: f.quad(0.14, 0.86, 16, 36, '#1a1c1e'); f.quad(0.18, 0.82, 18, 34, rng.chance(0.5) ? '#2e3a40' : '#384850'); f.line(0.25, 32, 0.45, 22, 'rgba(255,255,255,0.18)', 2); f.knob(0.9, 30, '#888', 1); break;
+      case O.MED_CABINET: f.line(0.5, 4, 0.5, 42, 'rgba(0,0,0,0.3)', 1); break;
+      case O.SHELF: break;
+    }
   }
   function drawTree(g, rng, v) {
     var t = ip(0.5, 0.5, 0);
@@ -766,10 +838,16 @@
     box(g, b[0], b[1], b[2], b[3], 15, 16, color);
   }
   function drawSofa(g, dir, color) {
-    box(g, 0.06, 0.06, 0.88, 0.88, 0, 12, U.shade(color, 0.9));
-    var back = againstWall(dir, 0.22, 0.06);
-    box(g, back[0], back[1], back[2], back[3], 12, 16, color);
-    box(g, 0.08, 0.08, 0.84, 0.84, 12, 3, U.shade(color, 1.05));
+    box(g, 0.06, 0.06, 0.88, 0.88, 0, 12, U.shade(color, 0.85));
+    var back = againstWall(dir, 0.24, 0.04);
+    box(g, back[0], back[1], back[2], back[3], 12, 15, color);
+    var horiz = dir === 0 || dir === 2;
+    // braços nas pontas
+    if (horiz) { box(g, 0.04, 0.06, 0.12, 0.88, 12, 8, U.shade(color, 0.95)); box(g, 0.84, 0.06, 0.12, 0.88, 12, 8, U.shade(color, 0.95)); } else { box(g, 0.06, 0.04, 0.88, 0.12, 12, 8, U.shade(color, 0.95)); box(g, 0.06, 0.84, 0.88, 0.12, 12, 8, U.shade(color, 0.95)); }
+    // almofadas do assento
+    for (var i = 0; i < 2; i++) {
+      if (horiz) { box(g, 0.17 + i * 0.335, dir === 2 ? 0.3 : 0.08, 0.32, 0.6, 12, 4, U.shade(color, 1.08)); } else { box(g, dir === 1 ? 0.3 : 0.08, 0.17 + i * 0.335, 0.6, 0.32, 12, 4, U.shade(color, 1.08)); }
+    }
   }
   function drawBooks(g, bw, dir, rng) {
     var cols = ['#8a2b2b', '#2b4a8a', '#3a6a3a', '#8a7a2b', '#5a2b6a', '#2b6a6a', '#c9b98a'];

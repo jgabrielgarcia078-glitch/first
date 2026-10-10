@@ -185,9 +185,9 @@ h3 { font-family: var(--font-c); font-size: 14px; text-transform: uppercase; let
 #hud-right button.sb svg { filter: drop-shadow(0 1px 1px rgba(0,0,0,0.9)); }
 /* relógio digital (direita) */
 #hud-top { left: auto; right: 8px; top: 8px; align-items: flex-end; gap: 4px; }
-.lcd { min-width: 196px; padding: 6px 10px 5px; background: linear-gradient(#0d0f0c, #151812); border: 1px solid #000; box-shadow: inset 0 0 0 1px rgba(160,170,140,0.18), inset 0 0 18px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.6); color: #b9cba0; font-family: "Share Tech Mono", "Courier New", monospace; }
-.lcd-time { font-size: 34px; line-height: 1; letter-spacing: 0.06em; text-align: right; text-shadow: 0 0 8px rgba(170,200,130,0.45); font-variant-numeric: tabular-nums; }
-.lcd-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #8c9c78; margin-top: 2px; }
+.lcd { min-width: 196px; padding: 6px 10px 5px; background: linear-gradient(#0d0f0c, #151812); border: 1px solid #000; box-shadow: inset 0 0 0 1px rgba(160,170,140,0.18), inset 0 0 18px rgba(0,0,0,0.9), 0 2px 8px rgba(0,0,0,0.6); color: #a9cde0; font-family: "Share Tech Mono", "Courier New", monospace; }
+.lcd-time { font-size: 34px; line-height: 1; letter-spacing: 0.06em; text-align: right; text-shadow: 0 0 8px rgba(130,190,230,0.45); font-variant-numeric: tabular-nums; }
+.lcd-row { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #7d9aac; margin-top: 2px; }
 .lcd-warn { color: #d07a4a; }
 #hud-top .speed { margin: 0; gap: 2px; align-items: center; }
 #hud-top .speed button { padding: 1px 7px; font-size: 11px; border-radius: 0; background: rgba(6,6,5,0.65); border-color: rgba(160,154,136,0.3); }
@@ -239,6 +239,14 @@ h3 { font-family: var(--font-c); font-size: 14px; text-transform: uppercase; let
 .menu-left .ver { margin-top: 48px; font-size: 12px; color: #6d6a62; }
 
 /* vinheta e grão de filme (camadas fixas sobre o canvas, abaixo da interface) */
-#vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0) 38%, rgba(0,0,0,0.28) 68%, rgba(0,0,0,0.62) 100%); }
-#grain { position: fixed; inset: -160px; pointer-events: none; opacity: 0.05; animation: grain 0.6s steps(6) infinite; will-change: transform; }
+#vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 48%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.12) 75%, rgba(0,0,0,0.35) 100%); }
+#grain { display: none; position: fixed; inset: -160px; pointer-events: none; opacity: 0.05; animation: grain 0.6s steps(6) infinite; will-change: transform; }
 @keyframes grain { 0% { transform: translate(0, 0); } 17% { transform: translate(-53px, 31px); } 33% { transform: translate(41px, -67px); } 50% { transform: translate(-97px, -13px); } 67% { transform: translate(23px, 79px); } 83% { transform: translate(-11px, -101px); } 100% { transform: translate(0, 0); } }
+
+/* barra lateral como no original: ícones soltos (sem caixa), mãos em círculos */
+#hud-right button.sb { background: none; border: none; width: 46px; height: 40px; color: #e4e0d4; }
+#hud-right button.sb svg { filter: drop-shadow(0 1px 1px #000) drop-shadow(0 0 3px rgba(0,0,0,0.8)); }
+#hud-right button.sb:hover:not(:disabled) { background: rgba(0,0,0,0.35); border: none; color: #fff; }
+#hud-right button.sb.on { background: rgba(0,0,0,0.45); color: #ffe6a6; box-shadow: inset 2px 0 0 #d6bf86; border: none; }
+#hud-right .equip .slot.hand { width: 46px; height: 46px; border-radius: 50%; background: radial-gradient(rgba(30,30,28,0.85), rgba(0,0,0,0.85)); border: 1px solid rgba(220,214,196,0.35); font-size: 22px; }
+#hud-right .equip .slot.hand .k { top: auto; bottom: -2px; left: 50%; transform: translateX(-50%); font-size: 9px; }

@@ -96,7 +96,7 @@
   /* ---------- luz ---------- */
   T.ambient = function () {
     var dl = CP.Vis.daylight(T.hourOfDay());
-    return Math.max(0.12, dl * T.weather().amb);
+    return Math.max(0.2, dl * T.weather().amb);
   };
   T.visionMult = function () { return 1; };
   T.isNight = function () { return T.ambient() < 0.45; };
