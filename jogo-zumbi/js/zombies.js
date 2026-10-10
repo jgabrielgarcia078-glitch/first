@@ -206,11 +206,21 @@
     var G = CP.Game;
     var p = G.player;
     rebuildHash();
-    Z.pathBudget = 4;
+    Z.nodeBudget = 3500;
+    Z.tickN = (Z.tickN || 0) + 1;
     var zs = G.zombies;
     var attackers = 0;
     for (var i = 0; i < zs.length; i++) {
       var zb = zs[i];
+      // zumbis longe e calmos pensam/andam com menos frequência (nível de detalhe)
+      var far = Math.abs(zb.x - p.x) + Math.abs(zb.y - p.y) > 45;
+      if (far && (zb.state === 'idle' || zb.state === 'wander' || zb.state === 'fakedead')) {
+        zb.lodAcc = (zb.lodAcc || 0) + dt;
+        if (((i + Z.tickN) & 3) !== 0) { continue; }
+        var ldt = zb.lodAcc; zb.lodAcc = 0;
+        updateOne(zb, p, Math.min(ldt, 0.2));
+        continue;
+      }
       updateOne(zb, p, dt);
       if (zb.attackT > 0 && U.dist2(zb.x, zb.y, p.x, p.y) < 2.2) { attackers++; }
     }
@@ -353,16 +363,32 @@
       if ((zb.stuckT || 0) > 1.0) { zb.seesPlayer = false; zb.stuckT = 0; }
       return;
     }
-    // segue caminho (A*)
-    zb.repathT -= dt;
+    // linha reta livre até o alvo (mesmo nível)? anda direto, sem A*
     var tl = W.levelOf(t.z);
+    if (tl === zl && !W.stairAt(Math.floor(zb.x), Math.floor(zb.y))) {
+      zb.lineT = (zb.lineT || 0) - dt;
+      if (zb.lineT <= 0) {
+        zb.lineT = 0.5 + Math.random() * 0.3;
+        var dl = U.dist(zb.x, zb.y, t.x, t.y);
+        zb.lineOk = dl < 45 && W.walkLine(zb.x, zb.y, t.x, t.y, zl, 60);
+      }
+      if (zb.lineOk) {
+        zb.path = null;
+        if (steer(zb, t.x, t.y, spd, dt)) { arrive(zb); }
+        if ((zb.stuckT || 0) > 1.2) { zb.lineOk = false; zb.lineT = 3; zb.stuckT = 0; }
+        return;
+      }
+    }
+    // segue caminho (A*), com orçamento de nós por passo de simulação
+    zb.repathT -= dt;
     var ttx = Math.floor(t.x), tty = Math.floor(t.y);
     if (!zb.path || zb.repathT <= 0 || zb.pathTarget !== ttx * 100000 + tty) {
-      if (Z.pathBudget > 0) {
-        Z.pathBudget--;
-        zb.repathT = ZC.REPATH_INTERVAL * (0.8 + Math.random() * 0.6);
+      if (Z.nodeBudget > 0) {
+        zb.repathT = ZC.REPATH_INTERVAL * (0.8 + Math.random() * 0.6) * (zb.state === 'chase' ? 1 : 2.5);
         zb.pathTarget = ttx * 100000 + tty;
-        zb.path = CP.Path.find(Math.floor(zb.x), Math.floor(zb.y), zl, ttx, tty, tl, { doorsPassable: true, fencesPassable: true, partial: true, maxNodes: zb.state === 'wander' ? 300 : ZC.PATH_MAX_NODES });
+        var maxN = zb.state === 'wander' ? 200 : (zb.state === 'chase' ? ZC.PATH_MAX_NODES : 900);
+        zb.path = CP.Path.find(Math.floor(zb.x), Math.floor(zb.y), zl, ttx, tty, tl, { doorsPassable: true, fencesPassable: true, partial: true, maxNodes: maxN });
+        Z.nodeBudget -= CP.Path.lastNodes + 20;
         zb.pathI = 0;
         if (!zb.path || !zb.path.length) {
           // sem caminho: vai direto

@@ -301,6 +301,31 @@
     return true;
   };
 
+  /* linha reta "andável" (sem paredes/portas fechadas/objetos sólidos) entre dois pontos no mesmo nível */
+  W.walkLine = function (x0, y0, x1, y1, z, maxSteps) {
+    var tx = Math.floor(x0), ty = Math.floor(y0);
+    var ex = Math.floor(x1), ey = Math.floor(y1);
+    var dx = x1 - x0, dy = y1 - y0;
+    var stepX = dx > 0 ? 1 : -1, stepY = dy > 0 ? 1 : -1;
+    var tDeltaX = dx !== 0 ? Math.abs(1 / dx) : Infinity;
+    var tDeltaY = dy !== 0 ? Math.abs(1 / dy) : Infinity;
+    var tMaxX = dx !== 0 ? (dx > 0 ? (tx + 1 - x0) : (x0 - tx)) * tDeltaX : Infinity;
+    var tMaxY = dy !== 0 ? (dy > 0 ? (ty + 1 - y0) : (y0 - ty)) * tDeltaY : Infinity;
+    var n = maxSteps || 60;
+    while ((tx !== ex || ty !== ey) && n-- > 0) {
+      var nx = tx, ny = ty;
+      if (Math.abs(tMaxX - tMaxY) < 1e-9) {
+        if (W.stepLevel(tx, ty, z, stepX, stepY) !== z) { return false; }
+        tx += stepX; ty += stepY; tMaxX += tDeltaX; tMaxY += tDeltaY;
+        continue;
+      }
+      if (tMaxX < tMaxY) { nx = tx + stepX; tMaxX += tDeltaX; } else { ny = ty + stepY; tMaxY += tDeltaY; }
+      if (W.stepLevel(tx, ty, z, nx - tx, ny - ty) !== z) { return false; }
+      tx = nx; ty = ny;
+    }
+    return n > 0;
+  };
+
   /* ---------- Passo de pathfinding entre tiles ----------
    * Retorna o nível de destino ou -1. Diagonais exigem os dois caminhos ortogonais livres.
    * opts.doorsPassable: portas/janelas fechadas contam como passáveis (zumbis batem nelas). */

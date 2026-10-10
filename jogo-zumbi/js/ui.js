@@ -674,10 +674,11 @@
     var days = CP.Time.daysSurvived();
     $.screens.innerHTML = '<div class="screen"><div class="death"><h1>Assim você morreu</h1><div class="cause">' + esc(p.deathCause) + '</div>' +
       '<div class="stats"><span>Sobrevivente</span><b>' + esc(p.name) + '</b><span>Ocupação</span><b>' + esc(D.OCC[p.occupation].name) + '</b>' +
-      '<span>Sobreviveu</span><b>' + Math.floor(days) + ' dias e ' + Math.floor((days % 1) * 24) + ' horas</b><span>Zumbis mortos</span><b>' + p.kills + '</b>' +
+      '<span>Sobreviveu</span><b>' + plural(Math.floor(days), 'dia', 'dias') + ' e ' + plural(Math.floor((days % 1) * 24), 'hora', 'horas') + '</b><span>Zumbis mortos</span><b>' + p.kills + '</b>' +
       '<span>Habilidade mais alta</span><b>' + bestSkill(p) + '</b></div>' +
       '<button class="primary" data-a="menu-new">Novo sobrevivente</button> <button data-a="to-menu">Menu</button></div></div>';
   }
+  function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
   function bestSkill(p) {
     var best = null;
     D.SKILLS.forEach(function (s) { if (s.passive) { return; } if (!best || p.skills[s.id] > p.skills[best.id]) { best = s; } });

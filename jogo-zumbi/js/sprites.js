@@ -119,10 +119,12 @@
   function diamondPath(g) {
     g.beginPath(); g.moveTo(HW, 0); g.lineTo(TW, HH); g.lineTo(HW, TH); g.lineTo(0, HH); g.closePath();
   }
+  var floorArr = [], wallArr = [], objArr = [];
   function floorSprite(f, v) {
+    var nk = f * 64 + (v & 63);
+    var s0 = floorArr[nk];
+    if (s0) { return s0; }
     var key = 'f' + f + '_' + v;
-    var s = S.cache[key];
-    if (s) { return s; }
     var c = mk(TW + 2, TH + 2), g = c.getContext('2d');
     var cols = FLOOR_COLORS[f] || ['#ff00ff'];
     var base = cols[v % cols.length];
@@ -181,7 +183,7 @@
       for (i = 0; i < 8; i++) { for (var k = 0; k < 4; k++) { var ox = (k + (i % 2) * 0.5) / 4; tline(ox, i / 8, ox, (i + 1) / 8, U.shade(base, 0.85), 1); } }
     }
     g.restore();
-    return store(key, c, HW + 1, 1);
+    return (floorArr[nk] = store(key, c, HW + 1, 1));
   }
   S.floor = floorSprite;
 
@@ -198,9 +200,10 @@
   }
   /* state: 0 normal; para porta: 1 aberta, 2 quebrada; janela: 1 aberta, 2 quebrada; bar = 0..4 tábuas; cut = parede baixa */
   function wallSprite(type, style, side, state, bar, cut, extra) {
+    var nk = (((((type * 16 + style) * 2 + side) * 4 + state) * 5 + bar) * 2 + (cut ? 1 : 0)) * 2 + (extra ? 1 : 0);
+    var s0 = wallArr[nk];
+    if (s0) { return s0; }
     var key = 'w' + type + '_' + style + '_' + side + '_' + state + '_' + bar + '_' + (cut ? 1 : 0) + '_' + (extra || 0);
-    var s = S.cache[key];
-    if (s) { return s; }
     var H = cut ? C.CUT_WALL_H : WH;
     var pad = 6;
     var c = mk(TW * 2, HH + WH + pad * 2 + 4), g = c.getContext('2d');
@@ -303,16 +306,17 @@
       wline(g, side, 0, th, 1, th, '#8a8d8a', 2, ox, oy);
       if (!cut) { for (var bw = 0; bw < 6; bw++) { var pt = wp(side, bw / 6 + 0.08, th + 4); ellipseAt(g, pt[0] + ox, pt[1] + oy, 2, 1.5, 'rgba(160,160,160,0.8)'); } }
     }
-    return store(key, c, ox, oy);
+    return (wallArr[nk] = store(key, c, ox, oy));
   }
   S.wall = wallSprite;
 
   /* ---------- Objetos ---------- */
   var CAR_COLORS = ['#8c2b2b', '#2b4c8c', '#d8d4c8', '#2e2e30', '#5b7b4a', '#b8862f', '#6a6a70', '#7a3f6e', '#c9c2a4', '#3c6d73', '#a14a24', '#425066'];
   function objSprite(o, dir, extra) {
+    var nk = (o * 256 + (dir & 255)) * 8 + ((extra || 0) & 7);
+    var s0 = objArr[nk];
+    if (s0) { return s0; }
     var key = 'o' + o + '_' + dir + '_' + (extra || 0);
-    var s = S.cache[key];
-    if (s) { return s; }
     var info = C.OBJ_INFO[o];
     var maxH = Math.ceil((info.h || 1) * WH) + 40;
     var cw = TW + 64, chh = TH + maxH + 10;
@@ -370,7 +374,7 @@
       case O.CORPSE_PILE: drawRock(g, rng); break;
       default: box(g, 0.2, 0.2, 0.6, 0.6, 0, 20, '#f0f');
     }
-    return store(key, c, ax, ay);
+    return (objArr[nk] = store(key, c, ax, ay));
   }
   S.obj = objSprite;
 

@@ -67,6 +67,18 @@
 
   function startSwing(p, wp) {
     var w = wp.w;
+    // assistência de mira: vira para o zumbi mais próximo dentro do alcance e mais ou menos à frente
+    var cands = CP.Zombies.near(p.x, p.y, w.range + 0.6, near);
+    var best = null, bd = 99;
+    for (var i = 0; i < cands.length; i++) {
+      var zb = cands[i];
+      if (zb.state === 'dead' || Math.abs(zb.z - p.z) > 0.45) { continue; }
+      var a = Math.atan2(zb.y - p.y, zb.x - p.x);
+      var da = Math.abs(U.angleDiff(p.ang, a));
+      var d = U.dist(zb.x, zb.y, p.x, p.y);
+      if (da < 1.25 && d + da * 0.5 < bd) { bd = d + da * 0.5; best = a; }
+    }
+    if (best !== null) { p.ang = best; p.aimLock = best; } else { p.aimLock = null; }
     var skill = CP.Player.skillLevel(p, w.skill);
     var dur = w.cd * (1.1 - skill * 0.03);
     if (endurance(p) < 0.25) { dur *= 1.3; }
@@ -200,7 +212,7 @@
     var pellets = g.pellets || 1;
     var spread = (g.spread || 0.12) * (1.4 - aim * 0.08) * (1 + panic / 120);
     var In = CP.Input;
-    var mw = CP.Render.toWorld(In.mouse.x, In.mouse.y, p.z);
+    var mw = CP.Player.mouseWorld(p);
     var baseAng = Math.atan2(mw.y - p.y, mw.x - p.x);
     p.ang = baseAng;
     var lv = W.levelOf(p.z);

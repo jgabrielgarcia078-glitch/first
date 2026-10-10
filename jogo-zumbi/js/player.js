@@ -160,9 +160,9 @@
     p.running = canControl && len > 0 && (In.isDown('ShiftLeft') || In.isDown('ShiftRight')) && !p.aiming && (!CP.Body || CP.Body.canRun(p));
     if (p.running && p.sneaking) { p.sneaking = false; }
     // olhar para o mouse ao mirar/atacar
-    var mouseW = CP.Render.toWorld(In.mouse.x, In.mouse.y, p.z);
+    var mouseW = P.mouseWorld(p);
     var toMouse = Math.atan2(mouseW.y - p.y, mouseW.x - p.x);
-    if (p.aiming || p.anim.attack > 0 || p.anim.shove > 0) { p.ang = U.approachAngle(p.ang, toMouse, dt * 14); }
+    if (p.anim.attack > 0 && p.aimLock !== null && p.aimLock !== undefined) { p.ang = p.aimLock; } else if (p.aiming || p.anim.attack > 0 || p.anim.shove > 0) { p.ang = U.approachAngle(p.ang, toMouse, dt * 14); }
     p.moving = false;
     if (len > 0) {
       // movimento cancela ações com tempo
@@ -197,6 +197,12 @@
     }
     if (CP.Combat) { CP.Combat.playerUpdate(p, dt); }
     if (CP.Actions) { CP.Actions.update(p, dt, gameDt); }
+  };
+
+  /* ponto do mundo sob o mouse, considerando que se mira na altura do peito (não nos pés) */
+  P.mouseWorld = function (p) {
+    var In = CP.Input, R = CP.Render;
+    return R.toWorld(In.mouse.x, In.mouse.y + 30 * R.zoom, p.z);
   };
 
   /* ---------- aparência ---------- */
