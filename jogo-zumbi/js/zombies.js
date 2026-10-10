@@ -299,7 +299,10 @@
       var sees = !p.dead && canSeePlayer(zb, p);
       zb.seesPlayer = sees;
       if (sees) {
-        if (zb.state !== 'chase' && zb.state !== 'attack' && CP.Audio && Math.random() < 0.5) { CP.Audio.groan(zb, true); }
+        if (zb.state !== 'chase' && zb.state !== 'attack') {
+          if (CP.Audio && Math.random() < 0.5) { CP.Audio.groan(zb, true); }
+          if (CP.Music && U.dist(zb.x, zb.y, p.x, p.y) < 16) { CP.Music.spotted(); }
+        }
         zb.lastSeenT = 0;
         zb.target = { x: p.x, y: p.y, z: p.z };
         zb.memT = ZC.MEMORY_SECONDS * (CP.Game.settings.memory || 1);

@@ -154,7 +154,7 @@
     if (!w.announced.power && !T.powerOn()) { w.announced.power = true; if (CP.UI) { CP.UI.toast('A energia elétrica acabou.', 'warn'); } if (CP.Audio) { CP.Audio.powerDown(); } }
     if (!w.announced.water && !T.waterOn()) { w.announced.water = true; if (CP.UI) { CP.UI.toast('As torneiras secaram. A água encanada acabou.', 'warn'); } }
     // eventos meta (sons distantes)
-    if (h >= w.nextMeta) { metaSound(); w.nextMeta = h + rng.range(24 / EV.META_SOUND_PER_DAY * 0.5, 24 / EV.META_SOUND_PER_DAY * 1.5); }
+    if (h >= w.nextMeta) { metaSound(); var per = 24 / EV.META_SOUND_PER_DAY / (T.isNight() ? 1.5 : 1); w.nextMeta = h + rng.range(per * 0.5, per * 1.5); }
     // helicóptero
     if (!w.heliDone && !w.heli && T.daysSurvived() >= w.heliDay + (w.heliHour - C.START_HOUR) / 24) { startHeli(); }
     if (w.heli) { updateHeli(dt); }
@@ -192,16 +192,29 @@
     if (CP.UI) { CP.UI.toast('Dia ' + (day + 1) + ' — ' + T.dateText(), 'info'); }
   }
 
-  function metaSound() {
+  /* evento distante: só som e barulho (atrai zumbis para lá); nunca há alguém de verdade */
+  function metaSound(forceId) {
     var p = G().player;
-    var a = Math.random() * Math.PI * 2, r = U.randRange(35, 70);
-    var x = p.x + Math.cos(a) * r, y = p.y + Math.sin(a) * r;
-    var kinds = [['gunshot', 'Você ouve tiros ao longe...'], ['scream', 'Um grito ecoa à distância...'], ['dogs', 'Cachorros latem em algum lugar...'], ['crash', 'Um estrondo distante, como uma batida de carro...']];
-    var kd = U.pick(kinds);
-    CP.Zombies.noise(x, y, 0, C.NOISE.META, 'meta');
-    if (CP.Audio) { CP.Audio.distant(kd[0], a); }
-    if (CP.UI) { CP.UI.toast(kd[1]); }
+    if (!p || p.dead) { return; }
+    var night = T.isNight(), day = T.daysSurvived();
+    var list = C.META_EVENTS.filter(function (e) { return (!e.maxDay || day < e.maxDay) && (!forceId || e.id === forceId); });
+    if (!list.length) { return; }
+    var tot = 0, ws2 = list.map(function (e) { var wgt = e.w * (night && e.night ? e.night : 1); tot += wgt; return wgt; });
+    var r = Math.random() * tot, ev = list[list.length - 1];
+    for (var i = 0; i < list.length; i++) { r -= ws2[i]; if (r <= 0) { ev = list[i]; break; } }
+    var a = Math.random() * Math.PI * 2, dist = U.randRange(ev.dist[0], ev.dist[1]);
+    var x = p.x + Math.cos(a) * dist, y = p.y + Math.sin(a) * dist;
+    if (ev.id === 'caralarm') {
+      ws().alarms.push({ x: x, y: y, z: 0, t: 30, pulse: 0, kind: 'car' });
+    } else {
+      CP.Zombies.noise(x, y, 0, ev.noise, 'meta');
+      if (CP.Audio) { CP.Audio.distant(ev.id, a, dist); }
+    }
+    if (CP.Music) { CP.Music.event(); }
+    if (CP.UI) { CP.UI.toast(ev.msg); }
+    ws().lastMeta = { id: ev.id, x: x, y: y };
   }
+  T.metaEvent = metaSound;
   T.triggerAlarm = function (x, y, z, kind) {
     ws().alarms.push({ x: x, y: y, z: z, t: EV.ALARM_SECONDS, pulse: 0, kind: kind || 'house' });
     if (CP.UI) { CP.UI.toast(kind === 'car' ? 'O alarme do carro disparou!' : 'Um alarme disparou!', 'danger'); }

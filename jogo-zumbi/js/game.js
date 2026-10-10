@@ -164,6 +164,7 @@
     try {
       if (G.running) { G.frameUpdate(dtReal); }
       if (CP.UI) { CP.UI.frame(dtReal); }
+      if (CP.Music) { CP.Music.update(dtReal); }
     } catch (err) {
       console.error(err);
       if (CP.UI && CP.UI.fatal) { CP.UI.fatal(err); }

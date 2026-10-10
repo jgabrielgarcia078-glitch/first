@@ -8,7 +8,7 @@
 
   var UI = {
     screen: 'menu', open: {}, ctxOpen: false, lastCtxClose: 0, refs: [], hurtT: 0,
-    hudT: 0, panelT: 0, sigs: {}, creation: null, prefs: { volume: 0.7, showFps: false, zoomIndex: C.ZOOM_DEFAULT_INDEX },
+    hudT: 0, panelT: 0, sigs: {}, creation: null, prefs: { volume: 0.7, music: C.MUSIC.VOLUME, showFps: false, zoomIndex: C.ZOOM_DEFAULT_INDEX },
     autosaveT: 0, menuT: 0, deathShown: false, craftTab: 'recipes', mapMode: 'region', hasSave: false
   };
   var root, $ = {};
@@ -77,10 +77,13 @@
     document.addEventListener('mousedown', function () { if (CP.Audio) { CP.Audio.resume(); } });
     CP.U.on('skill:up', function (d) { UI.toast('⬆ ' + D.SKILL[d.skill].name + ' subiu para o nível ' + d.level + '!', 'good'); if (UI.open.skills) { renderSkills(); } });
     CP.U.on('player:dead', function () { setTimeout(showDeath, 1800); });
+    CP.U.on('player:dead', function () { if (CP.Music) { CP.Music.death(); } });
+    CP.U.on('game:start', function () { if (CP.Music) { CP.Music.reset(); } });
     CP.U.on('sleep:end', function () { if (CP.Save) { CP.Save.save(); } });
     CP.Save.loadSettings().then(function (pr) {
       if (pr) { Object.assign(UI.prefs, pr); }
       CP.Audio.setVolume(UI.prefs.volume);
+      if (CP.Music) { CP.Music.setVolume(UI.prefs.music); }
       CP.Render.setZoomIndex(UI.prefs.zoomIndex);
     });
     UI.showMenu();
@@ -720,6 +723,7 @@
       '<button style="width:100%;margin:4px 0" data-a="toggle" data-p="help">Controles</button>' +
       '<h3>Configurações</h3>' +
       '<div class="row"><label>Volume</label><input type="range" min="0" max="1" step="0.05" value="' + UI.prefs.volume + '" data-a="volume"></div>' +
+      '<div class="row"><label>Música</label><input type="range" min="0" max="1" step="0.05" value="' + UI.prefs.music + '" data-a="music"></div>' +
       '<div class="row"><label>Mostrar FPS</label><input type="checkbox" data-a="fps"' + (UI.prefs.showFps ? ' checked' : '') + '></div>' +
       '<button class="danger" style="width:100%;margin-top:10px" data-a="quit">Salvar e sair para o menu</button>';
   }
@@ -848,6 +852,7 @@
       case 'infection': cr.settings.infection = t.checked; break;
       case 'daylen': cr.dayMinutes = +t.value; break;
       case 'volume': UI.prefs.volume = +t.value; CP.Audio.setVolume(UI.prefs.volume); CP.Save.saveSettings(UI.prefs); break;
+      case 'music': UI.prefs.music = +t.value; CP.Music.setVolume(UI.prefs.music); CP.Save.saveSettings(UI.prefs); break;
       case 'fps': UI.prefs.showFps = t.checked; CP.Save.saveSettings(UI.prefs); break;
     }
   }

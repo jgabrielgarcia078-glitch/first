@@ -283,18 +283,135 @@
     var sp = Object.assign({}, CENTER, { pan: Math.random() * 1.4 - 0.7, outdoor: true, d: 30 });
     setTimeout(function () { if (ok()) { noise(sp, 3, 70, 0.7, 0.6, 'lowpass', 0.25, 0.5); noise(sp, 0.6, 400, 0.6, 0.25, 'lowpass', 0.01); } }, 300 + Math.random() * 1500);
   };
-  /* sons distantes: ang = direção no mundo */
-  Au.distant = function (kind, ang) {
+  /* ---------- eventos distantes (tiros, gritos, cachorros...) ---------- */
+  /* saída para som longe: passa-baixa pela distância, pan pela direção, muito eco */
+  function farOut(pan, d, vol) {
+    var ctx = Au.ctx;
+    var g = ctx.createGain(); g.gain.value = vol * U.clamp(1.25 - d / 60, 0.25, 1);
+    var lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = U.clamp(4200 - d * 45, 900, 3200);
+    g.connect(lp);
+    var node = lp;
+    if (ctx.createStereoPanner) { var pn = ctx.createStereoPanner(); pn.pan.value = pan; lp.connect(pn); node = pn; }
+    node.connect(Au.master);
+    var send = ctx.createGain(); send.gain.value = 0.9; node.connect(send); send.connect(Au.reverbIn);
+    return g;
+  }
+  function burst(o, t, dur, freq, type, q, vol, att) {
+    var ctx = Au.ctx;
+    var src = ctx.createBufferSource(); src.buffer = Au.noiseBuf;
+    var f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+    var e = ctx.createGain();
+    e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(vol, t + (att || 0.002)); e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(e); e.connect(o); src.start(t, Math.random() * 1.5); src.stop(t + dur + 0.05);
+  }
+  function boom(o, t, f0, f1, dur, vol) {
+    var ctx = Au.ctx, os = ctx.createOscillator(); os.type = 'sine';
+    os.frequency.setValueAtTime(f0, t); os.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    var e = ctx.createGain(); e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(vol, t + 0.004); e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    os.connect(e); e.connect(o); os.start(t); os.stop(t + dur + 0.05);
+  }
+  /* tiro com eco nos prédios */
+  function farShot(o, t, v) {
+    burst(o, t, 0.05, 2200, 'highpass', 0.7, 0.5 * v);
+    burst(o, t, 0.5, 500, 'lowpass', 0.8, 0.9 * v);
+    boom(o, t, 75, 38, 0.45, 0.6 * v);
+    burst(o, t + 0.33, 0.6, 420, 'lowpass', 0.6, 0.3 * v, 0.02);
+    burst(o, t + 0.85, 0.8, 350, 'lowpass', 0.6, 0.14 * v, 0.04);
+  }
+  /* voz humana: f0 e formantes (vogais) automatizados ao longo do tempo */
+  var VOW = { a: [820, 1200, 2800], o: [520, 880, 2500], e: [560, 1700, 2600], u: [380, 800, 2400] };
+  function humanVoice(o, t, pts, vowels, dur, vol, breathy) {
+    var ctx = Au.ctx;
+    var osc = ctx.createOscillator(); osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(pts[0][1], t);
+    for (var i = 1; i < pts.length; i++) { osc.frequency.linearRampToValueAtTime(pts[i][1], t + pts[i][0] * dur); }
+    var vib = ctx.createOscillator(); vib.frequency.value = 5.5 + Math.random() * 1.5;
+    var vg = ctx.createGain(); vg.gain.value = pts[0][1] * 0.035; vib.connect(vg); vg.connect(osc.frequency);
+    var src = ctx.createBufferSource(); src.buffer = Au.noiseBuf; src.loop = true;
+    var ng = ctx.createGain(); ng.gain.value = breathy || 0.25;
+    var mix = ctx.createGain(); mix.gain.value = 0.5;
+    var sh = ctx.createWaveShaper(); sh.curve = Au.rasp;
+    var pre = ctx.createGain(); pre.gain.value = 0.35;
+    osc.connect(pre); pre.connect(sh); sh.connect(mix); src.connect(ng); ng.connect(mix);
+    var e = ctx.createGain();
+    e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(vol, t + 0.05);
+    e.gain.setValueAtTime(vol, t + dur * 0.75); e.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    for (var k = 0; k < 3; k++) {
+      var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = k ? 10 : 7;
+      bp.frequency.setValueAtTime(VOW[vowels[0][1]][k], t);
+      for (var j = 1; j < vowels.length; j++) { bp.frequency.linearRampToValueAtTime(VOW[vowels[j][1]][k], t + vowels[j][0] * dur); }
+      var ag = ctx.createGain(); ag.gain.value = [3, 2, 0.8][k];
+      mix.connect(bp); bp.connect(ag); ag.connect(e);
+    }
+    e.connect(o);
+    osc.start(t); vib.start(t); src.start(t, Math.random());
+    osc.stop(t + dur + 0.05); vib.stop(t + dur + 0.05); src.stop(t + dur + 0.05);
+  }
+  /* kind: gunshot, gunfire, scream, help, dogs, crash, glass, explosion, siren; ang = direção no mundo; dist = tiles */
+  Au.distant = function (kind, ang, dist) {
     if (!ok()) { return; }
-    var dx = Math.cos(ang), dy = Math.sin(ang);
-    var sp = { g: 0.5, pan: U.clamp((dx - dy) * 0.6, -0.9, 0.9), muffle: true, outdoor: true, d: 40 };
-    if (kind === 'gunshot') { for (var i = 0; i < 3; i++) { setTimeout(function () { if (ok()) { noise(sp, 0.9, 350, 0.6, 0.5, 'lowpass', 0.001); } }, i * 380 + Math.random() * 200); } } else if (kind === 'scream') {
-      var ctx = Au.ctx, t = ctx.currentTime;
-      var o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(420, t); o.frequency.linearRampToValueAtTime(620, t + 0.4); o.frequency.linearRampToValueAtTime(380, t + 1.3);
-      var env = ctx.createGain(); env.gain.setValueAtTime(0.0001, t); env.gain.exponentialRampToValueAtTime(1, t + 0.1); env.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
-      [900, 1400].forEach(function (fr) { var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = fr; bp.Q.value = 6; o.connect(bp); bp.connect(env); });
-      env.connect(output(sp, 0.25)); o.start(t); o.stop(t + 1.5);
-    } else if (kind === 'dogs') { for (var j = 0; j < 4; j++) { setTimeout(function () { if (ok()) { noise(sp, 0.12, 700, 3, 0.4, 'bandpass', 0.005); } }, j * 300 + Math.random() * 100); } } else { noise(sp, 1.5, 160, 0.6, 0.6, 'lowpass', 0.002); }
+    var d = dist || 45;
+    var pan = U.clamp((Math.cos(ang) - Math.sin(ang)) * 0.6, -0.9, 0.9);
+    var ctx = Au.ctx, t = ctx.currentTime + 0.05, i;
+    var female = Math.random() < 0.5;
+    var o;
+    if (kind === 'gunshot') {
+      o = farOut(pan, d, 0.7); farShot(o, t, 1);
+      if (Math.random() < 0.4) { farShot(o, t + U.randRange(1.5, 4), 0.9); }
+    } else if (kind === 'gunfire') {
+      o = farOut(pan, d, 0.6);
+      var tt = t, n = 4 + ((Math.random() * 8) | 0);
+      for (i = 0; i < n; i++) { farShot(o, tt, U.randRange(0.7, 1)); tt += Math.random() < 0.3 ? U.randRange(0.8, 2) : U.randRange(0.12, 0.35); }
+    } else if (kind === 'scream') {
+      o = farOut(pan, d, 0.5);
+      var f0 = female ? 360 : 230;
+      humanVoice(o, t, [[0, f0], [0.15, f0 * 1.45], [0.6, f0 * 1.35], [1, f0 * 0.8]], [[0, 'a'], [1, 'a']], U.randRange(1.4, 2.2), 1, 0.35);
+      if (Math.random() < 0.55) { humanVoice(o, t + U.randRange(2.4, 3.2), [[0, f0 * 1.2], [0.3, f0 * 1.5], [1, f0 * 0.9]], [[0, 'a'], [0.6, 'e']], U.randRange(0.9, 1.4), 0.85, 0.4); }
+    } else if (kind === 'help') {
+      o = farOut(pan, d, 0.55);
+      var b0 = female ? 300 : 175;
+      for (i = 0; i < 3; i++) { // "so-CÔR-ro!"
+        var ts = t + i * U.randRange(1.4, 1.9);
+        burst(o, ts, 0.09, 5200, 'bandpass', 2, 0.25);
+        humanVoice(o, ts + 0.08, [[0, b0], [0.35, b0 * 1.35], [0.65, b0 * 1.3], [1, b0 * 0.85]], [[0, 'o'], [0.3, 'o'], [0.55, 'u'], [1, 'u']], 0.75, 0.9, 0.3);
+      }
+    } else if (kind === 'dogs') {
+      o = farOut(pan, d, 0.5);
+      var dogs = 1 + (Math.random() < 0.5 ? 1 : 0);
+      for (var dg = 0; dg < dogs; dg++) {
+        var pf = dg ? 520 : 380, tb = t + dg * 0.6;
+        for (i = 0; i < 4 + ((Math.random() * 4) | 0); i++) {
+          humanVoice(o, tb, [[0, pf], [0.3, pf * 1.25], [1, pf * 0.7]], [[0, 'a'], [1, 'o']], 0.16, 0.9, 0.5);
+          tb += Math.random() < 0.3 ? 0.9 : U.randRange(0.25, 0.4);
+        }
+      }
+    } else if (kind === 'crash') {
+      o = farOut(pan, d, 0.7);
+      burst(o, t, 1.6, 300, 'lowpass', 0.6, 1);
+      boom(o, t, 90, 35, 0.8, 0.7);
+      [1700, 2600, 3900].forEach(function (f) { burst(o, t + 0.02, 1.4, f, 'bandpass', 25, 0.35); });
+      for (i = 0; i < 6; i++) { burst(o, t + 0.1 + Math.random() * 0.6, 0.12, 4000 + Math.random() * 2500, 'bandpass', 6, 0.15); }
+    } else if (kind === 'glass') {
+      o = farOut(pan, Math.min(d, 30), 1.1);
+      burst(o, t, 0.15, 900, 'lowpass', 1, 0.5);
+      for (i = 0; i < 10; i++) { burst(o, t + Math.random() * 0.5, 0.08 + Math.random() * 0.15, 3000 + Math.random() * 4500, 'bandpass', 12, 0.3); }
+    } else if (kind === 'explosion') {
+      o = farOut(pan, d, 0.9);
+      boom(o, t, 60, 22, 2.2, 1);
+      burst(o, t, 3.2, 140, 'lowpass', 0.5, 1, 0.01);
+      burst(o, t + 0.05, 0.4, 1400, 'bandpass', 0.6, 0.4);
+      for (i = 0; i < 8; i++) { burst(o, t + 0.4 + Math.random() * 2.5, 0.06, 2500, 'bandpass', 3, 0.12); }
+    } else if (kind === 'siren') {
+      o = farOut(pan, d, 0.35);
+      var os = ctx.createOscillator(); os.type = 'square';
+      var lfo = ctx.createOscillator(); lfo.frequency.value = 0.22;
+      var lg = ctx.createGain(); lg.gain.value = 280;
+      os.frequency.value = 900; lfo.connect(lg); lg.connect(os.frequency);
+      var se = ctx.createGain(); se.gain.setValueAtTime(0.0001, t); se.gain.exponentialRampToValueAtTime(0.5, t + 3); se.gain.setValueAtTime(0.5, t + 7); se.gain.exponentialRampToValueAtTime(0.0001, t + 12);
+      var slp = ctx.createBiquadFilter(); slp.type = 'lowpass'; slp.frequency.value = 1800;
+      os.connect(slp); slp.connect(se); se.connect(o);
+      os.start(t); lfo.start(t); os.stop(t + 12.1); lfo.stop(t + 12.1);
+    }
   };
   Au.hammer = function () { if (ok()) { noise(CENTER, 0.06, 2000, 4, 0.18, 'bandpass', 0.001); noise(CENTER, 0.08, 400, 2, 0.15, 'lowpass', 0.001); } };
   Au.chop = function () { if (ok()) { noise(CENTER, 0.12, 700, 1.5, 0.3, 'bandpass', 0.001); tone(CENTER, 110, 0.12, 0.15, 'sine', 0.6); } };

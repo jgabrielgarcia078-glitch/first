@@ -31,12 +31,13 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 | zombies.js | Dados/entidades, ativação por chunk, percepção, IA (idle/wander/investigate/chase/attack/bash/climb), dano, cadáveres, migração/reaparecimento diários |
 | combat.js | Golpes (com assistência de mira), empurrão, pisão, tiros, ataques de zumbi |
 | body.js | Necessidades, moodles, temperatura, ferimentos, primeiros socorros, infecção, sono, morte |
-| time.js | Relógio, clima, luz, energia/água, helicóptero, sons distantes, alarmes, rádio/TV |
+| time.js | Relógio, clima, luz, energia/água, helicóptero, eventos distantes (`C.META_EVENTS`: só som + barulho que atrai zumbis, nunca há alguém lá), alarmes, rádio/TV |
 | fx.js | Sangue persistente, efeitos, chuva/neblina/relâmpago, vinheta |
 | actions.js | Ações com tempo (fila) e interações com o mundo (menu de contexto e tecla E) |
 | use.js | Uso de itens, artesanato, construção (`CP.Build`) e agricultura (`CP.Farm`) |
 | vehicles.js | Carros dirigíveis (os objetos CAR do mapa viram entidades ao ativar o chunk) |
 | audio.js | Sons sintetizados (WebAudio): vozes de zumbi por formantes, tudo posicional (pan + distância + abafado por parede), reverb, limite de vozes |
+| music.js | Trilha sonora **original** composta em tempo real (nunca usar a trilha do PZ): camadas calma/tensão/perseguição pela intensidade do perigo, peças com silêncio entre elas, sustos (`spotted`, `event`, `death`). Números em `C.MUSIC` |
 | save.js | IndexedDB (stores `saves`, `chunks`, `settings`), versão de esquema e migrações |
 | ui.js | Menu, criação de personagem, HUD, painéis, menu de contexto, morte |
 | game.js | Estado da partida, loop de passo fixo (30/s), ativação de chunks, câmera, desenho |
@@ -64,4 +65,4 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 - `tests/unit-sim.js`: integridade dos dados, combate, IA (ver, ouvir, perseguir, arrombar porta, subir escada), necessidades, sono, curativo, infecção, loot, serialização.
 - `tests/unit-days.js`: 30 dias acelerados (energia, água, helicóptero, clima, plantação, migração).
 - `tests/e2e.js`: Chromium via `file://` (menu → criação → jogo → painéis → salvar → recarregar → continuar).
-- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `audio` = níveis de som).
+- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R).

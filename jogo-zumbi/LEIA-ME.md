@@ -51,6 +51,8 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 - **Veículos**: carros com chave ou ligação direta, gasolina, dano, atropelamento, porta-malas e faróis.
 - **Visual**: casas com telhado de duas águas, chão com textura (grama, asfalto rachado, calçada, piso de madeira), árvores sombreadas, sombra junto às paredes. Personagens com corpo masculino e feminino de verdade, roupas visíveis (mangas, saia, vestido, jaqueta, boné, mochila) e zumbis curvados, mancando, com pele manchada, boca ensanguentada e roupas rasgadas.
 - **Som de onde ele vem**: gemidos de zumbi sintetizados como voz (rouco, com formantes), cada som vem da direção e da distância certas (esquerda/direita, mais baixo longe, abafado atrás de paredes). Passos mudam com o piso.
+- **Trilha sonora original**, composta na hora pelo próprio jogo: piano e violão melancólicos quando está tudo calmo (com silêncio entre as músicas), coração batendo e cordas tensas quando há zumbi por perto, percussão quando eles estão atrás de você, e um susto quando um zumbi te vê. Volume da música separado no menu (Esc).
+- **Eventos aleatórios ao longe**: tiros, rajadas, gritos, pedidos de socorro, cachorros, batida de carro, vidro quebrando, explosão, sirene e alarme de carro. Não há ninguém lá — mas o barulho é real e os zumbis vão até ele. Mais frequentes à noite.
 - **Leve**: só os zumbis perto de você são simulados; os de longe ficam "guardados" e acordam quando você se aproxima (ou se ouvirem um barulho grande).
 
 ## Testes

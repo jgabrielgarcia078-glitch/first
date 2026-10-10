@@ -279,10 +279,35 @@
     POWER_OFF_MIN_DAY: 3, POWER_OFF_MAX_DAY: 25,
     WATER_OFF_MIN_DAY: 3, WATER_OFF_MAX_DAY: 25,
     HELI_MIN_DAY: 6, HELI_MAX_DAY: 9,
-    META_SOUND_PER_DAY: 3,
+    META_SOUND_PER_DAY: 6,       // eventos distantes por dia (à noite ficam 1,5× mais frequentes)
     ALARM_CHANCE: 0.18,          // ao arrombar uma casa
     ALARM_SECONDS: 90,
     SURVIVOR_HOUSE_CHANCE: 0.03
+  };
+
+  /* Eventos distantes (sem ninguém de verdade lá): peso, raio do barulho que atrai zumbis, distância (tiles) e mensagem.
+   * night = peso extra à noite; maxDay = só nos primeiros dias */
+  C.META_EVENTS = [
+    { id: 'gunshot', w: 3, noise: 60, dist: [30, 70], msg: 'Um tiro ecoa em algum lugar...' },
+    { id: 'gunfire', w: 2, noise: 70, dist: [35, 70], msg: 'Rajadas de tiros ao longe. Alguém está lutando.' },
+    { id: 'scream', w: 3, noise: 55, dist: [25, 60], night: 2, msg: 'Um grito desesperado corta o silêncio...' },
+    { id: 'help', w: 2, noise: 55, dist: [25, 55], night: 1.5, msg: 'Alguém grita por socorro ao longe...' },
+    { id: 'dogs', w: 2, noise: 40, dist: [25, 60], msg: 'Cachorros latem em algum lugar...' },
+    { id: 'crash', w: 1, noise: 70, dist: [35, 70], msg: 'Um estrondo distante, como uma batida de carro...' },
+    { id: 'glass', w: 1.5, noise: 40, dist: [16, 30], night: 1.5, msg: 'Vidro se quebrando, não muito longe daqui...' },
+    { id: 'explosion', w: 0.4, noise: 90, dist: [50, 80], msg: 'Uma explosão faz o chão tremer ao longe!' },
+    { id: 'siren', w: 1.2, noise: 60, dist: [40, 70], maxDay: 7, msg: 'Uma sirene toca ao longe... e se cala.' },
+    { id: 'caralarm', w: 1, noise: 60, dist: [30, 55], msg: 'Um alarme de carro dispara em algum lugar.' }
+  ];
+
+  /* ---------- Trilha sonora (js/music.js) ---------- */
+  C.MUSIC = {
+    VOLUME: 0.6, BUS_GAIN: 1.0,                // volume padrão e quanto a música fica abaixo dos efeitos
+    BPM_CALM: 62, BPM_NIGHT: 54, BPM_TENSE: 76, BPM_CHASE: 108,
+    PIECE_BARS_MIN: 16, PIECE_BARS_MAX: 28,     // duração de uma peça calma (compassos)
+    REST_MIN: 25, REST_MAX: 75,                 // silêncio entre peças (s)
+    RISE: 1.2, FALL: 16,                        // s para a intensidade subir / baixar
+    SPOT_COOLDOWN: 35                           // s entre dois sustos de "zumbi te viu"
   };
 
   /* ---------- Combate ---------- */
