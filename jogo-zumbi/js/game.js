@@ -41,6 +41,7 @@
       world: CP.Time ? CP.Time.newWorldState(seed) : {}
     };
     G.zombies = []; G.effects = []; G.texts = []; G.activeChunks = {};
+    if (CP.Vehicles) { CP.Vehicles.reset(); }
     var spawn = G.findSpawn(seed, opts.townIndex);
     W.ensureAround(Math.floor(spawn.x), Math.floor(spawn.y), C.LOAD_RADIUS);
     G.player = CP.Player.create(opts.character || {}, spawn.x, spawn.y, spawn.z || 0);
@@ -118,6 +119,7 @@
           ch.active = true;
           ch.saveDirty = true;
           if (CP.Zombies) { CP.Zombies.activateChunk(ch); }
+          if (CP.Vehicles) { CP.Vehicles.activateChunk(ch); }
         }
       }
     }
@@ -126,6 +128,7 @@
       var c = G.activeChunks[key];
       if (Math.abs(c.cx - pcx) > C.UNLOAD_RADIUS || Math.abs(c.cy - pcy) > C.UNLOAD_RADIUS) {
         if (CP.Zombies) { CP.Zombies.deactivateChunk(c); }
+        if (CP.Vehicles) { CP.Vehicles.deactivateChunk(c); }
         c.active = false;
         delete G.activeChunks[key];
       }
@@ -247,7 +250,16 @@
     if (onStairs) { bld = W.building(Math.floor(p.x), Math.floor(p.y), 0); }
     var indoor = !!bld;
     drawList.length = 0;
-    drawList.push(p);
+    if (!p.vehicle) { drawList.push(p); }
+    if (CP.Vehicles) {
+      var cars = CP.Vehicles.active;
+      for (var ci = 0; ci < cars.length; ci++) {
+        var car = cars[ci];
+        if (Math.abs(car.x - p.x) > 40 || Math.abs(car.y - p.y) > 40) { continue; }
+        car.bright = undefined;
+        drawList.push(car);
+      }
+    }
     var V = CP.Vis;
     for (var i = 0; i < G.zombies.length; i++) {
       var zb = G.zombies[i];

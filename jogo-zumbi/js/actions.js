@@ -440,6 +440,7 @@
     var z = lvl(p);
     var x = Math.floor(wx), y = Math.floor(wy);
     var out = [];
+    if (CP.Vehicles) { CP.Vehicles.contextOptions(p, wx, wy, out); }
     // borda mais próxima do clique
     var fx = wx - x, fy = wy - y;
     var edges = [];
@@ -467,6 +468,7 @@
 
   /* tecla E: interação mais provável na frente do jogador */
   A.interact = function (p) {
+    if (p.vehicle && CP.Vehicles) { CP.Vehicles.exit(p); return true; }
     var z = lvl(p);
     var fx = Math.cos(p.ang), fy = Math.sin(p.ang);
     var cands = [];

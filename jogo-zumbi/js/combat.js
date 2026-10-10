@@ -41,7 +41,7 @@
       p.reloadT -= dt;
       if (p.reloadT <= 0) { finishReload(p); }
     }
-    if (In.blockGame || p.sleeping || p.dead) { return; }
+    if (In.blockGame || p.sleeping || p.dead || p.vehicle) { return; }
     var wantAttack = In.mouse.left && !p.uiClickGuard;
     if (wantAttack && p.anim.attack <= 0 && p.anim.shove <= 0 && p.attackCd <= 0 && !p.action) {
       var wp = weaponOf(p);
@@ -277,6 +277,15 @@
   /* ---------- zumbi acerta o jogador ---------- */
   K.zombieHits = function (zb, p) {
     if (p.dead) { return; }
+    if (p.vehicle) {
+      var car = p.vehicle;
+      if (!car.windowBroken && car.cond > 0.25) {
+        car.cond = Math.max(0, car.cond - 0.01);
+        if (CP.Audio) { CP.Audio.thump(car.x, car.y, 0, true); }
+        if (car.cond < 0.35 && Math.random() < 0.3) { car.windowBroken = true; if (CP.UI) { CP.UI.toast('Os zumbis quebraram o vidro do carro!', 'danger'); } }
+        return;
+      }
+    }
     // ser agarrado por vários = arrastado ao chão
     var attackers = CP.Zombies.near(p.x, p.y, 1.3, near).filter(function (o) { return o.state === 'attack' || (o.state === 'chase' && U.dist2(o.x, o.y, p.x, p.y) < 1.1); }).length;
     if (attackers >= ZC.DRAG_DOWN_COUNT && Math.random() < ZC.DRAG_DOWN_CHANCE * (attackers - ZC.DRAG_DOWN_COUNT + 1)) {

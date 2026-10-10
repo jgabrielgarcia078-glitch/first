@@ -258,6 +258,11 @@
     var al = $['action-label'];
     if (p.action && p.action.time > 0.4) { al.style.display = 'block'; al.textContent = p.action.opts.name + ' — ' + Math.round(p.action.t / p.action.time * 100) + '%' + (p.queue.length ? ' (+' + p.queue.length + ')' : ''); } else if (p.reloadT > 0) { al.style.display = 'block'; al.textContent = 'Recarregando...'; } else { al.style.display = 'none'; }
     $.fps.textContent = UI.prefs.showFps ? (G().fps + ' FPS · ' + CP.Render.stats.ms.toFixed(1) + ' ms · ' + G().zombies.length + ' zumbis ativos') : '';
+    if (p.vehicle) {
+      var car = p.vehicle;
+      al.style.display = 'block';
+      al.textContent = '🚗 ' + Math.round(Math.abs(car.speed) * 3.6) + ' km/h · ⛽ ' + car.fuel.toFixed(1) + ' L · estado ' + Math.round(car.cond * 100) + '% · ' + (car.engine ? 'motor ligado' : 'motor desligado (G)') + ' · E sai';
+    }
     var bh = $['build-hint'];
     if (CP.Build.mode) { bh.style.display = 'block'; bh.textContent = 'Construindo: ' + CP.Build.mode.def.name + ' — clique para colocar · R gira · Esc cancela'; } else { bh.style.display = 'none'; }
   }
@@ -308,6 +313,7 @@
   UI.openCrafting = function () { UI.toggle('craft', true); };
   UI.openLoot = function (x, y, z) { UI.lootFocus = { x: x, y: y, z: z }; UI.toggle('inv', true); renderInv(); };
   UI.equip = function (it, hand) { CP.Use.equip(P(), it, hand); };
+  UI.openCar = function (car) { UI.lootCar = car; UI.lootFocus = null; UI.toggle('inv', true); renderInv(); };
 
   /* arrastar painéis pelo cabeçalho */
   var drag = null;
@@ -355,6 +361,12 @@
       var fi = W.floorItems(x, y, z, true);
       if (fi.length || (x === px && y === py)) { out.push({ name: x === px && y === py ? 'Chão (aqui)' : 'Chão', items: fi, cap: 999, floor: true }); }
     });
+    // porta-malas de carros por perto
+    if (CP.Vehicles) {
+      CP.Vehicles.active.forEach(function (car) {
+        if (U.dist(p.x, p.y, car.x, car.y) < 2.6 && !p.vehicle) { out.unshift({ name: 'Porta-malas', items: car.trunk || (car.trunk = []), cap: 40 }); }
+      });
+    }
     // comida da geladeira envelhece mais devagar (com energia)
     out.forEach(function (s) { s.items.forEach(function (it) { CP.Items.touch(it, s.fridge && CP.Time.powerAt(s.x, s.y) ? 0.2 : 1); }); });
     return out;
@@ -650,6 +662,7 @@
       ['Clique direito rápido', 'Menu de contexto (portas, janelas, móveis, chão...)'], ['Espaço', 'Empurrar zumbi / pisar em zumbi caído'], ['E', 'Interagir com o que está à frente'],
       ['R', 'Recarregar arma (no modo construção: girar)'], ['F', 'Lanterna'], ['Q', 'Gritar (atrai zumbis!)'], ['Z', 'Sentar / levantar'],
       ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa'],
+      ['Carro', 'Clique direito: entrar · G liga o motor · W/S acelera/freia · A/D vira · Espaço freio · E sai'],
       ['1 a 5', 'Atalhos (equipar item)'], ['[ e ]', 'Velocidade do tempo (só sem zumbis por perto)'], ['Roda do mouse / + −', 'Zoom'], ['Esc', 'Fechar janela / pausa']
     ].map(function (k) { return '<b>' + k[0] + '</b><span>' + k[1] + '</span>'; }).join('') + '</div>' +
       '<h3>Dicas</h3><div style="font-size:13px;line-height:1.5">• Zumbis ouvem barulho e veem você. Ande agachado, evite correr perto deles.<br>• Uma mordida quase sempre é fatal (infecção). Arranhões e cortes têm chance menor. Roupas grossas protegem.<br>• Empurre (Espaço) e pise em zumbis caídos para economizar arma e fôlego.<br>• Barrique janelas e portas (martelo + tábuas + pregos). Desmonte móveis para conseguir tábuas.<br>• A energia e a água acabam em algumas semanas: encha garrafas e panelas antes.<br>• Quando o helicóptero passar, fique dentro de uma construção.<br>• Durma em camas (clique direito) e leia livros para multiplicar o XP.<br>• O jogo salva sozinho a cada minuto. Morreu, acabou: começa um novo sobrevivente.</div>';
@@ -829,7 +842,8 @@
           }
           break;
         case 'KeyE': if (!G().paused) { CP.Actions.interact(p); } break;
-        case 'Space': CP.Combat.spaceAction(p); break;
+        case 'KeyG': if (p.vehicle && CP.Vehicles) { CP.Vehicles.toggleEngine(p); } break;
+        case 'Space': if (!p.vehicle) { CP.Combat.spaceAction(p); } break;
         case 'KeyC': p.sneaking = !p.sneaking; break;
         case 'KeyF': CP.Use.toggleFlashlight(p); break;
         case 'KeyQ': UI.say(p, U.pick(['Ei!', 'Aqui!', 'Venham!', 'Socorro!'])); CP.Zombies.noise(p.x, p.y, p.z, C.NOISE.SHOUT, 'shout'); break;

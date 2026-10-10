@@ -149,6 +149,11 @@
   var SCREEN_DIRS = { KeyW: [-1, -1], KeyS: [1, 1], KeyA: [-1, 1], KeyD: [1, -1], ArrowUp: [-1, -1], ArrowDown: [1, 1], ArrowLeft: [-1, 1], ArrowRight: [1, -1] };
   P.update = function (p, dt, gameDt) {
     if (p.dead) { return; }
+    if (p.vehicle && CP.Vehicles) {
+      CP.Vehicles.drive(p, dt);
+      if (CP.Actions) { CP.Actions.update(p, dt, gameDt); }
+      return;
+    }
     var In = CP.Input;
     var mx = 0, my = 0;
     var canControl = !In.blockGame && !p.sleeping;

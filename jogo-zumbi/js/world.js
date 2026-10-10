@@ -183,8 +183,9 @@
    * Retorna { x, y, hit } — também trata escadas (z contínuo). */
   var segs = [];
   function addSeg(x1, y1, x2, y2) { segs.push(x1, y1, x2, y2); }
-  function gatherBlockers(cx, cy, z, r, onStairs) {
+  function gatherBlockers(cx, cy, z, r, onStairs, ignoreCar) {
     segs.length = 0;
+    if (CP.Vehicles && z === 0) { CP.Vehicles.addBlockers(addSeg, cx, cy, z, ignoreCar); }
     var x0 = Math.floor(cx - r - 1), x1 = Math.floor(cx + r + 1);
     var y0 = Math.floor(cy - r - 1), y1 = Math.floor(cy + r + 1);
     var lz = z;
@@ -242,18 +243,19 @@
     return hit;
   }
   var tmpP = { x: 0, y: 0 };
-  W.moveCircle = function (ent, dx, dy, r) {
+  W.moveCircle = function (ent, dx, dy, r, ignoreCar) {
     var lz = ent.z >= 0.5 ? Math.round(ent.z) : 0;
     if (ent.z >= 0.5 && ent.z < 1.5) { lz = 1; }
     var curSt = W.stairAt(Math.floor(ent.x), Math.floor(ent.y));
     var onStairs = !!curSt && (lz === 0 || ent.z < 0.999);
     var steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy)) / (r * 0.8)));
+    if (dx === 0 && dy === 0) { steps = 1; }
     var sx = dx / steps, sy = dy / steps;
     var hit = false;
     tmpP.x = ent.x; tmpP.y = ent.y;
     for (var s = 0; s < steps; s++) {
       tmpP.x += sx; tmpP.y += sy;
-      gatherBlockers(tmpP.x, tmpP.y, lz, r, onStairs);
+      gatherBlockers(tmpP.x, tmpP.y, lz, r, onStairs, ignoreCar);
       for (var it = 0; it < 3; it++) { if (!pushOut(tmpP, r)) { break; } hit = true; }
     }
     ent.x = tmpP.x; ent.y = tmpP.y;

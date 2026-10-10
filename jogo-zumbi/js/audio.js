@@ -138,6 +138,20 @@
     var d = Math.sqrt(dx * dx + dy * dy);
     Au.heliNode.g.gain.setTargetAtTime(Math.max(0.02, 0.6 * (1 - d / 90)), Au.ctx.currentTime, 0.3);
   };
+  /* motor do carro (level 0..1; null desliga) */
+  Au.engine = function (level) {
+    if (!ok()) { return; }
+    if (level === null) { if (Au.engNode) { Au.engNode.g.gain.setTargetAtTime(0, Au.ctx.currentTime, 0.2); var en = Au.engNode; setTimeout(function () { try { en.o.stop(); } catch (e) { /* já parou */ } }, 800); Au.engNode = null; } return; }
+    if (!Au.engNode) {
+      var o = Au.ctx.createOscillator(); o.type = 'sawtooth';
+      var f = Au.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 400;
+      var g = out(0, 0);
+      o.connect(f); f.connect(g); o.start();
+      Au.engNode = { o: o, g: g };
+    }
+    Au.engNode.o.frequency.setTargetAtTime(38 + level * 90, Au.ctx.currentTime, 0.1);
+    Au.engNode.g.gain.setTargetAtTime(0.05 + level * 0.05, Au.ctx.currentTime, 0.1);
+  };
   /* chuva contínua */
   Au.ambient = function (rain, outdoor) {
     if (!ok()) { return; }

@@ -160,8 +160,8 @@
   function fadeAlpha(x, y, view) {
     var dx = x + 0.5 - view.px, dy = y + 0.5 - view.py;
     var s = dx + dy, a = dx - dy;
-    if (s > -1.5 && s < 13 && a > -5 && a < 5) {
-      var k = Math.max(Math.abs(a) / 5, s > 9 ? (s - 9) / 4 : 0);
+    if (s > -1.5 && s < 16 && a > -5 && a < 5) {
+      var k = Math.max(Math.abs(a) / 5, s > 12 ? (s - 12) / 4 : 0);
       return 0.22 + 0.78 * k * k;
     }
     return 1;
@@ -186,7 +186,7 @@
     }
     // ao ar livre: paredes "na frente na tela" perto do jogador
     var s = dx + dy;
-    return s > 0 && s < 7 && Math.abs(dx - dy) < 3.2;
+    return s > 0 && s < 14 && Math.abs(dx - dy) < (s < 4 ? 3.2 : 2.4);
   }
 
   function drawEdge(g, x, y, z, side, type, style, bx, by, view, br, fade) {

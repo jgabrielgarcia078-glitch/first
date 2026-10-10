@@ -15,7 +15,9 @@ const fs = require('fs');
   page.on('pageerror', e => errors.push('pageerror: ' + e.message + ' @ ' + (e.stack || '').split('\n').slice(1, 3).join(' | ')));
   await page.goto('file://' + path.join(__dirname, '..', 'index.html'));
   await page.waitForTimeout(600);
-  await page.evaluate(() => indexedDB.deleteDatabase('condado-perdido'));
+  await page.evaluate(() => new Promise((res) => { if (CP.Save.db) { CP.Save.db.close(); CP.Save.db = null; } const r = indexedDB.deleteDatabase('condado-perdido'); r.onsuccess = r.onerror = r.onblocked = () => res(); }));
+  await page.reload();
+  await page.waitForTimeout(600);
   await page.click('[data-a="menu-new"]');
   await page.waitForTimeout(200);
   if (process.env.SEED) { await page.fill('[data-a="seed"]', process.env.SEED); await page.dispatchEvent('[data-a="seed"]', 'change'); await page.waitForTimeout(100); }

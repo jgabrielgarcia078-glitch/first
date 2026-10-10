@@ -47,7 +47,9 @@
       levels: ch.levels, rooms: ch.rooms, buildings: ch.buildings, edges: ch.edges,
       containers: ch.containers, items: ch.items, zombies: ch.zombies,
       corpses: ch.corpses.map(function (c) { return { x: c.x, y: c.y, z: c.z, ang: c.ang, look: c.look, items: c.items, t: c.t, zombie: c.zombie }; }),
-      crops: ch.crops, water: ch.water, fires: ch.fires, decals: ch.decals || [], seen: ch.seen || null, foraged: ch.foraged || null
+      crops: ch.crops, water: ch.water, fires: ch.fires, decals: ch.decals || [], seen: ch.seen || null, foraged: ch.foraged || null,
+      cars: (ch.cars || []).map(function (c) { var o = {}; for (var k in c) { if (k !== 'draw' && k !== 'kind' && k !== 'bright') { o[k] = c[k]; } } return o; }), carsConverted: !!ch.carsConverted,
+      initialZ: ch.initialZ || 0, lastActive: ch.lastActive || 0
     };
   };
   S.deserializeChunk = function (d) {
@@ -63,12 +65,16 @@
     if (!G.state || !G.player || G.player.dead || S.busy) { return Promise.resolve(false); }
     S.busy = true;
     var p = G.player;
+    var veh = p.vehicle;
+    p.vehicleId = veh ? veh.id : null;
+    p.vehicle = null;
     var record = {
       version: C.SCHEMA_VERSION, savedAt: Date.now(),
       meta: { name: p.name, occupation: p.occupation, days: CP.Time.daysSurvived(), kills: G.state.kills, town: (W.macro.towns[0] || {}).name },
       state: plain(G.state), player: plain(p), settings: plain(G.settings),
       zombies: G.zombies.map(function (z) { return plain(CP.Zombies.toData(z)); })
     };
+    p.vehicle = veh;
     var chunks = W.allChunks().filter(function (c) { return c.saveDirty || c.active; });
     return S.open().then(function () {
       var t = tx(['saves', 'chunks'], 'readwrite');
@@ -118,7 +124,9 @@
       G.zombies = (record.zombies || []).map(function (d) { return CP.Zombies.fromData(d); });
       G.effects = []; G.texts = []; G.activeChunks = {};
       // chunks que estavam ativos: marcar já ativos (seus zumbis estão em record.zombies)
+      if (CP.Vehicles) { CP.Vehicles.reset(); }
       G.afterLoad();
+      if (p.vehicleId && CP.Vehicles) { p.vehicle = CP.Vehicles.active.filter(function (c) { return c.id === p.vehicleId; })[0] || null; }
       return record;
     });
   };

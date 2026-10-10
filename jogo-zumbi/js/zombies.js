@@ -94,7 +94,7 @@
       var zb = G.zombies[i];
       var ch = W.chunkAt(Math.floor(zb.x), Math.floor(zb.y));
       if (!ch) { continue; }
-      if (!ch.active) { ch.zombies.push(toData(zb)); G.zombies.splice(i, 1); }
+      if (!ch.active) { ch.zombies.push(toData(zb)); ch.saveDirty = true; G.zombies.splice(i, 1); }
     }
   };
 
@@ -619,7 +619,7 @@
           var zd = ch.zombies.pop();
           zd.x = nx * C.CHUNK + rng.range(2, C.CHUNK - 2); zd.y = ny * C.CHUNK + rng.range(2, C.CHUNK - 2); zd.z = 0;
           if (!W.tileWalkable(Math.floor(zd.x), Math.floor(zd.y), 0)) { ch.zombies.push(zd); continue; }
-          nb.zombies.push(zd);
+          nb.zombies.push(zd); nb.saveDirty = true; ch.saveDirty = true;
         }
       }
       // reaparecimento lento onde o jogador limpou, se faz mais de 3 dias que não passa por lá
