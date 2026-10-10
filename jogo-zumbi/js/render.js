@@ -50,9 +50,30 @@
     return { x: (a + d) / 2, y: (d - a) / 2 };
   };
 
-  function drawSprite(g, spr, li, sx, sy, alpha) {
-    var img = S.lit(spr, li);
-    if (alpha !== undefined && alpha < 1) { g.globalAlpha = alpha; g.drawImage(img, sx - spr.ax, sy - spr.ay); g.globalAlpha = 1; } else { g.drawImage(img, sx - spr.ax, sy - spr.ay); }
+  /* código de luz de um tile: bits 0-3 = nível de luz visível, 4-7 = nível de luz "de memória" (fora da visão),
+   * 8-10 = quanto do tile está fora da visão (0 = visível, 4 = todo); entre 1 e 3 mistura as duas versões (borda suave) */
+  function lcode(liV, liF, q) { return liV | (liF << 4) | (q << 8); }
+  function drawSprite(g, spr, c, sx, sy, alpha) {
+    var a = alpha !== undefined ? alpha : 1;
+    var q = c >> 8, X = sx - spr.ax, Y = sy - spr.ay;
+    if (q < 4) {
+      if (a < 1) { g.globalAlpha = a; }
+      g.drawImage(S.lit(spr, c & 15), X, Y);
+    }
+    if (q > 0) {
+      g.globalAlpha = q >= 4 ? a : a * q / 4;
+      g.drawImage(S.litFog(spr, (c >> 4) & 15), X, Y);
+    }
+    g.globalAlpha = 1;
+  }
+  /* luz + névoa do tile (x, y, z) vista do andar viewZ */
+  function tileCode(x, y, z, viewZ) {
+    if (z > viewZ) { return S.lightIndex(V.brightness(x, y, z, viewZ)); }
+    if (z < viewZ) { var lb = S.lightIndex(V.brightness(x, y, z, viewZ)); return lcode(lb, lb, 4); }
+    var lv = V.lightAt(x, y, z);
+    var n = (V.isVisible(x + 1, y, z) ? 1 : 0) + (V.isVisible(x - 1, y, z) ? 1 : 0) + (V.isVisible(x, y + 1, z) ? 1 : 0) + (V.isVisible(x, y - 1, z) ? 1 : 0);
+    var q = V.isVisible(x, y, z) ? (n >= 4 ? 0 : 1) : (n >= 2 ? 2 : (n === 1 ? 3 : 4));
+    return lcode(S.lightIndex(lv), S.lightIndex(lv * C.FOG_DIM), q);
   }
 
   /* ---------- quadro ---------- */
@@ -101,8 +122,10 @@
         if (!f) { continue; }
         var sx = HW * (x - y), sy = HH * (x + y);
         if (sy > camSY + hh + 40 || sy < camSY - hh - 80) { continue; }
-        var b = V.brightness(x, y, 0, viewZ);
-        drawSprite(g, S.floor(f, fv(f, L0.fvar[i0], x, y)), S.lightIndex(b), sx, sy);
+        var lia = tileCode(x, y, 0, viewZ);
+        drawSprite(g, S.floor(f, fv(f, L0.fvar[i0], x, y)), lia, sx, sy);
+        var lk = litterAt(f, x, y);
+        if (lk >= 0) { drawSprite(g, S.litter(lk, (x * 7 + y * 3) & 3), lia, sx, sy); }
         tiles++;
       }
     }
@@ -120,7 +143,7 @@
           var bx = HW * (x - y), by = HH * (x + y) - zz * WH;
           if (by > camSY + hh + WH + 40 || by < camSY - hh - 260) { continue; }
           var br = V.brightness(x, y, zz, viewZ);
-          var li = S.lightIndex(br);
+          var li = tileCode(x, y, zz, viewZ);
           var fade = zz > viewZ ? fadeAlpha(x, y, view) : 1;
           if (zz > 0) {
             var fz = L.floor[ii];
@@ -128,8 +151,8 @@
           }
           // paredes
           var wwT = L.ww[ii], wnT = L.wn[ii];
-          if (wwT) { drawEdge(g, x, y, zz, 1, wwT, L.wws[ii], bx, by, view, br, fade); }
-          if (wnT) { drawEdge(g, x, y, zz, 0, wnT, L.wns[ii], bx, by, view, br, fade); }
+          if (wwT) { drawEdge(g, x, y, zz, 1, wwT, L.wws[ii], bx, by, view, li, fade); }
+          if (wnT) { drawEdge(g, x, y, zz, 0, wnT, L.wns[ii], bx, by, view, li, fade); }
           // objeto
           var o = L.obj[ii];
           if (o) { drawObject(g, x, y, zz, o, L.odir[ii], bx, by, li, view, ch); }
@@ -164,6 +187,27 @@
     var h = (x * 374761393 + y * 668265263) | 0;
     h = (h ^ (h >>> 13)) * 1274126177;
     return (v & 3) | (((h >>> 16) & 7) << 2);
+  }
+
+  /* lixo/abandono no chão: escolhido pela posição (determinístico), por tipo de piso */
+  var LITTER = [];
+  LITTER[F.ASPHALT] = { p: 0.13, k: [4, 4, 4, 2, 2, 0, 0, 1, 10, 6, 5, 7, 11] };
+  LITTER[F.SIDEWALK] = { p: 0.16, k: [5, 5, 5, 2, 2, 0, 0, 1, 9, 4, 7, 8] };
+  LITTER[F.CONCRETE] = { p: 0.14, k: [5, 5, 4, 4, 0, 1, 11, 8, 7] };
+  LITTER[F.GRASS] = { p: 0.05, k: [2, 2, 0, 3, 1, 9, 7] };
+  LITTER[F.DARKGRASS] = { p: 0.04, k: [2, 2, 2, 0, 3] };
+  LITTER[F.DIRT] = { p: 0.05, k: [2, 11, 1, 9] };
+  LITTER[F.WOOD] = { p: 0.07, k: [0, 0, 0, 8, 11, 7, 6, 1] };
+  LITTER[F.TILE] = { p: 0.07, k: [0, 0, 7, 6, 11, 1] };
+  LITTER[F.LINOLEUM] = { p: 0.07, k: [0, 0, 7, 6, 11, 1, 8] };
+  LITTER[F.CARPET] = { p: 0.06, k: [0, 0, 8, 7, 1, 9] };
+  function litterAt(f, x, y) {
+    var L = LITTER[f];
+    if (!L) { return -1; }
+    var h = (x * 2654435761 ^ y * 2246822519) >>> 0;
+    h = ((h ^ (h >>> 15)) * 2246822507) >>> 0;
+    if ((h % 1000) / 1000 >= L.p) { return -1; }
+    return L.k[(h >>> 12) % L.k.length];
   }
 
   /* ---------- telhados (formato calculado uma vez por chunk e nível) ---------- */
@@ -236,7 +280,7 @@
     return s > 0 && s < 14 && Math.abs(dx - dy) < (s < 4 ? 3.2 : 2.4);
   }
 
-  function drawEdge(g, x, y, z, side, type, style, bx, by, view, br, fade) {
+  function drawEdge(g, x, y, z, side, type, style, bx, by, view, lc, fade) {
     var cut = shouldCut(x, y, z, side, view);
     var st = W.edgeState(x, y, z, side);
     var state = 0, bar = 0;
@@ -247,10 +291,11 @@
     }
     // brilho: o maior dos dois lados da parede
     var ax = side === 0 ? x : x - 1, ay = side === 0 ? y - 1 : y;
-    var b2 = V.brightness(ax, ay, z, view.viewZ);
-    var b = Math.max(br, b2);
-    var spr = S.wall(type, style, side, state, bar, cut, st && st.curtain ? 1 : 0);
-    drawSprite(g, spr, S.lightIndex(b), bx, by, fade);
+    var lc2 = tileCode(ax, ay, z, view.viewZ);
+    var c = lcode(Math.max(lc & 15, lc2 & 15), Math.max((lc >> 4) & 15, (lc2 >> 4) & 15), Math.min(lc >> 8, lc2 >> 8));
+    var grime = ((x * 73856093) ^ (y * 19349663) ^ (side * 83492791)) >>> 0;
+    var spr = S.wall(type, style, side, state, bar, cut, st && st.curtain ? 1 : 0, (grime >>> 7) % 3);
+    drawSprite(g, spr, c, bx, by, fade);
   }
 
   function drawObject(g, x, y, z, o, dir, bx, by, li, view, ch) {

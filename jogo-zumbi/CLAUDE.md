@@ -22,8 +22,8 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 | world.js | Chunks 32×32×3 níveis, paredes nas bordas N/O de cada tile, portas e janelas (`edges`), colisão de círculo deslizante, linha de visão, escadas (z contínuo), `stepLevel` para pathfinding |
 | worldgen.js | Mapa macro (cidades, rodovias, tipos de quarteirão) e geração determinística por chunk (casas por BSP com cômodos e portas, lojas, sobrados com escada, fazendas, postos, natureza, zumbis, histórias aleatórias) |
 | sprites.js | Arte procedural com cache e variações de luz; telhados de duas águas (`S.roof`, código montado em `render.js`); personagens desenhados por vetor a cada quadro (`drawHuman`, aparência por `S.buildLook` a partir das roupas: corpo masculino/feminino, mangas, saia/vestido, zumbis curvados e rasgados) |
-| fov.js | Campo de visão por raios (com cone) e mapa de luz |
-| render.js | Isométrico 2:1, ordem por diagonal com todos os níveis, recorte de paredes e telhado transparente perto do jogador |
+| fov.js | Campo de visão por raios (com cone) e mapa de luz (`V.sources` guarda as luzes para o brilho quente em `FX.drawGlows`) |
+| render.js | Isométrico 2:1, ordem por diagonal com todos os níveis, recorte de paredes e telhado transparente perto do jogador. Código de luz por tile (`tileCode`): o que está fora da visão usa a versão sem cor (`S.litFog`) com borda suave; lixo/abandono por posição (`litterAt`); paredes com 3 níveis de sujeira |
 | input.js | Teclado e mouse (clique direito curto = menu; segurar = mirar) |
 | items.js | Instâncias de item, peso, envelhecimento de comida, inventário e loot |
 | player.js | Criação pela ficha (pontos), habilidades e XP, movimento |
@@ -39,7 +39,7 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 | audio.js | Sons sintetizados (WebAudio): vozes de zumbi por formantes, tudo posicional (pan + distância + abafado por parede), reverb, limite de vozes |
 | music.js | Trilha sonora **original** composta em tempo real (nunca usar a trilha do PZ): camadas calma/tensão/perseguição pela intensidade do perigo, peças com silêncio entre elas, sustos (`spotted`, `event`, `death`). Números em `C.MUSIC` |
 | save.js | IndexedDB (stores `saves`, `chunks`, `settings`), versão de esquema e migrações |
-| ui.js | Menu, criação de personagem, HUD, painéis, menu de contexto, morte |
+| ui.js | Menu (no estilo do original: título e opções à esquerda), criação de personagem, HUD (barra lateral de ícones com as mãos, relógio digital, moodles à direita, atalhos embaixo), painéis (inventário em duas janelas com colunas e abas de recipiente), menu de contexto, morte |
 | game.js | Estado da partida, loop de passo fixo (30/s), ativação de chunks, câmera, desenho |
 
 ## Regras que não podem quebrar
@@ -52,6 +52,8 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 - Ações com tempo passam por `CP.Actions.start`. Andar cancela a ação.
 
 ## Desempenho
+
+- Nada de filtros de tela cheia por quadro (`saturation`, `soft-light`, `overlay` custam ~10 ms sem placa de vídeo). A gradação de cor (`C.GRADE`) é aplicada uma vez em cada sprite (`store` → `gradeCanvas`) e nas cores dos personagens (`S.gradeHex`); vinheta e grão são camadas CSS (`#vignette`, `#grain`).
 
 - Zumbis só viram entidades (simuladas) a até `C.ZOMBIE.ACTIVE_IN` tiles do jogador e voltam a ser dados além de `ACTIVE_OUT` (exceto quem está perseguindo). Testes que movem zumbis devem manter o jogador dentro desse raio.
 - O A* tem orçamento de nós por quadro (`Z.nodeBudget`). O HUD só troca o HTML quando muda (`setHtml`).

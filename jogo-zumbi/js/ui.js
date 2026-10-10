@@ -33,6 +33,28 @@
     stuffed: '<path d="M3 11h18a9 9 0 0 1-18 0zM8 7.5c0-2 2-2 2-4M14 7.5c0-2 2-2 2-4"/>',
     fine: '<circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 14.5c2 2.5 6 2.5 8 0"/>'
   };
+  /* ícones da barra lateral e das abas de recipiente (traço claro) */
+  var SB_SVG = {
+    inv: '<path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M4 12h16M10 12v3h4v-3"/>',
+    health: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/><path d="M12 10v5M9.5 12.5h5"/>',
+    skills: '<circle cx="12" cy="7" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
+    craft: '<path d="M14 6l4 4M3 21l9-9M12 4l6 6-3 3-6-6z"/><path d="M15 13l5 5-2 2-5-5"/>',
+    map: '<path d="M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>',
+    pause: '<path d="M4 6h16M4 12h16M4 18h16"/>'
+  };
+  var TAB_SVG = {
+    pocket: '<path d="M5 4h14v9a7 7 0 0 1-14 0z"/><path d="M5 8h14"/>',
+    bag: SB_SVG.inv,
+    worn: '<path d="M8 3l4 2 4-2 5 4-3 3-2-1v12H8V9l-2 1-3-3z"/>',
+    floor: '<path d="M2 15l10-5 10 5-10 5z"/><path d="M12 3v8M9 8l3 3 3-3"/>',
+    box: '<path d="M3 8l9-4 9 4v9l-9 4-9-4z"/><path d="M3 8l9 4 9-4M12 12v9"/>',
+    fridge: '<rect x="6" y="2" width="12" height="20" rx="1.5"/><path d="M6 9h12M9 5v2M9 12v4"/>',
+    body: '<circle cx="6" cy="12" r="2.5"/><path d="M9 12h11M12 12l-2 5M16 12l2 5M12 12l-2-4M16 12l2-4"/>',
+    car: '<path d="M3 15l2-6h14l2 6v4H3z"/><circle cx="7.5" cy="19" r="1.8"/><circle cx="16.5" cy="19" r="1.8"/><path d="M6 9l2-4h8l2 4"/>'
+  };
+  function svgIcon(path, size) { return '<svg viewBox="0 0 24 24" width="' + (size || 22) + '" height="' + (size || 22) + '" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + path + '</svg>'; }
+  var CAT_PT = { weapon: 'Arma', firearm: 'Arma de fogo', ammo: 'Munição', food: 'Comida', drink: 'Bebida', medical: 'Medicina', tool: 'Ferramenta', bag: 'Recipiente', clothing: 'Roupa', book: 'Leitura', material: 'Material', seed: 'Semente', electronics: 'Eletrônico', throwable: 'Arremesso', misc: 'Diversos', junk: 'Sucata' };
   function moodleIcon(id) {
     return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (MOODLE_SVG[id] || '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>') + '</svg>';
   }
@@ -59,6 +81,17 @@
   UI.init = function () {
     root = document.getElementById('ui');
     root.innerHTML = '';
+    // vinheta e grão de filme por cima do jogo (camadas da página: o navegador compõe sem custo no canvas)
+    if (!document.getElementById('vignette')) {
+      document.body.insertBefore(h('div', { id: 'vignette' }), root);
+      var gr = h('div', { id: 'grain' });
+      var gc = document.createElement('canvas'); gc.width = gc.height = 160;
+      var gx = gc.getContext('2d'), im = gx.createImageData(160, 160);
+      for (var gi = 0; gi < im.data.length; gi += 4) { var gv = Math.random() < 0.5 ? 0 : 255; im.data[gi] = im.data[gi + 1] = im.data[gi + 2] = gv; im.data[gi + 3] = (Math.random() * 255) | 0; }
+      gx.putImageData(im, 0, 0);
+      gr.style.backgroundImage = 'url(' + gc.toDataURL() + ')';
+      document.body.insertBefore(gr, root);
+    }
     ['hud-top', 'moodles', 'hud-left', 'hud-bottom', 'hud-right', 'toasts', 'action-label', 'fps', 'build-hint', 'panels', 'screens', 'ctxwrap'].forEach(function (id) {
       var e = h('div', { id: id });
       root.appendChild(e);
@@ -99,11 +132,12 @@
     var t = W.macro.towns[0];
     UI.menuCam = { x: t.x * C.CHUNK + 4, y: t.y * C.CHUNK + 4, a: Math.random() * Math.PI * 2 };
     W.ensureAround(UI.menuCam.x, UI.menuCam.y, 2);
-    $.screens.innerHTML = '<div class="screen"><div class="menu-box">' +
+    $.screens.innerHTML = '<div class="screen menu-screen"><div class="menu-left">' +
       '<h1>' + esc(C.GAME_NAME) + '</h1><div class="sub">Este é o fim do mundo. Como você vai morrer?</div>' +
-      '<button class="primary" data-a="menu-new">Novo jogo</button>' +
-      '<button data-a="menu-continue" id="btn-continue" disabled>Continuar</button>' +
-      '<button data-a="help">Como jogar</button>' +
+      '<nav class="menu-list">' +
+      '<button class="menu-item" data-a="menu-new">Novo jogo</button>' +
+      '<button class="menu-item" data-a="menu-continue" id="btn-continue" disabled>Continuar</button>' +
+      '<button class="menu-item" data-a="help">Como jogar</button></nav>' +
       '<div class="ver">v' + C.VERSION + ' · sobrevivência zumbi isométrica · tudo desenhado por código</div></div></div>';
     CP.Save.hasSave().then(function (r) {
       UI.hasSave = !!r;
@@ -120,8 +154,9 @@
     var R = CP.Render;
     R.camX = mc.x; R.camY = mc.y; R.camZ = 0;
     CP.Vis.compute(mc.x, mc.y, 0, 0, { cone: 360, radius: 30, markSeen: false });
-    CP.Vis.computeLight(1, [], true);
+    CP.Vis.computeLight(0.62, [], true);
     R.draw({ viewZ: 0, maxZ: 2, px: mc.x, py: mc.y, bld: null, ents: [], noCut: true });
+
   }
 
   /* ================= CRIAÇÃO DE PERSONAGEM ================= */
@@ -245,7 +280,7 @@
   }
   function buildHud() {
     clearHud();
-    $['hud-right'].innerHTML = [['inv', 'Inventário (I)'], ['health', 'Saúde (H)'], ['skills', 'Personagem (K)'], ['craft', 'Artesanato (B)'], ['map', 'Mapa (M)'], ['help', 'Ajuda (F1)'], ['pause', '☰']].map(function (b) { return '<button class="pe" data-a="toggle" data-p="' + b[0] + '">' + b[1] + '</button>'; }).join('');
+    $['hud-right'].innerHTML = '<div class="equip pe" id="equip"></div>' + [['inv', 'Inventário (I)'], ['health', 'Saúde (H)'], ['skills', 'Personagem (K)'], ['craft', 'Artesanato e construção (B)'], ['map', 'Mapa (M)'], ['help', 'Como jogar (F1)'], ['pause', 'Menu (Esc)']].map(function (b) { return '<button class="sb pe" id="sb-' + b[0] + '" data-a="toggle" data-p="' + b[0] + '" title="' + b[1] + '">' + svgIcon(SB_SVG[b[0]], 24) + '</button>'; }).join('');
     UI.hudT = 0;
   }
   function updateHud() {
@@ -253,8 +288,8 @@
     if (!p || !p.body) { return; }
     var wt = T.weather();
     var temp = Math.round(T.temperature(true));
-    setHtml($['hud-top'], '<div class="hud-box"><div class="clock">' + T.clockText() + '</div><div class="clock-sub">Dia ' + (Math.floor(T.daysSurvived()) + 1) + ' · ' + esc(T.dateText()) + '</div><div class="clock-sub">' + wt.name + ' · ' + temp + '°C · ' + T.season() + (T.powerOn() ? '' : ' · <span class="warn">sem energia</span>') + '</div>' +
-      '<div class="speed pe">' + C.GAME_SPEEDS.map(function (s, i) { return '<button class="pe' + (G().speedIndex === i ? ' on' : '') + '" data-a="speed" data-i="' + i + '">' + (i === 0 ? '▶' : '▶'.repeat(Math.min(3, i + 1))) + '</button>'; }).join('') + (p.sleeping ? ' <span class="warn">dormindo...</span>' : '') + '</div></div>');
+    setHtml($['hud-top'], '<div class="lcd"><div class="lcd-time">' + T.clockText() + '</div><div class="lcd-row"><span>' + esc(T.dateText()) + '</span><span>' + temp + '°C</span></div><div class="lcd-row"><span>Dia ' + (Math.floor(T.daysSurvived()) + 1) + ' · ' + wt.name + '</span>' + (T.powerOn() ? '' : '<span class="lcd-warn">SEM ENERGIA</span>') + '</div></div>' +
+      '<div class="speed pe">' + C.GAME_SPEEDS.map(function (s, i) { return '<button class="pe' + (G().speedIndex === i ? ' on' : '') + '" data-a="speed" data-i="' + i + '" title="Velocidade ' + s + '×">' + (i === 0 ? '▶' : '▶'.repeat(Math.min(3, i + 1))) + '</button>'; }).join('') + (p.sleeping ? '<span class="warn">dormindo</span>' : '') + '</div>');
     var ms = CP.Body.moodles(p);
     setHtml($.moodles, ms.map(function (m) {
       return '<div class="moodle pe" title="' + esc(m.name + ' — ' + m.desc) + '"><span class="lbl">' + esc(m.name) + '</span><div class="ic ' + (m.good ? 'good' : 'l' + m.level) + '">' + moodleIcon(m.id) + '</div></div>';
@@ -262,11 +297,12 @@
     var b = p.body;
     var maxH = CP.Body.maxHealth(p);
     var cap = CP.Items.Inv.capacity(p), car = CP.Items.Inv.carried(p);
-    setHtml($['hud-left'], '<div class="hud-box">' +
-      '<div style="display:flex;justify-content:space-between;font-size:12px"><span>❤ Vida</span><span>' + Math.round(b.health) + '%</span></div><div class="statbar"><i style="width:' + Math.max(0, b.health) + '%;background:' + (b.health > 60 ? '#7ec46a' : (b.health > 30 ? '#e0a64a' : '#d9534f')) + '"></i></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:12px"><span>💨 Fôlego</span><span>' + Math.round(b.stats.endurance * 100) + '%</span></div><div class="statbar"><i style="width:' + (b.stats.endurance * 100) + '%;background:#6aa8d8"></i></div>' +
-      '<div style="display:flex;justify-content:space-between;font-size:12px"><span>🎒 Peso</span><span>' + U.round1(car) + ' / ' + U.round1(cap) + ' kg</span></div><div class="statbar"><i style="width:' + Math.min(100, car / cap * 100) + '%;background:' + (car > cap ? '#d9534f' : '#c9a24a') + '"></i></div>' +
-      '<div style="font-size:12px" class="muted">' + (p.sneaking ? '🐾 Agachado · ' : '') + (p.running ? '🏃 Correndo · ' : '') + (p.flashlightOn ? '🔦 · ' : '') + 'Mortos: ' + G().state.kills + (maxH < 99 ? ' · vida máx. ' + Math.round(maxH) + '%' : '') + '</div></div>');
+    function sbar(lbl, val, pct, col) { return '<div class="sline"><span class="sl">' + lbl + '</span><div class="statbar"><i style="width:' + Math.max(0, Math.min(100, pct)) + '%;background:' + col + '"></i></div><span class="sv">' + val + '</span></div>'; }
+    setHtml($['hud-left'], '<div class="stats">' +
+      sbar('Vida', Math.round(b.health), b.health, b.health > 60 ? '#8fb86a' : (b.health > 30 ? '#d6a046' : '#c8463e')) +
+      sbar('Fôlego', Math.round(b.stats.endurance * 100), b.stats.endurance * 100, '#7fa8c8') +
+      sbar('Peso', U.round1(car) + '/' + U.round1(cap), car / cap * 100, car > cap ? '#c8463e' : '#b89a5a') +
+      '<div class="smeta">' + (p.sneaking ? 'Agachado · ' : '') + (p.running ? 'Correndo · ' : '') + (p.flashlightOn ? 'Lanterna · ' : '') + 'Mortos: ' + G().state.kills + (maxH < 99 ? ' · vida máx. ' + Math.round(maxH) + '%' : '') + '</div></div>');
     // mãos e atalhos
     var hb = p.hotbar || ['', '', '', '', ''];
     function slot(it, k, cls) {
@@ -284,7 +320,10 @@
       var d = D.ITEMS[id];
       return '<div class="slot pe" data-a="hot" data-i="' + i + '" title="' + esc(d.name) + (f ? '' : ' (não está com você)') + '" style="' + (f ? '' : 'opacity:0.4') + '"><span class="k">' + (i + 1) + '</span>' + d.icon + '</div>';
     }).join('');
-    setHtml($['hud-bottom'], slot(p.hand1, 'mão', 'hand') + slot(p.hand2, '2ª', 'hand') + '<div style="width:10px"></div>' + hotHtml);
+    setHtml($['hud-bottom'], hotHtml);
+    var eqEl = document.getElementById('equip');
+    if (eqEl) { setHtml(eqEl, slot(p.hand1, 'mão', 'hand') + slot(p.hand2, '2ª', 'hand')); }
+    for (var pk in PANELS) { var sbE = document.getElementById('sb-' + pk); if (sbE) { sbE.classList.toggle('on', !!UI.open[pk]); } }
     // ação em andamento
     var al = $['action-label'];
     if (p.action && p.action.time > 0.4) { al.style.display = 'block'; al.textContent = p.action.opts.name + ' — ' + Math.round(p.action.t / p.action.time * 100) + '%' + (p.queue.length ? ' (+' + p.queue.length + ')' : ''); } else if (p.reloadT > 0) { al.style.display = 'block'; al.textContent = 'Recarregando...'; } else { al.style.display = 'none'; }
@@ -405,7 +444,20 @@
   function itemRow(it, ref, extra) {
     var d = D.ITEMS[it.id];
     var w = CP.Items.weight(it);
-    return '<div class="item" data-ref="' + ref + '" data-a="item" title="Clique: opções · Duplo clique: transferir"><span class="ico">' + d.icon + '</span><span class="nm">' + esc(CP.Items.name(it)) + '</span>' + (extra || '') + '<span class="wt">' + U.round1(w) + '</span></div>';
+    return '<div class="item" data-ref="' + ref + '" data-a="item" title="Clique: opções · Duplo clique: transferir"><span class="ico">' + d.icon + '</span><span class="nm">' + esc(CP.Items.name(it)) + (extra || '') + '</span><span class="cat">' + (CAT_PT[d.cat] || '') + '</span><span class="wt">' + U.round1(w) + '</span></div>';
+  }
+  function srcIcon(sct) {
+    if (sct.floor) { return TAB_SVG.floor; }
+    if (sct.fridge) { return TAB_SVG.fridge; }
+    if (/Corpo/.test(sct.name)) { return TAB_SVG.body; }
+    if (/Porta-malas|Carro|carro/.test(sct.name)) { return TAB_SVG.car; }
+    return TAB_SVG.box;
+  }
+  /* janela no estilo do original: título, colunas e abas verticais de recipiente à direita */
+  function invPane(title, info, btn, tabs, side, cur, rows) {
+    var tb = tabs.map(function (t, i) { return '<button class="tab-v pe' + (i === cur ? ' on' : '') + (t.empty ? ' empty' : '') + '" data-a="invtab" data-side="' + side + '" data-i="' + i + '" title="' + esc(t.name) + '">' + svgIcon(t.icon, 20) + '</button>'; }).join('');
+    return '<div class="pane"><div class="pane-h"><b>' + esc(title) + '</b><span class="pane-i">' + info + '</span>' + (btn || '') + '</div>' +
+      '<div class="pane-main"><div class="pane-list"><div class="cols-h"><span>Tipo</span><span>Categoria</span><span>Peso</span></div>' + rows + '</div><div class="tabs-v">' + tb + '</div></div></div>';
   }
   function renderInv() {
     var b = body('inv');
@@ -413,33 +465,47 @@
     var p = P();
     UI.refs = [];
     function ref(o) { UI.refs.push(o); return UI.refs.length - 1; }
-    var left = '';
+    // você: recipientes + equipado/vestido
     var conts = CP.Items.Inv.containers(p);
-    conts.forEach(function (c) {
-      var w = CP.Items.Inv.containerWeight(c.items);
-      left += '<div class="sect"><div class="sect-h"><span>' + esc(c.name) + '</span><span>' + U.round1(w) + ' / ' + U.round1(c.cap) + ' kg</span></div><div class="capbar"><i style="width:' + Math.min(100, w / c.cap * 100) + '%"></i></div>';
-      if (!c.items.length) { left += '<div class="muted" style="font-size:12px;padding:2px 6px">vazio</div>'; }
-      sortItems(c.items).forEach(function (it) { left += itemRow(it, ref({ item: it, list: c.items, where: 'player', cont: c })); });
-      left += '</div>';
-    });
-    // mãos e roupas
-    var eq = '';
-    ['hand1', 'hand2'].forEach(function (hnd) { var it = p[hnd]; if (it) { eq += itemRow(it, ref({ item: it, list: null, where: 'player', hand: hnd }), '<span class="tag">' + (hnd === 'hand1' ? 'mão' : '2ª mão') + '</span>'); } });
-    for (var s in p.worn) { var it2 = p.worn[s]; if (it2) { eq += itemRow(it2, ref({ item: it2, list: null, where: 'player', worn: s }), '<span class="tag worn">vestido</span>'); } }
-    left += '<div class="sect"><div class="sect-h"><span>Equipado e vestido</span></div>' + (eq || '<div class="muted">nada</div>') + '</div>';
+    var ptabs = conts.map(function (c, i) { return { name: c.name, icon: i === 0 ? TAB_SVG.pocket : TAB_SVG.bag, empty: !c.items.length }; });
+    ptabs.push({ name: 'Equipado e vestido', icon: TAB_SVG.worn });
+    var pt = UI.invTab = U.clamp(UI.invTab || 0, 0, ptabs.length - 1);
+    var lrows = '', linfo = '', ltitle;
+    if (pt < conts.length) {
+      var c = conts[pt], w = CP.Items.Inv.containerWeight(c.items);
+      ltitle = c.name;
+      linfo = U.round1(w) + ' / ' + U.round1(c.cap);
+      if (!c.items.length) { lrows = '<div class="empty-row">vazio</div>'; }
+      sortItems(c.items).forEach(function (it) { lrows += itemRow(it, ref({ item: it, list: c.items, where: 'player', cont: c })); });
+    } else {
+      ltitle = 'Equipado e vestido';
+      ['hand1', 'hand2'].forEach(function (hnd) { var it = p[hnd]; if (it) { lrows += itemRow(it, ref({ item: it, list: null, where: 'player', hand: hnd }), ' <span class="tag">' + (hnd === 'hand1' ? 'mão' : '2ª mão') + '</span>'); } });
+      for (var sl in p.worn) { var it2 = p.worn[sl]; if (it2) { lrows += itemRow(it2, ref({ item: it2, list: null, where: 'player', worn: sl }), ' <span class="tag worn">vestido</span>'); } }
+      if (!lrows) { lrows = '<div class="empty-row">nada</div>'; }
+    }
+    var cap = CP.Items.Inv.capacity(p), car = CP.Items.Inv.carried(p);
+    linfo = linfo ? linfo + ' kg · total ' + U.round1(car) + '/' + U.round1(cap) : U.round1(car) + ' / ' + U.round1(cap) + ' kg';
     // arredores
-    var right = '';
     var srcs = nearbySources(p);
     UI.lootSources = srcs;
-    srcs.forEach(function (sct, si) {
-      var w = CP.Items.Inv.containerWeight(sct.items);
-      right += '<div class="sect"><div class="sect-h"><span>' + esc(sct.name) + (sct.fridge ? (CP.Time.powerAt(sct.x, sct.y) ? ' ❄' : ' (desligada)') : '') + '</span><span>' + (sct.floor ? '' : U.round1(w) + ' / ' + sct.cap + ' kg ') + (sct.items.length ? '<button class="small" data-a="takeall" data-s="' + si + '">Pegar tudo</button>' : '') + '</span></div>';
-      if (!sct.items.length) { right += '<div class="muted" style="font-size:12px;padding:2px 6px">vazio</div>'; }
-      sortItems(sct.items).forEach(function (it) { right += itemRow(it, ref({ item: it, list: sct.items, where: 'loot', src: sct })); });
-      right += '</div>';
-    });
-    if (!srcs.length) { right = '<div class="muted">Nada por perto. Chegue perto de móveis, corpos ou itens no chão.</div>'; }
-    b.innerHTML = '<div class="cols"><div><div class="sect-h" style="color:#fff"><span>VOCÊ</span></div>' + left + '</div><div><div class="sect-h" style="color:#fff"><span>ARREDORES</span></div>' + right + '</div></div>';
+    var key = srcs.map(function (x) { return x.name + x.x + x.y; }).join('|');
+    if (key !== UI.lootKey) { // lugar novo: abre a primeira aba com alguma coisa
+      UI.lootKey = key;
+      UI.lootTab = 0;
+      for (var k = 0; k < srcs.length; k++) { if (srcs[k].items.length) { UI.lootTab = k; break; } }
+    }
+    var lt = UI.lootTab = U.clamp(UI.lootTab || 0, 0, Math.max(0, srcs.length - 1));
+    var rtabs = srcs.map(function (sct) { return { name: sct.name, icon: srcIcon(sct), empty: !sct.items.length }; });
+    var rrows = '', rinfo = '', rtitle = 'Arredores', rbtn = '';
+    if (srcs.length) {
+      var sct = srcs[lt], sw = CP.Items.Inv.containerWeight(sct.items);
+      rtitle = sct.name + (sct.fridge ? (CP.Time.powerAt(sct.x, sct.y) ? ' (gelando)' : ' (desligada)') : '');
+      rinfo = sct.floor ? '' : U.round1(sw) + ' / ' + sct.cap + ' kg';
+      if (sct.items.length) { rbtn = '<button class="small pe" data-a="takeall" data-s="' + lt + '">Pegar tudo</button>'; }
+      if (!sct.items.length) { rrows = '<div class="empty-row">vazio</div>'; }
+      sortItems(sct.items).forEach(function (it) { rrows += itemRow(it, ref({ item: it, list: sct.items, where: 'loot', src: sct })); });
+    } else { rrows = '<div class="empty-row">Nada por perto. Chegue perto de móveis, corpos ou itens no chão.</div>'; }
+    b.innerHTML = '<div class="invwin">' + invPane(ltitle, linfo, '', ptabs, 'p', pt, lrows) + invPane(rtitle, rinfo, rbtn, rtabs, 'l', lt, rrows) + '</div>';
     UI.sigs.inv = invSig();
   }
   function sortItems(list) {
@@ -800,6 +866,7 @@
       case 'look': cr.look[t.getAttribute('data-k')] = t.getAttribute('data-v'); renderCreate(); break;
       case 'reseed': cr.seed = (Math.random() * 1e9) >>> 0; W.init(cr.seed); cr.town = 0; renderCreate(); break;
       case 'toggle': UI.toggle(t.getAttribute('data-p')); break;
+      case 'invtab': if (t.getAttribute('data-side') === 'p') { UI.invTab = +t.getAttribute('data-i'); } else { UI.lootTab = +t.getAttribute('data-i'); } renderInv(); break;
       case 'close': UI.toggle(t.getAttribute('data-p'), false); break;
       case 'speed': G().speedIndex = +t.getAttribute('data-i'); clampSpeed(); updateHud(); break;
       case 'hot': hotbar(+t.getAttribute('data-i')); break;

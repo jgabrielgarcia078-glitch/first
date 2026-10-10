@@ -111,12 +111,52 @@
   };
 
   /* camada de tela: chuva, neve, clarão, escurecer bordas */
+  /* brilho quente das luzes no escuro (postes, fogueiras, lanterna), somado à cena */
+  FX.drawGlows = function (g) {
+    var V = CP.Vis, src = V.sources;
+    if (!src) { return; }
+    var dark = U.clamp((0.8 - V.ambientOut) / 0.5, 0, 1);
+    if (dark <= 0.02) { return; }
+    var HW = C.TILE_W / 2, HH = C.TILE_H / 2, WH = C.WALL_H, K = HW * Math.SQRT2;
+    var t = performance.now() / 1000;
+    g.save();
+    g.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < src.length; i++) {
+      var s = src[i];
+      if (!s.glow) { continue; }
+      var sx = HW * (s.x - s.y), sy = HH * (s.x + s.y) - s.z * WH;
+      var col = s.glow === 'fire' ? '255,120,40' : (s.glow === 'lamp' ? '255,176,96' : '255,236,200');
+      var k = s.glow === 'fire' ? 0.8 + 0.15 * Math.sin(t * 13 + i) + 0.08 * Math.sin(t * 7.3) : 1;
+      var a = (s.glow === 'flash' ? 0.16 : (s.glow === 'fire' ? 0.3 : 0.24)) * dark * k;
+      g.save();
+      g.translate(sx, sy); g.scale(1, 0.5);
+      var R = s.r * K;
+      var gr = g.createRadialGradient(0, 0, 0, 0, 0, R);
+      gr.addColorStop(0, 'rgba(' + col + ',' + a.toFixed(3) + ')'); gr.addColorStop(0.5, 'rgba(' + col + ',' + (a * 0.35).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(' + col + ',0)');
+      g.fillStyle = gr;
+      g.beginPath();
+      if (s.cone) {
+        var an = s.cone.ang + Math.PI / 4;
+        g.moveTo(0, 0); g.arc(0, 0, R, an - s.cone.half, an + s.cone.half); g.closePath();
+      } else { g.arc(0, 0, R, 0, Math.PI * 2); }
+      g.fill();
+      g.restore();
+      if (s.glow === 'lamp') { // a lâmpada no alto do poste
+        var hx = sx + 20, hy = sy - 190;
+        var hg = g.createRadialGradient(hx, hy, 0, hx, hy, 34);
+        hg.addColorStop(0, 'rgba(255,214,150,' + (0.55 * dark).toFixed(3) + ')'); hg.addColorStop(1, 'rgba(255,214,150,0)');
+        g.fillStyle = hg; g.fillRect(hx - 34, hy - 34, 68, 68);
+      }
+    }
+    g.restore();
+  };
   FX.drawScreen = function (g, w, h, dt) {
     var T = CP.Time;
     if (!T) { return; }
     var wt = T.weather();
     var p = CP.Game.player;
     var outdoor = !W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z));
+
     if (wt.rain > 0) {
       var n = Math.round(wt.rain * 260 * (outdoor ? 1 : 0.35));
       while (FX.drops.length < n) { FX.drops.push({ x: Math.random() * w, y: Math.random() * h, v: 700 + Math.random() * 400 }); }
@@ -142,11 +182,10 @@
       g.fillStyle = 'rgba(255,255,255,' + Math.min(0.5, FX.flash) + ')'; g.fillRect(0, 0, w, h);
       FX.flash = Math.max(0, FX.flash - dt * 2.5);
     }
-    // vinheta (escurece as bordas)
-    var v = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.35, w / 2, h / 2, Math.max(w, h) * 0.75);
-    v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,0.45)');
-    g.fillStyle = v; g.fillRect(0, 0, w, h);
-    // ferido / pânico: borda vermelha
+    // vinheta e grão são camadas CSS (#vignette, #grain) — não custam nada no canvas
+    FX.hurtEdge(g, w, h, p);
+  };
+  FX.hurtEdge = function (g, w, h, p) {
     if (p.body) {
       var hurt = Math.max(0, (60 - p.body.health) / 60);
       if (CP.UI && CP.UI.hurtT > 0) { hurt = Math.max(hurt, CP.UI.hurtT); }

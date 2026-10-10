@@ -126,6 +126,7 @@
   /* ---------- Luz ---------- */
   /* sources: [{x, y, z, r, i (intensidade), indoor(bool|undefined), cone: {ang, half}}] */
   V.computeLight = function (ambient, sources, power) {
+    V.sources = sources;
     V.ambientOut = ambient;
     V.ambientIn = Math.max(0.08, ambient * 0.72);
     var z = V.z;

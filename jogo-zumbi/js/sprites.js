@@ -20,7 +20,42 @@
   S.mk = mk;
 
   /* Registro: key → { base: canvas, ax, ay, lv: [] } */
+  /* gradação de cor do jogo (menos saturação + tom sujo), aplicada UMA vez em cada sprite guardada e nas cores dos personagens */
+  function gradeCanvas(c) {
+    var GR = C.GRADE;
+    var copy = mk(c.width, c.height);
+    copy.getContext('2d').drawImage(c, 0, 0);
+    var g = c.getContext('2d');
+    g.save();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.globalCompositeOperation = 'saturation'; g.globalAlpha = GR.DESAT;
+    g.fillStyle = '#808080'; g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = 'soft-light'; g.globalAlpha = GR.TINT_ALPHA;
+    g.fillStyle = GR.TINT; g.fillRect(0, 0, c.width, c.height);
+    g.globalCompositeOperation = 'destination-in'; g.globalAlpha = 1;
+    g.drawImage(copy, 0, 0);
+    g.restore();
+  }
+  var gradeMemo = {};
+  function softLight(b, s) { return s < 0.5 ? b - (1 - 2 * s) * b * (1 - b) : b + (2 * s - 1) * ((b <= 0.25 ? ((16 * b - 12) * b + 4) * b : Math.sqrt(b)) - b); }
+  /* a mesma gradação, calculada numa cor hex (personagens, carros) */
+  S.gradeHex = function (hex) {
+    var r = gradeMemo[hex];
+    if (r) { return r; }
+    var GR = C.GRADE, rgb = U.hexToRgb(hex), t = U.hexToRgb(GR.TINT), out = [];
+    var lum = (0.3 * rgb[0] + 0.59 * rgb[1] + 0.11 * rgb[2]) / 255;
+    for (var i = 0; i < 3; i++) {
+      var c = rgb[i] / 255;
+      c = c + (lum - c) * GR.DESAT;
+      c = c + (softLight(c, t[i] / 255) - c) * GR.TINT_ALPHA;
+      out.push(Math.round(U.clamp(c, 0, 1) * 255));
+    }
+    r = '#' + ((1 << 24) | (out[0] << 16) | (out[1] << 8) | out[2]).toString(16).slice(1);
+    gradeMemo[hex] = r;
+    return r;
+  };
   function store(key, canvas, ax, ay) {
+    gradeCanvas(canvas);
     var s = { base: canvas, ax: ax, ay: ay, lv: new Array(LIGHT_STEPS.length) };
     S.cache[key] = s; S.count++;
     return s;
@@ -38,6 +73,27 @@
     g.fillStyle = 'rgba(' + NIGHT_TINT[0] + ',' + NIGHT_TINT[1] + ',' + NIGHT_TINT[2] + ',' + (1 - b).toFixed(3) + ')';
     g.fillRect(0, 0, c.width, c.height);
     s.lv[li] = c;
+    return c;
+  };
+  /* versão fora do campo de visão: quase sem cor e escurecida (memória do lugar) */
+  S.litFog = function (s, li) {
+    var arr = s.fv || (s.fv = new Array(LIGHT_STEPS.length));
+    var c = arr[li];
+    if (c) { return c; }
+    c = mk(s.base.width, s.base.height);
+    var g = c.getContext('2d');
+    g.drawImage(s.base, 0, 0);
+    g.globalCompositeOperation = 'saturation';
+    g.globalAlpha = C.FOG_DESAT;
+    g.fillStyle = '#808080'; g.fillRect(0, 0, c.width, c.height);
+    g.globalAlpha = 1;
+    g.globalCompositeOperation = 'destination-in';
+    g.drawImage(s.base, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    var b = LIGHT_STEPS[li];
+    g.fillStyle = 'rgba(14,16,22,' + (1 - b).toFixed(3) + ')';
+    g.fillRect(0, 0, c.width, c.height);
+    arr[li] = c;
     return c;
   };
   S.lightIndex = function (b) {
@@ -97,8 +153,8 @@
 
   /* ---------- Pisos ---------- */
   var FLOOR_COLORS = {};
-  FLOOR_COLORS[F.GRASS] = ['#5a7739', '#577438', '#5d7b3c', '#587538'];
-  FLOOR_COLORS[F.DARKGRASS] = ['#4a6530', '#46602e', '#4d6833', '#435c2b'];
+  FLOOR_COLORS[F.GRASS] = ['#5c6c3a', '#596938', '#5f703c', '#5a6a39'];
+  FLOOR_COLORS[F.DARKGRASS] = ['#4a5a30', '#46562e', '#4d5d33', '#43532b'];
   FLOOR_COLORS[F.DIRT] = ['#7b6449', '#806a4e', '#756046', '#7e6650'];
   FLOOR_COLORS[F.ASPHALT] = ['#434447', '#414245', '#45464a', '#404144'];
   FLOOR_COLORS[F.ASPHALT_LINE] = ['#434447', '#434447', '#434447', '#434447'];
@@ -217,6 +273,44 @@
   }
   S.floor = floorSprite;
 
+  /* ---------- Lixo e abandono no chão (decalques por tile, escolhidos por posição em render.js) ---------- */
+  /* kind: 0 papel, 1 lata, 2 folhas secas, 3 saco de lixo, 4 mancha de óleo, 5 mato na rachadura, 6 cacos de vidro,
+   * 7 sangue seco, 8 papelão, 9 garrafa, 10 marca de pneu, 11 entulho */
+  var litArr = [];
+  S.LITTER_KINDS = 12;
+  S.litter = function (kind, v) {
+    var k = kind * 4 + (v & 3);
+    if (litArr[k]) { return litArr[k]; }
+    var c = mk(TW + 8, TH + 24), g = c.getContext('2d');
+    var ax = HW + 4, ay = 18;
+    g.translate(ax, ay);
+    var rng = new U.Rng(kind * 101 + v * 13 + 5);
+    var ctr = ip(rng.range(0.3, 0.7), rng.range(0.3, 0.7), 0);
+    var i;
+    function flat(fn) { g.save(); g.translate(ctr[0], ctr[1]); g.scale(1, 0.5); g.rotate(rng.range(0, Math.PI * 2)); fn(); g.restore(); }
+    switch (kind) {
+      case 0: flat(function () {
+        g.fillStyle = 'rgba(0,0,0,0.15)'; g.fillRect(-6, -4, 14, 10);
+        g.fillStyle = rng.pick(['#b4ad98', '#a8a088', '#bab3a0']); g.fillRect(-6, -4, 12, 8);
+        g.fillStyle = 'rgba(60,60,60,0.2)'; for (i = 0; i < 3; i++) { g.fillRect(-4, -2 + i * 2.2, rng.range(4, 8), 0.7); }
+      }); break;
+      case 1: flat(function () { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(-2, 1, 7, 4); g.fillStyle = rng.pick(['#a8302a', '#b8bcc0', '#2f6a3a', '#c9a23a']); g.fillRect(-3, -2, 7, 4); g.fillStyle = '#d8dadc'; g.fillRect(-3, -2, 1.5, 4); }); break;
+      case 2: for (i = 0; i < 14; i++) { var lp = ip(rng.range(0.15, 0.85), rng.range(0.15, 0.85), 0); g.fillStyle = rng.pick(['#7a5a2a', '#8a6a30', '#5a4220', '#9a7a3a', '#6a5a2a']); g.beginPath(); g.ellipse(lp[0], lp[1], rng.range(1.5, 3), rng.range(1, 1.8), rng.range(0, 3), 0, Math.PI * 2); g.fill(); } break;
+      case 3: ellipseAt(g, ctr[0] + 2, ctr[1] + 2, 10, 4.5, 'rgba(0,0,0,0.3)');
+        ellipseAt(g, ctr[0], ctr[1] - 4, 9, 7, '#1e1f22'); ellipseAt(g, ctr[0] + 4, ctr[1] - 3, 6, 5, '#26282c');
+        ellipseAt(g, ctr[0] - 3, ctr[1] - 7, 3, 2, 'rgba(255,255,255,0.18)'); break;
+      case 4: flat(function () { g.fillStyle = 'rgba(12,12,14,0.32)'; g.beginPath(); g.ellipse(0, 0, rng.range(9, 15), rng.range(6, 10), 0, 0, Math.PI * 2); g.fill(); g.fillStyle = 'rgba(12,12,14,0.2)'; g.beginPath(); g.ellipse(6, 3, 6, 4, 0, 0, Math.PI * 2); g.fill(); }); break;
+      case 5: for (i = 0; i < 16; i++) { var wx = ctr[0] + rng.range(-9, 9), wy = ctr[1] + rng.range(-3, 3); g.strokeStyle = rng.pick(['#5d6e2e', '#6e7a34', '#4e5e26', '#7a7a3a']); g.lineWidth = 1.2; g.beginPath(); g.moveTo(wx, wy); g.lineTo(wx + rng.range(-3, 3), wy - rng.range(3, 9)); g.stroke(); } break;
+      case 6: for (i = 0; i < 9; i++) { var gp = ip(rng.range(0.2, 0.8), rng.range(0.2, 0.8), 0); g.fillStyle = rng.chance(0.5) ? 'rgba(190,220,230,0.8)' : 'rgba(140,170,180,0.7)'; g.beginPath(); g.moveTo(gp[0], gp[1]); g.lineTo(gp[0] + rng.range(1, 4), gp[1] + rng.range(-1, 1)); g.lineTo(gp[0] + rng.range(0, 2), gp[1] + rng.range(1, 2)); g.fill(); } break;
+      case 7: flat(function () { g.fillStyle = 'rgba(70,12,10,0.6)'; g.beginPath(); g.ellipse(0, 0, rng.range(6, 11), rng.range(4, 7), 0, 0, Math.PI * 2); g.fill(); g.fillStyle = 'rgba(70,12,10,0.45)'; for (i = 0; i < 5; i++) { g.beginPath(); g.arc(rng.range(-14, 14), rng.range(-9, 9), rng.range(1, 2.5), 0, Math.PI * 2); g.fill(); } g.fillRect(4, -1, 14, 2.5); }); break;
+      case 8: flat(function () { g.fillStyle = 'rgba(0,0,0,0.2)'; g.fillRect(-9, -6, 20, 14); g.fillStyle = '#9a7a4e'; g.fillRect(-10, -7, 20, 14); g.strokeStyle = '#7a5e38'; g.lineWidth = 1; g.strokeRect(-10, -7, 20, 14); g.beginPath(); g.moveTo(0, -7); g.lineTo(0, 7); g.stroke(); }); break;
+      case 9: flat(function () { g.fillStyle = 'rgba(0,0,0,0.25)'; g.fillRect(-4, 2, 12, 4); g.fillStyle = rng.pick(['rgba(60,110,60,0.85)', 'rgba(120,80,40,0.85)', 'rgba(200,220,220,0.6)']); g.fillRect(-5, -2, 9, 4); g.fillRect(4, -1, 4, 2); }); break;
+      case 10: g.strokeStyle = 'rgba(15,15,15,0.28)'; g.lineWidth = 3; for (i = 0; i < 2; i++) { var a0 = ip(0.05, 0.3 + i * 0.25, 0), a1 = ip(0.95, 0.4 + i * 0.25 + rng.range(-0.1, 0.1), 0); g.beginPath(); g.moveTo(a0[0], a0[1]); g.quadraticCurveTo((a0[0] + a1[0]) / 2 + rng.range(-6, 6), (a0[1] + a1[1]) / 2 + rng.range(-3, 3), a1[0], a1[1]); g.stroke(); } break;
+      case 11: for (i = 0; i < 10; i++) { var rp = ip(rng.range(0.2, 0.8), rng.range(0.2, 0.8), 0); var rc = rng.pick(['#7a7670', '#8a8680', '#6a6660', '#9a8a7a']); ellipseAt(g, rp[0] + 1, rp[1] + 1, rng.range(1.5, 3.5), rng.range(1, 2), 'rgba(0,0,0,0.25)'); ellipseAt(g, rp[0], rp[1], rng.range(1.5, 3.5), rng.range(1, 2), rc); } break;
+    }
+    return (litArr[k] = store('lit' + k, c, ax, ay));
+  };
+
   /* ---------- Telhados ---------- */
   /* code (montado em render.js): bits 0-1 tipo (1 = cumeeira ao longo de x, 2 = ao longo de y, 3 = plano), 2-7 altura na borda inicial / 2,
    * 8-13 altura na borda final / 2, 14-19 pico no meio do tile / 2, 20-22 cor, 23 empena visível, 24-27 estilo da parede, 28-31 beirais (N=1, L=2, S=4, O=8) */
@@ -333,11 +427,12 @@
     g.strokeStyle = color; g.lineWidth = lw || 1; g.beginPath(); g.moveTo(a[0] + ox, a[1] + oy); g.lineTo(b[0] + ox, b[1] + oy); g.stroke();
   }
   /* state: 0 normal; para porta: 1 aberta, 2 quebrada; janela: 1 aberta, 2 quebrada; bar = 0..4 tábuas; cut = parede baixa */
-  function wallSprite(type, style, side, state, bar, cut, extra) {
-    var nk = (((((type * 16 + style) * 2 + side) * 4 + state) * 5 + bar) * 2 + (cut ? 1 : 0)) * 2 + (extra ? 1 : 0);
+  function wallSprite(type, style, side, state, bar, cut, extra, grime) {
+    grime = grime || 0;
+    var nk = ((((((type * 16 + style) * 2 + side) * 4 + state) * 5 + bar) * 2 + (cut ? 1 : 0)) * 2 + (extra ? 1 : 0)) * 3 + grime;
     var s0 = wallArr[nk];
     if (s0) { return s0; }
-    var key = 'w' + type + '_' + style + '_' + side + '_' + state + '_' + bar + '_' + (cut ? 1 : 0) + '_' + (extra || 0);
+    var key = 'w' + type + '_' + style + '_' + side + '_' + state + '_' + bar + '_' + (cut ? 1 : 0) + '_' + (extra || 0) + '_' + grime;
     var H = cut ? C.CUT_WALL_H : WH;
     var pad = 6;
     var c = mk(TW * 2, HH + WH + pad * 2 + 4), g = c.getContext('2d');
@@ -379,6 +474,27 @@
         } else {
           // rodapé
           wquad(g, side, 0, 1, 0, 5, U.shade(st.trim, faceF), ox, oy);
+        }
+      }
+      // sujeira: manchas de água escorrendo, mofo na base, tinta descascada
+      if (!cut) {
+        var gr = new U.Rng(grime * 7919 + style * 31 + side * 7 + type);
+        var nSt = st.interior ? (grime > 1 ? 1 : 0) : grime + 1;
+        for (var sI = 0; sI < nSt; sI++) {
+          var su = gr.range(0.05, 0.95), sh0 = gr.range(H * 0.5, H), sh1 = gr.range(H * 0.05, H * 0.4);
+          var sg0 = wp(side, su, sh0), sg1 = wp(side, su, sh1);
+          var sgr = g.createLinearGradient(sg0[0] + ox, sg0[1] + oy, sg1[0] + ox, sg1[1] + oy);
+          sgr.addColorStop(0, 'rgba(40,34,24,0.16)'); sgr.addColorStop(1, 'rgba(40,34,24,0)');
+          wquad(g, side, su - 0.05, su + 0.05 + gr.range(0, 0.06), sh1, sh0, sgr, ox, oy);
+        }
+        var mold = g.createLinearGradient(0, oy - 2, 0, oy - 30);
+        mold.addColorStop(0, 'rgba(48,54,30,' + (st.interior ? 0.12 : 0.3) + ')'); mold.addColorStop(1, 'rgba(48,54,30,0)');
+        wquad(g, side, 0, 1, 0, 30, mold, ox, oy);
+        if (!st.interior && grime === 2) {
+          for (var pI = 0; pI < 2; pI++) {
+            var pu = gr.range(0.05, 0.9), ph = gr.range(5, H - 10), pw = gr.range(0.04, 0.1);
+            wquad(g, side, pu, pu + pw, ph, ph + gr.range(3, 8), U.shade(st.base, faceF * (gr.chance(0.5) ? 1.06 : 0.88)), ox, oy);
+          }
         }
       }
       // aberturas
@@ -467,7 +583,7 @@
     var key = 'o' + o + '_' + dir + '_' + (extra || 0);
     var info = C.OBJ_INFO[o];
     var maxH = Math.ceil((info.h || 1) * WH) + 40;
-    var cw = TW + 64, chh = TH + maxH + 10;
+    var cw = TW + (o === O.CAR ? 128 : 64), chh = TH + maxH + 10;
     var c = mk(cw, chh), g = c.getContext('2d');
     var ax = cw / 2, ay = maxH + 4;
     g.translate(ax, ay);
@@ -745,18 +861,60 @@
     var color = CAR_COLORS[(odir >> 2) % CAR_COLORS.length];
     // a carroceria inteira é desenhada a partir da parte "frente" (tile de maior x/y) cobrindo os 2 tiles
     if (!front) { return; }
-    var x0 = horiz ? -0.92 : 0.12, y0 = horiz ? 0.12 : -0.92, w = horiz ? 1.84 : 0.76, d = horiz ? 0.76 : 1.84;
-    box(g, x0, y0, w, d, 4, 16, color);
-    // cabine
-    var cx0 = horiz ? x0 + 0.45 : x0 + 0.06, cy0 = horiz ? y0 + 0.06 : y0 + 0.45, cw = horiz ? 0.85 : 0.64, cd = horiz ? 0.64 : 0.85;
-    box(g, cx0, cy0, cw, cd, 20, 13, U.shade(color, 0.95));
-    // vidros
-    var gl = '#6f8fa3';
-    poly(g, [ip(cx0 + cw, cy0, 21), ip(cx0 + cw, cy0 + cd, 21), ip(cx0 + cw, cy0 + cd, 32), ip(cx0 + cw, cy0, 32)], U.shade(gl, 0.9));
-    poly(g, [ip(cx0, cy0 + cd, 21), ip(cx0 + cw, cy0 + cd, 21), ip(cx0 + cw, cy0 + cd, 32), ip(cx0, cy0 + cd, 32)], U.shade(gl, 0.75));
-    // rodas
-    var wheels = horiz ? [[x0 + 0.3, y0 + d], [x0 + w - 0.35, y0 + d]] : [[x0 + w, y0 + 0.3], [x0 + w, y0 + d - 0.35]];
-    wheels.forEach(function (wpnt) { var p = ip(wpnt[0], wpnt[1], 5); ellipseAt(g, p[0], p[1], 6, 6, '#1a1a1a'); ellipseAt(g, p[0], p[1], 2.5, 2.5, '#777'); });
+    // coordenadas locais: u ao longo do carro (-0.92..0.92), v na largura (0.12..0.88); o capô fica em +u
+    function P(u, v, h) { return horiz ? ip(u, v, h) : ip(v, u, h); }
+    function q(a, b, c, d, fill, stroke) { poly(g, [a, b, c, d], fill, stroke, 1); }
+    var u0 = -0.92, u1 = 0.92, v0 = 0.12, v1 = 0.88;
+    var sh = function (k) { return U.shade(color, k); };
+    var t0 = P(0, 0.5, 0);
+    ellipseAt(g, t0[0], t0[1] + 2, 60, 26, 'rgba(0,0,0,0.22)'); ellipseAt(g, t0[0], t0[1] + 2, 44, 18, 'rgba(0,0,0,0.18)');
+    // rodas (lado visível)
+    [u0 + 0.33, u1 - 0.36].forEach(function (u, i) {
+      var w = P(u, v1 + 0.005, 6);
+      var flat = i === 0 && rng.chance(0.3);
+      ellipseAt(g, w[0], w[1] + (flat ? 1.5 : 0), 7, flat ? 5 : 7, '#141414');
+      ellipseAt(g, w[0], w[1] + (flat ? 1.5 : 0), 3, flat ? 2 : 3, '#6a6a68');
+    });
+    // parte de baixo (lataria)
+    q(P(u0, v1, 4), P(u1, v1, 4), P(u1, v1, 15), P(u0, v1, 15), sh(0.72), 'rgba(0,0,0,0.4)');
+    q(P(u1, v0, 4), P(u1, v1, 4), P(u1, v1, 15), P(u1, v0, 15), sh(0.88), 'rgba(0,0,0,0.4)');
+    // para-choque e faróis
+    q(P(u1 + 0.01, v0 + 0.02, 4), P(u1 + 0.01, v1 - 0.02, 4), P(u1 + 0.01, v1 - 0.02, 7), P(u1 + 0.01, v0 + 0.02, 7), '#3a3a3a');
+    [v0 + 0.1, v1 - 0.18].forEach(function (v) { q(P(u1 + 0.01, v, 10), P(u1 + 0.01, v + 0.08, 10), P(u1 + 0.01, v + 0.08, 13), P(u1 + 0.01, v, 13), '#d8d2b0'); });
+    // capô e porta-malas (topo)
+    q(P(u0, v0, 15), P(u1, v0, 15), P(u1, v1, 15), P(u0, v1, 15), sh(1.02));
+    q(P(u0 + 0.02, v0 + 0.03, 17), P(u1 - 0.02, v0 + 0.03, 17), P(u1 - 0.02, v1 - 0.03, 17), P(u0 + 0.02, v1 - 0.03, 17), sh(1.1), 'rgba(0,0,0,0.25)');
+    q(P(u0 + 0.02, v1 - 0.03, 15), P(u1 - 0.02, v1 - 0.03, 15), P(u1 - 0.02, v1 - 0.03, 17), P(u0 + 0.02, v1 - 0.03, 17), sh(0.85));
+    q(P(u1 - 0.02, v0 + 0.03, 15), P(u1 - 0.02, v1 - 0.03, 15), P(u1 - 0.02, v1 - 0.03, 17), P(u1 - 0.02, v0 + 0.03, 17), sh(0.95));
+    // linha das portas
+    var dl0 = P(-0.05, v1, 5), dl1 = P(-0.05, v1, 15);
+    g.strokeStyle = 'rgba(0,0,0,0.35)'; g.lineWidth = 1; g.beginPath(); g.moveTo(dl0[0], dl0[1]); g.lineTo(dl1[0], dl1[1]); g.stroke();
+    // cabine com vidros inclinados
+    var ua = -0.5, ub = 0.38, vb0 = v0 + 0.06, vb1 = v1 - 0.06, vt0 = v0 + 0.11, vt1 = v1 - 0.11, H0 = 17, H1 = 30, ra = 0.2, rb = 0.16;
+    var glass = '#5d7584', broken = rng.chance(0.35);
+    q(P(ua, vb0, H0), P(ua, vb1, H0), P(ua + ra, vt1, H1), P(ua + ra, vt0, H1), U.shade(glass, 0.7));
+    q(P(ua + ra, vt0, H1), P(ub - rb, vt0, H1), P(ub - rb, vt1, H1), P(ua + ra, vt1, H1), sh(1.05), 'rgba(0,0,0,0.3)');
+    q(P(ua, vb1, H0), P(ub, vb1, H0), P(ub - rb, vt1, H1), P(ua + ra, vt1, H1), U.shade(glass, 0.78), 'rgba(0,0,0,0.35)');
+    var pm0 = P((ua + ub) / 2 - 0.02, vb1, H0), pm1 = P((ua + ub) / 2 - 0.02 - 0.0, vt1, H1);
+    g.strokeStyle = sh(0.7); g.lineWidth = 2.5; g.beginPath(); g.moveTo(pm0[0], pm0[1]); g.lineTo(pm1[0], pm1[1]); g.stroke();
+    q(P(ub, vb0, H0), P(ub, vb1, H0), P(ub - rb, vt1, H1), P(ub - rb, vt0, H1), U.shade(glass, 0.95), 'rgba(0,0,0,0.35)');
+    // reflexo no para-brisa
+    var r0 = P(ub - 0.04, vb0 + 0.15, H0 + 3), r1 = P(ub - rb + 0.03, vt0 + 0.3, H1 - 2);
+    g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 2; g.beginPath(); g.moveTo(r0[0], r0[1]); g.lineTo(r1[0], r1[1]); g.stroke();
+    if (broken) { // para-brisa trincado
+      var bc = P(ub - 0.07, (vb0 + vb1) / 2, (H0 + H1) / 2);
+      g.strokeStyle = 'rgba(220,230,235,0.7)'; g.lineWidth = 0.8; g.beginPath();
+      for (var k = 0; k < 7; k++) { var an = k / 7 * Math.PI * 2; g.moveTo(bc[0], bc[1]); g.lineTo(bc[0] + Math.cos(an) * rng.range(4, 9), bc[1] + Math.sin(an) * rng.range(3, 7)); }
+      g.stroke();
+    }
+    // sujeira, ferrugem e folhas no capô
+    for (var i = 0; i < 7; i++) {
+      var dp = P(rng.range(u0 + 0.1, u1 - 0.1), rng.range(v0 + 0.08, v1 - 0.08), 17);
+      g.fillStyle = rng.chance(0.5) ? 'rgba(90,60,30,0.3)' : 'rgba(60,50,40,0.22)';
+      g.beginPath(); g.ellipse(dp[0], dp[1], rng.range(2, 5), rng.range(1, 2.5), 0, 0, Math.PI * 2); g.fill();
+    }
+    var rs = P(rng.range(u0 + 0.2, u1 - 0.2), v1, rng.range(6, 12));
+    g.fillStyle = 'rgba(110,60,30,0.45)'; g.beginPath(); g.ellipse(rs[0], rs[1], rng.range(3, 6), 2, 0, 0, Math.PI * 2); g.fill();
   }
 
   /* ---------- Escada ---------- */
@@ -818,7 +976,7 @@
     if (q < 0) { q = 0; } else if (q > 70) { q = 70; }
     var t = SHT[hex];
     if (!t) { t = SHT[hex] = []; }
-    return t[q] || (t[q] = U.shade(hex, q / 40));
+    return t[q] || (t[q] = U.shade(S.gradeHex(hex), q / 40));
   }
   S.shadeQ = shq;
   function iso(dx, dy) { return [HW * (dx - dy), HH * (dx + dy)]; }

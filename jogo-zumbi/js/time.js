@@ -106,7 +106,7 @@
     var night = T.isNight();
     if (p.flashlightOn) {
       var fl = CP.Items.Inv.find(p, function (it) { return D.ITEMS[it.id].light && it.charge > 0; });
-      if (fl) { out.push({ x: p.x, y: p.y, z: lz, r: 11, i: 0.95, cone: { ang: p.ang, half: 0.5 } }); } else { p.flashlightOn = false; }
+      if (fl) { out.push({ x: p.x, y: p.y, z: lz, r: 11, i: 0.95, cone: { ang: p.ang, half: 0.5 }, glow: 'flash' }); } else { p.flashlightOn = false; }
     }
     // luz fraca ao redor do jogador (para não ficar totalmente preto)
     out.push({ x: p.x, y: p.y, z: lz, r: 3.2, i: 0.42 });
@@ -116,14 +116,14 @@
         for (var x = V.ox; x < V.ox + V.size; x++) {
           var o = W.obj(x, y, lz);
           if (!o) { continue; }
-          if (o === O.LAMPPOST && T.powerAt(x, y)) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 7, i: 0.85, indoor: false }); }
-          if (o === O.CAMPFIRE) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 6, i: 0.85 }); }
+          if (o === O.LAMPPOST && T.powerAt(x, y)) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 7, i: 0.85, indoor: false, glow: 'lamp' }); }
+          if (o === O.CAMPFIRE) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 6, i: 0.85, glow: 'fire' }); }
         }
       }
     }
     if (CP.Vehicles) { CP.Vehicles.lightSources(out); }
     var fires = ws().fires || [];
-    fires.forEach(function (f) { if (W.levelOf(f.z) === lz) { out.push({ x: f.x + 0.5, y: f.y + 0.5, z: lz, r: 6, i: 0.9 }); } });
+    fires.forEach(function (f) { if (W.levelOf(f.z) === lz) { out.push({ x: f.x + 0.5, y: f.y + 0.5, z: lz, r: 6, i: 0.9, glow: 'fire' }); } });
     var heli = ws().heli;
     if (heli && night) { out.push({ x: heli.x, y: heli.y, z: 0, r: 6, i: 0.9, indoor: false }); }
     return out;

@@ -157,7 +157,8 @@
   C.VISION_RADIUS = 34;         // tiles (dia)
   C.VISION_CONE_DEG = 150;      // ângulo do cone de visão (total)
   C.VISION_NEAR = 2.2;          // dentro desta distância enxerga até pelas costas
-  C.FOG_DIM = 0.58;             // brilho de tiles fora da visão
+  C.FOG_DIM = 0.5;              // brilho de tiles fora da visão
+  C.FOG_DESAT = 0.85;           // quanto a cor some nos tiles fora da visão
   C.HEARING_RADIUS = 7;         // percebe zumbis "ouvindo" pelas costas
   C.CARRY_BASE = 8;             // kg sem penalidade (ajustado pela Força)
   C.CARRY_PER_STRENGTH = 0.8;
@@ -299,6 +300,9 @@
     { id: 'siren', w: 1.2, noise: 60, dist: [40, 70], maxDay: 7, msg: 'Uma sirene toca ao longe... e se cala.' },
     { id: 'caralarm', w: 1, noise: 60, dist: [30, 55], msg: 'Um alarme de carro dispara em algum lugar.' }
   ];
+
+  /* ---------- Gradação de cor (aplicada uma vez em cada sprite e nas cores dos personagens; ver sprites.js) ---------- */
+  C.GRADE = { DESAT: 0.3, TINT: '#b8a878', TINT_ALPHA: 0.3 };
 
   /* ---------- Trilha sonora (js/music.js) ---------- */
   C.MUSIC = {

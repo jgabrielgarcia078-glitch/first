@@ -283,7 +283,7 @@
 
   /* sobreposições em coordenadas de mundo: efeitos, mira, construção */
   G.drawOverlay = function (g) {
-    if (CP.FX) { CP.FX.drawOverlay(g); }
+    if (CP.FX) { CP.FX.drawGlows(g); CP.FX.drawOverlay(g); }
     var p = G.player;
     if (CP.UI && CP.UI.drawBuildGhost) { CP.UI.drawBuildGhost(g); }
     G.drawHover(g, p);
