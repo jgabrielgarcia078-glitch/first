@@ -49,6 +49,9 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 - **Tempo e mundo vivo**: 1 hora real = 1 dia, clima (chuva, tempestade, neblina, neve), estações, dia e noite com iluminação, corte de energia e de água, helicóptero, tiros e gritos distantes, alarmes, rádio e TV.
 - **Sobrevivência longa**: barricadas, carpintaria (paredes, portas, cercas, pisos, caixotes, coletor de chuva, fogueira, bancada), desmontar móveis, cortar árvores, ferver água, cozinhar, agricultura, coleta, pesca e gerador.
 - **Veículos**: carros com chave ou ligação direta, gasolina, dano, atropelamento, porta-malas e faróis.
+- **Visual**: casas com telhado de duas águas, chão com textura (grama, asfalto rachado, calçada, piso de madeira), árvores sombreadas, sombra junto às paredes. Personagens com corpo masculino e feminino de verdade, roupas visíveis (mangas, saia, vestido, jaqueta, boné, mochila) e zumbis curvados, mancando, com pele manchada, boca ensanguentada e roupas rasgadas.
+- **Som de onde ele vem**: gemidos de zumbi sintetizados como voz (rouco, com formantes), cada som vem da direção e da distância certas (esquerda/direita, mais baixo longe, abafado atrás de paredes). Passos mudam com o piso.
+- **Leve**: só os zumbis perto de você são simulados; os de longe ficam "guardados" e acordam quando você se aproxima (ou se ouvirem um barulho grande).
 
 ## Testes
 

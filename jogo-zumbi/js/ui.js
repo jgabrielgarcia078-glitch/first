@@ -12,7 +12,37 @@
     autosaveT: 0, menuT: 0, deathShown: false, craftTab: 'recipes', mapMode: 'region', hasSave: false
   };
   var root, $ = {};
-  var MOODLE_ICONS = { hunger: '🍖', thirst: '💧', fatigue: '😴', endurance: '💨', panic: '😱', stress: '😣', boredom: '😑', unhappy: '😞', sick: '🤢', pain: '🤕', bleeding: '🩸', hot: '🥵', cold: '🥶', wet: '🌧️', heavy: '🎒', drunk: '🥴', stuffed: '😋', fine: '🙂' };
+  /* ícones dos moodles (SVG em traço branco) */
+  var MOODLE_SVG = {
+    hunger: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3.5 4-3.5 7.5H17V21"/>',
+    thirst: '<path d="M12 3c3 4.5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6.5 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
+    fatigue: '<path d="M4 5h7l-7 8h7M14 12h6l-6 7h6"/>',
+    endurance: '<path d="M3 8h11a3 3 0 1 0-3-3M3 13h15a3 3 0 1 1-3 3M3 18h7"/>',
+    panic: '<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1.3"/><circle cx="15" cy="10" r="1.3"/><ellipse cx="12" cy="16.5" rx="2" ry="2.3"/>',
+    stress: '<path d="M2 12l3-4 3 8 3-8 3 8 3-8 3 8 2-4"/>',
+    boredom: '<circle cx="12" cy="12" r="9"/><path d="M7.5 10h3M13.5 10h3M8 16h8"/>',
+    unhappy: '<circle cx="12" cy="12" r="9"/><path d="M8 9.5l2 1M16 9.5l-2 1M8 17c2-2.2 6-2.2 8 0"/>',
+    sick: '<circle cx="12" cy="12" r="9"/><path d="M8 9l2 2M10 9l-2 2M14 9l2 2M16 9l-2 2M7 16c1-1 2 1 3 0s2 1 3 0 2 1 3 0"/>',
+    pain: '<path d="M13 2L5 14h6l-1 8 8-12h-6z"/>',
+    bleeding: '<path d="M10 4c2.5 3.8 5 6.7 5 9.2a5 5 0 0 1-10 0c0-2.5 2.5-5.4 5-9.2z"/><path d="M18 12c1 1.6 2 2.7 2 3.8a2 2 0 0 1-4 0c0-1 1-2.2 2-3.8z"/>',
+    hot: '<path d="M10 4a2 2 0 0 1 4 0v9.5a4 4 0 1 1-4 0z"/><path d="M12 8v8M18 5l2-1M18 9h2.5"/>',
+    cold: '<path d="M12 2v20M3.5 7l17 10M3.5 17l17-10M9 3.5l3 2.5 3-2.5M9 20.5l3-2.5 3 2.5"/>',
+    wet: '<path d="M7 14a4 4 0 0 1 0-8 5 5 0 0 1 9.5-1A4 4 0 0 1 17 14z"/><path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3"/>',
+    heavy: '<path d="M8.5 9a3.5 3.5 0 0 1 7 0"/><path d="M5.5 20l1.5-10h10l1.5 10z"/>',
+    drunk: '<path d="M10 2h4v5l2 3v12H8V10l2-3z"/><path d="M8 14h8"/>',
+    stuffed: '<path d="M3 11h18a9 9 0 0 1-18 0zM8 7.5c0-2 2-2 2-4M14 7.5c0-2 2-2 2-4"/>',
+    fine: '<circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 14.5c2 2.5 6 2.5 8 0"/>'
+  };
+  function moodleIcon(id) {
+    return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (MOODLE_SVG[id] || '<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/>') + '</svg>';
+  }
+  /* silhueta do corpo (frente): partes em retângulos arredondados; esq./dir. do personagem */
+  var BODY_SHAPES = {
+    head: 'c60,22,14', neck: 'r54,35,12,10', torso: 'r37,44,46,40', belly: 'r39,84,42,22', groin: 'r41,106,38,16',
+    uarmR: 'r21,46,14,37', uarmL: 'r85,46,14,37', farmR: 'r17,84,13,35', farmL: 'r90,84,13,35',
+    handR: 'r15,120,14,15', handL: 'r91,120,14,15', thighR: 'r41,124,18,45', thighL: 'r61,124,18,45',
+    shinR: 'r42,171,16,42', shinL: 'r62,171,16,42', footR: 'r37,214,20,10', footL: 'r63,214,20,10'
+  };
 
   function h(tag, attrs, html) {
     var e = document.createElement(tag);
@@ -224,7 +254,7 @@
       '<div class="speed pe">' + C.GAME_SPEEDS.map(function (s, i) { return '<button class="pe' + (G().speedIndex === i ? ' on' : '') + '" data-a="speed" data-i="' + i + '">' + (i === 0 ? '▶' : '▶'.repeat(Math.min(3, i + 1))) + '</button>'; }).join('') + (p.sleeping ? ' <span class="warn">dormindo...</span>' : '') + '</div></div>');
     var ms = CP.Body.moodles(p);
     setHtml($.moodles, ms.map(function (m) {
-      return '<div class="moodle pe" title="' + esc(m.name + ' — ' + m.desc) + '"><span class="lbl">' + esc(m.name) + '</span><div class="ic ' + (m.good ? 'good' : 'l' + m.level) + '">' + (MOODLE_ICONS[m.id] || '❔') + '</div></div>';
+      return '<div class="moodle pe" title="' + esc(m.name + ' — ' + m.desc) + '"><span class="lbl">' + esc(m.name) + '</span><div class="ic ' + (m.good ? 'good' : 'l' + m.level) + '">' + moodleIcon(m.id) + '</div></div>';
     }).join(''));
     var b = p.body;
     var maxH = CP.Body.maxHealth(p);
@@ -507,6 +537,7 @@
     var s = bd.stats;
     html += '<div class="muted" style="font-size:12px">Temperatura ' + s.temp.toFixed(1) + '°C · Peso ' + s.weight.toFixed(1) + ' kg' + (p.fx.nutrition ? ' · Calorias ' + Math.round(s.calories) : '') + ' · Dor ' + Math.round(CP.Body.pain(p)) + '</div>';
     if (bd.infection && bd.infection.p > 0.35) { html += '<div class="danger" style="margin:6px 0">Você está com febre alta e se sentindo cada vez pior...</div>'; }
+    html += '<div class="health-grid">' + bodyFigure(bd) + '<div class="health-list">';
     var any = false;
     D.BODY_PARTS.forEach(function (bp) {
       var part = bd.parts[bp.id];
@@ -535,9 +566,26 @@
         '</div></div>';
     });
     if (!any) { html += '<div class="good" style="margin-top:8px">Nenhum ferimento.</div>'; }
+    html += '</div></div>';
     html += '<h3>Proteção das roupas</h3><div class="muted" style="font-size:12px">' + ['head', 'neck', 'torso', 'farmR', 'handR', 'thighL', 'shinL', 'footL'].map(function (id) { var pr = CP.Body.protection(p, id); return D.PART[id].name + ': ' + Math.round(pr.bite) + '/' + Math.round(pr.scratch); }).join(' · ') + ' <i>(mordida/arranhão)</i></div>';
     b.innerHTML = html;
     UI.sigs.health = healthSig();
+  }
+  function bodyFigure(bd) {
+    var out = '<svg class="bodyfig" viewBox="0 0 120 228" width="120" height="228">';
+    D.BODY_PARTS.forEach(function (bp) {
+      var part = bd.parts[bp.id], sh = BODY_SHAPES[bp.id];
+      if (!sh) { return; }
+      var sev = 0, bleed = false, band = false;
+      part.wounds.forEach(function (w) { sev = Math.max(sev, w.sev); if (w.bleeding && !w.bandage) { bleed = true; } if (w.bandage) { band = true; } });
+      var fill = !part.wounds.length ? '#3b3d38' : U.mix('#a08a3a', '#b02418', Math.min(1, sev));
+      if (band) { fill = U.mix(fill, '#d8d2c0', 0.55); }
+      var cls = bleed ? ' class="bleed"' : '';
+      var t = '<title>' + bp.name + (part.wounds.length ? ' — ' + part.wounds.map(function (w) { return D.WOUND_NAMES[w.type]; }).join(', ') : '') + '</title>';
+      var a = sh.slice(1).split(',').map(Number);
+      if (sh[0] === 'c') { out += '<circle' + cls + ' cx="' + a[0] + '" cy="' + a[1] + '" r="' + a[2] + '" fill="' + fill + '">' + t + '</circle>'; } else { out += '<rect' + cls + ' x="' + a[0] + '" y="' + a[1] + '" width="' + a[2] + '" height="' + a[3] + '" rx="4" fill="' + fill + '">' + t + '</rect>'; }
+    });
+    return out + '</svg>';
   }
   function healthSig() {
     var p = P(), s = Math.round(p.body.health) + '|';

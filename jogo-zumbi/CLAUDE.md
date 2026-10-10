@@ -21,7 +21,7 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 | data.js | Habilidades, ocupações, traços, partes do corpo, itens (~230), loot por cômodo, receitas, construções, roupas iniciais |
 | world.js | Chunks 32×32×3 níveis, paredes nas bordas N/O de cada tile, portas e janelas (`edges`), colisão de círculo deslizante, linha de visão, escadas (z contínuo), `stepLevel` para pathfinding |
 | worldgen.js | Mapa macro (cidades, rodovias, tipos de quarteirão) e geração determinística por chunk (casas por BSP com cômodos e portas, lojas, sobrados com escada, fazendas, postos, natureza, zumbis, histórias aleatórias) |
-| sprites.js | Arte procedural com cache e variações de luz; personagens desenhados por vetor a cada quadro (`drawHuman`) |
+| sprites.js | Arte procedural com cache e variações de luz; telhados de duas águas (`S.roof`, código montado em `render.js`); personagens desenhados por vetor a cada quadro (`drawHuman`, aparência por `S.buildLook` a partir das roupas: corpo masculino/feminino, mangas, saia/vestido, zumbis curvados e rasgados) |
 | fov.js | Campo de visão por raios (com cone) e mapa de luz |
 | render.js | Isométrico 2:1, ordem por diagonal com todos os níveis, recorte de paredes e telhado transparente perto do jogador |
 | input.js | Teclado e mouse (clique direito curto = menu; segurar = mirar) |
@@ -36,7 +36,7 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 | actions.js | Ações com tempo (fila) e interações com o mundo (menu de contexto e tecla E) |
 | use.js | Uso de itens, artesanato, construção (`CP.Build`) e agricultura (`CP.Farm`) |
 | vehicles.js | Carros dirigíveis (os objetos CAR do mapa viram entidades ao ativar o chunk) |
-| audio.js | Sons sintetizados (WebAudio) |
+| audio.js | Sons sintetizados (WebAudio): vozes de zumbi por formantes, tudo posicional (pan + distância + abafado por parede), reverb, limite de vozes |
 | save.js | IndexedDB (stores `saves`, `chunks`, `settings`), versão de esquema e migrações |
 | ui.js | Menu, criação de personagem, HUD, painéis, menu de contexto, morte |
 | game.js | Estado da partida, loop de passo fixo (30/s), ativação de chunks, câmera, desenho |
@@ -50,6 +50,11 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 - O tempo de jogo (`state.time`, em segundos) anda 24× o real (`settings.dayMinutes`). Durante o sono, o relógio anda `SLEEP_SPEED` vezes mais rápido, mas a física continua em passos normais.
 - Ações com tempo passam por `CP.Actions.start`. Andar cancela a ação.
 
+## Desempenho
+
+- Zumbis só viram entidades (simuladas) a até `C.ZOMBIE.ACTIVE_IN` tiles do jogador e voltam a ser dados além de `ACTIVE_OUT` (exceto quem está perseguindo). Testes que movem zumbis devem manter o jogador dentro desse raio.
+- O A* tem orçamento de nós por quadro (`Z.nodeBudget`). O HUD só troca o HTML quando muda (`setHtml`).
+
 ## Validação antes de entregar
 
 `sh tests/run-all.sh` (precisa passar tudo):
@@ -59,4 +64,4 @@ Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquis
 - `tests/unit-sim.js`: integridade dos dados, combate, IA (ver, ouvir, perseguir, arrombar porta, subir escada), necessidades, sono, curativo, infecção, loot, serialização.
 - `tests/unit-days.js`: 30 dias acelerados (energia, água, helicóptero, clima, plantação, migração).
 - `tests/e2e.js`: Chromium via `file://` (menu → criação → jogo → painéis → salvar → recarregar → continuar).
-- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho).
+- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `audio` = níveis de som).
