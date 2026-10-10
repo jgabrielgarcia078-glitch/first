@@ -222,7 +222,8 @@
       shoes: w.shoes ? w.shoes.color : U.shade(l.skin, 0.8),
       hat: w.hat ? w.hat.color : null,
       blood: p.bloodSpots || null,
-      female: p.female
+      female: p.female,
+      bag: w.back ? (CP.Items.def(w.back).id === 'military_bag' ? '#4a5a3a' : (CP.Items.def(w.back).id === 'schoolbag' ? '#8a2f2f' : '#5a4a3a')) : null
     };
     if (w.shirt && CP.Items.def(w.shirt).id === 'dress') { out.pants = w.shirt.color; }
     return out;

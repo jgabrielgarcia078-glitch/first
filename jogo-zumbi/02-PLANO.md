@@ -1,5 +1,7 @@
 # Plano de construção — nosso jogo de sobrevivência zumbi
 
+> **Status (v0.1.0):** fases 0 a 11 implementadas e testadas, inclusive veículos. Decisões tomadas: visual isométrico, pasta com vários `.js`, mundo gerado por semente e condado fictício nos anos 90 (interface em português). Como jogar: `LEIA-ME.md`. Contexto técnico: `CLAUDE.md`.
+
 > Baseado na pesquisa em `01-PESQUISA.md`. Nome provisório: **"Condado Perdido"** (trocar quando você escolher).
 > Nada de código ainda: este documento é para você aprovar/ajustar antes de começarmos.
 

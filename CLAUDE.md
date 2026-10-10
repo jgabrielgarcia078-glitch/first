@@ -2,6 +2,8 @@
 
 Este arquivo é carregado automaticamente pelo Claude Code no início de toda sessão nesta pasta. Leia por completo antes de escrever qualquer código.
 
+> A pasta `jogo-zumbi/` é **outro projeto** (o jogo "Condado Perdido"), com regras e contexto próprios em `jogo-zumbi/CLAUDE.md`. Tudo abaixo vale só para o GoalQuest (`goalquest.html`).
+
 ## Visão geral
 
 GoalQuest é um app pessoal de gestão de metas gamificado. Uso exclusivo em desktop/PC (responsividade é bônus, não requisito — nunca sacrificar a experiência desktop por causa de mobile). Organiza:

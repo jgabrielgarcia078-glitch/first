@@ -603,6 +603,19 @@
    * lightF: 0..1 multiplicador de cor */
   var bodyPts = [];
   function iso(dx, dy) { return [HW * (dx - dy), HH * (dx + dy)]; }
+  var OUT = 'rgba(12,10,8,0.62)';
+  /* membro com contorno escuro (leitura melhor, estilo sprite) */
+  function oline(g, a, b, w, c) {
+    g.lineCap = 'round';
+    g.strokeStyle = OUT; g.lineWidth = w + 2;
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    g.strokeStyle = c; g.lineWidth = w;
+    g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+  }
+  function dot(g, p, r, c) {
+    g.fillStyle = OUT; g.beginPath(); g.arc(p[0], p[1], r + 1, 0, Math.PI * 2); g.fill();
+    g.fillStyle = c; g.beginPath(); g.arc(p[0], p[1], r, 0, Math.PI * 2); g.fill();
+  }
   S.drawHuman = function (g, sx, sy, look, pose, lightF, alpha) {
     var lf = lightF;
     function col(c) { return U.shade(c, lf); }
@@ -619,44 +632,60 @@
       g.restore();
       return;
     }
-    var Hh = pose.crouch ? 40 : 52;
     var zombie = look.zombie;
+    var Hh = pose.crouch ? 40 : (zombie ? 50 : 52);
     var phase = pose.phase * Math.PI * 2;
     var swing = pose.moving ? Math.sin(phase) * (pose.run ? 0.34 : 0.22) : 0;
     var bob = pose.moving ? Math.abs(Math.sin(phase)) * (pose.run ? 2.5 : 1.5) : 0;
     var sway = zombie ? Math.sin(phase * 0.5) * 2 : 0;
+    var tilt = zombie ? 0.05 : 0;
     function P(fwd, side, h) { // ponto do corpo: frente/direita em unidades de tile, h em px
       var w = iso(fx * fwd + rx * side, fy * fwd + ry * side);
       return [sx + w[0] + sway * 0.5, sy + w[1] - h - bob];
     }
     var hipH = Hh * 0.48, shH = Hh * 0.8, headH = Hh * 0.93;
-    var lean = pose.crouch ? 0.08 : (pose.run ? 0.07 : 0) + (zombie ? 0.05 : 0);
+    var lean = pose.crouch ? 0.08 : (pose.run ? 0.07 : 0) + (zombie ? 0.1 : 0);
     var parts = [];
+    var torsoCol = look.jacket || look.shirt;
+    function depthOf(side, fwd) { var w = iso(fx * fwd + rx * side, fy * fwd + ry * side); return w[1]; }
     // pernas
     var legSpread = 0.08;
     var kneeBend = pose.crouch ? 0.12 : 0;
-    function leg(side, s) {
+    function leg(side, sw) {
       var hip = P(0, side * legSpread, hipH);
-      var foot = P(s * 0.35, side * legSpread * 1.1, 0);
-      var knee = P(s * 0.17 + kneeBend, side * legSpread, hipH * 0.5);
-      parts.push({ depth: depthOf(side * legSpread, s * 0.2), draw: function () {
-        line(g, hip, knee, 6.5, col(look.pants)); line(g, knee, foot, 5.5, col(look.pants));
-        line(g, [foot[0], foot[1] - 1], [foot[0] + iso(fx * 0.07, fy * 0.07)[0], foot[1] + iso(fx * 0.07, fy * 0.07)[1] - 1], 5, col(look.shoes));
+      var foot = P(sw * 0.35, side * legSpread * 1.1, 0);
+      var knee = P(sw * 0.17 + kneeBend, side * legSpread, hipH * 0.5);
+      var toe = iso(fx * 0.08, fy * 0.08);
+      parts.push({ depth: depthOf(side * legSpread, sw * 0.2), draw: function () {
+        oline(g, hip, knee, 6, col(look.pants)); oline(g, knee, foot, 5.2, col(look.pants));
+        oline(g, [foot[0], foot[1] - 1], [foot[0] + toe[0], foot[1] + toe[1] - 1], 4.6, col(look.shoes));
       } });
     }
-    function depthOf(side, fwd) { var w = iso(fx * fwd + rx * side, fy * fwd + ry * side); return w[1]; }
     leg(-1, swing); leg(1, -swing);
+    // mochila nas costas
+    if (look.bag) {
+      parts.push({ depth: depthOf(0, -0.2), draw: function () {
+        var a = P(lean - 0.16, -0.12, shH - 2), b = P(lean - 0.16, 0.12, shH - 2), c = P(lean * 0.6 - 0.15, 0.11, hipH + 4), d = P(lean * 0.6 - 0.15, -0.11, hipH + 4);
+        g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.lineTo(c[0], c[1]); g.lineTo(d[0], d[1]); g.closePath();
+        g.fillStyle = col(look.bag); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1.5; g.stroke();
+      } });
+    }
     // tronco
-    var torsoCol = look.jacket || look.shirt;
     parts.push({ depth: 0, draw: function () {
       var hl = P(lean * 0.3, -0.11, hipH), hr = P(lean * 0.3, 0.11, hipH);
       var sl = P(lean, -0.17, shH), sr = P(lean, 0.17, shH);
       g.beginPath(); g.moveTo(hl[0], hl[1]); g.lineTo(hr[0], hr[1]); g.lineTo(sr[0], sr[1]); g.lineTo(sl[0], sl[1]); g.closePath();
       g.fillStyle = col(torsoCol); g.fill();
-      g.strokeStyle = col(U.shade(torsoCol, 0.6)); g.lineWidth = 1; g.stroke();
-      // linha do cinto
-      line(g, hl, hr, 2.5, col(U.shade(look.pants, 0.7)));
-      if (look.jacket && look.shirt) { var nm = P(lean + 0.02, 0, shH - 1), nb = P(lean * 0.6 + 0.02, 0, hipH + 8); line(g, nm, nb, 3, col(look.shirt)); }
+      g.strokeStyle = OUT; g.lineWidth = 1.5; g.stroke();
+      // sombreado do lado mais longe da luz
+      var ml = P(lean * 0.65, 0, (hipH + shH) / 2);
+      g.beginPath(); g.moveTo(ml[0], ml[1]); g.lineTo(hr[0], hr[1]); g.lineTo(sr[0], sr[1]); g.closePath();
+      g.fillStyle = 'rgba(0,0,0,0.12)'; g.fill();
+      // cinto
+      oline(g, hl, hr, 1.6, col(U.shade(look.pants, 0.6)));
+      if (look.jacket && look.shirt) { var nm = P(lean + 0.03, 0, shH - 1), nb = P(lean * 0.6 + 0.03, 0, hipH + 9); g.strokeStyle = col(look.shirt); g.lineWidth = 3; g.beginPath(); g.moveTo(nm[0], nm[1]); g.lineTo(nb[0], nb[1]); g.stroke(); }
+      // alças da mochila
+      if (look.bag) { var s1 = P(lean + 0.02, -0.1, shH - 1), s2 = P(lean * 0.6 + 0.02, -0.1, hipH + 6); g.strokeStyle = col(U.shade(look.bag, 0.7)); g.lineWidth = 1.6; g.beginPath(); g.moveTo(s1[0], s1[1]); g.lineTo(s2[0], s2[1]); g.stroke(); }
       // sangue
       if (look.blood) {
         for (var b = 0; b < look.blood.length; b++) {
@@ -664,17 +693,19 @@
           g.fillStyle = U.shade('#6e1414', lf); g.beginPath(); g.ellipse(bp[0], bp[1], look.blood[b][2], look.blood[b][2] * 0.8, 0, 0, Math.PI * 2); g.fill();
         }
       }
+      // pescoço
+      var n0 = P(lean, tilt * 0.5, shH), n1 = P(lean + 0.02, tilt, shH + 4);
+      oline(g, n0, n1, 4, col(look.skin));
     } });
     // braços
-    function arm(side, s) {
+    function arm(side, sw) {
       var sh = P(lean, side * 0.17, shH - 2);
       var hand, elbow;
       var weaponHand = side === 1;
       if (zombie && !pose.attack) {
-        hand = P(0.42 + lean, side * 0.12, shH - 4 + Math.sin(phase + side) * 2);
-        elbow = P(0.22 + lean, side * 0.16, shH - 4);
+        hand = P(0.44 + lean, side * 0.11, shH - 5 + Math.sin(phase + side) * 2);
+        elbow = P(0.24 + lean, side * 0.16, shH - 4);
       } else if (pose.attack && weaponHand) {
-        // golpe: braço vai de trás/alto para frente/baixo
         var a = pose.attack;
         var t = a < 0.45 ? a / 0.45 : 1 - (a - 0.45) / 0.55 * 0.6;
         var fwd = -0.15 + t * 0.55, hh = shH + 10 - t * 18;
@@ -688,50 +719,53 @@
         hand = P(0.38 + lean, 0.04, shH - 4);
         elbow = P(0.18 + lean, side * 0.16, shH - 6);
       } else {
-        hand = P(-s * 0.28 + lean * 0.5, side * 0.2, hipH + 2);
-        elbow = P(-s * 0.12 + lean * 0.5, side * 0.2, (shH + hipH) / 2 + 2);
+        hand = P(-sw * 0.28 + lean * 0.5, side * 0.2, hipH + 2);
+        elbow = P(-sw * 0.12 + lean * 0.5, side * 0.2, (shH + hipH) / 2 + 2);
       }
       parts.push({ depth: depthOf(side * 0.17, 0) + (weaponHand ? 0.1 : 0), draw: function () {
-        line(g, sh, elbow, 5, col(torsoCol));
-        line(g, elbow, hand, 4.5, look.jacket ? col(look.jacket) : col(look.skin));
-        g.fillStyle = col(look.skin); g.beginPath(); g.arc(hand[0], hand[1], 2.6, 0, Math.PI * 2); g.fill();
+        oline(g, sh, elbow, 4.6, col(torsoCol));
+        oline(g, elbow, hand, 4, look.jacket ? col(look.jacket) : col(look.skin));
+        dot(g, hand, 2.3, col(look.skin));
         if (weaponHand && pose.weapon && !zombie) { drawWeapon(g, hand, pose, fx, fy, col); }
       } });
     }
     arm(-1, -swing); arm(1, swing);
-    // cabeça
+    // cabeça: pele + cabelo deslocado para trás e recortado pela cabeça (o rosto aparece do lado para onde olha)
+    var fsx = (fx - fy), fsy = (fx + fy) * 0.5;
+    var fl = Math.sqrt(fsx * fsx + fsy * fsy) || 1; fsx /= fl; fsy /= fl;
+    if (look.hairStyle === 'longo' || look.hairStyle === 'rabo') {
+      parts.push({ depth: depthOf(0, -0.12), draw: function () {
+        var hc = P(lean + 0.03, tilt, headH);
+        var bx = hc[0] - fsx * 3.5, by = hc[1] - fsy * 3.5;
+        oline(g, [bx, by], [bx, by + (look.hairStyle === 'longo' ? 12 : 8)], look.hairStyle === 'longo' ? 7 : 4, col(look.hair));
+      } });
+    }
     parts.push({ depth: 0.5, draw: function () {
-      var hc = P(lean + 0.03 + (zombie ? 0.05 : 0), 0, headH + (pose.crouch ? 0 : 0));
+      var hc = P(lean + 0.03 + (zombie ? 0.04 : 0), tilt, headH);
       var r = 6.2;
-      var facingCam = (fx + fy) > -0.2; // olhando "para baixo" na tela
-      g.fillStyle = col(look.skin); g.beginPath(); g.arc(hc[0], hc[1], r, 0, Math.PI * 2); g.fill();
-      g.strokeStyle = col(U.shade(look.skin, 0.6)); g.lineWidth = 1; g.stroke();
+      dot(g, hc, r, col(look.skin));
+      if (zombie) { g.fillStyle = col(U.shade(look.skin, 0.78)); g.beginPath(); g.arc(hc[0] + 2, hc[1] - 2, 2.2, 0, Math.PI * 2); g.fill(); }
       if (look.hairStyle !== 'careca') {
-        var back = iso(-fx * 0.06, -fy * 0.06);
+        g.save();
+        g.beginPath(); g.arc(hc[0], hc[1], r + 0.5, 0, Math.PI * 2); g.clip();
+        var off = look.hairStyle === 'raspado' ? 3.8 : 3.0;
         g.fillStyle = col(look.hair);
-        g.beginPath();
-        if (facingCam) {
-          g.arc(hc[0] + back[0], hc[1] + back[1] - 2, r * 0.98, Math.PI * 1.05, Math.PI * 1.95);
-          g.closePath(); g.fill();
-        } else {
-          g.arc(hc[0] + back[0] * 0.5, hc[1] + back[1] * 0.5 - 0.5, r, 0, Math.PI * 2); g.fill();
-        }
-        if (look.hairStyle === 'longo' || look.hairStyle === 'rabo') {
-          var bk = iso(-fx * 0.12, -fy * 0.12);
-          line(g, [hc[0] + bk[0], hc[1] + bk[1]], [hc[0] + bk[0], hc[1] + bk[1] + (look.hairStyle === 'longo' ? 12 : 9)], look.hairStyle === 'longo' ? 8 : 4, col(look.hair));
-        }
+        g.beginPath(); g.arc(hc[0] - fsx * off, hc[1] - fsy * off - 2.4, r + 0.6, 0, Math.PI * 2); g.fill();
+        if (look.hairStyle === 'raspado') { g.globalAlpha = 0.5; }
+        g.restore();
       }
-      if (facingCam) {
-        var e = iso(fx * 0.1, fy * 0.1);
-        var eR = iso(rx * 0.05, ry * 0.05);
-        var eyeCol = zombie ? '#e8e0c0' : '#1a1a1a';
+      // rosto: olhos do lado para onde olha (só se virado para a câmera)
+      if (fsy > -0.35) {
+        var ex = hc[0] + fsx * 3.2, ey = hc[1] + fsy * 2.2 + 0.5;
+        var pxs = -fsy * 1.9, pys = fsx * 0.9;
+        var eyeCol = zombie ? '#f0e8c8' : '#1a1a1a';
         g.fillStyle = col(eyeCol);
-        g.fillRect(hc[0] + e[0] + eR[0] - 1, hc[1] + e[1] + eR[1], 2, zombie ? 1.5 : 2);
-        g.fillRect(hc[0] + e[0] - eR[0] - 1, hc[1] + e[1] - eR[1], 2, zombie ? 1.5 : 2);
-        if (zombie) { g.fillStyle = col('#3a1010'); g.fillRect(hc[0] + e[0] - 2, hc[1] + e[1] + 3, 4, 2); }
-        if (look.beard) { g.fillStyle = col(look.hair); g.beginPath(); g.arc(hc[0] + e[0] * 0.6, hc[1] + e[1] * 0.6 + 3, 3.6, 0, Math.PI); g.fill(); }
+        g.fillRect(ex + pxs - 0.9, ey + pys - 0.8, 1.8, 1.8);
+        g.fillRect(ex - pxs - 0.9, ey - pys - 0.8, 1.8, 1.8);
+        if (zombie) { g.fillStyle = col('#4a0d0d'); g.fillRect(ex - 1.8, ey + 2.4, 3.6, 1.6); }
+        if (look.beard) { g.fillStyle = col(look.hair); g.beginPath(); g.arc(ex, ey + 2.6, 3, 0, Math.PI); g.fill(); }
       }
-      if (look.hat) { var hh2 = [hc[0], hc[1] - 4]; g.fillStyle = col(look.hat); g.beginPath(); g.ellipse(hh2[0], hh2[1], 7.5, 3.5, 0, 0, Math.PI * 2); g.fill(); g.fillRect(hh2[0] - 5, hh2[1] - 5, 10, 5); }
+      if (look.hat) { var hh2 = [hc[0] - fsx, hc[1] - 4]; g.fillStyle = OUT; g.beginPath(); g.ellipse(hh2[0], hh2[1], 8.3, 4.2, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = col(look.hat); g.beginPath(); g.ellipse(hh2[0], hh2[1], 7.5, 3.5, 0, 0, Math.PI * 2); g.fill(); g.fillRect(hh2[0] - 5, hh2[1] - 5, 10, 5); }
     } });
     parts.sort(function (a, b) { return a.depth - b.depth; });
     for (var i = 0; i < parts.length; i++) { parts[i].draw(); }
