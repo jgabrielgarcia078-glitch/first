@@ -12,6 +12,7 @@
   --info: #6aa8d8;
   --radius: 6px;
   --font: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 14px; user-select: none; }
