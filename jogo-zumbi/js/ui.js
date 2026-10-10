@@ -356,7 +356,7 @@
   /* ================= PAINÉIS ================= */
   var PANELS = {
     inv: { title: 'Inventário', render: renderInv },
-    health: { title: 'Saúde', render: renderHealth },
+    health: { title: 'Personagem', render: renderHealth },
     skills: { title: 'Personagem', render: renderSkills },
     craft: { title: 'Artesanato e construção', render: renderCraft },
     map: { title: 'Mapa', render: renderMap },
@@ -593,6 +593,24 @@
   }
 
   /* ---------- saúde ---------- */
+  /* janela do personagem com abas (como no original): Info e Habilidades no painel 'skills'; Saúde, Proteção e Temperatura no painel 'health' */
+  var CHAR_TABS = [['info', 'Info', 'skills'], ['skills', 'Habilidades', 'skills'], ['health', 'Saúde', 'health'], ['prot', 'Proteção', 'health'], ['temp', 'Temperatura', 'health']];
+  UI.skillsTab = 'skills'; UI.healthTab = 'health';
+  function charTabs(cur) {
+    return '<div class="ctabs">' + CHAR_TABS.map(function (t) { return '<button class="ctab pe' + (t[0] === cur ? ' on' : '') + '" data-a="chartab" data-t="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div>';
+  }
+  function switchCharTab(t, fromEl) {
+    var tab = CHAR_TABS.filter(function (x) { return x[0] === t; })[0];
+    if (!tab) { return; }
+    if (tab[2] === 'skills') { UI.skillsTab = t; } else { UI.healthTab = t; }
+    var cur = fromEl ? fromEl.id.replace('p-', '') : null;
+    if (cur === tab[2]) { if (cur === 'skills') { renderSkills(); } else { renderHealth(); } return; }
+    var r = fromEl ? fromEl.getBoundingClientRect() : null;
+    if (cur) { UI.toggle(cur, false); }
+    UI.toggle(tab[2], true);
+    var el = document.getElementById('p-' + tab[2]);
+    if (el && r) { el.style.transform = 'none'; el.style.left = r.left + 'px'; el.style.top = r.top + 'px'; }
+  }
   function renderHealth() {
     var b = body('health');
     if (!b) { return; }
@@ -602,11 +620,14 @@
     var hasDis = !!Inv.find(p, function (it) { var d = D.ITEMS[it.id]; return d.med && d.med.type === 'disinfect'; }) || !!Inv.findId(p, 'whiskey');
     var hasNeedle = !!Inv.findId(p, 'suture_needle') || (!!Inv.findTag(p, 'needle') && !!Inv.findTag(p, 'thread'));
     var hasTw = !!Inv.findId(p, 'tweezers'), hasSplint = !!Inv.findId(p, 'splint');
-    var html = '<div class="row"><b style="font-size:18px">Vida: ' + Math.round(bd.health) + '%</b><span class="muted">(máx. ' + Math.round(CP.Body.maxHealth(p)) + '%)</span></div>';
+    var html = charTabs(UI.healthTab);
+    if (UI.healthTab === 'prot') { b.innerHTML = html + protectionView(p); UI.sigs.health = healthSig(); return; }
+    if (UI.healthTab === 'temp') { b.innerHTML = html + temperatureView(p); UI.sigs.health = healthSig(); return; }
+    html += '<div class="row"><b style="font-size:18px">Vida: ' + Math.round(bd.health) + '%</b><span class="muted">(máx. ' + Math.round(CP.Body.maxHealth(p)) + '%)</span></div>';
     var s = bd.stats;
     html += '<div class="muted" style="font-size:12px">Temperatura ' + s.temp.toFixed(1) + '°C · Peso ' + s.weight.toFixed(1) + ' kg' + (p.fx.nutrition ? ' · Calorias ' + Math.round(s.calories) : '') + ' · Dor ' + Math.round(CP.Body.pain(p)) + '</div>';
     if (bd.infection && bd.infection.p > 0.35) { html += '<div class="danger" style="margin:6px 0">Você está com febre alta e se sentindo cada vez pior...</div>'; }
-    html += '<div class="health-grid">' + bodyFigure(bd) + '<div class="health-list">';
+    html += '<div class="health-grid">' + bodyFigure(bd, 'health', p) + '<div class="health-list">';
     var any = false;
     D.BODY_PARTS.forEach(function (bp) {
       var part = bd.parts[bp.id];
@@ -636,25 +657,42 @@
     });
     if (!any) { html += '<div class="good" style="margin-top:8px">Nenhum ferimento.</div>'; }
     html += '</div></div>';
-    html += '<h3>Proteção das roupas</h3><table class="prot"><tr><th>Parte</th><th>Mordida</th><th>Arranhão</th></tr>' + D.BODY_PARTS.map(function (bp) { var pr = CP.Body.protection(p, bp.id); return '<tr><td>' + bp.name + '</td><td class="' + (pr.bite > 0 ? 'pv' : 'p0') + '">' + Math.round(pr.bite) + '%</td><td class="' + (pr.scratch > 0 ? 'pv' : 'p0') + '">' + Math.round(pr.scratch) + '%</td></tr>'; }).join('') + '</table>';
     b.innerHTML = html;
     UI.sigs.health = healthSig();
   }
-  function bodyFigure(bd) {
+  function bodyFigure(bd, mode, p) {
     var out = '<svg class="bodyfig" viewBox="0 0 120 222" width="120" height="222">';
     D.BODY_PARTS.forEach(function (bp) {
       var part = bd.parts[bp.id], sh = BODY_SHAPES[bp.id];
       if (!sh) { return; }
       var sev = 0, bleed = false, band = false;
       part.wounds.forEach(function (w) { sev = Math.max(sev, w.sev); if (w.bleeding && !w.bandage) { bleed = true; } if (w.bandage) { band = true; } });
-      var fill = !part.wounds.length ? '#d8d2c6' : U.mix('#d8a060', '#c0201a', Math.min(1, sev));
+      var fill = !part.wounds.length ? '#e8e4dc' : U.mix('#d8a060', '#c0201a', Math.min(1, sev));
       if (band) { fill = U.mix(fill, '#f4f0e8', 0.6); }
+      if (mode === 'prot') { var pr = CP.Body.protection(p, bp.id); var pv = Math.min(1, (pr.bite + pr.scratch) / 80); fill = pv <= 0 ? '#d8261c' : U.mix('#9a6a3a', '#e8e4dc', pv); bleed = false; }
       var cls = bleed ? ' class="bleed"' : '';
       var t = '<title>' + bp.name + (part.wounds.length ? ' — ' + part.wounds.map(function (w) { return D.WOUND_NAMES[w.type]; }).join(', ') : '') + '</title>';
       var body = sh.slice(1);
       if (sh[0] === 'e') { var a = body.split(',').map(Number); out += '<ellipse' + cls + ' cx="' + a[0] + '" cy="' + a[1] + '" rx="' + a[2] + '" ry="' + a[3] + '" fill="' + fill + '">' + t + '</ellipse>'; } else { out += '<polygon' + cls + ' points="' + body + '" fill="' + fill + '">' + t + '</polygon>'; }
     });
     return out + '</svg>';
+  }
+  function protectionView(p) {
+    var html = '<div class="health-grid">' + bodyFigure(p.body, 'prot', p) + '<table class="prot"><tr><th>Parte</th><th>Mordida</th><th>Arranhão</th></tr>' + D.BODY_PARTS.map(function (bp) { var pr = CP.Body.protection(p, bp.id); return '<tr><td>' + bp.name + '</td><td class="' + (pr.bite > 0 ? 'pv' : 'p0') + '">' + Math.round(pr.bite) + '%</td><td class="' + (pr.scratch > 0 ? 'pv' : 'p0') + '">' + Math.round(pr.scratch) + '%</td></tr>'; }).join('') + '</table></div>';
+    return html + '<div class="muted" style="font-size:11px;margin-top:6px">Vermelho = sem proteção. Roupas grossas e jaquetas protegem contra arranhões e mordidas.</div>';
+  }
+  function temperatureView(p) {
+    var s = p.body.stats, T = CP.Time;
+    var ins = CP.Body.insulation(p);
+    var feel = s.temp > 37.5 ? '<span class="warn">com calor</span>' : (s.temp < 35.9 ? '<span class="info">com frio</span>' : 'normal');
+    var html = '<table class="prot"><tr><th>Temperatura do corpo</th><td class="pv">' + s.temp.toFixed(1) + '°C (' + feel + ')</td></tr>' +
+      '<tr><th>Temperatura do ar</th><td class="pv">' + Math.round(T.temperature(true)) + '°C</td></tr>' +
+      '<tr><th>Molhado</th><td class="' + (s.wet > 0.15 ? 'p0' : 'pv') + '">' + Math.round(s.wet * 100) + '%</td></tr>' +
+      '<tr><th>Isolamento das roupas</th><td class="pv">' + ins.toFixed(2) + '</td></tr></table>';
+    html += '<h3>Roupas</h3><table class="prot"><tr><th>Peça</th><th>Isolamento</th></tr>';
+    var any = false;
+    for (var k in p.worn) { var it = p.worn[k]; if (it && D.ITEMS[it.id].cloth) { any = true; html += '<tr><td>' + esc(CP.Items.name(it)) + '</td><td class="pv">' + D.ITEMS[it.id].cloth.ins.toFixed(2) + '</td></tr>'; } }
+    return html + (any ? '' : '<tr><td colspan="2" class="p0">nenhuma</td></tr>') + '</table>';
   }
   function healthSig() {
     var p = P(), s = Math.round(p.body.health) + '|';
@@ -667,10 +705,17 @@
     var b = body('skills');
     if (!b) { return; }
     var p = P();
-    var html = '<div><b>' + esc(p.name) + '</b> — ' + esc(D.OCC[p.occupation].name) + '</div>';
-    var tr = p.traits.map(function (t) { return D.TRAIT[t] ? D.TRAIT[t].name : t; });
-    html += '<div class="muted" style="font-size:12px;margin:4px 0">Traços: ' + (tr.length ? tr.map(esc).join(', ') : 'nenhum') + '</div>';
-    html += '<div class="muted" style="font-size:12px">Dias sobrevividos: ' + Math.floor(CP.Time.daysSurvived()) + ' · Zumbis mortos: ' + p.kills + ' · Livros lidos: ' + Object.keys(p.readBooks).length + ' · Receitas: ' + p.knownRecipes.length + '</div>';
+    var html = charTabs(UI.skillsTab);
+    if (UI.skillsTab === 'info') {
+      var tr = p.traits.map(function (t) { return D.TRAIT[t] ? D.TRAIT[t].name : t; });
+      html += '<table class="prot info"><tr><th>Nome</th><td class="pv">' + esc(p.name) + '</td></tr><tr><th>Ocupação</th><td class="pv">' + esc(D.OCC[p.occupation].name) + '</td></tr>' +
+        '<tr><th>Traços</th><td class="pv">' + (tr.length ? tr.map(esc).join(', ') : 'nenhum') + '</td></tr>' +
+        '<tr><th>Peso</th><td class="pv">' + p.body.stats.weight.toFixed(1) + ' kg</td></tr>' +
+        '<tr><th>Dias sobrevividos</th><td class="pv">' + Math.floor(CP.Time.daysSurvived()) + '</td></tr><tr><th>Zumbis mortos</th><td class="pv">' + p.kills + '</td></tr>' +
+        '<tr><th>Livros lidos</th><td class="pv">' + Object.keys(p.readBooks).length + '</td></tr><tr><th>Receitas conhecidas</th><td class="pv">' + p.knownRecipes.length + '</td></tr></table>';
+      b.innerHTML = html;
+      return;
+    }
     var cat = '';
     D.SKILLS.forEach(function (s) {
       if (s.cat !== cat) { cat = s.cat; html += '<h3>' + cat + '</h3>'; }
@@ -882,6 +927,7 @@
         break;
       case 'treat': CP.Use.treat(P(), t.getAttribute('data-part'), t.getAttribute('data-k')); break;
       case 'ctab': UI.craftTab = t.getAttribute('data-t'); renderCraft(); break;
+      case 'chartab': switchCharTab(t.getAttribute('data-t'), t.closest('.panel')); break;
       case 'craft': CP.Use.craft(P(), D.RECIPE[t.getAttribute('data-id')]); setTimeout(renderCraft, 100); break;
       case 'build': CP.Build.start(D.BUILD[t.getAttribute('data-id')]); UI.toggle('craft', false); break;
       case 'boil': CP.Use.boil(P()); break;

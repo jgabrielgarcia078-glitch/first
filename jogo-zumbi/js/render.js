@@ -84,6 +84,8 @@
 
   /* ---------- quadro ---------- */
   R.draw = function (view) {
+    var sn = CP.Time && CP.Game && CP.Game.running ? CP.Time.season() : 'Verão';
+    R.season = { 'Verão': 0, 'Outono': 1, 'Inverno': 2, 'Primavera': 3 }[sn] || 0;
     var t0 = performance.now();
     var g = R.g;
     var z = R.zoom, dpr = R.dpr;
@@ -320,7 +322,7 @@
       if (!(dir & 2)) { return; }
       spr = S.obj(o, dir, 0);
     } else {
-      spr = S.obj(o, dir, 0);
+      spr = S.obj(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.season : 0);
     }
     var alpha;
     var info = OI[o];

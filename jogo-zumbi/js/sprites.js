@@ -174,7 +174,7 @@
   FLOOR_COLORS[F.WOOD] = ['#8a5a32', '#7c5230', '#946238', '#6c4a2e'];
   FLOOR_COLORS[F.TILE] = ['#d8dcd8', '#cfd6da', '#ddd6c8', '#d4d0c8'];
   FLOOR_COLORS[F.CARPET] = ['#7a4a52', '#4f5f7c', '#5f6e4a', '#8a6e48'];
-  FLOOR_COLORS[F.WATER] = ['#2f5f7a', '#2c5c77', '#32637e', '#2d5a74'];
+  FLOOR_COLORS[F.WATER] = ['#2d5560', '#2b525d', '#2f5863', '#29505a'];
   FLOOR_COLORS[F.SAND] = ['#c9b588', '#c5b184', '#cdb98c', '#c2ae81'];
   FLOOR_COLORS[F.FARM] = ['#5b4632', '#58432f', '#5e4934', '#56412e'];
   FLOOR_COLORS[F.FURROW] = ['#5b4632', '#58432f', '#5e4934', '#56412e'];
@@ -288,7 +288,7 @@
       for (i = 0; i < 160; i++) { g.fillStyle = U.shade(base, 0.86 + rng.next() * 0.26); g.fillRect(rng.next() * TW, rng.next() * TH, 1, 1); }
       if (rng.chance(0.2)) { var cs = ip(rng.next(), rng.next(), 0); g.fillStyle = 'rgba(40,25,15,0.15)'; g.beginPath(); g.ellipse(cs[0] + HW, cs[1], rng.range(4, 9), rng.range(2, 4), 0, 0, Math.PI * 2); g.fill(); }
     } else if (f === F.WATER) {
-      for (i = 0; i < 6; i++) { x = rng.next() * TW; y = rng.next() * TH; g.strokeStyle = 'rgba(200,230,255,0.25)'; g.beginPath(); g.moveTo(x, y); g.lineTo(x + 8, y); g.stroke(); }
+      for (i = 0; i < 26; i++) { x = rng.next() * TW; y = rng.next() * TH; var wl = rng.range(3, 8); g.strokeStyle = rng.chance(0.6) ? 'rgba(170,210,215,0.18)' : 'rgba(10,25,30,0.3)'; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + wl / 2, y - 1, x + wl, y); g.stroke(); }
     } else if (f === F.ROOF) {
       for (i = 0; i <= 8; i++) { tline(0, i / 8, 1, i / 8, U.shade(base, 0.8), 1); }
       for (i = 0; i < 8; i++) { for (var k = 0; k < 4; k++) { var ox = (k + (i % 2) * 0.5) / 4; tline(ox, i / 8, ox, (i + 1) / 8, U.shade(base, 0.85), 1); } }
@@ -498,6 +498,9 @@
               wquad(g, side, Math.max(0, u0b), Math.min(1, u1b), r * 5 + 1, r * 5 + 4.6, U.shade(st.base, faceF * (0.82 + brng.next() * 0.3)), ox, oy);
             }
           }
+        } else if (st.ribs) {
+          for (var rb = 0; rb < 16; rb++) { var ru = rb / 16; wquad(g, side, ru, ru + 0.03, 0, H, U.shade(st.base, faceF * 1.12), ox, oy); wquad(g, side, ru + 0.035, ru + 0.055, 0, H, U.shade(st.base, faceF * 0.72), ox, oy); }
+          wline(g, side, 0, H * 0.5, 1, H * 0.5, U.shade(st.base, faceF * 0.6), 1, ox, oy);
         } else if (st.tiles) {
           for (var r2 = 0; r2 < H / 10; r2++) { wline(g, side, 0, r2 * 10, 1, r2 * 10, U.shade(st.base, faceF * 0.88), 1, ox, oy); }
           for (var b2 = 1; b2 < 4; b2++) { wline(g, side, b2 / 4, 0, b2 / 4, H, U.shade(st.base, faceF * 0.88), 1, ox, oy); }
@@ -636,8 +639,8 @@
     var rng = new U.Rng(o * 131 + dir * 17 + (extra || 0) * 7 + 3);
     var bw, bx;
     switch (o) {
-      case O.TREE: drawTree(g, rng, dir); break;
-      case O.TREE_PINE: drawPine(g, rng, dir); break;
+      case O.TREE: drawTree(g, rng, dir, extra || 0); break;
+      case O.TREE_PINE: drawPine(g, rng, dir, extra || 0); break;
       case O.BUSH: drawBush(g, rng); break;
       case O.TALL_GRASS: drawGrass(g, rng); break;
       case O.BED_HEAD:
@@ -763,11 +766,32 @@
       case O.SHELF: break;
     }
   }
-  function drawTree(g, rng, v) {
+  /* galhos recursivos (árvore sem folhas no inverno) */
+  function branches(g, x, y, ang, len, w, depth, rng, col) {
+    var x2 = x + Math.cos(ang) * len, y2 = y + Math.sin(ang) * len;
+    g.strokeStyle = col; g.lineWidth = w; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x2, y2); g.stroke();
+    if (depth <= 0 || w < 0.6) { return; }
+    var n = 2 + (rng.chance(0.4) ? 1 : 0);
+    for (var i = 0; i < n; i++) { branches(g, x2, y2, ang + rng.range(-0.75, 0.75), len * rng.range(0.6, 0.78), w * 0.68, depth - 1, rng, col); }
+  }
+  var SEASON_GREENS = [
+    [['#20361a', '#33572a', '#416b31', '#55823c'], ['#2a3a18', '#435d26', '#52702d', '#6b8a3a'], ['#1d3320', '#2f5032', '#3b623c', '#4f7a4a'], ['#33391a', '#56672a', '#6a7d33', '#83963f']],
+    [['#3a2010', '#8a3a18', '#b85a20', '#d8902a'], ['#40180e', '#9a2a1a', '#c0401e', '#e06a2a'], ['#3a3010', '#8a6a18', '#c09a28', '#e0c040'], ['#2a2a14', '#6a5a1e', '#9a7a2a', '#c08a30']],
+    null,
+    [['#24401c', '#3e6a2c', '#58903a', '#7ab04a'], ['#2a4420', '#4a7a32', '#6aa040', '#8ec458'], ['#3a2a30', '#8a5a70', '#c890a8', '#f0c0d0'], ['#24401c', '#3e6a2c', '#58903a', '#7ab04a']]
+  ];
+  function drawTree(g, rng, v, season) {
     var t = ip(0.5, 0.5, 0);
-    var greens = [['#20361a', '#33572a', '#416b31', '#55823c'], ['#2a3a18', '#435d26', '#52702d', '#6b8a3a'], ['#1d3320', '#2f5032', '#3b623c', '#4f7a4a'], ['#33391a', '#56672a', '#6a7d33', '#83963f']][v % 4];
     var hgt = 58 + rng.int(0, 14), rx = 34 + rng.int(0, 8), ry = 30 + rng.int(0, 6);
     groundShadow(g, t[0], t[1], rx + 6, (rx + 6) * 0.45);
+    if (season === 2) { // inverno: sem folhas
+      trunk(g, t[0], t[1], hgt, 9, 5, '#5a4636');
+      var br = new U.Rng(v * 71 + 9);
+      for (var k = 0; k < 4; k++) { branches(g, t[0], t[1] - hgt + 6 + k * 4, -Math.PI / 2 + br.range(-0.9, 0.9), br.range(16, 24), 2.6, 4, br, k % 2 ? '#4a3a2c' : '#5e4a38'); }
+      return;
+    }
+    var greens = SEASON_GREENS[season || 0][v % 4];
     trunk(g, t[0], t[1], hgt + 10, 9, 5, '#5a4130');
     g.strokeStyle = '#4a3424'; g.lineCap = 'round';
     for (var i = 0; i < 3; i++) {
@@ -775,10 +799,11 @@
       g.lineWidth = 3 - i * 0.6; g.beginPath(); g.moveTo(t[0], by); g.lineTo(t[0] + dir * rng.range(10, 18), by - rng.range(12, 20)); g.stroke();
     }
     g.lineCap = 'butt';
-    var fo = foliage(t[0], t[1] - hgt - ry * 0.55, rx, ry, 18 + rng.int(0, 6), greens, rng, 13);
+    var fo = foliage(t[0], t[1] - hgt - ry * 0.55, rx, ry, 18 + rng.int(0, 6) - (season === 1 ? 4 : 0), greens, rng, 13);
     g.drawImage(fo.c, fo.x, fo.y);
+    if (season === 1) { for (var f = 0; f < 10; f++) { var lp = ip(rng.range(0.1, 0.9), rng.range(0.1, 0.9), 0); g.fillStyle = rng.pick(['#b85a20', '#d8902a', '#9a2a1a']); g.fillRect(lp[0] + rng.range(-20, 20), lp[1], 2, 1); } }
   }
-  function drawPine(g, rng, v) {
+  function drawPine(g, rng, v, season) {
     var t = ip(0.5, 0.5, 0);
     groundShadow(g, t[0], t[1], 26, 11);
     trunk(g, t[0], t[1], 40, 7, 4, '#4f3826');

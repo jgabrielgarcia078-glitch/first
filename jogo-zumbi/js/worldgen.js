@@ -841,6 +841,7 @@
     var fill = SHOP_FILL[kind] || SHOP_FILL.grocery;
     var bld = newBuilding(ctx, r, kind, 1);
     var ext = rng.pick([3, 5, 11, 0, 2]);
+    if (kind === 'warehouse') { ext = 12; } // galpão: metal ondulado
     // fundos: depósito com 3-4 de profundidade
     var back = { N: 'S', S: 'N', E: 'W', W: 'E' }[front];
     var depth = Math.min(4, Math.floor((front === 'N' || front === 'S' ? r.h : r.w) / 3));

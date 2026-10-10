@@ -64,7 +64,8 @@
     { name: 'papel azul', base: '#a8b8c4', trim: '#e2ddd0', interior: true, pattern: 'diamond' },
     { name: 'azulejo', base: '#d7dee0', trim: '#a7b0b3', interior: true, tiles: true },
     { name: 'madeira', base: '#8a6440', trim: '#5f432a', interior: true, pattern: 'boards' },
-    { name: 'concreto', base: '#8d8d88', trim: '#62625e' }
+    { name: 'concreto', base: '#8d8d88', trim: '#62625e' },
+    { name: 'metal ondulado', base: '#8c9094', trim: '#5c6064', ribs: true }
   ];
   C.EXTERIOR_STYLES = [0, 1, 2, 3, 4, 5];
   C.INTERIOR_STYLES = [6, 7, 8, 10, 0];

@@ -274,3 +274,25 @@ table.prot td.pv { color: #e8e4d8; }
 
 #p-health { background: rgba(0,0,0,0.9); }
 .pane-main { min-height: 150px; }
+
+/* janela do personagem: abas no alto (Info, Habilidades, Saúde, Proteção, Temperatura) */
+#p-skills, #p-health { background: rgba(0,0,0,0.9); width: 560px; }
+.ctabs { display: flex; gap: 1px; margin: -4px -6px 8px; border-bottom: 1px solid #3a3a38; }
+.ctab { padding: 3px 10px; font-size: 12px; border-radius: 0; background: #141414; border: 1px solid #333; border-bottom: none; color: #b8b4a8; }
+.ctab.on { background: #2e2d2a; color: #fff; border-color: #6a6658; }
+.ctab:hover:not(:disabled) { background: #242422; }
+table.prot.info th { padding-right: 18px; }
+/* habilidades: 10 quadradinhos amarelos por habilidade, agrupadas */
+#p-skills h3 { margin: 8px 0 2px; font-size: 13px; color: #e8e4d8; text-transform: none; letter-spacing: 0; }
+.skill { grid-template-columns: 140px 1fr 40px; padding: 1px 0 1px 10px; font-size: 12px; color: #c8c4b8; }
+.pips { gap: 1px; }
+.pips i { width: 11px; height: 11px; border-radius: 0; background: #111; border: 1px solid #4a4a46; box-shadow: none; }
+.pips i.on { background: linear-gradient(#f2dc6a, #c8a828); border-color: #8a7420; }
+.xpbar { height: 2px; background: #1a1a1a; }
+.xpbar i { background: #d8c050; }
+/* lista do inventário: janela escura, nome claro e categoria em laranja */
+.pane { background: rgba(8,8,8,0.82); }
+.pane .item .nm { color: #f0ece4; }
+.pane .item .cat { color: #e0983a; }
+.pane .item:nth-child(even) { background: rgba(255,255,255,0.02); }
+.pane .item:hover { background: rgba(120,140,170,0.25); }
