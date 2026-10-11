@@ -157,7 +157,7 @@ z6.target = { x: up.x + 0.5, y: up.y + 0.5, z: 1 }; z6.memT = 999; z6.state = 'i
 G.zombies.push(z6);
 // o jogador fica dentro do raio de simulação (C.ZOMBIE.ACTIVE_IN), mas longe da casa
 p.x = startT.x + 0.5 + 28; p.y = startT.y + 0.5; p.z = 0;
-for (let i = 0; i < 80 * 30 && !(z6.z >= 0.999 && !W.stairAt(Math.floor(z6.x), Math.floor(z6.y))); i++) { G.tick(1 / 30, 1); z6.memT = 999; if (z6.state === 'idle' || z6.state === 'wander') { z6.state = 'investigate'; z6.target = { x: up.x + 0.5, y: up.y + 0.5, z: 1 }; } }
+for (let i = 0; i < 80 * 30 && !(z6.z >= 0.999 && !W.stairAt(Math.floor(z6.x), Math.floor(z6.y))); i++) { G.tick(1 / 30, 1); z6.memT = 999; if (G.zombies.length > 1) { clearZombies(); G.zombies.push(z6); } /* só o zumbi do teste: os do bairro não podem atacar o jogador aqui */ if (z6.state === 'idle' || z6.state === 'wander') { z6.state = 'investigate'; z6.target = { x: up.x + 0.5, y: up.y + 0.5, z: 1 }; } }
 ok(z6.z >= 0.999 && !W.stairAt(Math.floor(z6.x), Math.floor(z6.y)), 'zumbi subiu a escada e chegou ao andar de cima (z=' + z6.z.toFixed(2) + ', estado ' + z6.state + ')');
 
 /* ---------- necessidades ao longo de um dia ---------- */

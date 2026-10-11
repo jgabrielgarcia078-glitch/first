@@ -243,6 +243,8 @@
       if (zb.state !== 'idle' && zb.state !== 'wander') { continue; }
       var d2 = U.dist2(zb.x, zb.y, p.x, p.y);
       if (d2 > R2 || d2 < 4 || Math.abs(zb.z - p.z) > 0.5 || Math.random() > ZC.LIGHT_CHANCE) { continue; }
+      var cone = ZC.SIGHT_CONE_DEG * Math.PI / 360;
+      if (Math.abs(U.angleDiff(zb.ang, Math.atan2(p.y - zb.y, p.x - zb.x))) > cone) { continue; }   // só quem está olhando para lá
       if (!W.lineOfSight(zb.x, zb.y, p.x, p.y, lz, 60)) { continue; }
       zb.target = { x: p.x + U.randRange(-2, 2), y: p.y + U.randRange(-2, 2), z: p.z };
       zb.memT = ZC.MEMORY_SECONDS * 0.5; zb.state = 'investigate'; zb.path = null; zb.repathT = U.randRange(0, 0.5);

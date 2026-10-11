@@ -486,13 +486,13 @@ if (car) {
     const a = i / 8 * 6.283, zx = q.x + Math.cos(a) * 15, zy = q.y + Math.sin(a) * 15;
     if (!W.tileWalkable(Math.floor(zx), Math.floor(zy), 0)) continue;
     const zd = CP.Zombies.makeData(new U.Rng(1000 + i), zx, zy, 0); zd.crawler = false; zd.fakeDead = false;
-    const zb = CP.Zombies.fromData(zd); zb.state = 'idle'; zb.idleT = 999; zb.ang = a; G.zombies.push(zb); zs.push(zb);
+    const zb = CP.Zombies.fromData(zd); zb.state = 'idle'; zb.idleT = 999; zb.ang = a + Math.PI; G.zombies.push(zb); zs.push(zb);
   }
   q.flashlightOn = false; G.updateFov(true); tick(4);
   zs.forEach(z => { if (!toMeEarly(z)) { z.state = 'idle'; z.target = null; } });
   const toMe = z => (z.state === 'investigate' || z.state === 'chase') && z.target && U.dist(z.target.x, z.target.y, q.x, q.y) < 4;
   ok(!zs.some(toMe), 'sem luz, zumbis longe não reparam no jogador à noite (' + zs.map(z => z.state + (z.target ? '@' + (z.target.x - q.x).toFixed(0) + ',' + (z.target.y - q.y).toFixed(0) : '')).join(' ') + ' luz ' + CP.Vis.lightAt(Math.floor(q.x), Math.floor(q.y), 0).toFixed(2) + ')');
-  CP.Items.Inv.give(q, CP.Items.make('flashlight')); q.flashlightOn = true; tick(5);
+  CP.Items.Inv.give(q, CP.Items.make('flashlight')); q.flashlightOn = true; tick(9);
   ok(zs.some(toMe), 'lanterna acesa à noite chama zumbis de longe (' + zs.filter(toMe).length + '/' + zs.length + ')');
   q.flashlightOn = false; clearZombies(); G.state.time = t1;
 }
