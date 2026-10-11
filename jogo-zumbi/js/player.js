@@ -245,6 +245,11 @@
     if (w.back) { var bid = w.back.id; bag = bid === 'military_bag' ? '#4a5a3a' : (bid === 'schoolbag' ? '#8a2f2f' : '#5a4a3a'); }
     var lk = CP.Spr.buildLook({ skin: l.skin, hair: l.hair, hairStyle: l.hairStyle, beard: l.beard, female: p.female, blood: p.bloodSpots || null, bag: bag, seed: 0 },
       [w.hat, w.neck, w.shirt, w.jacket, w.vest, w.pants, w.shoes, w.gloves]);
+    // arma longa guardada vai pendurada nas costas (como no original)
+    var bw = null;
+    for (var bi = 0; bi < p.inv.length && !bw; bi++) { var bd = D.ITEMS[p.inv[bi].id]; if (bd.weapon && /^(blunt_long|axe|spear|blade_long|rifle|shotgun)$/.test(bd.weapon.type)) { bw = bd.weapon.type; } }
+    if (!bw && p.worn.back && p.worn.back.items) { for (var bj = 0; bj < p.worn.back.items.length && !bw; bj++) { var bd2 = D.ITEMS[p.worn.back.items[bj].id]; if (bd2.weapon && /^(blunt_long|axe|spear|blade_long|rifle|shotgun)$/.test(bd2.weapon.type)) { bw = bd2.weapon.type; } } }
+    if (bw) { lk.backWeapon = bw; }
     // molhado: roupa e cabelo mais escuros (em 4 degraus, para o cache de cores)
     var wet = p.body && p.body.stats ? p.body.stats.wet || 0 : 0;
     if (wet > 0.12) {
@@ -265,6 +270,13 @@
       down: p.sleeping || p.dead, dead: p.dead, t: now,
       struggle: p.anim.struggle > 0 ? Math.min(1, p.anim.struggle / 0.3) : 0
     };
+    // sentado (cadeira/sofá ou chão), lendo, comendo, dormindo coberto na cama
+    var ob = W.obj(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z)), oinf = ob ? C.OBJ_INFO[ob] : null;
+    var anim = p.action ? p.action.opts.anim : null;
+    if ((p.sitting || anim === 'sit' || anim === 'read') && !p.moving && !p.dead && !p.sleeping) { pose.sit = oinf && (oinf.seat || ob === C.OBJ.SOFA || ob === C.OBJ.CHAIR || ob === C.OBJ.BENCH) ? 1 : 2; }
+    if (anim === 'read') { pose.read = 1; }
+    if (anim === 'eat') { pose.sip = now + 0.01; pose.weapon = null; }
+    if (p.sleeping && oinf && oinf.bed && ob !== C.OBJ.SOFA) { pose.cover = '#5f6f8c'; }
     var exA = p.action && p.action.opts.exercise;
     if (exA) { // exercício: flexão deitado, agachamento, abdominal e polichinelo
       var ph = Math.sin(now * (exA === 'jack' ? 7 : 4));

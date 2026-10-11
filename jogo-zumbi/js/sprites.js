@@ -1909,13 +1909,15 @@
     var bob = mv * Math.abs(Math.sin(ph)) * (pose.run ? 2.4 : 1.2);
     if (Zb && mv) { bob = Math.max(0, Math.sin(ph) * limpSide) * 2.4; }
     var kneel = pose.kneel || 0, eatT = pose.eat || 0, stag = pose.stagger || 0, strug = pose.struggle || 0, tt0 = pose.t || 0;
+    var sit = pose.sit || 0, readB = pose.read || 0, sip = pose.sip || 0;   // sentado (1 cadeira, 2 chão), lendo, comendo/bebendo
+    var style = pose.attack ? (ATTACK_STYLE[pose.weapon] || 'swing') : '';
     var lean = (pose.crouch ? 0.1 : 0) + (pose.run ? 0.08 : 0) + (Zb ? 0.11 : 0) + (pose.lunge ? 0.08 : 0) + kneel * 0.2 + (eatT ? 0.16 + 0.05 * Math.sin(eatT * 5) : 0) - stag * 0.16 - strug * 0.1;
     var swayX = Zb ? Math.sin(ph * 0.5 + seed) * 1.6 : 0;
     var legH = H * 0.49, hipH = H * 0.53, waistH = H * 0.63, chestH = H * 0.72, shH = H * 0.8;
     var headH = H * 0.905 - (Zb ? 2.5 : 0);
     function leanAt(h) { return h <= legH ? lean * 0.15 : lean * (0.15 + 0.85 * (h - legH) / (shH - legH)); }
     // ajoelhado: tudo do quadril para cima desce (as pernas são montadas à parte em drawLeg)
-    var drop = kneel * legH * 0.5, dropFrom = legH * 0.45, dropFull = legH * 0.75;
+    var drop = kneel * legH * 0.5 + (sit === 1 ? legH * 0.48 : (sit === 2 ? legH * 0.82 : 0)), dropFrom = legH * 0.45, dropFull = legH * 0.75;
     function P(fwd, side, h, nodrop) {
       var a = fx * fwd + rx * side, b = fy * fwd + ry * side;
       var k = h >= legH ? 1 : h / legH;
@@ -1981,6 +1983,13 @@
       var knee = P(sw * 0.2 + kneeF, side * legSp * 1.04, legH * 0.5 + lift * 0.4, true);
       var ankle = P(sw * 0.36, side * legSp * 1.08, lift + 2, true);
       var heel = P(sw * 0.36 - 0.035, side * legSp * 1.08, lift + 1.3, true), toe = P(sw * 0.36 + 0.095, side * legSp * 1.1, lift + 0.9, true);
+      if (sit === 1) { // sentado na cadeira: coxa para a frente, canela para baixo
+        knee = P(0.3, side * legSp * 1.15, legH * 0.52, true); ankle = P(0.3, side * legSp * 1.1, 2, true);
+        heel = P(0.27, side * legSp * 1.1, 1.3, true); toe = P(0.4, side * legSp * 1.12, 0.9, true);
+      } else if (sit === 2) { // sentado no chão: pernas esticadas para a frente, joelhos um pouco dobrados
+        knee = P(0.25, side * legSp * 1.2, legH * 0.24, true); ankle = P(0.47, side * legSp * 1.15, 2, true);
+        heel = P(0.47, side * legSp * 1.15, 1.4, true); toe = P(0.53, side * legSp * 1.15, 4, true);
+      }
       if (kneel > 0) { // joelhos no chão na frente, canelas deitadas para trás
         var kb = side * (side === limpSide ? 0.03 : 0);
         knee = lerp2(knee, P(0.16 + kb, side * legSp * 1.2, 2.2, true), kneel);
@@ -2022,7 +2031,21 @@
       var L = leanAt(shH);
       var sh = P(L, side * shW * 0.9, shH - 2.4 - (side === shDrop ? 2 : 0));
       var hand, elbow;
-      if (eatT) { // comendo: as mãos rasgam o corpo no chão, alternando
+      var h1 = armPos[1] ? armPos[1][2] : null;
+      if (!wh && h1 && (style === 'overhead' || style === 'thrust')) { // arma de duas mãos: a outra mão segura logo abaixo
+        hand = [h1[0] - (style === 'thrust' ? HW * fx * 0.1 : 1.5), h1[1] + (style === 'thrust' ? 1 : 4)];
+        elbow = lerp2(sh, hand, 0.5); elbow = [elbow[0] + side * nearSide * 2, elbow[1] + 1];
+      } else if (readB) { // lendo: as duas mãos seguram o livro na frente do peito
+        hand = P(L + 0.2, side * 0.055, waistH + 3);
+        elbow = P(L + 0.05, side * (shW + 0.02), waistH - 1);
+      } else if (sip && wh) { // levando a comida/bebida à boca
+        var kS = (Math.sin(sip * 3) + 1) / 2;
+        hand = lerp2(P(L + 0.16, 0.08, waistH + 1), P(L + 0.1, 0.03, headH - 3), kS);
+        elbow = P(L + 0.04, side * (shW + 0.04), waistH);
+      } else if (sit && !pose.attack) { // mãos nas coxas
+        hand = P(0.17, side * 0.1, sit === 1 ? legH * 0.62 : legH * 0.3, true);
+        elbow = lerp2(sh, hand, 0.5); elbow = [elbow[0] + side * nearSide * 2, elbow[1]];
+      } else if (eatT) { // comendo: as mãos rasgam o corpo no chão, alternando
         var te = eatT * 5 + side * 1.9, up = Math.max(0, Math.sin(te));
         hand = P(L + 0.3 + up * 0.05, side * 0.08, 3 + up * 9, true);
         elbow = lerp2(sh, hand, 0.5); elbow = [elbow[0] + side * nearSide * 2.5, elbow[1] - 2];
@@ -2045,6 +2068,14 @@
         var dang = Math.sin(ph * 0.5 + side) * 0.03;
         hand = P(leanAt(hipH) + 0.14 + dang - sw * 0.1, side * (shW - 0.01), hipH + 1 - (side === shDrop ? 2 : 0));
         elbow = P(leanAt(waistH) + 0.07, side * (shW + 0.015), waistH + 1);
+      } else if (pose.attack && wh && style === 'overhead') { // machado/taco: levanta acima da cabeça e desce
+        var ao = pose.attack;
+        if (ao < 0.45) { hand = lerp2(P(L + 0.05, 0.15, shH - 4), P(L - 0.08, 0.1, shH + 17), ao / 0.45); } else { hand = lerp2(P(L - 0.08, 0.1, shH + 17), P(L + 0.42, 0.04, shH - 13), Math.min(1, (ao - 0.45) / 0.55 * 1.7)); }
+        elbow = P(L + 0.02, side * 0.2, shH + (ao < 0.6 ? 4 : -4));
+      } else if (pose.attack && wh && style === 'thrust') { // lança/faca: puxa e estoca para a frente
+        var at = pose.attack, reach = pose.weapon === 'spear' ? 0.55 : 0.42;
+        hand = at < 0.4 ? lerp2(P(L + 0.08, 0.14, shH - 6), P(L - 0.1, 0.16, shH - 6), at / 0.4) : lerp2(P(L - 0.1, 0.16, shH - 6), P(L + reach, 0.03, shH - 4), Math.min(1, (at - 0.4) / 0.6 * 2.2));
+        elbow = P(L + 0.04, side * 0.2, shH - 7);
       } else if (pose.attack && wh) {
         var a = pose.attack;
         var t = a < 0.45 ? a / 0.45 : 1 - (a - 0.45) / 0.55 * 0.6;
@@ -2085,7 +2116,13 @@
       }
       if (Zb && sleeve !== 'long') { var m2 = lerp2(el, hd, 0.4); g.fillStyle = 'rgba(70,35,50,0.4)'; g.beginPath(); g.arc(m2[0], m2[1], 1.3, 0, TAU); g.fill(); }
       blob(g, hd[0], hd[1] + 0.3, F ? 1.3 : 1.5, F ? 1.5 : 1.7, look.gloves ? dk(look.gloves, kk) : sk, false);
-      if (side === 1 && pose.weapon && !Zb) { drawWeapon(g, hd, pose, fx, fy, lf); }
+      if (side === 1 && pose.weapon && !Zb && !readB) { drawWeapon(g, hd, pose, fx, fy, lf, style); }
+      if (side === 1 && sip) { blob(g, hd[0] + 1, hd[1] - 1.5, 1.6, 2.2, col(pose.sipCol || '#b8b4a8')); }
+      if (side === nearSide && readB) { // livro aberto entre as mãos
+        var m0 = lerp2(armPos[-1][2], armPos[1][2], 0.5);
+        g.fillStyle = col(pose.bookCol || '#7a2e22'); g.fillRect(m0[0] - 4.5, m0[1] - 3.6, 9, 5);
+        g.fillStyle = col('#ece6d4'); g.fillRect(m0[0] - 3.8, m0[1] - 3.2, 3.5, 3.6); g.fillRect(m0[0] + 0.3, m0[1] - 3.2, 3.5, 3.6);
+      }
     }
 
     /* ----- quadril, saia, tronco ----- */
@@ -2350,23 +2387,33 @@
     }
 
     /* ----- ordem de desenho ----- */
-    armJoints(-1); armJoints(1);
+    armJoints(1); armJoints(-1);
     var weaponFront = !Zb && (pose.attack || pose.aim) ? 1 : 0;
     var farSide = -nearSide;
     if (frontNear) { hairBack(); }
     if (look.bag && frontNear) { bag(); }
+    if (look.backWeapon && frontNear) { backWeapon(); }
     if (!(weaponFront && farSide === 1)) { drawArm(farSide); }
     legs();
     pelvis();
     skirt();
     torso();
     if (look.bag && !frontNear) { bag(); }
+    if (look.backWeapon && !frontNear) { backWeapon(); }
     if (!frontNear) { hairBack(); }
     drawArm(nearSide);
     head();
     if (weaponFront && farSide === 1) { drawArm(1); }
     g.restore();
 
+    function backWeapon() { // arma pendurada nas costas, na diagonal
+      var L = leanAt(shH), wlk = WEAPON_LOOK[look.backWeapon] || WEAPON_LOOK.tool;
+      var a = P(L - 0.13, -0.13, shH + 9), b = P(L - 0.12, 0.13, hipH - 3);
+      var off = iso(-fx * 0.04, -fy * 0.04);
+      limb(g, [a[0] + off[0], a[1] + off[1]], [b[0] + off[0], b[1] + off[1]], wlk.r0 + 0.3, wlk.r1 + 0.3, shq(wlk.stock || wlk.c, lf * 0.9));
+      if ((wlk.axe || wlk.head) && !frontNear) { blob(g, a[0] + off[0], a[1] + off[1], 2.4, 2, shq(wlk.axe || wlk.head, lf)); }
+      if (wlk.grip) { limb(g, [b[0] + off[0], b[1] + off[1]], lerp2([b[0] + off[0], b[1] + off[1]], [a[0], a[1]], 0.2), 1.2, 1.2, shq(wlk.grip, lf)); }
+    }
     function bag() {
       var L = leanAt(shH);
       var lv = [ext(hipH + 3, 0.12, 0.07), ext(shH - 2, 0.13, 0.08)];
@@ -2388,9 +2435,21 @@
     pistol: { len: 0.16, r0: 1.5, r1: 1.3, c: '#26282a' }, rifle: { len: 0.62, r0: 1.7, r1: 1.1, c: '#26282a', stock: '#5a3f28' }, shotgun: { len: 0.6, r0: 1.8, r1: 1.4, c: '#26282a', stock: '#5a3f28' },
     tool: { len: 0.3, r0: 1, r1: 1, c: '#8a6a40', head: '#777777' }
   };
-  function drawWeapon(g, hand, pose, fx, fy, lf) {
+  /* jeito de golpear de cada tipo de arma */
+  var ATTACK_STYLE = { blunt_long: 'overhead', axe: 'overhead', spear: 'thrust', blade_short: 'thrust' };
+  S.ATTACK_STYLE = ATTACK_STYLE;
+  function drawWeapon(g, hand, pose, fx, fy, lf, style) {
     var wl = WEAPON_LOOK[pose.weapon] || WEAPON_LOOK.tool;
     var dirx = fx, diry = fy;
+    if (style === 'overhead' || style === 'thrust') { // por cima ou estocada: a arma aponta para cima/trás e depois para a frente
+      var aa = pose.attack, kk2 = style === 'overhead' ? (aa < 0.45 ? 0 : Math.min(1, (aa - 0.45) / 0.55 * 1.7)) : 1;
+      var lenK = style === 'overhead' ? -0.35 + kk2 * 1.35 : 1;
+      var tw = iso(fx * wl.len * lenK, fy * wl.len * lenK);
+      var upO = style === 'overhead' ? (1 - kk2) * 24 + kk2 * -5 : 2;
+      var tipO = [hand[0] + tw[0], hand[1] + tw[1] - upO];
+      drawWeaponShape(g, hand, tipO, wl, lf);
+      return;
+    }
     if (pose.attack) {
       var a = pose.attack, t = a < 0.45 ? a / 0.45 : 1;
       var an = Math.atan2(fy, fx) + (1 - t) * 1.6 - 0.5;
@@ -2402,6 +2461,9 @@
     if (!pose.attack && !pose.aim && (pose.weapon === 'blunt_long' || pose.weapon === 'axe' || pose.weapon === 'spear' || pose.weapon === 'blade_long')) {
       tip = [hand[0] + tipW[0] * 0.4, hand[1] + tipW[1] * 0.4 + 18]; // arma baixa, apontando para o chão
     }
+    drawWeaponShape(g, hand, tip, wl, lf);
+  }
+  function drawWeaponShape(g, hand, tip, wl, lf) {
     var dx = tip[0] - hand[0], dy = tip[1] - hand[1], L = Math.sqrt(dx * dx + dy * dy) || 1;
     var ux = dx / L, uy = dy / L;
     if (wl.stock) { limb(g, [hand[0] - ux * 5, hand[1] - uy * 5 + 1], hand, 1.9, 1.5, shq(wl.stock, lf)); }
@@ -2498,6 +2560,12 @@
       blob(g, hd[0], hd[1], 1.9, 1.9, look.gloves ? col(look.gloves) : col(skin));
     }
     armL(-1); armL(1);
+    if (pose.cover) { // coberto na cama: cobertor dos pés até o peito
+      var c1 = Q(-0.72, -0.24, 2), c2 = Q(-0.72, 0.24, 2), c3 = Q(0.3, 0.26, 4.5), c4 = Q(0.3, -0.26, 4.5), cm = Q(-0.2, 0, 7);
+      g.beginPath(); g.moveTo(c1[0], c1[1]); g.lineTo(c2[0], c2[1]); g.quadraticCurveTo(cm[0] + 4, cm[1], c3[0], c3[1]); g.lineTo(c4[0], c4[1]); g.quadraticCurveTo(cm[0] - 4, cm[1], c1[0], c1[1]); g.closePath();
+      g.fillStyle = col(pose.cover); g.fill();
+      var fold = [Q(0.24, -0.26, 4.8), Q(0.24, 0.26, 4.8)]; g.strokeStyle = col(U.mix(pose.cover, '#ffffff', 0.35)); g.lineWidth = 2; g.beginPath(); g.moveTo(fold[0][0], fold[0][1]); g.lineTo(fold[1][0], fold[1][1]); g.stroke();
+    }
     // cabeça
     var hh = crawl ? 5 : 2.5;
     var hc = Q(0.47, dead ? ((sd & 3) - 1.5) * 0.03 : 0, hh);

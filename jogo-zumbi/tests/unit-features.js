@@ -804,5 +804,15 @@ if (car) {
   const bl = CP.Body.belongings(q);
   ok(bl.length >= Inv.all(q).length && bl.some(i => i.id === 'house_key'), 'pertences incluem inventário, mãos e roupas (' + bl.length + ')');
 }
+
+/* ---------- T1: golpes por arma, arma nas costas ---------- */
+{
+  const q = G.player;
+  ok(CP.Spr.ATTACK_STYLE.axe === 'overhead' && CP.Spr.ATTACK_STYLE.spear === 'thrust' && !CP.Spr.ATTACK_STYLE.blunt_short, 'cada tipo de arma golpeia de um jeito');
+  q.inv = q.inv.filter(i => !CP.D.ITEMS[i.id].weapon);
+  ok(!CP.Player.lookFor(q).backWeapon, 'sem arma longa guardada, nada nas costas');
+  Inv.give(q, CP.Items.make('axe'));
+  ok(CP.Player.lookFor(q).backWeapon === 'axe', 'machado guardado aparece nas costas');
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);
