@@ -30,13 +30,15 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 | B | Artesanato e construção |
 | M | Mapa (clique anota com um símbolo e texto; botão direito apaga) |
 | N | Mostrar / esconder o minimapa |
+| O | Modo de busca: anda devagar procurando coisas no chão (frutas, cogumelos, minhocas, gravetos, pedras, ervas) |
+| Clique esquerdo agachado, com faca, atrás de um zumbi distraído | Matar em silêncio |
 | Arrastar itens | Entre as janelas e abas do inventário, para "Equipado e vestido" (veste/empunha) ou para fora (larga no chão) |
 | 1 a 5 | Atalhos (equipar item) |
 | [ e ] | Velocidade do tempo (só sem zumbis por perto) |
 | Roda do mouse / + − | Zoom |
 | Esc | Fechar janela / pausa |
 | F1 | Ajuda |
-| No carro | G liga o motor · W/S acelera e freia · A/D vira · Espaço freia · E sai |
+| No carro | G liga o motor · W/S acelera e freia · A/D vira · Espaço freia · Q buzina · R rádio · L sirene (viatura e ambulância) · E sai |
 
 ## O que tem no jogo
 
@@ -64,7 +66,14 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 - **Grandes hordas** que atravessam a região de tempos em tempos (dá para ouvir chegando).
 - **Mecânica de carro por peça**: motor, bateria, 4 pneus e para-brisa, com tirar, trocar e consertar.
 - **Bilhetes e recados**: bilhetes para ler (diários, listas, despedidas), recados presos nas portas de quem foi embora, pichações nas paredes ("SAQUEADO", "NÃO ENTRE"...) e acampamentos abandonados no mato.
-- **Interface**: arrastar e soltar itens, minimapa no canto, anotações no mapa e o nome das coisas quando o mouse passa por cima (portas, janelas, móveis, corpos, placas).
+- **Casas vivas à noite**: com energia, os cômodos têm luz (interruptor no menu de contexto) e as janelas acesas aparecem da rua. Cortinas abrem e fecham (ou pendure um lençol). Luz acesa à noite — lanterna ou cômodo iluminado sem cortina — chama os zumbis que estão olhando.
+- **Clima e tempo deixam marcas**: poças que enchem com a chuva e secam devagar, folhas secas no chão no outono, sangue que respinga nas paredes, rastejantes deixando rastro, e corpos que incham, escurecem e viram esqueleto com as semanas. Roupa molhada fica mais escura e no frio a respiração vira vapor.
+- **Veículos variados**: sedã, picape (com caçamba), van, viatura (com giroflex e sirene) e ambulância, cada um com o seu porta-malas. Buzina, rádio e sirene fazem barulho e chamam zumbis.
+- **Furtividade e fuga**: agachado e com faca, mate zumbis distraídos por trás sem barulho; pendure uma corda de lençol na janela do andar de cima para descer (e subir de volta); arraste corpos para tirá-los do caminho.
+- **Vida no mato**: armadilhas de caixa e de laço (com isca) pegam coelhos, esquilos, pássaros e ratos; modo de busca; exercícios para Força e Condicionamento (com dor muscular no dia seguinte); ensopado, salada e sanduíche montados com o que você tiver.
+- **Chaves de casa**: moradores que viraram zumbi às vezes têm a chave no bolso, e às vezes há uma reserva debaixo do vaso. Com a chave, dá para destrancar e trancar a porta da frente por fora.
+- **Morrer não é o fim do mundo**: o corpo fica onde caiu (ou se levanta como zumbi, com tudo o que você levava) e você pode começar um novo sobrevivente no mesmo mundo, com o tempo continuando de onde parou.
+- **Interface**: arrastar e soltar itens, minimapa no canto, mapa com zoom (roda) e arrastar, nomes das ruas, anotações no mapa e o nome das coisas quando o mouse passa por cima (portas, janelas, móveis, corpos, placas, pichações, armadilhas).
 - **Leve**: só os zumbis perto de você são simulados; os de longe ficam "guardados" e acordam quando você se aproxima (ou se ouvirem um barulho grande).
 
 ## Testes
@@ -73,4 +82,4 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 sh tests/run-all.sh
 ```
 
-Esse comando roda a checagem de sintaxe e de regras, a geração do mundo em 3 sementes, simulações de lógica (combate, IA, portas, escadas, necessidades, infecção), 30 dias de jogo acelerados os testes das melhorias (`tests/unit-features.js`), a interface no navegador (`tests/iface.sh`: arrastar e soltar, mapa, minimapa, rótulos) e um teste ponta a ponta no navegador (Playwright).
+Esse comando roda a checagem de sintaxe e de regras, a geração do mundo em 3 sementes, simulações de lógica (combate, IA, portas, escadas, necessidades, infecção), 30 dias de jogo acelerados os testes das melhorias (`tests/unit-features.js`), a interface no navegador (`tests/iface.sh`: arrastar e soltar, mapa, minimapa, rótulos), a morte e o mesmo mundo (`tests/death.sh`) e um teste ponta a ponta no navegador (Playwright).
