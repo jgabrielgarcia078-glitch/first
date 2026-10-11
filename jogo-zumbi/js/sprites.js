@@ -1191,7 +1191,7 @@
    * pose: { ang (radianos, mundo), phase (0..1 ciclo de passos), moving, run, crouch, attack (0..1), shove (0..1), weapon, aim,
    *   down, dead, crawl, lunge, reach }
    * lightF: multiplicador de cor (luz do lugar) */
-  var OUT = 'rgba(30,22,16,0.16)'; // detalhes (rosto, chapéu); as partes do corpo não têm contorno
+  var OUT = 'rgba(30,22,16,0.16)'; // só nas armas; personagens não têm contorno
   var TAU = Math.PI * 2;
   var SHT = {};
   /* cor sombreada com cache por cor e nível de luz quantizado (não cria strings por quadro) */
@@ -1241,10 +1241,9 @@
       g.fillStyle = 'rgba(0,0,14,0.1)'; g.fill();
     }
   }
-  function blob(g, x, y, rx, ry, c, outline) {
+  function blob(g, x, y, rx, ry, c) {
     g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, TAU);
     g.fillStyle = c; g.fill();
-    if (outline) { g.strokeStyle = OUT; g.lineWidth = 1; g.stroke(); }
   }
 
   /* ---------- aparência a partir das roupas ---------- */
@@ -1284,17 +1283,7 @@
   };
 
   /* ---------- pessoa em pé ---------- */
-  /* Personagem: desenhado duas vezes. 1ª passada: a figura inteira escura e um pouco mais grossa (contorno só em volta
-   * da silhueta); 2ª passada: as partes por cima, sem contorno entre elas — parece uma pessoa, não peças montadas. */
-  function OutlineCtx() { this.g = null; this.col = '#000'; this.w = 1.2; this.fillStyle = ''; this.strokeStyle = ''; this.lineWidth = 1; this.lineCap = 'butt'; this.lineJoin = 'miter'; this.globalAlpha = 1; this.globalCompositeOperation = 'source-over'; }
-  var OP = OutlineCtx.prototype;
-  ['beginPath', 'moveTo', 'lineTo', 'arc', 'ellipse', 'quadraticCurveTo', 'bezierCurveTo', 'closePath', 'save', 'restore', 'clip', 'translate', 'scale', 'rect'].forEach(function (k) { OP[k] = function () { return this.g[k].apply(this.g, arguments); }; });
-  OP.fill = function () { var g = this.g; g.fillStyle = this.col; g.fill(); g.strokeStyle = this.col; g.lineWidth = this.w; g.lineJoin = 'round'; g.stroke(); };
-  OP.stroke = function () { var g = this.g; g.strokeStyle = this.col; g.lineWidth = this.lineWidth + this.w; g.lineCap = 'round'; g.stroke(); };
-  OP.fillRect = function (x, y, w, h) { this.g.fillStyle = this.col; this.g.fillRect(x - this.w / 2, y - this.w / 2, w + this.w, h + this.w); };
-  OP.createLinearGradient = OP.createRadialGradient = function () { return { addColorStop: function () {} }; };
-  OP.createPattern = function () { return null; };
-  var OUTLINER = new OutlineCtx();
+  /* Personagem sem contorno nenhum: as partes se emendam e só o sombreado separa o volume (como uma pessoa, não peças montadas). */
   S.drawHuman = function (g, sx, sy, look, pose, lightF, alpha) {
     var lying = pose.down || pose.dead || pose.crawl;
     g.save();
@@ -1305,9 +1294,6 @@
     g.beginPath(); g.ellipse(sx, sy, lying ? 20 : 13, lying ? 9 : 6.5, 0, 0, TAU); g.fill();
     g.fillStyle = 'rgba(0,0,0,' + (0.2 * sa).toFixed(2) + ')';
     g.beginPath(); g.ellipse(sx, sy, lying ? 12 : 7, lying ? 5 : 3.4, 0, 0, TAU); g.fill();
-    OUTLINER.g = g; OUTLINER.col = shq('#2a221c', lightF * 0.9);
-    drawFigure(OUTLINER, sx, sy, look, pose, lightF);
-    OUTLINER.g = null;
     drawFigure(g, sx, sy, look, pose, lightF);
     g.restore();
   };
@@ -1598,10 +1584,10 @@
       }
       if (look.scarf) {
         var sc0 = ext(shH, shW * 0.5, dSh * 1.2);
-        blob(g, sc0[0], sc0[1] - 1.5, Math.max(2.4, sc0[2]), 2, col(look.scarf), true);
+        blob(g, sc0[0], sc0[1] - 1.5, Math.max(2.4, sc0[2]), 2, col(look.scarf));
         if (frontNear) { var st = frontPt(shH - 6, dSh); limb(g, [sc0[0], sc0[1]], st, 1.3, 1.1, dk(look.scarf, 0.85)); }
       }
-      if (look.jacketType === 'hoodie') { var hd = P(leanAt(shH) - 0.07, 0, shH + 0.5); blob(g, hd[0], hd[1], 3.6, 2.4, dk(look.jacket, 0.85), true); }
+      if (look.jacketType === 'hoodie') { var hd = P(leanAt(shH) - 0.07, 0, shH + 0.5); blob(g, hd[0], hd[1], 3.6, 2.4, dk(look.jacket, 0.85)); }
     }
 
     /* ----- cabeça ----- */
@@ -1628,7 +1614,7 @@
       var hair = look.hair, bald = hs === 'careca';
       // volume do cabelo fora do crânio
       if (!bald && hs !== 'raspado') {
-        blob(g, x - fsx * 1.0, y - fsy * 1.0 - 1.1, rX + 0.8, rY + 0.4, col(hair), true);
+        blob(g, x - fsx * 1.0, y - fsy * 1.0 - 1.1, rX + 0.8, rY + 0.4, col(hair));
       }
       var gr = g.createRadialGradient(x - 1.1, y - 1.4, 0.3, x, y, rY + 0.8);
       gr.addColorStop(0, shq(skin, lf * 1.1)); gr.addColorStop(0.5, shq(skin, lf * 1.0)); gr.addColorStop(1, shq(skin, lf * 0.76));
@@ -1655,10 +1641,6 @@
         g.globalAlpha /= 0.35;
       }
       g.restore();
-      g.strokeStyle = OUT; g.lineWidth = 1;
-      g.beginPath();
-      if (bald || hs === 'raspado') { g.ellipse(x, y, rX, rY, 0, 0, TAU); } else { g.ellipse(x, y, rX, rY, 0, 0.1, Math.PI - 0.1); }
-      g.stroke();
       // rosto (só se está virado para a câmera)
       if (fsy > -0.3) {
         var sxv = A1, syv = A2 * 0.5, sl = Math.sqrt(sxv * sxv + syv * syv) || 1; sxv /= sl; syv /= sl;
@@ -1698,22 +1680,22 @@
       if (look.hat) {
         var ht = look.hatType, hc = col(look.hat);
         if (ht === 'helmet') {
-          blob(g, x, y - 0.8, rX + 1.6, rY + 1.1, hc, true);
+          blob(g, x, y - 0.8, rX + 1.6, rY + 1.1, hc);
           if (fsy > -0.2) { g.fillStyle = 'rgba(20,24,30,0.85)'; g.beginPath(); g.ellipse(x + fsx * 2.2, y + fsy * 1.4 + 0.3, 2.8, 1.8, 0, 0, TAU); g.fill(); }
           g.strokeStyle = 'rgba(255,255,255,0.25)'; g.lineWidth = 0.8; g.beginPath(); g.ellipse(x - 1, y - 2.5, rX - 0.5, rY - 1.5, 0, Math.PI * 1.1, Math.PI * 1.6); g.stroke();
         } else if (ht === 'ranger_hat') { // aba larga e copa com vinco
-          blob(g, x, y - 2.2, rX + 4.2, 2.6, dk(look.hat, 0.9), true);
+          blob(g, x, y - 2.2, rX + 4.2, 2.6, dk(look.hat, 0.9));
           g.beginPath(); g.moveTo(x - rX * 0.75, y - 2.4); g.lineTo(x - rX * 0.6, y - 7.5); g.lineTo(x, y - 6.6); g.lineTo(x + rX * 0.6, y - 7.5); g.lineTo(x + rX * 0.75, y - 2.4); g.closePath();
-          g.fillStyle = hc; g.fill(); g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
+          g.fillStyle = hc; g.fill();
           g.fillStyle = dk('#3a2a1a', 1); g.fillRect(x - rX * 0.75, y - 3.6, rX * 1.5, 1.1);
         } else if (ht === 'police_cap') { // quepe: copa plana mais larga, faixa e pala
           g.fillStyle = dk(look.hat, 0.8); g.fillRect(x - rX * 0.85, y - 4.6, rX * 1.7, 2.6);
-          blob(g, x - fsx * 0.4, y - 5.4, rX + 0.9, 2.1, hc, true);
+          blob(g, x - fsx * 0.4, y - 5.4, rX + 0.9, 2.1, hc);
           if (fsy > -0.4) { limb(g, [x + fsx * 1.2, y - 2.2 + fsy * 0.6], [x + fsx * 4.2, y - 2.0 + fsy * 1.6], 0.9, 1.2, '#141414'); }
           g.fillStyle = col('#d8c27a'); g.fillRect(x + fsx * 2.2 - 0.6, y - 4.4 + fsy, 1.2, 1.2);
         } else {
           g.beginPath(); g.ellipse(x - fsx * 0.6, y - 1.9, rX + 0.7, rY * 0.82, 0, Math.PI, TAU); g.closePath();
-          g.fillStyle = hc; g.fill(); g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
+          g.fillStyle = hc; g.fill();
           if (ht === 'cap') { limb(g, [x + fsx * 1.8, y - 2.4 + fsy * 0.4], [x + fsx * 5.6, y - 2.4 + fsy * 1.3], 1.1, 1.4, dk(look.hat, 0.8)); } else { g.fillStyle = dk(look.hat, 0.8); g.fillRect(x - rX - 0.5, y - 2.6, rX * 2 + 1, 1.6); }
         }
       }
@@ -1789,7 +1771,7 @@
       g.lineTo(tip[0] + ux * 1 + px * 4.5, tip[1] + uy * 1 + py * 4.5); g.lineTo(b0[0] - ux * 1.2 + px * 4.5, b0[1] - uy * 1.2 + py * 4.5);
       g.closePath(); g.fillStyle = shq(wl.axe, lf); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
     }
-    if (wl.head) { blob(g, tip[0], tip[1], 2.2, 2.2, shq(wl.head, lf), true); }
+    if (wl.head) { blob(g, tip[0], tip[1], 2.2, 2.2, shq(wl.head, lf)); }
     if (wl.tip) {
       g.beginPath(); g.moveTo(tip[0] + ux * 5, tip[1] + uy * 5); g.lineTo(tip[0] - uy * 1.6, tip[1] + ux * 1.6); g.lineTo(tip[0] + uy * 1.6, tip[1] - ux * 1.6); g.closePath();
       g.fillStyle = shq(wl.tip, lf); g.fill(); g.strokeStyle = OUT; g.lineWidth = 0.8; g.stroke();
@@ -1828,16 +1810,16 @@
     if (legsT === 'skirt' || legsT === 'dress') {
       var kl = Q(-0.42, -hipW * 1.5, 1.5), kr = Q(-0.42, hipW * 1.5, 1.5);
       g.beginPath(); g.moveTo(wl[0], wl[1]); g.lineTo(wr[0], wr[1]); g.lineTo(kr[0], kr[1]); g.lineTo(kl[0], kl[1]); g.closePath();
-      g.fillStyle = col(look.pants); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
+      g.fillStyle = col(look.pants); g.fill();
     } else {
       g.beginPath(); g.moveTo(hl[0], hl[1]); g.lineTo(hr[0], hr[1]); g.lineTo(wr[0], wr[1]); g.lineTo(wl[0], wl[1]); g.closePath();
-      g.fillStyle = col(look.pants); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
+      g.fillStyle = col(look.pants); g.fill();
     }
     var tl = Q(-0.1, -hipW, 3), tr = Q(-0.1, hipW, 3);
     g.beginPath(); g.moveTo(tl[0], tl[1]); g.quadraticCurveTo(wl[0], wl[1], sl[0], sl[1]);
     var nk = Q(0.36, 0, 3);
     g.quadraticCurveTo(nk[0], nk[1], sr[0], sr[1]); g.quadraticCurveTo(wr[0], wr[1], tr[0], tr[1]); g.closePath();
-    g.fillStyle = col(outer); g.fill(); g.strokeStyle = OUT; g.lineWidth = 1; g.stroke();
+    g.fillStyle = col(outer); g.fill();
     g.fillStyle = 'rgba(0,0,0,0.14)'; g.beginPath(); g.moveTo(Q(0.05, 0, 3)[0], Q(0.05, 0, 3)[1]); g.lineTo(sr[0], sr[1]); g.lineTo(tr[0], tr[1]); g.closePath(); g.fill();
     if (look.blood) {
       g.fillStyle = col('#5e0f0f');
@@ -1860,7 +1842,7 @@
       limb(g, el, hd, 2, 1.6, sleeve === 'long' ? sc : col(skin));
       limb(g, sh, el, 2.5, 2.1, sleeve === 'short' ? col(skin) : sc);
       if (sleeve === 'short') { limb(g, sh, lerp2(sh, el, 0.6), 2.9, 2.5, sc); }
-      blob(g, hd[0], hd[1], 1.9, 1.9, look.gloves ? col(look.gloves) : col(skin), true);
+      blob(g, hd[0], hd[1], 1.9, 1.9, look.gloves ? col(look.gloves) : col(skin));
     }
     armL(-1); armL(1);
     // cabeça
@@ -1868,7 +1850,7 @@
     var hc = Q(0.47, dead ? ((sd & 3) - 1.5) * 0.03 : 0, hh);
     var hs = look.hairStyle || 'curto';
     if (hs === 'longo' || hs === 'rabo' || (hs === 'médio' && F)) { var hb = Q(0.62, 0, 1); limb(g, hc, hb, 3.6, 3, col(look.hair)); }
-    blob(g, hc[0], hc[1], F ? 4 : 4.3, F ? 3.9 : 4.2, col(skin), true);
+    blob(g, hc[0], hc[1], F ? 4 : 4.3, F ? 3.9 : 4.2, col(skin));
     if (hs !== 'careca') {
       g.save(); g.beginPath(); g.ellipse(hc[0], hc[1], 4.8, 4.6, 0, 0, TAU); g.clip();
       var hf = iso(fx * 0.06, fy * 0.06);
@@ -1876,7 +1858,7 @@
       g.fillStyle = col(look.hair); g.beginPath(); g.ellipse(hc[0] + hf[0], hc[1] + hf[1] - 0.5, 4.4, 4.2, 0, 0, TAU); g.fill();
       g.restore();
     }
-    if (look.hat) { var hf2 = iso(fx * 0.05, fy * 0.05); blob(g, hc[0] + hf2[0], hc[1] + hf2[1] - 0.8, 4.4, 3.6, col(look.hat), true); }
+    if (look.hat) { var hf2 = iso(fx * 0.05, fy * 0.05); blob(g, hc[0] + hf2[0], hc[1] + hf2[1] - 0.8, 4.4, 3.6, col(look.hat)); }
     if (Zb || dead) { g.fillStyle = 'rgba(30,8,8,0.7)'; var mf = iso(-fx * 0.04, -fy * 0.04); g.beginPath(); g.ellipse(hc[0] + mf[0], hc[1] + mf[1] + 1, 1.1, 0.8, 0, 0, TAU); g.fill(); }
   }
 
