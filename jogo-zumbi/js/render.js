@@ -157,7 +157,7 @@
           var vd = zz <= viewZ && voidAt(x, y, zz, view);
           if (zz > 0 && !vd) {
             var fz = L.floor[ii];
-            if (fz === F.ROOF) { drawSprite(g, S.roof(roofCode(ch, zz, ii)), li, bx, by, fade); } else if (fz) { drawSprite(g, S.floor(fz, fv(fz, L.fvar[ii], x, y)), li, bx, by, fade); }
+            if (fz === F.ROOF) { var rcd = roofCode(ch, zz, ii); drawSprite(g, S.roof(rcd), li, bx, by, fade); chimney(g, rcd, x, y, bx, by, li, fade); } else if (fz) { drawSprite(g, S.floor(fz, fv(fz, L.fvar[ii], x, y)), li, bx, by, fade); }
           }
           // paredes
           var wwT = L.ww[ii], wnT = L.wn[ii];
@@ -165,7 +165,7 @@
           if (wnT) { drawEdge(g, x, y, zz, 0, wnT, L.wns[ii], bx, by, view, li, fade); }
           // objeto
           var o = L.obj[ii];
-          if (o && !vd) { drawObject(g, x, y, zz, o, L.odir[ii], bx, by, li, view, ch); }
+          if (o && !vd) { drawObject(g, x, y, zz, o, L.odir[ii], bx, by, li, view, ch); if (o === O.POWER_POLE) { poles.push(x, y, L.odir[ii], li); } }
           // itens no chão
           var its = ch.items[zz * AREA + ii];
           if (its && its.length && !vd) { drawSprite(g, S.groundItems(its.length), li, bx, by); }
@@ -182,6 +182,8 @@
         }
       }
     }
+    drawWires(g, poles, view);
+    poles.length = 0;
     // sobreposições (efeitos, mira, textos)
     for (n = 0; n < R.overlays.length; n++) { R.overlays[n](g); }
     if (view.overlay) { view.overlay(g); }
@@ -220,6 +222,34 @@
     return L.k[(h >>> 12) % L.k.length];
   }
 
+  /* fios entre postes de fiação vizinhos (10 tiles) — por cima de tudo, com barriga */
+  var poles = [];
+  function drawWires(g, list, view) {
+    if (!list.length) { return; }
+    g.save();
+    for (var i = 0; i < list.length; i += 4) {
+      var x = list[i], y = list[i + 1], dir = list[i + 2];
+      var nx = dir === 1 ? x : x + 10, ny = dir === 1 ? y + 10 : y;
+      if (W.obj(nx, ny, 0) !== O.POWER_POLE) { continue; }
+      var dark = Math.min(1, (list[i + 3] & 15) / 8);
+      g.strokeStyle = 'rgba(20,20,22,' + (0.35 + 0.4 * dark).toFixed(2) + ')'; g.lineWidth = 1;
+      for (var k = -1; k <= 1; k++) {
+        var ox = dir === 1 ? k * 0.3 : 0, oy = dir === 1 ? 0 : k * 0.3;
+        var ax = HW * ((x + 0.5 + ox) - (y + 0.5 + oy)), ay = HH * ((x + 0.5 + ox) + (y + 0.5 + oy)) - 190;
+        var bx = HW * ((nx + 0.5 + ox) - (ny + 0.5 + oy)), by = HH * ((nx + 0.5 + ox) + (ny + 0.5 + oy)) - 190;
+        g.beginPath(); g.moveTo(ax, ay); g.quadraticCurveTo((ax + bx) / 2, (ay + by) / 2 + 26, bx, by); g.stroke();
+      }
+    }
+    g.restore();
+  }
+  /* chaminé de tijolo em alguns tiles da cumeeira */
+  function chimney(g, code, x, y, bx, by, li, fade) {
+    var kind = code & 3, p = ((code >>> 14) & 63) * 2;
+    if (!(kind === 1 || kind === 2) || p < 20) { return; }
+    var h = (x * 73856093 ^ y * 19349663) >>> 0;
+    if (h % 13 !== 0) { return; }
+    drawSprite(g, S.chimney(), li, bx, by - p + 6, fade);
+  }
   /* ---------- telhados (formato calculado uma vez por chunk e nível) ---------- */
   function roofCode(ch, z, i) {
     var rc = ch._roof || (ch._roof = []);
@@ -239,7 +269,9 @@
       while (lx + dE + 1 < N && fl[i + dE + 1] === RF) { dE++; }
       var wid = dW + dE + 1, dep = dN + dS + 1, col = L.fvar[i] & 7;
       var small = Math.min(wid, dep);
-      if (small > C.ROOF_PITCH_MAX || small < 3) {
+      var bk = z > 0 ? W.building(ch.cx * N + lx, ch.cy * N + ly, z - 1) : null;
+      var flatB = bk && bk.kind !== 'house' && bk.kind !== 'barn';
+      if (small > C.ROOF_PITCH_MAX || small < 3 || flatB) {
         out[i] = 3 | (col << 20) | (((dN === 0 ? 1 : 0) | (dE === 0 ? 2 : 0) | (dS === 0 ? 4 : 0) | (dW === 0 ? 8 : 0)) << 28);
         continue;
       }

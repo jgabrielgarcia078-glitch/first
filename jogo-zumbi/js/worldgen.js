@@ -305,6 +305,30 @@
     if (town) {
       if (rn) { for (var x = 8; x < CH; x += 10) { placeIfFree(ctx, x, RW, O.LAMPPOST, 0); } }
       if (rw) { for (var y = 8; y < CH; y += 10) { placeIfFree(ctx, RW, y, O.LAMPPOST, 0); } }
+      // mobília de rua: postes de fiação (do outro lado), bancos e lixeiras na calçada
+      if (rn) {
+        for (var px = 3; px < CH; px += 10) { placeIfFree(ctx, px, RW, O.POWER_POLE, 0); }
+        for (var bx = 5; bx < CH - 2; bx += 10) { var kb = ctx.rng.next(); if (kb < 0.25) { placeIfFree(ctx, bx, RW, O.BENCH, 0); } else if (kb < 0.5) { placeIfFree(ctx, bx, RW, O.TRASH_CAN, 0); } }
+      }
+      if (rw) {
+        for (var py = 3; py < CH; py += 10) { placeIfFree(ctx, RW, py, O.POWER_POLE, 1); }
+        for (var by = 5; by < CH - 2; by += 10) { var kc = ctx.rng.next(); if (kc < 0.25) { placeIfFree(ctx, RW, by, O.BENCH, 1); } else if (kc < 0.5) { placeIfFree(ctx, RW, by, O.TRASH_CAN, 1); } }
+      }
+      // corpos antigos largados na rua, com sangue seco em volta
+      if ((rn || rw) && ctx.rng.chance(0.45) && CP.Zombies) {
+        var nb = ctx.rng.int(1, 3);
+        for (var bi = 0; bi < nb; bi++) {
+          var along = ctx.rng.range(RW + 2, CH - 2), across = ctx.rng.range(0.5, RW - 0.5);
+          var hz = rn && (!rw || ctx.rng.chance(0.5));
+          var wx = ctx.ox + (hz ? along : across), wy = ctx.oy + (hz ? across : along);
+          var dz = CP.Zombies.makeData(ctx.rng, wx, wy, 0, null, null);
+          var lk = CP.Zombies.fromData(dz).look;
+          if (ctx.rng.chance(0.5)) { lk.zombie = false; lk.skin = ctx.rng.pick(C.SKIN_TONES); }
+          ctx.c.corpses.push({ x: wx, y: wy, z: 0, ang: ctx.rng.range(0, 6.28), look: lk, items: ctx.rng.chance(0.4) ? [makeItem(ctx, ctx.rng.pick(['wallet', 'cigarettes', 'water_bottle', 'candy', 'bandage']), null)] : [], t: -86400 * 3 });
+          ctx.c.decals = ctx.c.decals || [];
+          for (var dd = 0; dd < 4; dd++) { ctx.c.decals.push({ x: wx + ctx.rng.range(-0.8, 0.8), y: wy + ctx.rng.range(-0.8, 0.8), z: 0, s: ctx.rng.range(3, 6), r: ctx.rng.next() }); }
+        }
+      }
     }
     // carros abandonados nas estradas
     var nCars = town ? ctx.rng.int(0, 2) : (rn || rw ? ctx.rng.int(0, 1) : 0);
@@ -841,7 +865,7 @@
     var fill = SHOP_FILL[kind] || SHOP_FILL.grocery;
     var bld = newBuilding(ctx, r, kind, 1);
     var ext = rng.pick([3, 5, 11, 0, 2]);
-    if (kind === 'warehouse') { ext = 12; } // galpão: metal ondulado
+    if (kind === 'warehouse') { ext = 12; } else { ext = rng.chance(0.6) ? 13 : 14; } // galpão: metal ondulado; lojas: vitrine
     // fundos: depósito com 3-4 de profundidade
     var back = { N: 'S', S: 'N', E: 'W', W: 'E' }[front];
     var depth = Math.min(4, Math.floor((front === 'N' || front === 'S' ? r.h : r.w) / 3));

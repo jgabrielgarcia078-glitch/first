@@ -65,7 +65,9 @@
     { name: 'azulejo', base: '#d7dee0', trim: '#a7b0b3', interior: true, tiles: true },
     { name: 'madeira', base: '#8a6440', trim: '#5f432a', interior: true, pattern: 'boards' },
     { name: 'concreto', base: '#8d8d88', trim: '#62625e' },
-    { name: 'metal ondulado', base: '#8c9094', trim: '#5c6064', ribs: true }
+    { name: 'metal ondulado', base: '#8c9094', trim: '#5c6064', ribs: true },
+    { name: 'loja de tijolo', base: '#8e4a3c', trim: '#3a3a3a', brick: true, store: true },
+    { name: 'loja de reboco', base: '#c8bca4', trim: '#4a4a48', store: true }
   ];
   C.EXTERIOR_STYLES = [0, 1, 2, 3, 4, 5];
   C.INTERIOR_STYLES = [6, 7, 8, 10, 0];
@@ -77,7 +79,8 @@
     CRATE: 17, DUMPSTER: 18, LAMPPOST: 19, MAILBOX: 20, STAIRS: 21, DESK: 22, SHOP_SHELF: 23,
     CASH: 24, PUMP: 25, CAR: 26, LOG: 27, ROCK: 28, BARREL: 29, TREE_PINE: 30, WORKBENCH: 31,
     RAIN_BARREL: 32, CAMPFIRE: 33, CROP: 34, MED_CABINET: 35, LOCKER: 36, GENERATOR: 37,
-    WALL_SHELF: 38, NIGHTSTAND: 39, DRESSER: 40, TALL_GRASS: 41, FENCE_POST: 42, CORPSE_PILE: 43
+    WALL_SHELF: 38, NIGHTSTAND: 39, DRESSER: 40, TALL_GRASS: 41, FENCE_POST: 42, CORPSE_PILE: 43,
+    BENCH: 44, TRASH_CAN: 45, POWER_POLE: 46
   };
   /* Propriedades por objeto: nome, sólido, recipiente (capacidade em kg), altura visual (0..1 de parede), bloqueia visão */
   C.OBJ_INFO = [];
@@ -132,6 +135,9 @@
     o(O.WALL_SHELF, 'Prateleira de parede', false, 8, 0.0, false);
     o(O.FENCE_POST, 'Mourão', true, 0, 0.5, false);
     o(O.CORPSE_PILE, 'Pilha de corpos', true, 0, 0.3, false);
+    o(O.BENCH, 'Banco', false, 0, 0.35, false, { slow: 0.7, seat: true });
+    o(O.TRASH_CAN, 'Lixeira', false, 6, 0.45, false, { slow: 0.6 });
+    o(O.POWER_POLE, 'Poste de fiação', true, 0, 2.6, false);
   })();
 
   /* ---------- Tempo ---------- */

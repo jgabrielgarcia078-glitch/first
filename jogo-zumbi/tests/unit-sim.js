@@ -11,7 +11,7 @@ let bad = [];
 for (const k in D.LOOT) D.LOOT[k].list.forEach(([id]) => { if (!D.ITEMS[id]) bad.push('loot ' + k + ':' + id); });
 D.RECIPES.forEach(r => (r.needs || []).concat(r.out || []).forEach(n => { if (n.item && !D.ITEMS[n.item]) bad.push('receita ' + r.id + ':' + n.item); }));
 D.BUILDS.forEach(b => b.mats.forEach(m => { if (!D.ITEMS[m.item]) bad.push('build ' + b.id + ':' + m.item); }));
-for (const k in D.OUTFITS) D.OUTFITS[k].forEach(o => o.forEach(id => { if (!D.ITEMS[id]) bad.push('outfit ' + k + ':' + id); }));
+for (const k in D.OUTFITS) D.OUTFITS[k].forEach(o => o.forEach(spec => { const id = spec.split(':')[0]; if (!D.ITEMS[id]) bad.push('outfit ' + k + ':' + id); }));
 D.TRAITS.forEach(t => (t.excl || []).forEach(x => { if (!D.TRAIT[x]) bad.push('traço ' + t.id + ' exclui ' + x); }));
 D.OCCUPATIONS.forEach(o => { Object.keys(o.skills).forEach(s => { if (!D.SKILL[s]) bad.push('occ ' + o.id + ' skill ' + s); }); (o.traits || []).forEach(t => { if (!D.TRAIT[t]) bad.push('occ trait ' + t); }); });
 for (const id in D.ITEMS) { const it = D.ITEMS[id]; if (it.food && it.food.opens && !D.ITEMS[it.food.opens]) bad.push('opens ' + id); if (it.food && it.food.cookable && !D.ITEMS[it.food.cookable]) bad.push('cookable ' + id); if (it.asWeapon && !D.ITEMS[it.asWeapon]) bad.push('asWeapon ' + id); if (it.gun && !D.ITEMS[it.gun.ammo]) bad.push('ammo ' + id); }

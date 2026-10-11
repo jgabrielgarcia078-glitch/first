@@ -29,7 +29,7 @@
       x: x, y: y, z: z, ang: rng.range(0, Math.PI * 2), female: female, kind: kind, outfit: outfit, speed: speed,
       hp: rng.range(ZC.HP_MIN, ZC.HP_MAX) * (settings.toughness || 1),
       crawler: rng.chance(ZC.CRAWLER_CHANCE), fakeDead: rng.chance(ZC.FAKEDEAD_CHANCE),
-      skin: rng.pick(C.ZOMBIE_SKIN), hair: rng.pick(C.HAIR_COLORS), hairStyle: female ? rng.pick(['longo', 'médio', 'rabo', 'curto']) : rng.pick(['curto', 'raspado', 'médio', 'careca']),
+      skin: rng.pick(C.ZOMBIE_SKIN), hair: rng.pick(C.HAIR_COLORS), hairStyle: female ? rng.pick(['longo', 'médio', 'rabo', 'curto']) : rng.pick(['curto', 'curto', 'médio', 'raspado', 'médio', 'careca']),
       blood: blood, seed: rng.int(0, 1e9)
     };
   };

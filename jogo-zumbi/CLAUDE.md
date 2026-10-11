@@ -3,7 +3,7 @@
 Jogo de sobrevivência zumbi isométrico inspirado no Project Zomboid. A pesquisa está em `01-PESQUISA.md`, o plano em `02-PLANO.md` e as instruções para o jogador em `LEIA-ME.md`.
 **Nunca usar nome, arte, mapa, textos ou sons do Project Zomboid.** Só ideias de mecânica. Prints do original servem só de referência visual (cores, proporções, luz, layout da interface): tudo é redesenhado por código.
 
-Referências de visual já aplicadas: dia claro e colorido (grama verde viva, asfalto cinza médio); noite azul-arroxeada (`C.NIGHT`, `lightColor`); fora da visão mais escuro; interiores não vistos pretos (`voidAt`); madeira em tábuas estreitas, tijolo com rejunte, papel de parede estampado; móveis com frente detalhada; janelas do inventário cinza com abas em cima; saúde com silhueta e tabela de proteção.
+Referências de visual já aplicadas: dia claro e colorido (grama verde viva, asfalto cinza médio); noite azul-arroxeada (`C.NIGHT`, `lightColor`); fora da visão mais escuro; interiores não vistos pretos (`voidAt`); madeira em tábuas estreitas, tijolo com rejunte, papel de parede estampado; móveis com frente detalhada; janelas do inventário cinza com abas em cima; saúde com silhueta e tabela de proteção; personagens "low-poly" (face clara e escura nos membros) com uniformes (`D.OUTFITS`, cor fixa com `id:#cor`); ruas com postes de fiação e fios (`drawWires`), bancos, lixeiras e corpos; cercas de tábua; chaminés; lojas de teto plano com vitrines (estilos de parede `store`).
 
 ## Formato
 
@@ -69,4 +69,4 @@ Referências de visual já aplicadas: dia claro e colorido (grama verde viva, as
 - `tests/unit-sim.js`: integridade dos dados, combate, IA (ver, ouvir, perseguir, arrombar porta, subir escada), necessidades, sono, curativo, infecção, loot, serialização.
 - `tests/unit-days.js`: 30 dias acelerados (energia, água, helicóptero, clima, plantação, migração).
 - `tests/e2e.js`: Chromium via `file://` (menu → criação → jogo → painéis → salvar → recarregar → continuar).
-- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R).
+- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `uniforms` = uniformes em humanos e zumbis, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R).

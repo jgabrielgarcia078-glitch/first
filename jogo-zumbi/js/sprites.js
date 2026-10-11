@@ -336,6 +336,19 @@
     return (litArr[k] = store('lit' + k, c, ax, ay));
   };
 
+  S.chimney = function () {
+    var s0 = S.cache.chimney;
+    if (s0) { return s0; }
+    var c = mk(TW, 60), g = c.getContext('2d');
+    g.translate(HW, 30);
+    box(g, 0.38, 0.38, 0.24, 0.24, 0, 26, '#8a4a3a');
+    var a = ip(0.38, 0.62, 6), b = ip(0.62, 0.62, 6);
+    g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 1;
+    for (var r = 0; r < 4; r++) { g.beginPath(); g.moveTo(a[0], a[1] - r * 5); g.lineTo(b[0], b[1] - r * 5); g.stroke(); }
+    box(g, 0.35, 0.35, 0.3, 0.3, 26, 3, '#5a5a58');
+    var t = ip(0.5, 0.5, 29.5); ellipseAt(g, t[0], t[1], 4, 2, '#1a1a1a');
+    return store('chimney', c, HW, 30);
+  };
   /* ---------- Telhados ---------- */
   /* code (montado em render.js): bits 0-1 tipo (1 = cumeeira ao longo de x, 2 = ao longo de y, 3 = plano), 2-7 altura na borda inicial / 2,
    * 8-13 altura na borda final / 2, 14-19 pico no meio do tile / 2, 20-22 cor, 23 empena visível, 24-27 estilo da parede, 28-31 beirais (N=1, L=2, S=4, O=8) */
@@ -547,7 +560,23 @@
         }
       }
       // aberturas
-      if (type === E.WINDOW && !cut) {
+      if (type === E.WINDOW && !cut && st.store) {
+        // vitrine de loja: vidro grande quase do chão ao alto, moldura escura
+        var sg = state === 2 ? '#1c2228' : '#5e7c8c';
+        wquad(g, side, 0.02, 0.98, H * 0.08, H * 0.86, '#2a2a2a', ox, oy);
+        wquad(g, side, 0.06, 0.94, H * 0.12, H * 0.82, sg, ox, oy);
+        if (state !== 2) {
+          var vg0 = wp(side, 0.5, H * 0.12), vg1 = wp(side, 0.5, H * 0.82);
+          var vgr = g.createLinearGradient(vg0[0] + ox, vg0[1] + oy, vg1[0] + ox, vg1[1] + oy);
+          vgr.addColorStop(0, 'rgba(0,0,0,0.35)'); vgr.addColorStop(1, 'rgba(255,255,255,0.12)');
+          wquad(g, side, 0.06, 0.94, H * 0.12, H * 0.82, vgr, ox, oy);
+          wline(g, side, 0.2, H * 0.75, 0.4, H * 0.3, 'rgba(255,255,255,0.3)', 2, ox, oy);
+          wline(g, side, 0.5, H * 0.12, 0.5, H * 0.82, '#2a2a2a', 1.5, ox, oy);
+        } else {
+          var sh1 = wp(side, 0.1, H * 0.8), sh2 = wp(side, 0.3, H * 0.8), sh3 = wp(side, 0.16, H * 0.55);
+          poly(g, [[sh1[0] + ox, sh1[1] + oy], [sh2[0] + ox, sh2[1] + oy], [sh3[0] + ox, sh3[1] + oy]], 'rgba(150,190,210,0.75)');
+        }
+      } else if (type === E.WINDOW && !cut) {
         var glass = state === 2 ? '#1c2228' : (state === 1 ? '#22303a' : '#7fa6bf');
         wquad(g, side, 0.18, 0.82, H * 0.34, H * 0.84, U.shade('#e8e4da', faceF), ox, oy);
         wquad(g, side, 0.23, 0.77, H * 0.38, H * 0.80, glass, ox, oy);
@@ -604,12 +633,24 @@
       var a0 = wp(side, 0, 0), a3 = wp(side, 1, 0);
       g.beginPath(); g.moveTo(a0[0] + ox, a0[1] + oy); g.lineTo(t0[0] + ox, t0[1] + oy); g.lineTo(t1[0] + ox, t1[1] + oy); g.lineTo(a3[0] + ox, a3[1] + oy); g.stroke();
     } else if (type === E.FENCE) {
-      var fh = cut ? C.CUT_WALL_H : 26;
-      var wood = '#8a6a44';
-      for (var q = 0; q <= 4; q++) { wline(g, side, q / 4, 0, q / 4, fh + 3, '#4a3826', 4, ox, oy); wline(g, side, q / 4, 0, q / 4, fh + 3, wood, 2, ox, oy); }
+      // cerca de tábuas verticais (como as de quintal do original), com topo serrilhado
+      var fh = cut ? C.CUT_WALL_H : 38;
+      var frng = new U.Rng(style * 17 + side * 5 + (extra || 0) + 3);
+      var wood = side === 0 ? '#6e4e32' : '#7e5a3a';
+      wquad(g, side, 0, 1, 0, fh * 0.92, U.shade(wood, 0.55), ox, oy);
+      var NPL = 7;
+      for (var q = 0; q < NPL; q++) {
+        var ph = fh * (0.92 + frng.next() * 0.1);
+        var pcol = U.shade(wood, 0.82 + frng.next() * 0.28);
+        wquad(g, side, q / NPL + 0.006, (q + 1) / NPL - 0.006, 0, ph, pcol, ox, oy);
+        var tp = wp(side, (q + 0.5) / NPL, ph + 2);
+        var tl = wp(side, q / NPL + 0.006, ph), tr = wp(side, (q + 1) / NPL - 0.006, ph);
+        poly(g, [[tl[0] + ox, tl[1] + oy], [tp[0] + ox, tp[1] + oy], [tr[0] + ox, tr[1] + oy]], pcol);
+        wline(g, side, (q + 0.3) / NPL, 3, (q + 0.35) / NPL, ph - 3, U.shade(pcol, 0.88), 1, ox, oy);
+      }
       if (!cut) {
-        wline(g, side, 0, fh * 0.35, 1, fh * 0.35, '#4a3826', 4, ox, oy); wline(g, side, 0, fh * 0.35, 1, fh * 0.35, U.shade(wood, 1.1), 2, ox, oy);
-        wline(g, side, 0, fh * 0.85, 1, fh * 0.85, '#4a3826', 4, ox, oy); wline(g, side, 0, fh * 0.85, 1, fh * 0.85, U.shade(wood, 1.1), 2, ox, oy);
+        wquad(g, side, 0, 1, fh * 0.2, fh * 0.26, U.shade(wood, 0.62), ox, oy);
+        wquad(g, side, 0, 1, fh * 0.72, fh * 0.78, U.shade(wood, 0.62), ox, oy);
       }
     } else if (type === E.FENCE_TALL) {
       var th = cut ? C.CUT_WALL_H : WH * 0.9;
@@ -687,6 +728,9 @@
       case O.GENERATOR: box(g, 0.15, 0.25, 0.7, 0.5, 0, 22, '#d1a52a'); box(g, 0.2, 0.3, 0.2, 0.2, 22, 6, '#333'); break;
       case O.FENCE_POST: box(g, 0.42, 0.42, 0.16, 0.16, 0, 30, '#6b5034'); break;
       case O.CORPSE_PILE: drawRock(g, rng); break;
+      case O.BENCH: drawBench(g, dir); break;
+      case O.TRASH_CAN: drawTrashCan(g, rng); break;
+      case O.POWER_POLE: drawPowerPole(g, dir); break;
       default: box(g, 0.2, 0.2, 0.6, 0.6, 0, 20, '#f0f');
     }
     return (objArr[nk] = store(key, c, ax, ay));
@@ -952,6 +996,42 @@
       if (!faceX) { a = ip(bw[0], bw[1] + bw[3], h * k / 3); b = ip(bw[0] + bw[2], bw[1] + bw[3], h * k / 3); } else { a = ip(bw[0] + bw[2], bw[1], h * k / 3); b = ip(bw[0] + bw[2], bw[1] + bw[3], h * k / 3); }
       g.strokeStyle = 'rgba(0,0,0,0.4)'; g.lineWidth = 1; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
     }
+  }
+  /* banco de praça: ripas de madeira em pés de ferro */
+  function drawBench(g, dir) {
+    var along = dir === 0 || dir === 2;
+    var x0 = along ? 0.08 : 0.32, y0 = along ? 0.32 : 0.08, w = along ? 0.84 : 0.36, d = along ? 0.36 : 0.84;
+    var t = ip(0.5, 0.5, 0); ellipseAt(g, t[0], t[1] + 1, 24, 8, 'rgba(0,0,0,0.18)');
+    [[0.12, 0.12], [0.88, 0.12], [0.12, 0.88], [0.88, 0.88]].forEach(function (f) { box(g, x0 + w * f[0] - 0.02, y0 + d * f[1] - 0.02, 0.04, 0.04, 0, 12, '#2e2e2e', { outline: false }); });
+    for (var i = 0; i < 3; i++) { if (along) { box(g, x0, y0 + i * d / 3 + 0.01, w, d / 3 - 0.02, 12, 2, '#8a5e36'); } else { box(g, x0 + i * w / 3 + 0.01, y0, w / 3 - 0.02, d, 12, 2, '#8a5e36'); } }
+    if (along) { box(g, x0, y0 - 0.02, w, 0.05, 14, 12, '#7a5230'); } else { box(g, x0 - 0.02, y0, 0.05, d, 14, 12, '#7a5230'); }
+  }
+  /* lixeira de rua (verde, com tampa) */
+  function drawTrashCan(g, rng) {
+    var t = ip(0.5, 0.5, 0), col = rng.pick(['#3e5a3a', '#4a4e52', '#5a4a32']);
+    ellipseAt(g, t[0] + 2, t[1] + 2, 11, 5, 'rgba(0,0,0,0.25)');
+    ellipseAt(g, t[0], t[1], 9, 4.5, U.shade(col, 0.6));
+    g.fillStyle = col; g.fillRect(t[0] - 9, t[1] - 24, 18, 24);
+    g.fillStyle = U.shade(col, 0.75); g.fillRect(t[0] + 1, t[1] - 24, 8, 24);
+    g.fillStyle = 'rgba(0,0,0,0.25)'; for (var i = 0; i < 4; i++) { g.fillRect(t[0] - 7 + i * 4.5, t[1] - 22, 1, 20); }
+    ellipseAt(g, t[0], t[1] - 24, 10, 5, U.shade(col, 1.15));
+    ellipseAt(g, t[0], t[1] - 24.5, 7, 3.2, U.shade(col, 0.5));
+    if (rng.chance(0.6)) { ellipseAt(g, t[0] - 2, t[1] - 26, 4, 2.5, '#1e1f22'); ellipseAt(g, t[0] + 3, t[1] - 25, 2.5, 1.6, '#d8d2c0'); }
+  }
+  /* poste de fiação de madeira com travessa e isoladores (os fios são desenhados pelo renderizador) */
+  function drawPowerPole(g, dir) {
+    var t = ip(0.5, 0.5, 0), H = 200;
+    ellipseAt(g, t[0], t[1] + 1, 6, 3, 'rgba(0,0,0,0.3)');
+    g.fillStyle = '#5a4634'; g.fillRect(t[0] - 2.5, t[1] - H, 5, H);
+    g.fillStyle = '#463626'; g.fillRect(t[0] + 0.5, t[1] - H, 2, H);
+    var a = dir === 1 ? ip(0.5 - 0.35, 0.5, 0) : ip(0.5, 0.5 - 0.35, 0), b = dir === 1 ? ip(0.5 + 0.35, 0.5, 0) : ip(0.5, 0.5 + 0.35, 0);
+    // travessa perpendicular aos fios
+    var c0 = dir === 1 ? ip(0.5, 0.2, 0) : ip(0.2, 0.5, 0), c1 = dir === 1 ? ip(0.5, 0.8, 0) : ip(0.8, 0.5, 0);
+    g.strokeStyle = '#4a3a2a'; g.lineWidth = 3; g.beginPath(); g.moveTo(c0[0], c0[1] - H + 14); g.lineTo(c1[0], c1[1] - H + 14); g.stroke();
+    [0, 0.5, 1].forEach(function (k) { var x = c0[0] + (c1[0] - c0[0]) * k, y = c0[1] + (c1[1] - c0[1]) * k - H + 14; g.fillStyle = '#c8ccc8'; g.fillRect(x - 1, y - 4, 2, 4); });
+    // transformador
+    g.fillStyle = '#7a7e80'; g.fillRect(t[0] - 6, t[1] - H + 34, 8, 14); g.fillStyle = '#5a5e60'; g.fillRect(t[0] - 1, t[1] - H + 34, 3, 14);
+    a = b = null;
   }
   function drawLamp(g) {
     var t = ip(0.5, 0.5, 0);
