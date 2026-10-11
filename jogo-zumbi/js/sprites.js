@@ -1586,7 +1586,8 @@
    *   shirt, sleeve ('long'|'short'|'none'), sleeveCol, jacket, jacketType, vest, pants, legs ('long'|'shorts'|'skirt'|'dress'),
    *   shoes, gloves, hat, hatType, scarf }
    * pose: { ang (radianos, mundo), phase (0..1 ciclo de passos), moving, run, crouch, attack (0..1), shove (0..1), weapon, aim,
-   *   down, dead, crawl, lunge, reach }
+   *   down, dead, crawl, lunge, reach, kneel (0..1 ajoelhado), eat (tempo: comendo um corpo), stagger (0..1 cambaleando),
+   *   struggle (0..1 se debatendo com um zumbi), t (tempo real, para tremer/agitar) }
    * lightF: multiplicador de cor (luz do lugar) */
   var OUT = 'rgba(30,22,16,0.16)'; // só nas armas; personagens não têm contorno
   var TAU = Math.PI * 2;
@@ -1653,14 +1654,21 @@
       skin: base.skin, hair: base.zombie && base.hair ? U.mix(base.hair, '#4a4334', 0.38) : base.hair, hairStyle: base.hairStyle || 'curto', beard: !!base.beard && !base.female,
       female: !!base.female, zombie: !!base.zombie, seed: base.seed || 0, blood: base.blood || null, bag: base.bag || null,
       shirt: null, sleeve: 'none', sleeveCol: null, jacket: null, jacketType: null, vest: null,
-      pants: null, legs: 'long', shoes: null, gloves: null, hat: null, hatType: null, scarf: null
+      pants: null, legs: 'long', shoes: null, gloves: null, hat: null, hatType: null, scarf: null, stain: null
     };
+    var stn = { bt: 0, dt: 0, ht: 0, bl: 0, dl: 0, hl: 0 }, anyStain = false;
     for (var i = 0; i < items.length; i++) {
       var o = items[i];
       if (!o) { continue; }
       var it = CP.D.ITEMS[o.id];
       if (!it || !it.cloth) { continue; }
       var c = o.color || '#666666', s = it.cloth.slot;
+      // sangue, sujeira e buracos das roupas usadas (só instâncias de item têm esses campos)
+      if (o.blood || o.dirt || o.holes) {
+        anyStain = true;
+        if (s === 'shirt' || s === 'jacket' || s === 'vest') { stn.bt = Math.max(stn.bt, o.blood || 0); stn.dt = Math.max(stn.dt, o.dirt || 0); stn.ht += o.holes || 0; }
+        if (s === 'pants') { stn.bl = Math.max(stn.bl, o.blood || 0); stn.dl = Math.max(stn.dl, o.dirt || 0); stn.hl += o.holes || 0; }
+      }
       if (s === 'shirt') {
         l.shirt = c; l.sleeve = SLEEVE_OF[o.id] || 'long';
         if (o.id === 'dress') { l.legs = 'dress'; l.pants = c; }
@@ -1676,6 +1684,7 @@
       if (l.jacketType === 'scrubs') { if (l.sleeve !== 'long') { l.sleeve = 'short'; l.sleeveCol = l.jacket; } } else { l.sleeve = 'long'; l.sleeveCol = l.jacket; }
     }
     if (!l.pants) { l.pants = UNDER; l.legs = 'shorts'; l.under = true; }
+    if (anyStain) { l.stain = stn; }
     return l;
   };
 
@@ -1720,15 +1729,19 @@
     var swing = mv * Math.sin(ph) * amp;
     var bob = mv * Math.abs(Math.sin(ph)) * (pose.run ? 2.4 : 1.2);
     if (Zb && mv) { bob = Math.max(0, Math.sin(ph) * limpSide) * 2.4; }
-    var lean = (pose.crouch ? 0.1 : 0) + (pose.run ? 0.08 : 0) + (Zb ? 0.11 : 0) + (pose.lunge ? 0.08 : 0);
+    var kneel = pose.kneel || 0, eatT = pose.eat || 0, stag = pose.stagger || 0, strug = pose.struggle || 0, tt0 = pose.t || 0;
+    var lean = (pose.crouch ? 0.1 : 0) + (pose.run ? 0.08 : 0) + (Zb ? 0.11 : 0) + (pose.lunge ? 0.08 : 0) + kneel * 0.2 + (eatT ? 0.16 + 0.05 * Math.sin(eatT * 5) : 0) - stag * 0.16 - strug * 0.1;
     var swayX = Zb ? Math.sin(ph * 0.5 + seed) * 1.6 : 0;
     var legH = H * 0.49, hipH = H * 0.53, waistH = H * 0.63, chestH = H * 0.72, shH = H * 0.8;
     var headH = H * 0.905 - (Zb ? 2.5 : 0);
     function leanAt(h) { return h <= legH ? lean * 0.15 : lean * (0.15 + 0.85 * (h - legH) / (shH - legH)); }
-    function P(fwd, side, h) {
+    // ajoelhado: tudo do quadril para cima desce (as pernas são montadas à parte em drawLeg)
+    var drop = kneel * legH * 0.5, dropFrom = legH * 0.45, dropFull = legH * 0.75;
+    function P(fwd, side, h, nodrop) {
       var a = fx * fwd + rx * side, b = fy * fwd + ry * side;
       var k = h >= legH ? 1 : h / legH;
-      return [sx + HW * (a - b) + swayX * k, sy + HH * (a + b) - h - bob * k];
+      var dd = nodrop || !drop ? 0 : drop * U.clamp((h - dropFrom) / (dropFull - dropFrom), 0, 1);
+      return [sx + HW * (a - b) + swayX * k, sy + HH * (a + b) - h - bob * k + dd];
     }
     var bulk = look.jacket ? 0.012 : 0;
     var shW = (F ? 0.15 : 0.185) + bulk, chW = (F ? 0.135 : 0.165) + bulk, waW = (F ? 0.1 : 0.135) + bulk, hipW = (F ? 0.15 : 0.128) + bulk * 0.5;
@@ -1786,8 +1799,16 @@
       if (Zb && side === limpSide) { sw *= 0.45; lift *= 0.3; }
       var kneeF = (pose.crouch ? 0.15 : 0.04) + lift * 0.012;
       var hip = P(leanAt(legH), side * legSp, legH);
-      var knee = P(sw * 0.2 + kneeF, side * legSp * 1.04, legH * 0.5 + lift * 0.4);
-      var ankle = P(sw * 0.36, side * legSp * 1.08, lift + 2);
+      var knee = P(sw * 0.2 + kneeF, side * legSp * 1.04, legH * 0.5 + lift * 0.4, true);
+      var ankle = P(sw * 0.36, side * legSp * 1.08, lift + 2, true);
+      var heel = P(sw * 0.36 - 0.035, side * legSp * 1.08, lift + 1.3, true), toe = P(sw * 0.36 + 0.095, side * legSp * 1.1, lift + 0.9, true);
+      if (kneel > 0) { // joelhos no chão na frente, canelas deitadas para trás
+        var kb = side * (side === limpSide ? 0.03 : 0);
+        knee = lerp2(knee, P(0.16 + kb, side * legSp * 1.2, 2.2, true), kneel);
+        ankle = lerp2(ankle, P(-0.15, side * legSp * 1.12, 1.8, true), kneel);
+        heel = lerp2(heel, P(-0.19, side * legSp * 1.12, 2, true), kneel);
+        toe = lerp2(toe, P(-0.28, side * legSp * 1.14, 1.2, true), kneel);
+      }
       var far = side !== nearSide;
       var kk = far ? 0.8 : 1;
       var bare = legsT === 'skirt' || legsT === 'dress' || legsT === 'shorts';
@@ -1798,8 +1819,17 @@
       limb(g, hip, knee, F ? 3.4 : 3.3, F ? 2.25 : 2.5, thighC, lpat);
       if (legsT === 'shorts') { limb(g, hip, lerp2(hip, knee, 0.7), (F ? 3.6 : 3.5), 2.8, dk(look.pants, kk)); }
       if (bare && Zb) { g.fillStyle = 'rgba(60,30,40,0.35)'; g.beginPath(); g.arc((knee[0] + ankle[0]) / 2, (knee[1] + ankle[1]) / 2, 1.2, 0, TAU); g.fill(); }
-      var heel = P(sw * 0.36 - 0.035, side * legSp * 1.08, lift + 1.3), toe = P(sw * 0.36 + 0.095, side * legSp * 1.1, lift + 0.9);
       limb(g, heel, toe, F ? 1.6 : 1.9, F ? 1.5 : 1.9, look.shoes ? dk(look.shoes, kk) : dk(skin, kk * 0.92));
+      var stn = look.stain;
+      if (stn && legsT === 'long') { // calça suja (joelhos e barra), com sangue ou rasgada
+        if (stn.dl > 0.05) {
+          g.fillStyle = 'rgba(72,56,36,' + (0.16 + stn.dl * 0.36).toFixed(2) + ')';
+          var kq = lerp2(knee, ankle, 0.12); g.beginPath(); g.ellipse(kq[0], kq[1], 2.3, 1.6, 0, 0, TAU); g.fill();
+          var aq = lerp2(knee, ankle, 0.85); g.beginPath(); g.ellipse(aq[0], aq[1], 1.9, 1.2, 0, 0, TAU); g.fill();
+        }
+        if (stn.bl > 0.05) { var tq = lerp2(hip, knee, 0.45 + side * 0.1); g.fillStyle = dk('#5e1212', kk); g.beginPath(); g.ellipse(tq[0], tq[1], 0.9 + stn.bl * 1.6, 0.8 + stn.bl * 1.1, 0.5, 0, TAU); g.fill(); }
+        if (stn.hl > 0 && side === (stn.hl > 1 ? side : 1)) { var hq = lerp2(knee, ankle, 0.08); blob(g, hq[0], hq[1], 1.4, 1, dk(skin, kk)); }
+      }
     }
     function legs() {
       var dL = HH * (A2 * -legSp) + HH * (B2 * swing * 0.36), dR = HH * (A2 * legSp) - HH * (B2 * swing * 0.36);
@@ -1813,7 +1843,22 @@
       var L = leanAt(shH);
       var sh = P(L, side * shW * 0.9, shH - 2.4 - (side === shDrop ? 2 : 0));
       var hand, elbow;
-      if (Zb && (pose.reach || pose.attack)) {
+      if (eatT) { // comendo: as mãos rasgam o corpo no chão, alternando
+        var te = eatT * 5 + side * 1.9, up = Math.max(0, Math.sin(te));
+        hand = P(L + 0.3 + up * 0.05, side * 0.08, 3 + up * 9, true);
+        elbow = lerp2(sh, hand, 0.5); elbow = [elbow[0] + side * nearSide * 2.5, elbow[1] - 2];
+      } else if (kneel > 0.05) { // levantando: apoia as mãos nos joelhos/chão
+        hand = P(L + 0.2, side * 0.13, 3 + (1 - kneel) * 22, true);
+        elbow = lerp2(sh, hand, 0.5); elbow = [elbow[0] + side * nearSide * 2, elbow[1]];
+      } else if (stag > 0) { // cambaleando: braços abertos tentando se equilibrar
+        var fl = Math.sin(tt0 * 18 + side * 2) * 3;
+        hand = P(L - 0.04, side * (shW + 0.14), shH + 2 + fl);
+        elbow = P(L - 0.02, side * (shW + 0.08), shH - 3);
+      } else if (strug > 0) { // se debatendo: braços na frente empurrando
+        var sf = Math.sin(tt0 * 22 + side * 1.3) * 1.6;
+        hand = P(L + 0.28, side * 0.07, shH + 1 + sf);
+        elbow = P(L + 0.13, side * (shW + 0.02), shH - 5);
+      } else if (Zb && (pose.reach || pose.attack)) {
         var ext2 = pose.attack ? 0.12 * Math.sin(pose.attack * Math.PI) : 0;
         hand = P(L + 0.42 + ext2, side * 0.1, shH - 3 + Math.sin(ph + side) * 2);
         elbow = P(L + 0.22 + ext2 * 0.5, side * 0.15, shH - 3.5);
@@ -1886,11 +1931,12 @@
       var topW = sleeve === 'none' ? shW * 0.82 : shW * 0.97;
       var lv = [ext(hipH - 1, hipW * 0.99 + 0.004, dHip + 0.004), ext(waistH, waW, dWa), ext(chestH, chW, dCh), ext(shH, topW, dSh)];
       // pescoço por trás da gola
-      var nk0 = P(leanAt(shH), 0, shH - 3), nk1 = P(leanAt(shH) + 0.035 + (Zb ? 0.05 : 0), (Zb ? (((seed >> 1) % 3) - 1) * 0.03 : 0), headH - 3.5);
+      var nk0 = P(leanAt(shH), 0, shH - 3), nk1 = P(leanAt(shH) + 0.035 + (Zb ? 0.05 : 0) + (eatT ? 0.08 : 0), (Zb ? (((seed >> 1) % 3) - 1) * 0.03 : 0), headH - 3.5 - (eatT ? 5 : 0));
       limb(g, nk0, nk1, F ? 1.6 : 1.9, F ? 1.5 : 1.8, dk(skin, 0.92));
       var bare = !look.shirt && !look.jacket;
       shell(lv, 3.2, 2.2, Zb && !bare);
       shellFill(outer, lv);
+      if (look.stain && !bare) { stainsTorso(look.stain); }
       var vis = Math.abs(B2) > 0.15;
       // sutiã em quem está sem camisa (feminino)
       if (bare && F && frontNear) {
@@ -1987,12 +2033,38 @@
       if (look.jacketType === 'hoodie') { var hd = P(leanAt(shH) - 0.07, 0, shH + 0.5); blob(g, hd[0], hd[1], 3.6, 2.4, dk(look.jacket, 0.85)); }
     }
 
+    /* manchas da roupa de cima: sujeira na barra, sangue no peito, rasgos com a pele aparecendo (frente ou costas) */
+    function stainsTorso(st) {
+      var n, i, q;
+      if (st.dt > 0.05) {
+        n = 2 + Math.round(st.dt * 5);
+        g.fillStyle = 'rgba(72,56,36,' + (0.14 + st.dt * 0.32).toFixed(2) + ')';
+        for (i = 0; i < n; i++) { q = frontPt(hipH + 1 + ((i * 37) % 9), dWa, (((i * 53) % 11) / 11 - 0.5) * waW * 1.6); g.beginPath(); g.ellipse(q[0], q[1], 2 + (i % 3) * 0.8, 1.3, 0, 0, TAU); g.fill(); }
+      }
+      if (st.bt > 0.05) {
+        n = 1 + Math.round(st.bt * 6);
+        for (i = 0; i < n; i++) {
+          q = frontPt(waistH + ((i * 29) % 13) - 4, dCh, (((i * 71) % 13) / 13 - 0.5) * chW * 1.5);
+          g.fillStyle = col(i % 2 ? '#5a1010' : '#6e1414');
+          g.beginPath(); g.ellipse(q[0], q[1], 1.2 + st.bt * 1.6, 0.9 + st.bt * 1.1, 0.4, 0, TAU); g.fill();
+          if (st.bt > 0.5 && i === 0) { g.fillRect(q[0] - 0.5, q[1], 1, 2.5 + st.bt * 3); }
+        }
+      }
+      if (st.ht > 0) {
+        n = Math.min(4, st.ht);
+        for (i = 0; i < n; i++) {
+          q = frontPt(hipH + 4 + i * 4, dWa, ((i * 47 % 9) / 9 - 0.5) * waW * 1.4);
+          blob(g, q[0], q[1], 1.5, 1.0, col(skin)); g.strokeStyle = 'rgba(30,20,15,0.45)'; g.lineWidth = 0.6; g.stroke();
+        }
+      }
+    }
+
     /* ----- cabeça ----- */
     var fsx = B1, fsy = B2 * 0.5;
     var fl = Math.sqrt(fsx * fsx + fsy * fsy) || 1; fsx /= fl; fsy /= fl;
     var hSide = Zb ? (((seed >> 1) % 3) - 1) * 0.04 : 0;
-    var headF = leanAt(shH) + 0.035 + (Zb ? 0.07 : 0);
-    var HC = P(headF, hSide, headH);
+    var headF = leanAt(shH) + 0.035 + (Zb ? 0.07 : 0) + (eatT ? 0.09 + 0.04 * Math.sin(eatT * 5) : 0);
+    var HC = P(headF, hSide, headH - (eatT ? 5 + 3 * Math.abs(Math.sin(eatT * 10)) : 0));
     var rX = F ? 3.2 : 3.45, rY = F ? 3.75 : 4.0;
     var hs = look.hairStyle || 'curto';
     var longHair = hs === 'longo' || hs === 'rabo' || (hs === 'médio' && F);

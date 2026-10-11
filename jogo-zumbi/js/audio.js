@@ -525,6 +525,14 @@
     Au.flyNode.g.gain.setTargetAtTime(vol * 0.03, t, 0.6);
     if (Au.flyNode.pn) { Au.flyNode.pn.pan.setTargetAtTime(pan || 0, t, 0.4); }
   };
+  /* zumbi comendo: rasgar molhado e mastigar */
+  Au.chew = function (x, y, z) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, z, 18);
+    if (sp.g <= 0.02) { return; }
+    noise(sp, 0.18, 420 + Math.random() * 200, 1.4, 0.22, 'lowpass', 0.01, 0.6 + Math.random() * 0.3);
+    setTimeout(function () { if (ok()) { noise(sp, 0.07, 1400 + Math.random() * 600, 3, 0.12, 'bandpass', 0.002); } }, 120 + Math.random() * 120);
+  };
   /* corvos levantando voo: grasnados e bater de asas */
   Au.crows = function (x, y, n) {
     if (!ok()) { return; }

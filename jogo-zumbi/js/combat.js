@@ -126,6 +126,8 @@
       var knock = w.knock * (0.8 + str * 0.04);
       var knockdown = crit && w.knock >= 0.5 && Math.random() < 0.5 + str * 0.03;
       var killed = CP.Zombies.damage(zb, dmg, p.ang, { stagger: Math.random() < 0.55 + knock * 0.2, knockdown: knockdown, knock: knock, cause: 'weapon' });
+      // respingo de sangue na roupa (mais com armas curtas, de perto)
+      if (CP.Body && Math.random() < (w.type === 'blade_short' || w.type === 'blunt_short' ? 0.55 : 0.3)) { CP.Body.addBloodOnClothes(p, killed ? 0.05 : 0.03); }
       CP.Player.addXp(p, w.skill, killed ? 3 : 1.5);
       if (killed) { CP.Player.addXp(p, 'strength', 0.3); }
       if (CP.Audio) { CP.Audio.hit(w.type, killed, zb.x, zb.y, zb.z); if (!killed && Math.random() < 0.4) { CP.Audio.groan(zb, true); } }
@@ -188,6 +190,7 @@
     var dmg = U.randRange(CB.STOMP_DMG_MIN, CB.STOMP_DMG_MAX) * (0.75 + str * 0.05);
     if (zb.state === 'fakedead') { zb.state = 'down'; zb.downT = 1.5; }
     if (zb.state === 'down') { zb.downT = Math.max(zb.downT, 1.2); }
+    if (zb.state === 'getup') { zb.state = 'down'; zb.downT = 1.2; } // pisão derruba de novo quem está levantando
     var killed = CP.Zombies.damage(zb, dmg, p.ang, { cause: 'stomp' });
     if (CP.Audio) { CP.Audio.hit('stomp', killed, zb.x, zb.y, zb.z); }
     CP.Player.addXp(p, 'strength', 0.4);
@@ -276,7 +279,7 @@
 
   /* ---------- zumbi acerta o jogador ---------- */
   K.zombieHits = function (zb, p) {
-    if (p.dead) { return; }
+    if (p.dead || p.dragged) { return; }
     if (p.vehicle) {
       var car = p.vehicle;
       if (!car.windowBroken && car.cond > 0.25) {
@@ -289,7 +292,7 @@
     // ser agarrado por vários = arrastado ao chão
     var attackers = CP.Zombies.near(p.x, p.y, 1.3, near).filter(function (o) { return o.state === 'attack' || (o.state === 'chase' && U.dist2(o.x, o.y, p.x, p.y) < 1.1); }).length;
     if (attackers >= ZC.DRAG_DOWN_COUNT && Math.random() < ZC.DRAG_DOWN_CHANCE * (attackers - ZC.DRAG_DOWN_COUNT + 1)) {
-      if (CP.Body) { CP.Body.die(p, 'Foi arrastado e devorado por uma horda'); }
+      if (CP.Body) { CP.Body.dragDown(p); }
       return;
     }
     // chance de errar: jogador se afastando ou ágil

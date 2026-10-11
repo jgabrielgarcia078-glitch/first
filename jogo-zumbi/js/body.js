@@ -155,6 +155,8 @@
     if (s.boredom > 0.5) { s.unhappy = Math.min(1, s.unhappy + 0.02 * (s.boredom - 0.4) * h * 4); }
     if (s.stress > 0.5) { s.unhappy = Math.min(1, s.unhappy + 0.01 * h * 4); }
     if (b.meds.antidep > 0) { s.unhappy = Math.max(0, s.unhappy - 0.05 * h); }
+    var grime = B.grime(p);
+    if (grime > 0.5 && !sleeping) { s.unhappy = Math.min(1, s.unhappy + 0.006 * (grime - 0.4) * h * 4); } // roupa imunda de sangue e lama
     s.unhappy = Math.max(0, s.unhappy - 0.004 * h);
     s.drunk = Math.max(0, s.drunk - 0.08 * h);
     // remédios
@@ -342,6 +344,9 @@
     if (p.fx.woundMult && p.fx.woundMult < 1 && type === 'laceration' && Math.random() < 0.3) { type = 'scratch'; }
     if (p.fx.woundMult && p.fx.woundMult > 1 && type === 'scratch' && Math.random() < 0.25) { type = 'laceration'; }
     var w = B.addWound(p, partId, type, { zombie: true, cause: 'Foi atacado por zumbis' });
+    // sangue na roupa daquela parte e o personagem se debate (mordida e corte fundo)
+    B.addBloodOnClothes(p, type === 'scratch' ? 0.06 : 0.15, B.slotForPart(partId));
+    if (type !== 'scratch') { p.anim.struggle = 0.9; p.shakeT = Math.max(p.shakeT || 0, 0.5); }
     if (CP.Game.settings.infection !== false && Math.random() < C.INFECTION[type === 'laceration' ? 'LACERATION' : type.toUpperCase()]) { B.infect(p); }
     p.body.stats.panic = Math.min(100, p.body.stats.panic + 25);
     if (CP.UI) { CP.UI.toast(D.WOUND_NAMES[type] + ' no(a) ' + D.PART[partId].name.toLowerCase() + '!', type === 'bite' ? 'danger' : 'warn'); }
@@ -353,6 +358,36 @@
   B.addBloodOnClothes = function (p, amt, slot) {
     var it = slot ? p.worn[slot] : (p.worn.jacket || p.worn.shirt);
     if (it) { it.blood = Math.min(1, (it.blood || 0) + amt); }
+  };
+  /* roupa de cima ou calça conforme a parte do corpo */
+  B.slotForPart = function (partId) {
+    if (/^(thigh|shin|foot|groin)/.test(partId)) { return 'pants'; }
+    return null;
+  };
+  /* sujeira na roupa: slot = 'pants', 'top' (jaqueta ou camisa) ou nada (as duas) */
+  B.addDirt = function (p, amt, slot) {
+    var list = slot === 'pants' ? [p.worn.pants] : (slot === 'top' ? [p.worn.jacket || p.worn.shirt] : [p.worn.jacket || p.worn.shirt, p.worn.pants]);
+    list.forEach(function (it) { if (it && D.ITEMS[it.id].cloth) { it.dirt = Math.min(1, (it.dirt || 0) + amt); } });
+  };
+  /* quão imunda está a roupa que você veste (0..1) */
+  B.grime = function (p) {
+    var g = 0;
+    ['shirt', 'jacket', 'pants'].forEach(function (s) { var it = p.worn[s]; if (it) { g = Math.max(g, (it.blood || 0) * 0.9 + (it.dirt || 0) * 0.6); } });
+    return Math.min(1, g);
+  };
+  /* derrubado por vários zumbis: cai, se debate e é devorado (morre ao fim, com os zumbis comendo em volta) */
+  B.dragDown = function (p) {
+    if (p.dragged || p.dead) { return; }
+    p.dragged = { t: 0, dur: 2.6 };
+    p.running = false; p.sneaking = false; p.aiming = false; p.sitting = false;
+    if (p.action && CP.Actions) { CP.Actions.cancel(p, 'derrubado'); }
+    p.shakeT = 1.2;
+    var zs = CP.Zombies.near(p.x, p.y, 2, []);
+    zs.forEach(function (zb) { if (zb.state !== 'dead' && Math.abs(zb.z - p.z) < 0.5 && !CP.Zombies.isDown(zb)) { CP.Zombies.startEat(zb, { x: p.x, y: p.y }); } });
+    if (CP.FX) { CP.FX.blood(p.x, p.y, p.z, 3); }
+    if (CP.Audio) { CP.Audio.hurt('bite'); }
+    if (CP.UI) { CP.UI.toast('Você foi derrubado pela horda!', 'danger'); if (CP.UI.hurtFlash) { CP.UI.hurtFlash(); } }
+    B.addBloodOnClothes(p, 0.6); B.addBloodOnClothes(p, 0.5, 'pants');
   };
 
   /* isolamento total das roupas */

@@ -97,7 +97,8 @@
     if (S.frame % 300 === 0) { S.sweep(); }
     var g = R.g;
     var z = R.zoom, dpr = R.dpr;
-    var camSX = wsx(R.camX, R.camY), camSY = wsy(R.camX, R.camY, R.camZ);
+    var shx = R.shakeX || 0, shy = R.shakeY || 0;
+    var camSX = wsx(R.camX + shx, R.camY + shy), camSY = wsy(R.camX + shx, R.camY + shy, R.camZ);
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#07080a';
     g.fillRect(0, 0, R.canvas.width, R.canvas.height);

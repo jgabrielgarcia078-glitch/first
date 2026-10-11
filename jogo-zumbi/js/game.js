@@ -241,6 +241,9 @@
     }
     R.camX += (tx - R.camX) * k; R.camY += (ty - R.camY) * k; R.camZ += (p.z - R.camZ) * k;
     if (Math.abs(R.camX - tx) > 20 || Math.abs(R.camY - ty) > 20) { R.camX = tx; R.camY = ty; }
+    // tremor (mordida, ser derrubado): desvio pequeno que some sozinho no próximo quadro
+    R.shakeX = R.shakeY = 0;
+    if (p.shakeT > 0) { var sk = Math.min(1, p.shakeT) * 0.09; R.shakeX = (Math.random() - 0.5) * sk; R.shakeY = (Math.random() - 0.5) * sk; }
   };
 
   /* ---------- desenho ---------- */

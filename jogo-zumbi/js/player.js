@@ -149,6 +149,15 @@
   var SCREEN_DIRS = { KeyW: [-1, -1], KeyS: [1, 1], KeyA: [-1, 1], KeyD: [1, -1], ArrowUp: [-1, -1], ArrowDown: [1, 1], ArrowLeft: [-1, 1], ArrowRight: [1, -1] };
   P.update = function (p, dt, gameDt) {
     if (p.dead) { return; }
+    if (p.anim.struggle > 0) { p.anim.struggle = Math.max(0, p.anim.struggle - dt); }
+    if (p.shakeT > 0) { p.shakeT = Math.max(0, p.shakeT - dt); }
+    // derrubado pela horda: não há mais o que fazer
+    if (p.dragged) {
+      p.moving = false; p.running = false; p.aiming = false;
+      p.dragged.t += dt;
+      if (p.dragged.t >= p.dragged.dur && CP.Body) { CP.Body.die(p, 'Foi arrastado e devorado por uma horda'); }
+      return;
+    }
     if (p.vehicle && CP.Vehicles) {
       CP.Vehicles.drive(p, dt);
       if (CP.Actions) { CP.Actions.update(p, dt, gameDt); }
@@ -192,6 +201,11 @@
           r *= (p.fx.noiseMult || 1) * (1 - P.skillLevel(p, 'lightfooted') * 0.05);
           if (CP.Zombies) { CP.Zombies.noise(p.x, p.y, p.z, r, 'step'); }
           if (CP.Audio && !p.sneaking) { CP.Audio.step(p.running); }
+          // barro: andando na chuva por grama/terra suja a barra da calça
+          if (CP.Time && CP.Time.raining() && CP.Body && !W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z))) {
+            var sf = W.floor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z)), FL = C.FLOOR;
+            if (sf === FL.GRASS || sf === FL.DARKGRASS || sf === FL.DIRT || sf === FL.FARM || sf === FL.FURROW || sf === FL.FIELD) { CP.Body.addDirt(p, p.running ? 0.006 : 0.003, 'pants'); }
+          }
           // XP de movimento
           if (p.running) { P.addXp(p, 'sprinting', 0.6); P.addXp(p, 'fitness', 0.15); }
           if (p.sneaking) { P.addXp(p, 'sneaking', 0.5); P.addXp(p, 'lightfooted', 0.25); }
@@ -223,11 +237,14 @@
     var p = this;
     var look = P.lookFor(p);
     var wl = p.hand1 ? D.weaponLook(p.hand1.id) : null;
+    var now = performance.now() / 1000;
     var pose = {
       ang: p.ang, phase: p.anim.phase, moving: p.moving, run: p.running, crouch: p.sneaking,
       attack: p.anim.attack, shove: p.anim.shove, weapon: wl, aim: p.aiming,
-      down: p.sleeping || p.dead, dead: p.dead
+      down: p.sleeping || p.dead, dead: p.dead, t: now,
+      struggle: p.anim.struggle > 0 ? Math.min(1, p.anim.struggle / 0.3) : 0
     };
+    if (p.dragged && !p.dead) { pose.down = true; pose.crawl = true; pose.phase = (now * 2.4) % 1; } // debatendo-se no chão
     var b = Math.max(0.35, bright);
     CP.Spr.drawHuman(g, sx, sy, look, pose, b);
     if (p.action && CP.Actions) { CP.Actions.drawProgress(g, sx, sy, p); }

@@ -326,7 +326,9 @@
           var dz = CP.Zombies.makeData(ctx.rng, wx, wy, 0, null, null);
           var lk = CP.Zombies.fromData(dz).look;
           if (ctx.rng.chance(0.5)) { lk.zombie = false; lk.skin = ctx.rng.pick(C.SKIN_TONES); }
-          ctx.c.corpses.push({ x: wx, y: wy, z: 0, ang: ctx.rng.range(0, 6.28), look: lk, items: ctx.rng.chance(0.4) ? [makeItem(ctx, ctx.rng.pick(['wallet', 'cigarettes', 'water_bottle', 'candy', 'bandage']), null)] : [], t: -86400 * 3 });
+          ctx.c.corpses.push({ x: wx, y: wy, z: 0, ang: ctx.rng.range(0, 6.28), look: lk, items: ctx.rng.chance(0.4) ? [makeItem(ctx, ctx.rng.pick(['wallet', 'cigarettes', 'water_bottle', 'candy', 'bandage']), null)] : [], t: -86400 * 3, zombie: lk.zombie });
+          // alguns zumbis ajoelhados comendo o corpo (só corpos de gente)
+          if (!lk.zombie && ctx.rng.chance(0.45)) { feedingGroup(ctx, wx, wy, ctx.rng.int(2, 3)); }
           ctx.c.decals = ctx.c.decals || [];
           for (var dd = 0; dd < 4; dd++) { ctx.c.decals.push({ x: wx + ctx.rng.range(-0.8, 0.8), y: wy + ctx.rng.range(-0.8, 0.8), z: 0, s: ctx.rng.range(3, 6), r: ctx.rng.next() }); }
         }
@@ -351,6 +353,20 @@
       }
     }
   }
+  /* zumbis comendo um corpo em (wx, wy): ficam em volta, virados para ele */
+  function feedingGroup(ctx, wx, wy, n) {
+    if (!CP.Zombies) { return; }
+    var a0 = ctx.rng.range(0, Math.PI * 2);
+    for (var k = 0; k < n; k++) {
+      var a = a0 + k * (Math.PI * 2 / n) + ctx.rng.range(-0.3, 0.3), r = ctx.rng.range(0.55, 0.75);
+      var zx = wx + Math.cos(a) * r, zy = wy + Math.sin(a) * r;
+      if (!W.inBounds(Math.floor(zx), Math.floor(zy))) { continue; }
+      var d = CP.Zombies.makeData(ctx.rng, zx, zy, 0, null, null);
+      d.crawler = false; d.fakeDead = false; d.state = 'eat'; d.eat = { x: wx, y: wy }; d.ang = a + Math.PI;
+      ctx.c.zombies.push(d);
+    }
+  }
+  G.feedingGroup = feedingGroup;
   /* carro ocupa 2 tiles: dir 0 = horizontal (x, x+1), 1 = vertical (y, y+1). odir: bit0 dir, bit1 parte, bits 2-5 cor */
   function placeCar(ctx, lx, ly, dir) {
     var lx2 = dir === 0 ? lx + 1 : lx, ly2 = dir === 0 ? ly : ly + 1;

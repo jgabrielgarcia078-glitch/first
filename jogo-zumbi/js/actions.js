@@ -191,6 +191,7 @@
       if (W.blockedBetween(Math.floor(p.x), Math.floor(p.y), Math.floor(dest.x), Math.floor(dest.y), z, false) && !(st.broken || st.open)) { return; }
       if (st.broken && st.glass && Math.random() < 0.55) { CP.Body.addWound(p, U.pick(['farmL', 'farmR', 'handL', 'handR', 'thighL', 'shinR']), Math.random() < 0.3 ? 'glass' : 'laceration', { cause: 'Cortou-se pulando uma janela quebrada' }); }
       p.x = dest.x; p.y = dest.y;
+      if (CP.Body) { CP.Body.addDirt(p, 0.04); }
       if (!playerIndoorSide(p, e, z)) { /* saiu */ } else { breakIn(e.x, e.y, z); }
       // pulou do 2º andar: queda
       if (z > 0 && !W.tileWalkable(Math.floor(p.x), Math.floor(p.y), z)) {
@@ -210,6 +211,7 @@
     face(p, dest.x, dest.y);
     A.start(p, { name: 'Pulando', time: time - CP.Player.skillLevel(p, 'nimble') * 0.04, anim: 'climb', onDone: function () {
       p.x = dest.x; p.y = dest.y; CP.Zombies.noise(p.x, p.y, p.z, 5, 'vault'); CP.Player.addXp(p, 'nimble', 1);
+      if (CP.Body) { CP.Body.addDirt(p, 0.03); }
     } });
   }
   function barricadeOpt(p, e, z, st, out) {
@@ -317,10 +319,42 @@
         msg('Garrafa cheia.');
       } });
     } });
+    washOptions(p, src, ok, out);
     var pot = CP.Items.Inv.findId(p, 'pot');
     if (pot) {
       out.push({ label: 'Encher panela', disabled: !ok, fn: function () { A.start(p, { name: 'Enchendo panela', time: 2, onDone: function () { CP.Items.Inv.detach(p, pot.item); CP.Items.Inv.give(p, CP.Items.make('pot_water', { dirty: src.dirty })); src.take(3); } }); } });
     }
+  }
+  /* lavar-se e lavar roupas (sangue e sujeira). Com sabão sai tudo; sem, só uma parte */
+  function dirtyClothes(p) {
+    var list = [];
+    for (var s in p.worn) { var it = p.worn[s]; if (it && D.ITEMS[it.id].cloth && ((it.blood || 0) > 0.04 || (it.dirt || 0) > 0.04)) { list.push(it); } }
+    CP.Items.Inv.all(p).forEach(function (o) { var it = o.item; if (D.ITEMS[it.id].cloth && list.indexOf(it) < 0 && ((it.blood || 0) > 0.04 || (it.dirt || 0) > 0.04)) { list.push(it); } });
+    return list;
+  }
+  A.dirtyClothes = dirtyClothes;
+  function washOptions(p, src, ok, out) {
+    var body = (p.bloodSpots && p.bloodSpots.length) || (p.bodyDirt || 0) > 0.05;
+    out.push({ label: 'Lavar-se', disabled: !ok || !body, hint: !ok ? 'Sem água' : 'Você não está sujo', fn: function () {
+      A.start(p, { name: 'Lavando-se', time: 5, anim: 'work', onDone: function () {
+        src.take(2);
+        p.bloodSpots = []; p.bodyDirt = 0;
+        p.body.stats.unhappy = Math.max(0, p.body.stats.unhappy - 0.05);
+        msg('Você se lavou. Bem melhor.');
+      } });
+    } });
+    var cl = dirtyClothes(p);
+    if (!cl.length) { return; }
+    var soap = CP.Items.Inv.find(p, function (it) { return it.id === 'soap' && (it.uses === undefined || it.uses > 0); });
+    out.push({ label: 'Lavar roupas (' + cl.length + (cl.length > 1 ? ' peças' : ' peça') + (soap ? ', com sabão' : ', sem sabão') + ')', disabled: !ok || src.amount < 1, hint: 'Sem água', fn: function () {
+      A.start(p, { name: 'Lavando roupas', time: 3.5 * cl.length * (soap ? 0.8 : 1), anim: 'work', onDone: function () {
+        var k = soap ? 0 : 0.35;
+        cl.forEach(function (it) { it.blood = (it.blood || 0) * k; it.dirt = (it.dirt || 0) * k; if (it.blood < 0.04) { it.blood = 0; } if (it.dirt < 0.04) { it.dirt = 0; } });
+        src.take(Math.min(src.amount, 1.5 * cl.length));
+        if (soap && soap.item.uses !== undefined) { soap.item.uses--; if (soap.item.uses <= 0) { CP.Items.Inv.detach(p, soap.item); msg('O sabão acabou.'); } }
+        msg(soap ? 'As roupas ficaram limpas.' : 'Sem sabão, ficou só um pouco melhor.');
+      } });
+    } });
   }
   /* beber de lago/rio */
   function lakeOptions(p, x, y, z, out) {

@@ -39,7 +39,7 @@
     var zb = {
       kind: 'zombie', id: Z.nextId++, x: d.x, y: d.y, z: d.z, ang: d.ang || 0, data: d,
       hp: d.hp, speedType: d.speed, crawler: !!d.crawler,
-      state: d.fakeDead ? 'fakedead' : (d.state === 'wander' ? 'wander' : 'idle'),
+      state: d.fakeDead ? 'fakedead' : (d.state === 'wander' ? 'wander' : (d.state === 'eat' && d.eat ? 'eat' : 'idle')), eat: d.state === 'eat' ? d.eat : null,
       target: null, memT: 0, path: null, pathI: 0, repathT: 0, thinkT: Math.random() * ZC.THINK_INTERVAL,
       attackT: 0, attackCd: 0, staggerT: 0, downT: 0, climbT: 0, climb: null, bash: null, bashT: 0,
       vx: 0, vy: 0, phase: Math.random(), moving: false, seesPlayer: false, idleT: U.randRange(2, 10),
@@ -54,7 +54,8 @@
     var d = zb.data;
     d.x = zb.x; d.y = zb.y; d.z = zb.z; d.ang = zb.ang; d.hp = zb.hp; d.crawler = zb.crawler;
     d.fakeDead = zb.state === 'fakedead';
-    d.state = zb.state === 'wander' ? 'wander' : 'idle';
+    d.state = zb.state === 'wander' ? 'wander' : (zb.state === 'eat' && zb.eat ? 'eat' : 'idle');
+    d.eat = d.state === 'eat' ? zb.eat : null;
     return d;
   }
   Z.toData = toData;
@@ -156,7 +157,7 @@
       }
     }
   };
-  function isDown(zb) { return zb.state === 'down' || zb.state === 'fakedead' || zb.crawler; }
+  function isDown(zb) { return zb.state === 'down' || zb.state === 'fakedead' || zb.state === 'getup' || zb.crawler; }
   Z.isDown = isDown;
 
   /* ---------- ruído ---------- */
@@ -177,6 +178,7 @@
       if (Math.abs(zb.z - z) > 0.5 && d2 > (r * 0.4) * (r * 0.4)) { continue; }
       if (zb.state === 'chase' && zb.seesPlayer) { continue; }
       var d = Math.sqrt(d2);
+      if (zb.state === 'eat') { if (d > r * 0.45) { continue; } zb.eat = null; } // comendo: só barulho bem perto tira a atenção
       var jitter = Math.min(4, d * 0.12);
       zb.target = { x: x + U.randRange(-jitter, jitter), y: y + U.randRange(-jitter, jitter), z: z };
       zb.memT = ZC.MEMORY_SECONDS * ((G.settings && G.settings.memory) || 1);
@@ -284,7 +286,19 @@
         return;
       case 'down':
         zb.downT -= dt;
-        if (zb.downT <= 0) { zb.state = zb.target ? 'chase' : 'idle'; zb.path = null; }
+        if (zb.downT <= 0) {
+          if (zb.crawler) { zb.state = zb.target ? 'chase' : 'idle'; zb.path = null; } else {
+            // levanta devagar: apoia as mãos, fica de joelhos e depois de pé
+            zb.state = 'getup'; zb.getDur = zb.getT = (zb.speedType === 'sprinter' ? 0.7 : (zb.speedType === 'fast' ? 1.0 : 1.6)) * U.randRange(0.85, 1.2);
+          }
+        }
+        return;
+      case 'getup':
+        zb.getT -= dt;
+        if (zb.getT <= 0) { zb.state = zb.target ? 'chase' : 'idle'; zb.path = null; }
+        return;
+      case 'eat':
+        updateEat(zb, p, dt);
         return;
       case 'climb':
         zb.climbT -= dt;
@@ -326,7 +340,13 @@
       case 'idle':
         zb.idleT -= dt;
         if (zb.idleT <= 0) {
-          if (Math.random() < 0.55) {
+          var meal = Math.random() < 0.5 ? findMeal(zb) : null;
+          if (meal) {
+            var ma = Math.random() * Math.PI * 2;
+            zb.goEat = { x: meal.x, y: meal.y };
+            zb.target = { x: meal.x + Math.cos(ma) * 0.7, y: meal.y + Math.sin(ma) * 0.7, z: zb.z };
+            zb.memT = 30; zb.state = 'wander'; zb.path = null;
+          } else if (Math.random() < 0.55) {
             var a = Math.random() * Math.PI * 2, r = U.randRange(2, 8);
             zb.target = { x: zb.x + Math.cos(a) * r, y: zb.y + Math.sin(a) * r, z: zb.z };
             zb.memT = 14; zb.state = 'wander'; zb.path = null;
@@ -468,10 +488,56 @@
   }
 
   function arrive(zb) {
+    if (zb.goEat && U.dist(zb.x, zb.y, zb.goEat.x, zb.goEat.y) < 1.5) { startEat(zb, zb.goEat); zb.goEat = null; return; }
+    zb.goEat = null;
     if (zb.state === 'wander') { zb.state = 'idle'; zb.target = null; zb.idleT = U.randRange(3, 10); return; }
     // investigou e não achou nada: olha em volta
     if (!zb.seesPlayer) { zb.ang += U.randRange(-1.5, 1.5); }
     if (zb.memT < ZC.MEMORY_SECONDS - 6) { zb.state = 'idle'; zb.target = null; zb.idleT = U.randRange(4, 12); }
+  }
+
+  /* ---------- comendo um corpo ---------- */
+  /* corpo humano (não zumbi) mais perto, até 7 tiles */
+  function findMeal(zb) {
+    var G = CP.Game, best = null, bd = 49;
+    for (var k in G.activeChunks) {
+      var cs = G.activeChunks[k].corpses;
+      for (var i = 0; i < cs.length; i++) {
+        var c = cs[i];
+        if (c.zombie || c.burnt || Math.abs(c.z - zb.z) > 0.5) { continue; }
+        var d2 = U.dist2(c.x, c.y, zb.x, zb.y);
+        if (d2 < bd) { bd = d2; best = c; }
+      }
+    }
+    return best;
+  }
+  function startEat(zb, at) {
+    zb.state = 'eat'; zb.eat = { x: at.x, y: at.y }; zb.target = null; zb.path = null; zb.eatT = 0;
+    zb.ang = Math.atan2(at.y - zb.y, at.x - zb.x);
+  }
+  Z.startEat = startEat;
+  /* ajoelhado comendo: quase não presta atenção (só vê o jogador bem perto) */
+  function updateEat(zb, p, dt) {
+    zb.moving = false;
+    var e = zb.eat;
+    if (!e) { zb.state = 'idle'; zb.idleT = U.randRange(2, 6); return; }
+    zb.ang = U.approachAngle(zb.ang, Math.atan2(e.y - zb.y, e.x - zb.x), dt * 3);
+    zb.eatT = (zb.eatT || 0) + dt;
+    zb.thinkT -= dt;
+    if (zb.thinkT <= 0) {
+      zb.thinkT = 0.5 + Math.random() * 0.3;
+      if (!p.dead && !p.dragged && Math.abs(zb.z - p.z) < 0.45) {
+        var near = p.sneaking ? 2.2 : 4.5;
+        if (U.dist2(zb.x, zb.y, p.x, p.y) < near * near && canSeePlayer(zb, p)) {
+          zb.state = 'chase'; zb.seesPlayer = true; zb.lastSeenT = 0; zb.eat = null;
+          zb.target = { x: p.x, y: p.y, z: p.z }; zb.memT = ZC.MEMORY_SECONDS * (CP.Game.settings.memory || 1);
+          if (CP.Audio) { CP.Audio.groan(zb, true); }
+          if (CP.Music) { CP.Music.spotted(); }
+          return;
+        }
+      }
+    }
+    if (CP.Audio && CP.Audio.chew && Math.random() < dt * 0.45 && U.dist2(zb.x, zb.y, p.x, p.y) < 14 * 14) { CP.Audio.chew(zb.x, zb.y, zb.z); }
   }
 
   function startClimb(zb, n, time) {
@@ -617,8 +683,14 @@
       down: zb.state === 'down' || zb.state === 'fakedead', crawl: zb.crawler && zb.state !== 'down' && zb.state !== 'fakedead',
       lunge: zb.state === 'attack', reach: zb.state === 'chase' || zb.state === 'attack' || zb.state === 'bash'
     };
-    if (zb.state === 'stagger') { pose.ang += Math.sin(zb.staggerT * 20) * 0.2; }
+    var now = performance.now() / 1000;
+    if (zb.state === 'stagger') { pose.ang += Math.sin(zb.staggerT * 20) * 0.2; pose.stagger = Math.min(1, zb.staggerT / 0.4); pose.t = now; }
     if (zb.state === 'climb') { sy -= 10 * Math.sin((1 - zb.climbT / 2.4) * Math.PI); }
+    if (zb.state === 'getup') {
+      var gt = 1 - zb.getT / (zb.getDur || 1);
+      if (gt < 0.4) { pose.crawl = true; pose.phase = gt * 0.6; } else { pose.kneel = 1 - (gt - 0.4) / 0.6; }
+    }
+    if (zb.state === 'eat') { pose.kneel = 1; pose.eat = now + (zb.id % 13) * 0.37; pose.reach = false; }
     CP.Spr.drawHuman(g, sx, sy, zb.look, pose, Math.max(0.25, bright));
   }
   function drawCorpse(g, sx, sy, bright) {
