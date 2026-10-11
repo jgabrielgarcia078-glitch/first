@@ -204,7 +204,15 @@
     }
     if (b.health <= 0) { B.die(p, b.lastCause || 'Morreu dos ferimentos'); }
     // acorda?
-    if (sleeping) {
+    if (sleeping) { // pesadelos (checados por hora de sono)
+      p._nmAcc = (p._nmAcc || 0) + h;
+      while (p._nmAcc >= 1 && p.sleeping) {
+        p._nmAcc -= 1;
+        var SL = C.SLEEP, nm = (SL.NIGHTMARE_BASE + s.stress * SL.NIGHTMARE_STRESS + s.unhappy * SL.NIGHTMARE_UNHAPPY) * (b.meds.sleep > 0 ? 0.4 : 1);
+        if (Math.random() < nm) { s.nightmares = (s.nightmares || 0) + 1; s.panic = Math.min(100, s.panic + SL.NIGHTMARE_PANIC); s.stress = Math.min(1, s.stress + 0.04); B.wake(p, 'Você acordou assustado de um pesadelo.'); }
+      }
+    }
+    if (p.sleeping) {
       if (s.fatigue <= 0.02 && !p.forceSleep) { B.wake(p, 'Acordou descansado.'); } else if (s.hunger > 0.7 || s.thirst > 0.8) { B.wake(p, 'Acordou com fome/sede.'); } else if (B.pain(p) > 60) { B.wake(p, 'A dor te acordou.'); }
     }
   };
@@ -445,7 +453,7 @@
   };
   B.takePill = function (p, type) {
     var m = p.body.meds;
-    if (type === 'pain') { m.pain = 6; } else if (type === 'antibiotic') { m.antibiotic = 12; } else if (type === 'panic') { m.beta = 6; p.body.stats.panic = Math.min(p.body.stats.panic, 20); } else if (type === 'happy') { m.antidep = 24; } else if (type === 'sleep') { p.body.stats.fatigue = Math.min(1, p.body.stats.fatigue + 0.25); } else if (type === 'flu') { m.flu = 8; }
+    if (type === 'pain') { m.pain = 6; } else if (type === 'antibiotic') { m.antibiotic = 12; } else if (type === 'panic') { m.beta = 6; p.body.stats.panic = Math.min(p.body.stats.panic, 20); } else if (type === 'happy') { m.antidep = 24; } else if (type === 'sleep') { p.body.stats.fatigue = Math.min(1, p.body.stats.fatigue + 0.25); m.sleep = C.SLEEP.PILL_H; } else if (type === 'flu') { m.flu = 8; }
   };
 
   /* ---------- sono ---------- */
@@ -453,6 +461,11 @@
     if (p.body.stats.fatigue < 0.3) { if (CP.UI) { CP.UI.toast('Você não está com sono.'); } return false; }
     if (B.pain(p) > 50) { if (CP.UI) { CP.UI.toast('A dor não deixa você dormir.', 'warn'); } return false; }
     if (p.body.stats.panic > 30) { if (CP.UI) { CP.UI.toast('Você está nervoso demais para dormir.', 'warn'); } return false; }
+    var SL = C.SLEEP, st0 = p.body.stats;
+    if (!(p.body.meds.sleep > 0) && (st0.stress > SL.INSOMNIA_STRESS || B.pain(p) > SL.INSOMNIA_PAIN || p.fx.insomniac) && Math.random() < SL.INSOMNIA_CHANCE) {
+      if (CP.UI) { CP.UI.toast('Você rola na cama, mas não consegue pegar no sono. (Remédio para dormir ajuda.)', 'warn'); }
+      st0.stress = Math.max(0, st0.stress - 0.02); return false;
+    }
     p.sleeping = true; p.sitting = false;
     p.body.sleepQuality = quality || 0.6;
     p.sleepStart = CP.Game.state.time;

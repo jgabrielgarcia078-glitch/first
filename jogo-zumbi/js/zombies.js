@@ -161,6 +161,19 @@
   Z.isDown = isDown;
 
   /* ---------- ruído ---------- */
+  /* motor ouvido de longe: só uma parte dos zumbis vem ver (não entra na fila de barulho normal) */
+  Z.farNoise = function (x, y, r, chance) {
+    var zs = CP.Game.zombies, n = 0;
+    for (var i = 0; i < zs.length; i++) {
+      var zb = zs[i];
+      if (zb.state === 'dead' || zb.state === 'chase' || zb.state === 'attack' || zb.seesPlayer || zb.state === 'down' || zb.state === 'held') { continue; }
+      if (U.dist2(zb.x, zb.y, x, y) > r * r || Math.random() > chance) { continue; }
+      zb.target = { x: x + U.randRange(-6, 6), y: y + U.randRange(-6, 6), z: 0 }; zb.memT = ZC.MEMORY_SECONDS; zb.state = 'investigate'; zb.path = null; zb.repathT = U.randRange(0, 1); n++;
+    }
+    return n;
+  };
+  /* alguns zumbis abrem porta destrancada (escolhido pela semente do zumbi) */
+  Z.isOpener = function (zb) { var sd = zb.data && zb.data.seed !== undefined ? zb.data.seed : zb.id; return (Math.abs(sd) % 100) < C.ZSMART.OPENER_PCT; };
   Z.noise = function (x, y, z, radius, type) {
     var G = CP.Game;
     if (!G || !G.zombies) { return; }
@@ -168,6 +181,8 @@
     var r = radius * mult;
     if (CP.Amb) { CP.Amb.onNoise(x, y, z, radius); }
     if (CP.Anim) { CP.Anim.onNoise(x, y, z, radius); }
+    var pl = G.player; // barulho perto acorda quem está dormindo
+    if (pl && pl.sleeping && type !== 'radio' && type !== 'work' && U.dist(pl.x, pl.y, x, y) < radius * C.SLEEP.WAKE_NOISE_FRAC && CP.Body) { CP.Body.wake(pl, 'Um barulho te acordou!'); }
     var zs = G.zombies;
     for (var i = 0; i < zs.length; i++) {
       var zb = zs[i];
@@ -340,10 +355,24 @@
     // pensar (percepção) em intervalos
     zb.thinkT -= dt;
     zb.lastSeenT += dt;
+    zb.lt = (zb.lt || 0) + dt;
     if (zb.thinkT <= 0) {
       zb.thinkT = ZC.THINK_INTERVAL * (0.8 + Math.random() * 0.4);
       var sees = !p.dead && canSeePlayer(zb, p);
       zb.seesPlayer = sees;
+      zb.lt = zb.lt || 0;
+      if (sees) { // guarda a velocidade do jogador para adivinhar a fuga
+        if (zb.lastPos && zb.lt - zb.lastPos.t > 0.05) { zb.vSeen = { x: (p.x - zb.lastPos.x) / (zb.lt - zb.lastPos.t), y: (p.y - zb.lastPos.y) / (zb.lt - zb.lastPos.t) }; }
+        zb.lastPos = { x: p.x, y: p.y, t: zb.lt }; zb.wasSeeing = true;
+      } else if (zb.wasSeeing) {
+        zb.wasSeeing = false;
+        if (zb.vSeen && zb.target && zb.state === 'chase') { // perdeu de vista: segue na direção em que o jogador ia
+          var SZ = C.ZSMART, ex = zb.vSeen.x * SZ.PREDICT_S, ey = zb.vSeen.y * SZ.PREDICT_S, el = Math.sqrt(ex * ex + ey * ey);
+          if (el > SZ.PREDICT_MAX) { ex *= SZ.PREDICT_MAX / el; ey *= SZ.PREDICT_MAX / el; }
+          var gx = zb.target.x + ex, gy = zb.target.y + ey;
+          if (el > 0.5 && W.tileWalkable(Math.floor(gx), Math.floor(gy), W.levelOf(zb.target.z))) { zb.target = { x: gx, y: gy, z: zb.target.z }; zb.path = null; zb.repathT = 0; zb.predicted = true; }
+        }
+      }
       if (sees) {
         if (zb.state !== 'chase' && zb.state !== 'attack') {
           if (CP.Audio && Math.random() < 0.5) { CP.Audio.groan(zb, true); }
@@ -593,6 +622,13 @@
     var st = W.edgeState(b.x, b.y, b.z, b.side);
     var type = W.edgeType(b.x, b.y, b.z, b.side);
     if (!st) { st = { open: false, locked: false, hp: type === E.WINDOW ? 8 : 25, bar: 0, barHp: 0, broken: false, glass: type === E.WINDOW }; W.setEdgeState(b.x, b.y, b.z, b.side, st); }
+    if (type === E.DOOR && !st.locked && !(st.bar > 0) && !st.block && !st.broken && !st.open && Z.isOpener(zb)) { // gira a maçaneta
+      st.open = true; zb.state = zb.target ? 'chase' : 'idle'; zb.bash = null; zb.path = null; zb.repathT = 0;
+      var omx = b.side === 0 ? b.x + 0.5 : b.x, omy = b.side === 0 ? b.y : b.y + 0.5;
+      Z.noise(omx, omy, b.z, C.NOISE.DOOR * 0.6, 'door'); if (CP.Audio) { CP.Audio.door(true); }
+      W.chunkAt(b.x, b.y).dirty = true; if (CP.Game.updateFov) { CP.Game.updateFov(true); }
+      return;
+    }
     var dmg = ZC.BASH_DAMAGE * ((CP.Game.settings.strength) || 1) * U.randRange(0.6, 1.4) * (CP.Surv ? CP.Surv.bashMult(st) : 1);
     var mx = b.side === 0 ? b.x + 0.5 : b.x, my = b.side === 0 ? b.y : b.y + 0.5;
     Z.noise(mx, my, b.z, C.NOISE.DOOR_BASH, 'bash');

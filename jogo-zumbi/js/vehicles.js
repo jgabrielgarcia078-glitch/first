@@ -21,14 +21,15 @@
     pickup: { name: 'Picape', w: 20, trunk: ['plank', 'rope', 'wrench', 'gas_can_empty'] },
     van: { name: 'Van', w: 13, trunk: ['crate_item', 'tote', 'water_bottle'] },
     police: { name: 'Viatura', w: 8, color: CAR_COLORS.length - 1, bar: true, trunk: ['nightstick', 'shells', 'ammo9', 'flashlight', 'bandage'] },
-    ambulance: { name: 'Ambulância', w: 7, color: CAR_COLORS.length - 2, bar: true, trunk: ['bandage', 'disinfectant', 'painkillers', 'first_aid_kit', 'suture_needle', 'splint'] }
+    ambulance: { name: 'Ambulância', w: 7, color: CAR_COLORS.length - 2, bar: true, trunk: ['bandage', 'disinfectant', 'painkillers', 'first_aid_kit', 'suture_needle', 'splint'] },
+    trailer: { name: 'Reboque', w: 0, trunk: ['plank', 'log', 'scrap', 'garbage_bag'] }
   };
   V.MODELS = MODELS;
   function pickModel(rng) {
     var tot = 0, k;
     for (k in MODELS) { tot += MODELS[k].w; }
     var r = rng.next() * tot;
-    for (k in MODELS) { r -= MODELS[k].w; if (r <= 0) { return k; } }
+    for (k in MODELS) { if (!MODELS[k].w) { continue; } r -= MODELS[k].w; if (r <= 0) { return k; } }
     return 'sedan';
   }
   V.modelOf = function (car) { return MODELS[car.model] ? car.model : 'sedan'; };
@@ -68,6 +69,18 @@
           (MODELS[car.model].trunk || []).forEach(function (id) { if (rng.chance(0.45) && D.ITEMS[id]) { car.trunk.push(CP.Items.make(id, null, rng)); } });
           delete ch.containers[key];
           L.obj[i] = 0; L.odir[i] = 0;
+          // algumas picapes têm um reboque atrás (sorteio à parte: não muda os outros carros)
+          var trng = new U.Rng(U.hash2(x, y, W.seed ^ 0x7a11e));
+          if (car.model === 'pickup' && trng.chance(C.TRAILER.CHANCE)) {
+            var tc = Math.cos(car.ang), ts = Math.sin(car.ang), tl = V.HALF_L * 2 + C.TRAILER.TONGUE;
+            var trx = car.x - tc * tl, trY = car.y - ts * tl;
+            if (W.tileWalkable(Math.floor(trx), Math.floor(trY), 0) && !W.isIndoor(Math.floor(trx), Math.floor(trY), 0) && !W.blockedBetween(Math.floor(car.x), Math.floor(car.y), Math.floor(trx), Math.floor(trY), 0, false)) {
+              var trl = { id: 'tr' + car.id, x: trx, y: trY, z: 0, ang: car.ang, color: trng.int(0, 11), speed: 0, steer: 0, fuel: 0, cond: 1, model: 'trailer', trailer: true, locked: false, engine: false, broken: false, hornT: 0, trunk: [] };
+              MODELS.trailer.trunk.forEach(function (id) { if (trng.chance(0.4)) { trl.trunk.push(CP.Items.make(id, null, trng)); } });
+              trl.parts = { engine: 1, battery: 0, tireFL: 1, tireFR: 1, tireRL: 1, tireRR: 1, windshield: null };
+              ch.cars.push(trl);
+            }
+          }
           var bx = horiz ? x - 1 : x, by = horiz ? y : y - 1;
           var bi = W.idx(bx, by);
           var bch = W.chunkAt(bx, by);
@@ -87,7 +100,7 @@
     var p = CP.Game.player;
     for (var k = 0; k < ch.cars.length; k++) {
       var i = V.active.indexOf(ch.cars[k]);
-      if (i >= 0 && ch.cars[k] !== p.vehicle) { V.active.splice(i, 1); }
+      if (i >= 0 && ch.cars[k] !== p.vehicle && !(p.vehicle && p.vehicle.towId === ch.cars[k].id)) { V.active.splice(i, 1); }
     }
   };
   V.reset = function () { V.active.length = 0; };
@@ -149,7 +162,7 @@
   V.addBlockers = function (addSeg, cx, cy, z, ignore) {
     for (var i = 0; i < V.active.length; i++) {
       var car = V.active[i];
-      if (car === ignore || Math.abs(car.z - z) > 0.4) { continue; }
+      if (car === ignore || (ignore && ignore.towId && car.id === ignore.towId) || Math.abs(car.z - z) > 0.4) { continue; }
       if (Math.abs(car.x - cx) > 3 || Math.abs(car.y - cy) > 3) { continue; }
       var k = corners(car, car.x, car.y, car.ang, 0);
       addSeg(k[0][0], k[0][1], k[1][0], k[1][1]); addSeg(k[1][0], k[1][1], k[2][0], k[2][1]);
@@ -194,7 +207,7 @@
     var running = car.engine && car.fuel > 0 && !car.broken && pt.engine > 0.02;
     if (car.engine && pt.engine <= 0.02) { car.engine = false; if (CP.UI) { CP.UI.toast('O motor morreu.', 'danger'); } }
     var flat = V.flatTires(car);
-    var maxF = V.MAX_FWD * (0.45 + pt.engine * 0.55) * (flat ? Math.max(0.35, 1 - flat * 0.25) : 1) * (car.armor ? C.METAL.CAR_SPEED : 1);
+    var maxF = (car.towId ? C.TRAILER.SPEED_MULT : 1) * V.MAX_FWD * (0.45 + pt.engine * 0.55) * (flat ? Math.max(0.35, 1 - flat * 0.25) : 1) * (car.armor ? C.METAL.CAR_SPEED : 1);
     if (running) { pt.battery = Math.min(1, (pt.battery || 0) + dt * 0.004); }
     if (running && up) { car.speed = Math.min(maxF, car.speed + V.ACCEL * dt * (car.speed < 0 ? 2 : 1)); } else if (running && dn) { car.speed = car.speed > 0.2 ? car.speed - V.BRAKE * dt : Math.max(-V.MAX_REV, car.speed - V.ACCEL * 0.6 * dt); } else {
       var dr = V.DRAG * dt * (Math.abs(car.speed) > 0.1 ? 1 : 3);
@@ -214,7 +227,8 @@
     if (Math.abs(dist) > 0 || turn) {
       if (!collides(car, nx, ny, nang)) {
         car.x = nx; car.y = ny; car.ang = nang;
-        car.fuel = Math.max(0, car.fuel - Math.abs(dist) * V.FUEL_PER_TILE);
+        if (car.towId) { V.towFollow(car); }
+        car.fuel = Math.max(0, car.fuel - Math.abs(dist) * V.FUEL_PER_TILE * (car.towId ? C.TRAILER.FUEL_MULT : 1));
         if (car.fuel <= 0 && car.engine) { car.engine = false; if (CP.UI) { CP.UI.toast('Acabou a gasolina!', 'warn'); } }
       } else {
         // batida
@@ -249,6 +263,8 @@
     if (car.engine) {
       car.noiseT = (car.noiseT || 0) - dt;
       if (car.noiseT <= 0) { car.noiseT = 1; CP.Zombies.noise(car.x, car.y, 0, 14 + Math.abs(car.speed) * 1.5, 'engine'); }
+      car.farT = (car.farT || 0) - dt;
+      if (car.farT <= 0) { car.farT = C.ZSMART.ENGINE_EVERY; CP.Zombies.farNoise(car.x, car.y, C.ZSMART.ENGINE_FAR, C.ZSMART.ENGINE_CHANCE); } // motor se ouve de longe
       if (CP.Audio && CP.Audio.engine) { CP.Audio.engine(Math.abs(car.speed) / V.MAX_FWD); }
     }
     // jogador acompanha o carro
@@ -256,6 +272,46 @@
     p.moving = Math.abs(car.speed) > 0.1;
     rehome(car);
   };
+
+  /* ---------- reboque ---------- */
+  V.byId = function (id) { for (var i = 0; i < V.active.length; i++) { if (V.active[i].id === id) { return V.active[i]; } } return null; };
+  /* ponto de engate: atrás do para-choque */
+  function hitchPoint(car) { var c = Math.cos(car.ang), s = Math.sin(car.ang); return { x: car.x - c * (V.HALF_L + 0.12), y: car.y - s * (V.HALF_L + 0.12) }; }
+  /* o reboque vai atrás do engate (a lança aponta para ele) */
+  V.towFollow = function (car) {
+    var t = V.byId(car.towId);
+    if (!t) { car.towId = null; return; }
+    var h = hitchPoint(car), a = Math.atan2(h.y - t.y, h.x - t.x), L = V.HALF_L + C.TRAILER.TONGUE;
+    t.ang = a; t.x = h.x - Math.cos(a) * L; t.y = h.y - Math.sin(a) * L; t.speed = car.speed;
+    rehome(t);
+  };
+  V.trailerOptions = function (p, t, out) {
+    out.push({ label: 'Reboque' + (t.towBy ? ' (engatado)' : ''), disabled: true });
+    out.push({ label: 'Abrir a caçamba', key: 'E', fn: function () { if (CP.UI) { CP.UI.openCar(t); } } });
+    if (t.towBy) {
+      out.push({ label: 'Desengatar o reboque', fn: function () { var c = V.byId(t.towBy); if (c) { c.towId = null; } t.towBy = null; t.speed = 0; if (CP.UI) { CP.UI.toast('Reboque desengatado.'); } } });
+      return;
+    }
+    // carro com a traseira perto da lança
+    var tip = { x: t.x + Math.cos(t.ang) * (V.HALF_L + C.TRAILER.TONGUE), y: t.y + Math.sin(t.ang) * (V.HALF_L + C.TRAILER.TONGUE) }, best = null, bd = C.TRAILER.HITCH_DIST;
+    V.active.forEach(function (c) { if (c === t || c.trailer || c.towId) { return; } var h = hitchPoint(c), d = U.dist(h.x, h.y, tip.x, tip.y); if (d < bd) { bd = d; best = c; } });
+    out.push({ label: 'Engatar no carro', disabled: !best, hint: 'Encoste a traseira de um carro na lança do reboque', fn: function () {
+      CP.Actions.start(p, { name: 'Engatando o reboque', time: 3, anim: 'work', onDone: function () { if (!best || best.towId) { return; } best.towId = t.id; t.towBy = best.id; V.towFollow(best); if (CP.UI) { CP.UI.toast('Reboque engatado: mais carga, carro mais lento.'); } } });
+    } });
+  };
+  /* porta-luvas: miudezas geradas na primeira vez que abrem */
+  var GLOVE = [['map', 2], ['cigarettes', 2], ['lighter', 1.2], ['note', 1], ['flashlight', 0.6], ['painkillers', 0.6], ['candy', 1], ['battery', 1], ['matches', 0.8], ['wallet', 0.5]];
+  V.glovebox = function (car) {
+    if (!car.glove) {
+      var rng = new U.Rng(U.hashStr(String(car.id)) ^ 0x61c);
+      car.glove = [];
+      var n = rng.int(0, 2);
+      for (var i = 0; i < n; i++) { var id = rng.weighted(GLOVE); if (D.ITEMS[id]) { car.glove.push(CP.Items.make(id, null, rng)); } }
+    }
+    return car.glove;
+  };
+  V.seat = function (car) { return car.seat || (car.seat = []); };
+  V.canReachInside = function (p, car) { return p.vehicle === car || (!car.locked || car.windowBroken) && U.dist(p.x, p.y, car.x, car.y) < 2.6 && !p.vehicle; };
 
   /* ---------- entrar / sair / ligar ---------- */
   V.enter = function (p, car) {
@@ -317,11 +373,13 @@
     if (!car || p.vehicle) { return; }
     var d = U.dist(p.x, p.y, car.x, car.y);
     if (d > 2.6) { return; }
+    if (car.trailer) { V.trailerOptions(p, car, out); return; }
     V.syncCond(car);
     out.push({ label: V.modelName(car) + ': ' + Math.round(car.fuel) + ' L de gasolina · estado ' + Math.round(car.cond * 100) + '%', disabled: true });
     out.push({ label: 'Mecânica (ver peças)', fn: function () { if (CP.UI && CP.UI.openMechanics) { CP.UI.openMechanics(car); } } });
     out.push({ label: 'Entrar no carro', key: 'E', fn: function () { V.enter(p, car); } });
     out.push({ label: 'Abrir porta-malas', fn: function () { if (CP.UI) { CP.UI.openCar(car); } } });
+    if (V.canReachInside(p, car)) { out.push({ label: 'Mexer no porta-luvas e no banco', fn: function () { if (CP.UI) { CP.UI.openCar(car); } } }); }
     if (!car.armor) {
       var Inv = CP.Items.Inv, bt = Inv.findTag(p, 'blowtorch'), mk = Inv.findTag(p, 'weldmask'), sheets = Inv.count(p, 'metal_sheet'), M = C.METAL, lvl = CP.Player.skillLevel(p, 'metalworking');
       var miss = !bt ? 'Precisa de maçarico' : (!mk ? 'Precisa de máscara de solda' : (sheets < M.CAR_SHEETS ? 'Precisa de ' + M.CAR_SHEETS + ' chapas de metal' : ((bt.item.uses || 0) < M.CAR_TORCH ? 'Pouco gás no maçarico' : (lvl < M.CAR_SKILL ? 'Metalurgia ' + M.CAR_SKILL : ''))));
@@ -436,6 +494,23 @@
     for (var k = 0; k < 4; k++) { var q = iso(cs[k][0] - cx, cs[k][1] - cy, h1); if (k === 0) { g.moveTo(sxo + q[0], syo + q[1]); } else { g.lineTo(sxo + q[0], syo + q[1]); } }
     g.closePath(); g.fillStyle = U.shade(color, 1.1 * lf); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.35)'; g.stroke();
   }
+  /* reboque: caçamba baixa de madeira com laterais, 2 rodas e a lança na frente */
+  function drawTrailer(g, car, sx, sy, lf) {
+    var sh = corners(car, car.x, car.y, car.ang, 0.05);
+    g.beginPath(); sh.forEach(function (c2, i) { var q = iso(c2[0] - car.x, c2[1] - car.y, 0); if (i === 0) { g.moveTo(sx + q[0], sy + q[1]); } else { g.lineTo(sx + q[0], sy + q[1]); } }); g.closePath(); g.fillStyle = 'rgba(0,0,0,0.28)'; g.fill();
+    var c = Math.cos(car.ang), s = Math.sin(car.ang);
+    function W2(u, v, h) { var q = iso(c * u - s * v, s * u + c * v, h); return [sx + q[0], sy + q[1]]; }
+    var a = W2(V.HALF_L - 0.1, 0, 7), b = W2(V.HALF_L + C.TRAILER.TONGUE, 0, 5);
+    g.strokeStyle = U.shade('#3a3a3a', lf); g.lineWidth = 2.5; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke();
+    [0.42, -0.42].forEach(function (v) { var q = W2(-0.05, v, 6); g.fillStyle = '#121212'; g.beginPath(); g.ellipse(q[0], q[1], 6.5, 5.5, 0, 0, Math.PI * 2); g.fill(); g.fillStyle = '#5a5a58'; g.beginPath(); g.ellipse(q[0], q[1], 2.4, 2, 0, 0, Math.PI * 2); g.fill(); });
+    function rect(u0, u1, v0, v1) { return [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]; }
+    var col = CP.Spr.gradeHex(CAR_COLORS[car.color] || '#777'), wood = CP.Spr.gradeHex('#7a5a3a');
+    solid(g, car, rect(-0.9, 0.85, -0.4, 0.4), rect(-0.9, 0.85, -0.4, 0.4), 6, 10, sx, sy, col, col, lf);
+    solid(g, car, rect(-0.9, 0.85, -0.4, 0.4), rect(-0.9, 0.85, -0.4, 0.4), 10, 20, sx, sy, wood, wood, lf * 0.95);
+    var tp = [W2(-0.82, -0.32, 20), W2(0.77, -0.32, 20), W2(0.77, 0.32, 20), W2(-0.82, 0.32, 20)];
+    g.beginPath(); tp.forEach(function (q, i) { if (i === 0) { g.moveTo(q[0], q[1]); } else { g.lineTo(q[0], q[1]); } }); g.closePath(); g.fillStyle = U.shade('#3a2a1c', lf); g.fill();
+    if ((car.trunk || []).length) { var m = W2(0, 0, 20); g.fillStyle = U.shade('#8a7a5a', lf); g.fillRect(m[0] - 6, m[1] - 5, 12, 6); g.fillStyle = U.shade('#5a6a4a', lf); g.fillRect(m[0] - 2, m[1] - 8, 8, 5); }
+  }
   /* sólido convexo: base e topo (4 cantos em u, v locais, anti-horário visto de cima) → faces voltadas para a câmera */
   function solid(g, car, base, top, h0, h1, sx, sy, colTop, colSide, lf, glassSides) {
     var c = Math.cos(car.ang), s = Math.sin(car.ang);
@@ -464,6 +539,7 @@
   function drawCar(g, sx, sy, bright) {
     var car = this;
     var lf = Math.max(0.3, bright);
+    if (car.trailer) { drawTrailer(g, car, sx, sy, lf); return; }
     var col = CAR_COLORS[car.color] || '#777777';
     if (car.broken) { col = U.mix(col, '#3a3530', 0.4); }
     // ferrugem com o passar dos meses (cada carro enferruja num ritmo) e neve no teto se está parado ao relento

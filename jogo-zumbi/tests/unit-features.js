@@ -8,6 +8,8 @@ let fails = 0;
 function ok(c, m) { if (!c) { fails++; console.log('FALHA:', m); } else { console.log('ok  -', m); } }
 function tick(sec, timeMult) { const n = Math.round(sec * C.TICK_RATE); for (let i = 0; i < n && !G.over; i++) G.tick(1 / C.TICK_RATE, timeMult || 1); }
 function clearZombies() { G.zombies.length = 0; for (const k in G.activeChunks) G.activeChunks[k].zombies.length = 0; }
+/* espera a ação do jogador terminar sem zumbis por perto interrompendo */
+function finish(max) { const q = G.player; for (let t = 0; t < (max || 60) && (q.action || q.queue.length); t += 0.5) { clearZombies(); tick(0.5); } }
 function findOpen(cx, cy, r) {
   for (let d = 0; d < 60; d++) for (let a = 0; a < 16; a++) {
     const x = Math.floor(cx + Math.cos(a / 16 * 6.283) * d), y = Math.floor(cy + Math.sin(a / 16 * 6.283) * d);
@@ -739,7 +741,7 @@ if (car) {
   q.body.stats.endurance = 1; q.body.strain = null;
   const xp0 = q.xp.strength || 0;
   let ex = CP.Actions.contextOptions(q, q.x, q.y).find(o => /Flexões/.test(o.label));
-  ok(ex && !ex.disabled, 'opção de fazer flexões'); ex.fn(); tick(C.EXERCISE.TIME + 1);
+  ok(ex && !ex.disabled, 'opção de fazer flexões'); ex.fn(); finish(C.EXERCISE.TIME + 20);
   ok((q.xp.strength || 0) > xp0 && q.body.strain.arms > 0, 'flexões dão XP de força e deixam o braço dolorido');
   ok(CP.Body.pain(q) > 0, 'músculo dolorido dói');
   q.body.strain.arms = 0.9;
@@ -749,7 +751,7 @@ if (car) {
   q.body.strain = null;
   // ensopado
   ['pot_water', 'carrot', 'potato', 'chicken'].forEach(id => Inv.give(q, CP.Items.make(id, { age: 0 })));
-  const addStew = id => { const it = Inv.findId(q, id).item; const o = CP.Use.itemOptions(q, it, 'player').find(x => /ensopado/.test(x.label)); o.fn(); tick(3.5); };
+  const addStew = id => { const it = Inv.findId(q, id).item; const o = CP.Use.itemOptions(q, it, 'player').find(x => /ensopado/.test(x.label)); o.fn(); finish(); };
   addStew('carrot'); addStew('potato'); addStew('chicken');
   const raw = Inv.findId(q, 'stew_raw');
   ok(raw && raw.item.ingr.length === 3 && !Inv.findId(q, 'pot_water'), 'ensopado cru com 3 ingredientes');
@@ -833,7 +835,7 @@ if (car) {
   let opts = CP.Actions.contextOptions(q, sx + 0.5, sy + 0.5);
   const cut = opts.find(o => /deixar curto/.test(o.label)), shave = opts.find(o => /Fazer a barba/.test(o.label));
   ok(cut && !cut.disabled && shave && !shave.disabled, 'espelho: cortar o cabelo e fazer a barba');
-  cut.fn(); tick(7); shave.fn(); tick(6);
+  cut.fn(); finish(); shave.fn(); finish();
   W.isIndoor = indoorF; L.obj[ii] = o0;
   lk = CP.Player.lookFor(q);
   ok(lk.hairStyle === 'curto' && !lk.beard && !lk.stubble, 'cortado e barbeado de novo');
@@ -1099,6 +1101,112 @@ if (car) {
     ok(car2.armor && Inv.count(q, 'metal_sheet') === 0, 'carro blindado');
   } else ok(false, 'achou carro para blindar');
   q.skills.metalworking = ms0;
+}
+/* ---------- T7: rádio/walkie/rádio amador, despertador, sono, zumbis espertos, porta-luvas e reboque ---------- */
+{
+  const q = G.player, R = CP.Radio, B = CP.Body, s = q.body.stats, w = G.state.world, rnd = Math.random;
+  q.x = firstOpen.x; q.y = firstOpen.y; q.z = 0; q.vehicle = null; q.carry = null; q.action = null; q.queue.length = 0; q.sleeping = false; G.activateChunks(true); clearZombies();
+  const idle = (max) => { for (let t = 0; t < (max || 60) && (q.action || q.queue.length); t += 0.5) { clearZombies(); tick(0.5); } };
+  // rádio portátil: estações FM/AM, liga, fala atual, pilha e barulho
+  const rad = CP.Items.make('radio'); Inv.give(q, rad);
+  ok(R.stationsFor(rad).length === 4 && R.stationsFor(CP.Items.make('walkie')).length === 2, 'rádio pega FM/AM; walkie pega VHF');
+  let ro = CP.Use.itemOptions(q, rad, 'player');
+  ro.find(o => /^Ligar o rádio/.test(o.label)).fn();
+  ok(rad.on && ro.some(o => /^Sintonizar/.test(o.label)), 'ligou o rádio; dá para sintonizar outras estações');
+  w.radioOff = { fm88: CP.Time.daysSurvived() + 5, ebs: CP.Time.daysSurvived() + 0.3, fm93: CP.Time.daysSurvived() - 1 };
+  rad.freq = 'fm88'; ok(/Locutor/.test(R.hear(q, rad)), 'estação no ar fala');
+  rad.freq = 'fm93'; ok(/chiado/.test(R.hear(q, rad)), 'estação que saiu do ar só chia');
+  rad.freq = 'ebs'; ok(/última transmissão/.test(R.lineOf('ebs')), 'sistema de emergência se despede antes de sair do ar');
+  const ch0 = rad.charge; let heard = 0; const zn = CP.Zombies.noise; CP.Zombies.noise = (x, y, z, r, ty) => { if (ty === 'radio') heard = r; return zn(x, y, z, r, ty); };
+  rad.talkT = 0; R.update(0.1, 3600); CP.Zombies.noise = zn;
+  ok(rad.charge < ch0 && heard === C.RADIO.NOISE_LOW, 'rádio ligado gasta pilha e faz um pouco de barulho');
+  rad.loud = true; heard = 0; CP.Zombies.noise = (x, y, z, r, ty) => { if (ty === 'radio') heard = r; return zn(x, y, z, r, ty); }; rad.talkT = 0; R.update(0.1, 1); CP.Zombies.noise = zn;
+  ok(heard === C.RADIO.NOISE_HIGH, 'volume alto faz mais barulho');
+  rad.on = false;
+  // walkie-talkie no canal dos sobreviventes: falar e às vezes alguém responde (marca lugar no mapa)
+  const wk = CP.Items.make('walkie'); Inv.give(q, wk); wk.freq = 'ham';
+  const tx = CP.Use.itemOptions(q, wk, 'player').find(o => /^Falar no rádio/.test(o.label));
+  ok(!!tx, 'walkie-talkie pode transmitir');
+  Math.random = () => 0.0; tx.fn(); idle(); Math.random = rnd;
+  ok(R.replyQ.length === 1, 'alguém vai responder');
+  q.mapNotes = []; R.replyQ[0].t = 0; R.update(0.1, 1);
+  for (let i = 0; i < 12 && !q.mapNotes.length; i++) R.reply(q);
+  ok(q.mapNotes.length > 0 && /rádio/.test(q.mapNotes[0].t), 'resposta marcou um lugar no mapa (' + (q.mapNotes[0] && q.mapNotes[0].t) + ')');
+  // despertador
+  const ac = CP.Items.make('alarm_clock'); Inv.give(q, ac);
+  CP.Use.itemOptions(q, ac, 'player').find(o => /^Programar despertador/.test(o.label)).fn();
+  ok(ac.alarmAt === C.RADIO.ALARM_DEFAULT, 'despertador programado');
+  ac.alarmAt = Math.floor(CP.Time.hourOfDay()); ac.alarmDay = -1;
+  s.fatigue = 0.8; s.stress = 0; s.panic = 0; q.body.meds.sleep = 0;
+  ok(B.sleep(q, 1), 'foi dormir');
+  R.alarmT = 0; R.update(0.1, 1);
+  ok(!q.sleeping && ac.alarmDay >= 0, 'despertador tocou e acordou');
+  ac.alarmAt = null;
+  // insônia e remédio
+  s.stress = 0.9; Math.random = () => 0.0;
+  ok(!B.sleep(q, 1), 'estressado demais: insônia');
+  q.body.meds.sleep = 3; ok(B.sleep(q, 1), 'com remédio para dormir consegue'); Math.random = rnd;
+  // pesadelo
+  q.body.meds.sleep = 0; s.stress = 0.9; s.unhappy = 0.6; q._nmAcc = 0;
+  Math.random = () => 0.0; B.update(q, 0.05, 3600); Math.random = rnd;
+  ok(!q.sleeping && s.nightmares > 0, 'pesadelo acorda');
+  // barulho perto acorda
+  s.stress = 0; s.panic = 0; q.body.meds.sleep = 3; B.sleep(q, 1);
+  CP.Zombies.noise(q.x + 3, q.y, 0, 12, 'bang');
+  ok(!q.sleeping, 'barulho perto acorda');
+  q.body.meds.sleep = 0; s.fatigue = 0.2; s.stress = 0; s.unhappy = 0;
+  // zumbis: alguns abrem porta destrancada
+  let hs = null;
+  for (const ch of W.allChunks()) { if (!ch.active) continue; for (const b of ch.buildings) if (b.kind === 'house' && b.door && W.edgeType(b.door.x, b.door.y, 0, b.door.side) === C.EDGE.DOOR) { hs = b; break; } if (hs) break; }
+  const d = hs.door, inA = W.isIndoor(d.x, d.y, 0), inT = inA ? { x: d.x, y: d.y } : (d.side === 0 ? { x: d.x, y: d.y - 1 } : { x: d.x - 1, y: d.y }), outT = inA ? (d.side === 0 ? { x: d.x, y: d.y - 1 } : { x: d.x - 1, y: d.y }) : { x: d.x, y: d.y };
+  const st = W.edgeState(d.x, d.y, 0, d.side) || (W.setEdgeState(d.x, d.y, 0, d.side, { open: false, locked: false, hp: 25, bar: 0, barHp: 0, broken: false }), W.edgeState(d.x, d.y, 0, d.side));
+  const tryDoor = (seed) => {
+    st.open = false; st.locked = false; st.bar = 0; st.broken = false; st.block = false; st.hp = 25;
+    W.lvl(inT.x, inT.y, 0).obj[W.idx(inT.x, inT.y)] = 0; W.lvl(outT.x, outT.y, 0).obj[W.idx(outT.x, outT.y)] = 0;
+    q.x = inT.x + 0.5; q.y = inT.y + 0.5; q.sneaking = true;
+    const zd = CP.Zombies.makeData(new U.Rng(5), outT.x + 0.5, outT.y + 0.5, 0); zd.crawler = false; zd.fakeDead = false; zd.seed = seed;
+    const z = CP.Zombies.fromData(zd); clearZombies(); G.zombies.push(z);
+    z.state = 'chase'; z.target = { x: inT.x + 0.5, y: inT.y + 0.5, z: 0 }; z.memT = 60;
+    for (let i = 0; i < 300 && !st.open && z.state !== 'attack'; i++) { G.zombies.length = 1; G.zombies[0] = z; CP.Zombies.rebuildHash(); CP.Zombies.update(1 / 30); q.body.health = 100; }
+    return st.open;
+  };
+  ok(CP.Zombies.isOpener({ data: { seed: 5 } }) && !CP.Zombies.isOpener({ data: { seed: 50 } }), 'só alguns zumbis abrem portas');
+  ok(tryDoor(5) && !st.broken, 'zumbi "esperto" girou a maçaneta da porta destrancada');
+  ok(!tryDoor(50) && st.hp < 25, 'zumbi comum só bate na porta');
+  st.open = false; st.hp = 25; clearZombies(); q.sneaking = false;
+  // perdeu de vista: segue na direção da fuga
+  const zd2 = CP.Zombies.makeData(new U.Rng(9), q.x + 30, q.y, 0); zd2.crawler = false; zd2.fakeDead = false;
+  const z2 = CP.Zombies.fromData(zd2); G.zombies.push(z2);
+  z2.state = 'chase'; z2.target = { x: z2.x - 4, y: z2.y, z: 0 }; z2.memT = 60; z2.wasSeeing = true; z2.vSeen = { x: 0, y: 1.2 }; z2.thinkT = 0;
+  const ty0 = z2.target.y; CP.Zombies.rebuildHash(); CP.Zombies.update(1 / 30);
+  ok(z2.predicted && z2.target.y > ty0 + 1, 'zumbi que perdeu o jogador de vista segue na direção da fuga');
+  clearZombies();
+  // motor ouvido de longe
+  const zd3 = CP.Zombies.makeData(new U.Rng(11), q.x + 35, q.y, 0); zd3.crawler = false; zd3.fakeDead = false;
+  const z3 = CP.Zombies.fromData(zd3); z3.state = 'idle'; G.zombies.push(z3);
+  ok(CP.Zombies.farNoise(q.x, q.y, C.ZSMART.ENGINE_FAR, 1) === 1 && z3.state === 'investigate', 'motor se ouve de longe');
+  clearZombies();
+  // porta-luvas, banco e reboque
+  const V = CP.Vehicles;
+  let car = null; for (let r = 0; r < 4 && !car; r++) { for (const c of V.active) if (!c.trailer) { car = c; break; } if (!car) { q.x += 32; G.activateChunks(true); } }
+  ok(!!car, 'carro para o porta-luvas');
+  const gb1 = V.glovebox(car).map(i => i.id).join(','); car.glove = null; const gb2 = V.glovebox(car).map(i => i.id).join(',');
+  ok(gb1 === gb2 && V.glovebox(car).length <= 2, 'porta-luvas tem miudezas (sempre as mesmas): ' + (gb1 || 'vazio'));
+  car.locked = true; car.windowBroken = false; q.x = car.x + 1.6; q.y = car.y; q.vehicle = null;
+  ok(!V.canReachInside(q, car), 'carro trancado: não alcança o banco');
+  q.vehicle = car; ok(V.canReachInside(q, car), 'dentro do carro alcança porta-luvas e banco'); q.vehicle = null;
+  const c0 = Math.cos(car.ang), s0 = Math.sin(car.ang), L = V.HALF_L * 2 + C.TRAILER.TONGUE + 0.1;
+  const tr = { id: 'trTest', x: car.x - c0 * L, y: car.y - s0 * L, z: 0, ang: car.ang, color: 1, speed: 0, steer: 0, fuel: 0, cond: 1, model: 'trailer', trailer: true, trunk: [], parts: { engine: 1, battery: 0, tireFL: 1, tireFR: 1, tireRL: 1, tireRR: 1, windshield: null }, kind: 'car' };
+  V.active.push(tr);
+  q.x = tr.x + 1.5; q.y = tr.y + 0.3;
+  const eo = CP.Actions.contextOptions(q, tr.x, tr.y).find(o => /Engatar/.test(o.label));
+  ok(eo && !eo.disabled, 'dá para engatar o reboque na traseira do carro'); eo.fn(); idle();
+  ok(car.towId === tr.id && tr.towBy === car.id, 'reboque engatado');
+  car.x += c0 * 3; car.y += s0 * 3; V.towFollow(car);
+  ok(Math.abs(U.dist(car.x, car.y, tr.x, tr.y) - (V.HALF_L * 2 + 0.12 + C.TRAILER.TONGUE)) < 0.05, 'reboque acompanha o carro');
+  q.x = tr.x + 1.5; q.y = tr.y + 0.3; CP.Actions.contextOptions(q, tr.x, tr.y).find(o => /Desengatar/.test(o.label)).fn();
+  ok(!car.towId && !tr.towBy, 'desengatou');
+  V.active.splice(V.active.indexOf(tr), 1); car.locked = false;
 }
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

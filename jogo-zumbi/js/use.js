@@ -53,7 +53,8 @@
       out.push({ label: 'Remendar (agulha, linha e pano)', disabled: !hasKit, hint: 'Precisa de agulha, linha e um pano', fn: function () { Use.patch(p, it); } });
     }
     if (d.light) { out.push({ label: p.flashlightOn ? 'Desligar lanterna (F)' : 'Ligar lanterna (F)', disabled: it.charge <= 0, hint: 'Sem pilha', fn: function () { Use.toggleFlashlight(p); } }); if (it.charge < 0.9 && Inv.findId(p, 'battery')) { out.push({ label: 'Trocar pilha', fn: function () { Inv.consume(p, 'battery', 1); it.charge = 1; msg('Pilha trocada.'); } }); } }
-    if (It.hasTag(it, 'radio')) { out.push({ label: 'Ouvir rádio', fn: function () { A.start(p, { name: 'Ouvindo rádio', time: 4, onDone: function () { msg('Rádio: ' + CP.Time.broadcast()); p.body.stats.boredom = Math.max(0, p.body.stats.boredom - 0.05); } }); } }); }
+    if (d.radio && CP.Radio) { CP.Radio.itemOptions(p, it, out); }
+    if (it.id === 'alarm_clock' && CP.Radio) { CP.Radio.alarmOptions(p, it, out); }
     if (d.throwable) { out.push({ label: 'Arremessar (no mouse)', fn: function () { Use.equip(p, it, 'hand1'); msg('Mire com o botão direito e clique com o esquerdo para arremessar.'); } }); }
     if (d.seed) { out.push({ label: 'Plantar (clique direito num canteiro)', disabled: true }); }
     if (d.flame) {

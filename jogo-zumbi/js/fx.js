@@ -158,9 +158,14 @@
     if (p.say && p.sayT > 0) {
       var px = sx(p.x, p.y), py = sy(p.x, p.y, p.z) - 78;
       g.font = '12px system-ui, sans-serif'; g.textAlign = 'center';
-      var w = g.measureText(p.say).width + 12;
-      g.fillStyle = 'rgba(20,20,24,0.8)'; g.fillRect(px - w / 2, py - 14, w, 20);
-      g.fillStyle = '#f0ece0'; g.fillText(p.say, px, py);
+      // quebra frases longas (rádio, bilhetes) em linhas de até ~300 px; o balão cresce para cima
+      var words = String(p.say).split(' '), lines = [], cur = '';
+      for (var wi = 0; wi < words.length; wi++) { var tryL = cur ? cur + ' ' + words[wi] : words[wi]; if (cur && g.measureText(tryL).width > 300) { lines.push(cur); cur = words[wi]; } else { cur = tryL; } }
+      if (cur) { lines.push(cur); }
+      var w = 0; lines.forEach(function (l) { w = Math.max(w, g.measureText(l).width); }); w += 12;
+      var lh = 15, top = py - 14 - (lines.length - 1) * lh;
+      g.fillStyle = 'rgba(20,20,24,0.8)'; g.fillRect(px - w / 2, top, w, 20 + (lines.length - 1) * lh);
+      g.fillStyle = '#f0ece0'; lines.forEach(function (l, li) { g.fillText(l, px, top + 14 + li * lh); });
     }
   };
 

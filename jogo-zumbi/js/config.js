@@ -365,6 +365,15 @@
   C.KITCHEN = { BURN: 0.22, BURN_PER_LVL: 0.03, BURN_MIN: 0.02, GAS_PER_COOK: 0.25, TANK_H: 12, WARM_H: 2, MICRO: 4, SPARK: 0.5, WARM_HAPPY: 0.06, WARM_BORED: 0.04 };
   /* metalurgia: maçarico gasta usos por solda; carro blindado sofre só CAR_DMG do dano e perde um pouco de velocidade */
   C.METAL = { CAR_SHEETS: 3, CAR_TORCH: 3, CAR_SKILL: 1, CAR_DMG: 0.35, CAR_SPEED: 0.92, TORCH_USES: 10 };
+  /* reboque (vehicles.js): chance de uma picape ter reboque, lança (tiles), distância para engatar, carga, e o custo de puxar */
+  C.TRAILER = { CHANCE: 0.3, TONGUE: 0.7, HITCH_DIST: 1.6, CAP: 80, SPEED_MULT: 0.8, FUEL_MULT: 1.35 };
+  /* rádio (radio.js): pilha gasta por hora ligado, barulho a cada TALK_EVERY s (volume baixo/alto), falar no rádio, chance de resposta, despertador */
+  C.RADIO = { DRAIN_H: 0.035, TALK_EVERY: 14, NOISE_LOW: 3, NOISE_HIGH: 9, TALK_NOISE: 6, TX_DRAIN: 0.01, REPLY_CHANCE: 0.45, ALARM_DEFAULT: 7, ALARM_NOISE: 14 };
+  /* sono (body.js): insônia com estresse/dor (sem remédio), pesadelos por hora (base + estresse + tristeza), barulho perto acorda */
+  C.SLEEP = { INSOMNIA_STRESS: 0.5, INSOMNIA_PAIN: 30, INSOMNIA_CHANCE: 0.6, NIGHTMARE_BASE: 0.02, NIGHTMARE_STRESS: 0.12, NIGHTMARE_UNHAPPY: 0.06, NIGHTMARE_PANIC: 25, WAKE_NOISE_FRAC: 0.6, PILL_H: 6 };
+  /* zumbis espertos (zombies.js): % que abre porta destrancada, segundos de "adivinhar" para onde o jogador fugiu,
+   * motor ouvido de longe (raio, chance por zumbi, a cada ENGINE_EVERY s) */
+  C.ZSMART = { OPENER_PCT: 12, PREDICT_S: 2.5, PREDICT_MAX: 7, ENGINE_FAR: 45, ENGINE_CHANCE: 0.3, ENGINE_EVERY: 5 };
   C.TRAPS = { BASE: 0.03, FOREST: 2.2, FIELD: 1.3, TOWN: 0.35, BAIT: 2.5, MIN_DIST: 12, ANIMALS: { box: [['dead_rabbit', 5], ['dead_squirrel', 4], ['dead_rat', 2]], snare: [['dead_rabbit', 4], ['dead_bird', 4], ['dead_squirrel', 2]] } };
   /* modo de busca (O): procura coisas no chão em volta enquanto anda devagar */
   C.SEARCH = { EVERY: 1.6, RADIUS: 3, PER_LEVEL: 0.6, SPEED: 0.6, MARK_S: 90 };

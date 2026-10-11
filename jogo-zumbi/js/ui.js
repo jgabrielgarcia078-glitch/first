@@ -492,7 +492,8 @@
     // porta-malas de carros por perto
     if (CP.Vehicles) {
       CP.Vehicles.active.forEach(function (car) {
-        if (U.dist(p.x, p.y, car.x, car.y) < 2.6 && !p.vehicle) { out.unshift({ name: 'Porta-malas', items: car.trunk || (car.trunk = []), cap: 40 }); }
+        if (U.dist(p.x, p.y, car.x, car.y) < 2.6 && !p.vehicle) { out.unshift(car.trailer ? { name: 'Caçamba do reboque', items: car.trunk || (car.trunk = []), cap: C.TRAILER.CAP } : { name: 'Porta-malas', items: car.trunk || (car.trunk = []), cap: 40 }); }
+        if (!car.trailer && CP.Vehicles.canReachInside(p, car)) { out.unshift({ name: 'Banco do carro', items: CP.Vehicles.seat(car), cap: 15 }); out.unshift({ name: 'Porta-luvas', items: CP.Vehicles.glovebox(car), cap: 3 }); }
       });
     }
     // comida da geladeira envelhece mais devagar (com energia)
