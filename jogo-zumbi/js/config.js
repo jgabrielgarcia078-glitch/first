@@ -287,6 +287,7 @@
     wet: [0.15, 0.40, 0.70, 0.90],
     heavy: [1.0, 1.25, 1.5, 1.75],
     drunk: [0.15, 0.4, 0.65, 0.85],
+    flu: [0.05, 0.25, 0.5, 0.7],
     stuffed: [0.0, 0.0, 0.0, 0.0]
   };
 
@@ -355,6 +356,15 @@
   /* carregar móveis (survival.js): velocidade andando com o móvel nas mãos (cai com o peso, sobe com a força);
    * força mínima = (kg - FREE_KG) / KG_PER_STR; porta com móvel encostado (fechada) leva só BLOCK_MULT do dano dos zumbis */
   C.FURNITURE = { SPEED: 0.75, KG_SLOW: 0.008, STR_FAST: 0.02, FREE_KG: 20, KG_PER_STR: 5, BLOCK_MULT: 0.35, PICK_TIME: 2.5, PLACE_TIME: 1.5 };
+  /* resfriado (body.js): frio/molhado acumula "friagem" (chill); com chill > MIN_CHILL, a cada hora CATCH × chill de chance de pegar.
+   * A doença sobe RISE/h até um pico e depois cai RECOVER/h (descansando e aquecido sara mais rápido). Espirro/tosse: SNEEZE × gravidade por segundo,
+   * barulho NOISE (MUFFLED com lenço de papel). */
+  C.FLU = { CHILL_TEMP: 35.9, WET_AIR: 15, CHILL_UP: 0.06, CHILL_DOWN: 0.04, MIN_CHILL: 0.3, CATCH: 0.07, RISE: 0.03, RECOVER: 0.008, SNEEZE: 0.02, NOISE: 14, MUFFLED: 3, FATIGUE: 0.012, PEAK: [0.4, 0.85] };
+  /* cozinha (use.js/survival.js): chance de queimar a comida (cai com Culinária), botijão no fogão (horas de chama),
+   * comida esquentada fica quente WARM_H horas; 1 em MICRO balcões de cozinha tem micro-ondas; lata no micro-ondas pega fogo com SPARK de chance */
+  C.KITCHEN = { BURN: 0.22, BURN_PER_LVL: 0.03, BURN_MIN: 0.02, GAS_PER_COOK: 0.25, TANK_H: 12, WARM_H: 2, MICRO: 4, SPARK: 0.5, WARM_HAPPY: 0.06, WARM_BORED: 0.04 };
+  /* metalurgia: maçarico gasta usos por solda; carro blindado sofre só CAR_DMG do dano e perde um pouco de velocidade */
+  C.METAL = { CAR_SHEETS: 3, CAR_TORCH: 3, CAR_SKILL: 1, CAR_DMG: 0.35, CAR_SPEED: 0.92, TORCH_USES: 10 };
   C.TRAPS = { BASE: 0.03, FOREST: 2.2, FIELD: 1.3, TOWN: 0.35, BAIT: 2.5, MIN_DIST: 12, ANIMALS: { box: [['dead_rabbit', 5], ['dead_squirrel', 4], ['dead_rat', 2]], snare: [['dead_rabbit', 4], ['dead_bird', 4], ['dead_squirrel', 2]] } };
   /* modo de busca (O): procura coisas no chão em volta enquanto anda devagar */
   C.SEARCH = { EVERY: 1.6, RADIUS: 3, PER_LEVEL: 0.6, SPEED: 0.6, MARK_S: 90 };

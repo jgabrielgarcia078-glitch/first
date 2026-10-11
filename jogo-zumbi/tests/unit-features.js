@@ -274,7 +274,7 @@ Inv.give(q, CP.Items.make('extinguisher'));
 let fo = CP.Actions.contextOptions(q, Math.floor(ox) + 1.5, Math.floor(oy) + 0.5);
 const ap = fo.find(o => /extintor/.test(o.label));
 ok(ap && !ap.disabled, 'opção de apagar com o extintor');
-ap.fn(); tick(2);
+{ const rnd = Math.random; Math.random = () => 0.99; ap.fn(); tick(2); Math.random = rnd; } // sem o fogo pular para o tile do jogador no meio da ação
 ok(!CP.Fire.burningAt(Math.floor(ox) + 1, Math.floor(oy), 0), 'apagou o fogo');
 ok(CP.Fire.flammability(Math.floor(ox) + 1, Math.floor(oy), 0) === 0, 'molhado não pega fogo de novo logo');
 
@@ -330,6 +330,7 @@ ok(!wsw.horde && G.zombies.length - zBefore >= hd.n * 0.6, 'perto do jogador vir
 ok(G.zombies.slice(zBefore).every(z => z.state === 'wander' && z.target), 'todos andando juntos para o destino');
 clearZombies();
 wsw.horde = null; wsw.nextHorde = 0; CP.Horde.update(1 / 30, 1);
+for (let k = 0; k < 8 && !W.tileWalkable(Math.floor(wsw.horde.tx), Math.floor(wsw.horde.ty), 0); k++) { wsw.horde = null; wsw.nextHorde = 0; CP.Horde.update(1 / 30, 1); } // destino em terra firme
 const h2 = wsw.horde; h2.x = h2.tx; h2.y = h2.ty;
 let before = 0; for (const ch of W.allChunks()) before += ch.zombies.length;
 CP.Horde.update(1 / 30, 1);
@@ -914,13 +915,14 @@ if (car) {
   q.x = spot.x - 0.8; q.y = spot.y; q.sneaking = true; An.update(0.05);
   ok(rb2.state !== 'flee', 'agachado por trás o coelho não percebe');
   const knife = CP.Items.make('knife'); Inv.give(q, knife); CP.Use.equip(q, knife, 'hand1');
+  const onN = An.onNoise; An.onNoise = () => {}; clearZombies(); // barulhos aleatórios do mundo não espantam o coelho do teste
   q.ang = 0; q.anim.attack = 0; q.attackCd = 0; q.stealth = null; CP.Zombies.rebuildHash();
   const fl0 = (W.floorItems(Math.floor(spot.x), Math.floor(spot.y), 0) || []).filter(i => i.id === 'dead_rabbit').length;
   CP.Input.mouse.left = true; q.uiClickGuard = false; CP.Combat.playerUpdate(q, 1 / 30); CP.Input.mouse.left = false;
   for (let i = 0; i < 60; i++) CP.Combat.playerUpdate(q, 1 / 30);
   const fl1 = (W.floorItems(Math.floor(rb2.x), Math.floor(rb2.y), 0) || []).filter(i => i.id === 'dead_rabbit').length;
   ok(An.list.indexOf(rb2) < 0 && fl1 > fl0, 'golpe mata o coelho e deixa a carcaça no chão');
-  q.sneaking = false; CP.Use.unequip(q, knife);
+  q.sneaking = false; CP.Use.unequip(q, knife); An.onNoise = onN;
   // tiro: o raio acha o veado e o dano mata
   const dr = An.spawn('deer', spot.x + 6, spot.y); q.x = spot.x; q.y = spot.y;
   const hit = An.ray(q, 0, 20);
@@ -1003,6 +1005,100 @@ if (car) {
   ok(W.levelOf(q.z) === 0 && Math.floor(q.x) === spot.x && Math.floor(q.y) === spot.y, 'desceu');
   CP.Actions.contextOptions(q, spot.x + 0.5, spot.y + 0.5).find(o => o.label === 'Recolher a escada').fn(); tick(3);
   ok(!W.obj(spot.x, spot.y, 0) && Inv.findId(q, 'step_ladder'), 'escada recolhida');
+}
+/* ---------- T6: resfriado, cozinha completa, metalurgia ---------- */
+{
+  const q = G.player, B = CP.Body, s = q.body.stats, K = C.KITCHEN, w = G.state.world;
+  const idle = (max) => { for (let t = 0; t < (max || 60) && (q.action || q.queue.length); t += 0.5) { clearZombies(); tick(0.5); } };
+  q.x = firstOpen.x; q.y = firstOpen.y; q.z = 0; q.vehicle = null; q.carry = null; q.action = null; q.sleeping = false; q.sitting = false; G.activateChunks(true); clearZombies();
+  // resfriado: frio e molhado acumula friagem e acaba pegando
+  s.cold = 0; s.coldOn = 0; s.chill = 0; s.temp = 35.5; s.wet = 1;
+  let caught = false; for (let i = 0; i < 300 && !caught; i++) { B.updateFlu(q, 0, 1, 5, false); caught = !!s.coldOn; }
+  ok(caught && s.chill > 0.3, 'frio e molhado: pegou resfriado');
+  ok(B.moodles(q).some(m => m.id === 'flu'), 'moodle de resfriado');
+  s.temp = 36.8; s.wet = 0;
+  let hrs = 0; while (s.coldOn && hrs < 600) { B.updateFlu(q, 0, 1, 22, true); hrs++; }
+  ok(!s.coldOn && s.cold === 0 && hrs > 10, 'resfriado passa sozinho descansando aquecido (' + hrs + ' h)');
+  B.catchCold(q); s.cold = 0.5;
+  const r1 = B.sneeze(q); Inv.give(q, CP.Items.make('tissues')); const r2 = B.sneeze(q);
+  ok(r1 >= C.FLU.NOISE * 0.7 && r2 === C.FLU.MUFFLED && Inv.findId(q, 'tissues').item.uses === 11, 'espirro faz barulho; lenço abafa e gasta');
+  s.cold = 0; s.coldOn = 0; s.chill = 0;
+  // fogão sem energia + botijão
+  const day0 = w.powerOffDay; w.powerOffDay = 0;
+  let st = null;
+  for (const ch of W.allChunks()) { if (!ch.active) continue; for (let i = 0; i < 1024 && !st; i++) if (ch.levels[0].obj[i] === O.STOVE) st = { x: ch.cx * 32 + (i & 31), y: ch.cy * 32 + (i >> 5) }; if (st) break; }
+  ok(!!st, 'achou um fogão');
+  let near = null; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) if (!near && W.tileWalkable(st.x + dx, st.y + dy, 0) && W.isIndoor(st.x + dx, st.y + dy, 0)) near = { x: st.x + dx, y: st.y + dy };
+  q.x = near.x + 0.5; q.y = near.y + 0.5;
+  ok(!CP.Use.nearHeat(q), 'sem energia o fogão não esquenta');
+  const tank = CP.Items.make('propane_tank'); Inv.give(q, tank);
+  const io = CP.Actions.contextOptions(q, st.x + 0.5, st.y + 0.5).find(o => /Instalar botijão/.test(o.label));
+  ok(io && !io.disabled, 'opção de instalar o botijão'); io.fn(); idle();
+  ok(CP.Use.nearHeat(q) && CP.Use.stoveGas(st.x, st.y, 0) === K.TANK_H && !Inv.findId(q, 'propane_tank'), 'fogão a gás funciona sem energia');
+  // cozinhar (sem queimar) gasta gás; com azar queima
+  const rnd = Math.random;
+  const meat = CP.Items.make('dead_rabbit', { age: 0 }); Inv.give(q, meat);
+  Math.random = () => 0.99; CP.Use.itemOptions(q, meat, 'player').find(o => /^Cozinhar/.test(o.label)).fn(); idle(); Math.random = rnd;
+  ok(Inv.findId(q, 'rabbit_cooked') && CP.Use.stoveGas(st.x, st.y, 0) < K.TANK_H, 'cozinhou no gás e gastou botijão');
+  ok(/quente/.test(CP.Items.name(Inv.findId(q, 'rabbit_cooked').item)), 'comida sai quente do fogo');
+  const meat2 = CP.Items.make('dead_rabbit', { age: 0 }); Inv.give(q, meat2);
+  Math.random = () => 0.0; CP.Use.itemOptions(q, meat2, 'player').find(o => /^Cozinhar/.test(o.label)).fn(); idle(); Math.random = rnd;
+  ok(!!Inv.findId(q, 'burnt_food'), 'com azar a comida queima');
+  // esquentar lata aberta no fogo e comer quente
+  const beans = CP.Items.make('beans_open', { age: 0 }); Inv.give(q, beans);
+  const wo = CP.Use.itemOptions(q, beans, 'player').find(o => /^Esquentar/.test(o.label));
+  ok(wo && !wo.disabled, 'dá para esquentar a lata aberta'); wo.fn(); idle();
+  ok(beans.warmUntil > G.state.time && /quente/.test(CP.Items.name(beans)), 'lata esquentada');
+  s.unhappy = 0.5; s.hunger = 0.6; const u0 = s.unhappy; CP.Use.eat(q, beans, 1); idle();
+  ok(s.unhappy < u0 - 0.03, 'comida quente anima');
+  // retirar o botijão
+  CP.Actions.contextOptions(q, st.x + 0.5, st.y + 0.5).find(o => o.label === 'Retirar o botijão').fn();
+  ok(Inv.findId(q, 'propane_tank') && CP.Use.stoveGas(st.x, st.y, 0) === 0, 'botijão retirado com o gás que sobrou');
+  // micro-ondas num balcão de cozinha
+  w.powerOffDay = 999;
+  let mc = null;
+  for (const ch of W.allChunks()) { if (!ch.active || mc) continue; for (let i = 0; i < 1024 && !mc; i++) { const x = ch.cx * 32 + (i & 31), y = ch.cy * 32 + (i >> 5); if (ch.levels[0].obj[i] === O.COUNTER && CP.Surv.hasMicrowave(x, y, 0)) mc = { x, y }; } }
+  if (!mc) { for (const ch of W.allChunks()) { if (!ch.active || mc) continue; for (let i = 0; i < 1024 && !mc; i++) { const x = ch.cx * 32 + (i & 31), y = ch.cy * 32 + (i >> 5); const b = W.building(x, y, 0); if (b && b.kind === 'house' && W.isIndoor(x, y, 0) && !ch.levels[0].obj[i] && ((x * 73856093 ^ y * 19349663) >>> 0) % K.MICRO === 0) { ch.levels[0].obj[i] = O.COUNTER; mc = { x, y }; } } } }
+  ok(!!mc && CP.Surv.hasMicrowave(mc.x, mc.y, 0), 'há micro-ondas em balcão de casa');
+  let mn = null; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (!mn && W.tileWalkable(mc.x + dx, mc.y + dy, 0) && !W.blockedBetween(mc.x, mc.y, mc.x + dx, mc.y + dy, 0, false)) mn = { x: mc.x + dx, y: mc.y + dy };
+  q.x = (mn || mc).x + 0.5; q.y = (mn || mc).y + 0.5;
+  const soup = CP.Items.make('rabbit_cooked', { age: 0 }); Inv.give(q, soup);
+  const mo = CP.Actions.contextOptions(q, mc.x + 0.5, mc.y + 0.5).find(o => /micro-ondas/.test(o.label) && /coelho/.test(o.label));
+  ok(mo && !mo.disabled, 'esquentar no micro-ondas'); mo.fn(); idle();
+  ok(soup.warmUntil > G.state.time, 'micro-ondas esquentou');
+  const can = CP.Items.make('beans_open', { age: 0 }); Inv.give(q, can); w.fires = [];
+  Math.random = () => 0.0; CP.Actions.contextOptions(q, mc.x + 0.5, mc.y + 0.5).find(o => /micro-ondas/.test(o.label) && /feijão/i.test(o.label)).fn(); idle(); Math.random = rnd;
+  ok(CP.Fire.burningAt(mc.x, mc.y, 0), 'lata de metal no micro-ondas pega fogo');
+  w.fires = []; for (const k in G.activeChunks) G.activeChunks[k].fires = {};
+  for (const k in q.body.parts) q.body.parts[k].wounds = []; q.body.health = 100; q.dead = false; q.deathCause = null; G.over = false;
+  w.powerOffDay = day0;
+  // metalurgia: parede de metal soldada
+  q.x = firstOpen.x; q.y = firstOpen.y; G.activateChunks(true); clearZombies();
+  const op = findOpen(q.x, q.y, 3); q.x = op.x; q.y = op.y;
+  const bd = CP.D.BUILD.b_metal_wall;
+  CP.Build.mode = { def: bd, side: 0 };
+  ok(!CP.Build.status(q, bd).ok, 'sem maçarico e chapas não solda');
+  ['blowtorch', 'welding_mask'].forEach(id => Inv.give(q, CP.Items.make(id)));
+  Inv.give(q, CP.Items.make('metal_sheet')); Inv.give(q, CP.Items.make('metal_sheet')); Inv.give(q, CP.Items.make('scrap')); Inv.give(q, CP.Items.make('scrap'));
+  const ms0 = q.skills.metalworking; q.skills.metalworking = 1;
+  ok(CP.Build.status(q, bd).ok, 'com maçarico, máscara, chapas e Metalurgia 1 dá para soldar');
+  let tx = null; for (const [dx, dy] of [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1]]) { const x = Math.floor(q.x) + dx, y = Math.floor(q.y) + dy; if (!tx && !W.edgeType(x, y, 0, 0) && W.tileWalkable(x, y, 0) && W.tileWalkable(x, y - 1, 0)) tx = { x, y }; }
+  CP.Build.place(q, tx.x + 0.5, tx.y + 0.02); idle();
+  const es = W.edgeState(tx.x, tx.y, 0, 0);
+  ok(W.edgeType(tx.x, tx.y, 0, 0) === C.EDGE.WALL && es && es.hp === 120 && es.metal, 'parede de metal soldada (hp 120)');
+  ok(Inv.findTag(q, 'blowtorch').item.uses === C.METAL.TORCH_USES - 2, 'solda gastou gás do maçarico');
+  CP.Build.mode = null;
+  // blindar carro
+  let car2 = null; for (let r = 0; r < 4 && !car2; r++) { for (const c of CP.Vehicles.active) { car2 = c; break; } if (!car2) { q.x += 32; G.activateChunks(true); } }
+  if (car2) {
+    q.x = car2.x + 1.6; q.y = car2.y; q.vehicle = null; car2.armor = false; clearZombies(); q.action = null; q.queue.length = 0;
+    for (let i = 0; i < 3; i++) Inv.give(q, CP.Items.make('metal_sheet'));
+    Inv.findTag(q, 'blowtorch').item.uses = C.METAL.TORCH_USES;
+    const ao = CP.Actions.contextOptions(q, car2.x, car2.y).find(o => /Blindar/.test(o.label));
+    ok(ao && !ao.disabled, 'opção de blindar o carro'); ao.fn(); idle();
+    ok(car2.armor && Inv.count(q, 'metal_sheet') === 0, 'carro blindado');
+  } else ok(false, 'achou carro para blindar');
+  q.skills.metalworking = ms0;
 }
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

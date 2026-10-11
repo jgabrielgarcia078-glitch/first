@@ -128,6 +128,7 @@
   V.flatTires = function (car) { var pt = V.parts(car), n = 0; TIRES.forEach(function (t) { if (!pt[t] || pt[t] <= 0.05) { n++; } }); return n; };
   function damageParts(car, impact) {
     var pt = V.parts(car);
+    if (car.armor) { impact *= C.METAL.CAR_DMG; } // chapas soldadas protegem
     pt.engine = Math.max(0, pt.engine - impact * 0.009);
     if (pt.windshield) { pt.windshield = Math.max(0, pt.windshield - impact * 0.012); }
     if (Math.random() < impact * 0.03) { var t = U.pick(TIRES); if (pt[t]) { pt[t] = Math.max(0, pt[t] - U.randRange(0.2, 0.7)); } }
@@ -193,7 +194,7 @@
     var running = car.engine && car.fuel > 0 && !car.broken && pt.engine > 0.02;
     if (car.engine && pt.engine <= 0.02) { car.engine = false; if (CP.UI) { CP.UI.toast('O motor morreu.', 'danger'); } }
     var flat = V.flatTires(car);
-    var maxF = V.MAX_FWD * (0.45 + pt.engine * 0.55) * (flat ? Math.max(0.35, 1 - flat * 0.25) : 1);
+    var maxF = V.MAX_FWD * (0.45 + pt.engine * 0.55) * (flat ? Math.max(0.35, 1 - flat * 0.25) : 1) * (car.armor ? C.METAL.CAR_SPEED : 1);
     if (running) { pt.battery = Math.min(1, (pt.battery || 0) + dt * 0.004); }
     if (running && up) { car.speed = Math.min(maxF, car.speed + V.ACCEL * dt * (car.speed < 0 ? 2 : 1)); } else if (running && dn) { car.speed = car.speed > 0.2 ? car.speed - V.BRAKE * dt : Math.max(-V.MAX_REV, car.speed - V.ACCEL * 0.6 * dt); } else {
       var dr = V.DRAG * dt * (Math.abs(car.speed) > 0.1 ? 1 : 3);
@@ -321,7 +322,20 @@
     out.push({ label: 'Mecânica (ver peças)', fn: function () { if (CP.UI && CP.UI.openMechanics) { CP.UI.openMechanics(car); } } });
     out.push({ label: 'Entrar no carro', key: 'E', fn: function () { V.enter(p, car); } });
     out.push({ label: 'Abrir porta-malas', fn: function () { if (CP.UI) { CP.UI.openCar(car); } } });
-    if (car.locked && !car.windowBroken) {
+    if (!car.armor) {
+      var Inv = CP.Items.Inv, bt = Inv.findTag(p, 'blowtorch'), mk = Inv.findTag(p, 'weldmask'), sheets = Inv.count(p, 'metal_sheet'), M = C.METAL, lvl = CP.Player.skillLevel(p, 'metalworking');
+      var miss = !bt ? 'Precisa de maçarico' : (!mk ? 'Precisa de máscara de solda' : (sheets < M.CAR_SHEETS ? 'Precisa de ' + M.CAR_SHEETS + ' chapas de metal' : ((bt.item.uses || 0) < M.CAR_TORCH ? 'Pouco gás no maçarico' : (lvl < M.CAR_SKILL ? 'Metalurgia ' + M.CAR_SKILL : ''))));
+      out.push({ label: 'Blindar com chapas de metal (solda)', disabled: !!miss, hint: miss, fn: function () {
+        CP.Actions.start(p, { name: 'Soldando chapas no carro', time: 20 * (1.3 - lvl * 0.05), anim: 'work', noise: { r: C.NOISE.BUILD, every: 1.5 }, onDone: function () {
+          var b2 = Inv.findTag(p, 'blowtorch');
+          if (!b2 || Inv.count(p, 'metal_sheet') < M.CAR_SHEETS || (b2.item.uses || 0) < M.CAR_TORCH) { return; }
+          Inv.consume(p, 'metal_sheet', M.CAR_SHEETS); b2.item.uses -= M.CAR_TORCH;
+          car.armor = true; car.windowBroken = false; car.locked = false; CP.Player.addXp(p, 'metalworking', 12);
+          if (CP.UI) { CP.UI.toast('Carro blindado: aguenta muito mais pancada.'); }
+        } });
+      } });
+    }
+    if (car.locked && !car.windowBroken && !car.armor) {
       out.push({ label: 'Quebrar o vidro', fn: function () {
         CP.Actions.start(p, { name: 'Quebrando o vidro', time: 0.9, onDone: function () {
           car.windowBroken = true;
@@ -482,7 +496,7 @@
     });
     function rect(u0, u1, v0, v1) { return [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]; }
     // lataria, capô/porta-malas e cabine com vidros inclinados (frente = +u); cada modelo tem a sua forma
-    var model = V.modelOf(car), glass = CP.Spr.gradeHex(car.windowBroken ? '#2a3238' : '#5d7584'), top;
+    var model = V.modelOf(car), glass = CP.Spr.gradeHex(car.armor ? '#6c7074' : (car.windowBroken ? '#2a3238' : '#5d7584')), top;
     var white = CP.Spr.gradeHex('#e8e6e0'), red = CP.Spr.gradeHex('#b02420');
     if (model === 'van' || model === 'ambulance') {
       solid(g, car, rect(-0.92, 0.92, -0.38, 0.38), rect(-0.92, 0.92, -0.38, 0.38), 4, 15, sx, sy, col, col, lf);

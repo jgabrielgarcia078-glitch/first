@@ -545,7 +545,7 @@
       if (!(dir & 2)) { return; }
       spr = S.obj(o, dir, 0);
     } else {
-      spr = S.obj(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.treeSeason : 0);
+      spr = S.obj(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.treeSeason : (o === O.COUNTER && CP.Surv && CP.Surv.hasMicrowave(x, y, z) ? 1 : 0));
     }
     var alpha;
     var info = OI[o];

@@ -70,6 +70,9 @@
     var fs = It.freshState(it);
     if (fs === 'stale') { n += ' (passado)'; } else if (fs === 'rotten') { n += ' (podre)'; }
     if (it.cooked === false) { n += ' (cru)'; }
+    if (it.warmUntil && CP.Game && CP.Game.state && CP.Game.state.time < it.warmUntil) { n += ' (quente)'; }
+    if (d.gasTank) { n += ' [' + Math.round((it.gas === undefined ? C.KITCHEN.TANK_H : it.gas) / C.KITCHEN.TANK_H * 100) + '%]'; }
+    if (d.tags && d.tags.indexOf('blowtorch') >= 0) { n += ' [' + (it.uses || 0) + '/' + C.METAL.TORCH_USES + ']'; }
     if (d.drink && it.uses !== undefined && d.drink.uses > 1) { n += ' [' + it.uses + '/' + d.drink.uses + ']'; }
     if (d.gun) { n += ' [' + (it.ammo || 0) + '/' + d.gun.mag + ']'; }
     if (d.light) { n += it.on ? ' (ligada)' : ''; }

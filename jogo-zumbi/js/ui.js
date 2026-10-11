@@ -14,6 +14,7 @@
   var root, $ = {};
   /* ícones dos moodles (SVG em traço branco) */
   var MOODLE_SVG = {
+    flu: '<path d="M12 3c-1 4-4 6-4 10a4 4 0 0 0 8 0c0-4-3-6-4-10z"/><path d="M5 19c1.5 1 3 1 4 0M15 19c1.5 1 3 1 4 0"/>',
     hunger: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 3c-2 1-3.5 4-3.5 7.5H17V21"/>',
     thirst: '<path d="M12 3c3 4.5 6 8 6 11a6 6 0 0 1-12 0c0-3 3-6.5 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/>',
     fatigue: '<path d="M4 5h7l-7 8h7M14 12h6l-6 7h6"/>',

@@ -17,7 +17,7 @@
         hunger: 0.1, thirst: 0.1, fatigue: 0.15, endurance: 1, panic: 0, stress: 0, boredom: 0.05, unhappy: 0,
         sick: 0, drunk: 0, wet: 0, temp: 36.6, weight: weight, calories: 1000, stuffed: 0, cold: 0, smokeT: 0
       },
-      meds: { pain: 0, beta: 0, antidep: 0, antibiotic: 0 },
+      meds: { pain: 0, beta: 0, antidep: 0, antibiotic: 0, flu: 0 },
       dmgLog: [], lastHurt: -999, sleepQuality: 1, fear: 0
     };
   };
@@ -123,7 +123,7 @@
       var regen = (moving ? N.ENDURANCE_REGEN_WALK : N.ENDURANCE_REGEN) * (0.7 + CP.Player.skillLevel(p, 'fitness') * 0.06);
       if (p.sitting || sleeping) { regen *= 1.8; }
       if (s.hunger > 0.45 || s.thirst > 0.7) { regen *= 0.6; }
-      s.endurance += regen * dt * (s.endurance < 0.3 ? 0.7 : 1);
+      s.endurance += regen * dt * (s.endurance < 0.3 ? 0.7 : 1) * (1 - (s.cold || 0) * 0.4);
     }
     s.endurance = U.clamp(s.endurance, 0, 1);
     if (running && moving) { CP.Player.addXp(p, 'fitness', 0.02 * dt * 10); }
@@ -179,9 +179,7 @@
       target = U.clamp(target, 30, 41);
       s.temp += (target - s.temp) * Math.min(1, h * 0.8);
       if (outdoor && T.raining()) { s.wet = Math.min(1, s.wet + T.rainIntensity() * 0.6 * h * (p.worn.jacket ? 0.6 : 1)); } else { s.wet = Math.max(0, s.wet - (outdoor ? 0.15 : 0.3) * h); }
-      // resfriado
-      if (s.temp < 35.9 || (s.wet > 0.5 && air < 15)) { s.cold = Math.min(1, s.cold + 0.004 * h * (p.fx.sickMult || 1)); } else { s.cold = Math.max(0, s.cold - 0.01 * h); }
-      if (s.cold > 0.3 && Math.random() < dt * 0.02 * s.cold) { CP.Zombies.noise(p.x, p.y, p.z, 9, 'sneeze'); if (CP.UI) { CP.UI.say(p, Math.random() < 0.5 ? 'Atchim!' : '*tosse*'); } }
+      B.updateFlu(p, dt, h, air, sleeping);
     }
     // doença por comida
     if (s.sick > 0) {
@@ -447,7 +445,7 @@
   };
   B.takePill = function (p, type) {
     var m = p.body.meds;
-    if (type === 'pain') { m.pain = 6; } else if (type === 'antibiotic') { m.antibiotic = 12; } else if (type === 'panic') { m.beta = 6; p.body.stats.panic = Math.min(p.body.stats.panic, 20); } else if (type === 'happy') { m.antidep = 24; } else if (type === 'sleep') { p.body.stats.fatigue = Math.min(1, p.body.stats.fatigue + 0.25); }
+    if (type === 'pain') { m.pain = 6; } else if (type === 'antibiotic') { m.antibiotic = 12; } else if (type === 'panic') { m.beta = 6; p.body.stats.panic = Math.min(p.body.stats.panic, 20); } else if (type === 'happy') { m.antidep = 24; } else if (type === 'sleep') { p.body.stats.fatigue = Math.min(1, p.body.stats.fatigue + 0.25); } else if (type === 'flu') { m.flu = 8; }
   };
 
   /* ---------- sono ---------- */
@@ -505,6 +503,50 @@
     U.emit('player:dead', { cause: p.deathCause });
   };
 
+  /* ---------- resfriado ---------- */
+  B.updateFlu = function (p, dt, h, air, sleeping) {
+    var s = p.body.stats, FL = C.FLU;
+    var chilled = s.temp < FL.CHILL_TEMP || (s.wet > 0.5 && air < FL.WET_AIR);
+    s.chill = U.clamp((s.chill || 0) + (chilled ? FL.CHILL_UP : -FL.CHILL_DOWN) * h, 0, 1);
+    if (!s.coldOn) {
+      s.cold = Math.max(0, (s.cold || 0) - 0.05 * h);
+      if (s.chill > FL.MIN_CHILL) {
+        s.chillAcc = (s.chillAcc || 0) + h;
+        while (s.chillAcc >= 1) {
+          s.chillAcc -= 1;
+          if (Math.random() < FL.CATCH * s.chill * (p.fx.sickMult || 1)) { B.catchCold(p); break; }
+        }
+      }
+    } else if (s.coldOn === 1) { // piorando
+      s.cold = Math.min(s.coldPeak, s.cold + FL.RISE * h);
+      if (s.cold >= s.coldPeak) { s.coldOn = 2; }
+    } else { // sarando
+      var rec = FL.RECOVER * (sleeping || p.sitting ? 2 : 1) * (s.temp > 36.3 && !chilled ? 1.5 : 0.6) * (p.body.meds.flu > 0 ? 1.8 : 1);
+      s.cold = Math.max(0, s.cold - rec * h);
+      if (s.cold <= 0) { s.coldOn = 0; s.chill = 0; if (CP.UI && p === CP.Game.player) { CP.UI.toast('O resfriado passou.'); } }
+    }
+    if (s.cold > 0.05) {
+      s.fatigue = Math.min(1, s.fatigue + FL.FATIGUE * s.cold * h);
+      if (!sleeping && Math.random() < dt * FL.SNEEZE * s.cold * (p.body.meds.flu > 0 ? 0.4 : 1)) { B.sneeze(p); }
+    }
+  };
+  B.catchCold = function (p) {
+    var s = p.body.stats;
+    s.coldOn = 1; s.coldPeak = U.randRange(C.FLU.PEAK[0], C.FLU.PEAK[1]); s.cold = Math.max(s.cold || 0, 0.08); s.chillAcc = 0;
+    if (CP.UI && p === CP.Game.player) { CP.UI.toast('Você pegou um resfriado. Fique seco, aquecido e descanse.', 'warn'); }
+  };
+  /* espirro/tosse: barulho que atrai zumbis (lenço de papel abafa) */
+  B.sneeze = function (p) {
+    var Inv = CP.Items.Inv, ts = Inv.findId(p, 'tissues'), cough = Math.random() < 0.45;
+    var r = ts ? C.FLU.MUFFLED : C.FLU.NOISE * (cough ? 0.75 : 1);
+    if (ts) { ts.item.uses = (ts.item.uses || 1) - 1; if (ts.item.uses <= 0) { Inv.detach(p, ts.item); } }
+    CP.Zombies.noise(p.x, p.y, p.z, r, 'sneeze');
+    if (CP.Audio && CP.Audio.sneeze) { CP.Audio.sneeze(p.x, p.y, cough, !!ts); }
+    if (CP.UI) { CP.UI.say(p, ts ? '(espirro abafado)' : (cough ? '*tosse*' : 'Atchim!')); }
+    p.body.stats.sneezes = (p.body.stats.sneezes || 0) + 1;
+    return r;
+  };
+
   /* ---------- moodles para a interface ---------- */
   B.moodles = function (p) {
     var b = p.body, s = b.stats, out = [];
@@ -517,7 +559,7 @@
       sick: ['', 'Enjoado', 'Nauseado', 'Doente', 'Muito doente'], pain: ['', 'Dor leve', 'Dor', 'Dor forte', 'Agonia'],
       hot: ['', 'Com calor', 'Superaquecido', 'Insolação', 'Hipertermia'], cold: ['', 'Com frio', 'Gelado', 'Congelando', 'Hipotermia'],
       wet: ['', 'Úmido', 'Molhado', 'Encharcado', 'Ensopado'], heavy: ['', 'Carga pesada', 'Muito pesado', 'Sobrecarregado', 'Esmagado pelo peso'],
-      drunk: ['', 'Alegre', 'Tonto', 'Bêbado', 'Muito bêbado']
+      drunk: ['', 'Alegre', 'Tonto', 'Bêbado', 'Muito bêbado'], flu: ['', 'Nariz escorrendo', 'Resfriado', 'Gripado', 'Gripe forte']
     };
     add('hunger', names.hunger[lvl(s.hunger, ML.hunger)], lvl(s.hunger, ML.hunger), 'Coma algo. Fome extrema tira vida.');
     add('thirst', names.thirst[lvl(s.thirst, ML.thirst)], lvl(s.thirst, ML.thirst), 'Beba água. Sede extrema tira vida.');
@@ -527,7 +569,7 @@
     add('stress', names.stress[lvl(s.stress, ML.stress)], lvl(s.stress, ML.stress), 'Estresse leva à tristeza.');
     add('boredom', names.boredom[lvl(s.boredom, ML.boredom)], lvl(s.boredom, ML.boredom), 'Leia, saia de casa, faça algo diferente.');
     add('unhappy', names.unhappy[lvl(s.unhappy, ML.unhappy)], lvl(s.unhappy, ML.unhappy), 'Ações mais lentas. Leia, coma bem, tome antidepressivo.');
-    var sk = Math.max(s.sick, b.infection ? b.infection.p : 0, s.cold * 0.6);
+    var sk = Math.max(s.sick, b.infection ? b.infection.p : 0);
     add('sick', names.sick[lvl(sk, ML.sick)], lvl(sk, ML.sick), b.infection && b.infection.p > 0.2 ? 'Algo está muito errado...' : 'Descanse, beba água.');
     var pain = B.pain(p);
     add('pain', names.pain[lvl(pain, ML.pain)], lvl(pain, ML.pain), 'Trate os ferimentos; analgésicos ajudam.');
@@ -536,6 +578,7 @@
     add('hot', names.hot[lvl(s.temp, ML.hot)], lvl(s.temp, ML.hot), 'Tire roupas, beba água, fique na sombra.');
     add('cold', names.cold[lvl(s.temp, ML.cold, true)], lvl(s.temp, ML.cold, true), 'Vista roupas quentes, saia da chuva.');
     add('wet', names.wet[lvl(s.wet, ML.wet)], lvl(s.wet, ML.wet), 'Fique em lugar seco.');
+    add('flu', names.flu[lvl(s.cold || 0, ML.flu)], lvl(s.cold || 0, ML.flu), 'Espirros e tosse fazem barulho. Descanse aquecido; lenço de papel abafa, remédio para gripe ajuda.');
     var hv = B.carryLevel(p);
     add('heavy', names.heavy[hv], hv, 'Carregue menos peso.');
     add('drunk', names.drunk[lvl(s.drunk, ML.drunk)], lvl(s.drunk, ML.drunk), 'Mira e ações piores.');

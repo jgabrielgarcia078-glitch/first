@@ -306,6 +306,18 @@
     noise(sp, 1.2, 1800, 0.8, 0.035, 'bandpass', 0.05);
     for (var i = 0; i < 5; i++) { (function (k) { setTimeout(function () { if (ok()) { tone(spatial(x, y, 0, 14), 180 + Math.random() * 120, 0.18, 0.025, 'triangle', 1.1, 0.02); } }, k * 220); })(i); }
   };
+  /* espirro ("ah... tchim") ou tosse (dois estouros graves); abafado no lenço */
+  Au.sneeze = function (x, y, cough, muffled) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, 0, 20), k = muffled ? 0.35 : 1;
+    if (sp.g <= 0.01) { return; }
+    if (cough) {
+      for (var i = 0; i < 2; i++) { (function (j) { setTimeout(function () { if (ok()) { noise(spatial(x, y, 0, 20), 0.16, 700, 1.2, 0.16 * k, muffled ? 'lowpass' : 'bandpass', 0.01); } }, j * 260); })(i); }
+      return;
+    }
+    tone(sp, 330, 0.35, 0.03 * k, 'triangle', 1.3, 0.15);
+    setTimeout(function () { if (ok()) { noise(spatial(x, y, 0, 20), 0.22, muffled ? 1200 : 2600, 0.9, 0.2 * k, muffled ? 'lowpass' : 'bandpass', 0.005); } }, 380);
+  };
   Au.thunder = function () {
     if (!ok()) { return; }
     var sp = Object.assign({}, CENTER, { pan: Math.random() * 1.4 - 0.7, outdoor: true, d: 30 });

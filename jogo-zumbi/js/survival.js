@@ -458,6 +458,41 @@
       }
     }
   };
+  /* ================= COZINHA: botijão no fogão e micro-ondas ================= */
+  var KC = C.KITCHEN;
+  /* micro-ondas: alguns balcões de cozinha de casa (escolhido pela posição, sem mudar a geração do mundo) */
+  Sv.hasMicrowave = function (x, y, z) {
+    if (W.obj(x, y, z) !== O.COUNTER || !W.isIndoor(x, y, z) || ((x * 73856093 ^ y * 19349663) >>> 0) % KC.MICRO !== 0) { return false; }
+    var b = W.building(x, y, z);
+    return !!b && b.kind === 'house';
+  };
+  Sv.stoveOptions = function (p, x, y, z, out) {
+    var Inv = CP.Items.Inv, cont = W.container(x, y, z);
+    if (!cont) { return; }
+    if (cont.gas > 0) {
+      out.push({ label: 'Botijão no fogão: ' + Math.round(cont.gas / KC.TANK_H * 100) + '%', disabled: true });
+      out.push({ label: 'Retirar o botijão', fn: function () { var t = CP.Items.make('propane_tank'); t.gas = cont.gas; cont.gas = 0; Inv.give(p, t); W.chunkAt(x, y).saveDirty = true; } });
+      return;
+    }
+    var tank = Inv.find(p, function (o) { return D.ITEMS[o.id].gasTank && (o.gas === undefined || o.gas > 0.05); });
+    out.push({ label: 'Instalar botijão de gás (fogão sem energia)', disabled: !tank, hint: 'Precisa de um botijão com gás', fn: function () {
+      CP.Actions.start(p, { name: 'Ligando o botijão', time: 3, anim: 'work', onDone: function () {
+        if (!tank || Inv.find(p, function (o) { return o === tank.item; }) === null) { return; }
+        Inv.detach(p, tank.item); cont.gas = tank.item.gas === undefined ? KC.TANK_H : tank.item.gas; W.chunkAt(x, y).saveDirty = true;
+        msg('Botijão ligado: dá para cozinhar sem energia.');
+      } });
+    } });
+  };
+  Sv.microOptions = function (p, x, y, z, out) {
+    if (!Sv.hasMicrowave(x, y, z)) { return; }
+    var power = CP.Time.powerAt(x, y), now = G().state.time;
+    var list = CP.Items.Inv.all(p).filter(function (o) { return CP.Use.warmable(o.item) && !(o.item.warmUntil && now < o.item.warmUntil); });
+    if (!list.length) { out.push({ label: 'Micro-ondas (nada para esquentar)', disabled: true }); return; }
+    list.slice(0, 4).forEach(function (o) {
+      out.push({ label: 'Esquentar ' + CP.Items.name(o.item).toLowerCase() + ' no micro-ondas', disabled: !power, hint: 'Sem energia', fn: function () { CP.Use.warm(p, o.item, { x: x, y: y, z: z }); } });
+    });
+  };
+
   Sv.reset = function () { Sv.marks.length = 0; };
 
   CP.Surv = Sv;

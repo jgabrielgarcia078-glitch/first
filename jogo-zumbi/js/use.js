@@ -27,6 +27,7 @@
         out.push({ label: 'Comer' + (fs === 'rotten' ? ' (podre!)' : ''), fn: function () { eat(p, it, 1); } });
         out.push({ label: 'Comer metade', fn: function () { eat(p, it, 0.5); } });
         if (d.food.cookable) { out.push({ label: 'Cozinhar (fogão/fogueira)', fn: function () { cook(p, it); } }); }
+        if (Use.warmable(it) && !(it.warmUntil && CP.Game.state.time < it.warmUntil)) { out.push({ label: 'Esquentar (fogão/fogueira)', disabled: !Use.nearHeat(p), hint: 'Precisa de fogão ou fogueira por perto', fn: function () { Use.warm(p, it, null); } }); }
       }
     }
     if (d.drink) {
@@ -60,6 +61,10 @@
       if (!it.on) { out.push({ label: 'Acender', disabled: !lt || (it.burn !== undefined && it.burn <= 0), hint: !lt ? 'Precisa de fósforo ou isqueiro' : 'Acabou o combustível', fn: function () { if (lt.item.uses !== undefined) { lt.item.uses--; if (lt.item.uses <= 0) { Inv.detach(p, lt.item); } } if (it.burn === undefined) { it.burn = d.flame.hours; } it.on = true; if (p.hand1 !== it && p.hand2 !== it) { Use.equip(p, it, p.hand1 ? 'hand2' : 'hand1'); } CP.Game.updateLight(); msg(d.name + ' acesa.'); } }); } else { out.push({ label: 'Apagar', fn: function () { it.on = false; CP.Game.updateLight(); } }); }
       if (d.flame.refill) { var gas = Inv.findTag(p, 'gas'); out.push({ label: 'Encher com gasolina', disabled: !gas || (it.burn || 0) >= d.flame.hours - 0.2, hint: 'Precisa de galão com gasolina', fn: function () { gas.item.fuel = Math.max(0, gas.item.fuel - 0.3); it.burn = d.flame.hours; msg('Lampião cheio.'); } }); }
       out.push({ label: 'Combustível: ' + Math.round((it.burn !== undefined ? it.burn : d.flame.hours) / d.flame.hours * 100) + '%', disabled: true });
+    }
+    if (It.hasTag(it, 'blowtorch')) {
+      var tank = Inv.find(p, function (o) { return It.def(o).gasTank && (o.gas === undefined || o.gas > 0.2); });
+      out.push({ label: 'Encher com o botijão', disabled: !tank || (it.uses || 0) >= C.METAL.TORCH_USES, hint: !tank ? 'Precisa de botijão com gás' : 'Cheio', fn: function () { tank.item.gas = (tank.item.gas === undefined ? C.KITCHEN.TANK_H : tank.item.gas) - 1; it.uses = C.METAL.TORCH_USES; msg('Maçarico cheio.'); } });
     }
     if (d.ladder && CP.Surv) { CP.Surv.ladderItemOptions(p, it, out); }
     if (d.trap && CP.Surv) { out.push({ label: 'Armar armadilha aqui', fn: function () { CP.Surv.placeTrap(p, it); } }); }
@@ -161,6 +166,7 @@
       s.thirst = U.clamp(s.thirst + (f.thirst || 0) * mult, 0, 1);
       s.unhappy = U.clamp(s.unhappy + (f.unhappy || 0) * mult + (fs === 'stale' ? 0.04 : 0), 0, 1);
       s.boredom = U.clamp(s.boredom + (f.boredom || 0) * mult, 0, 1);
+      if (it.warmUntil && CP.Game.state.time < it.warmUntil) { s.unhappy = Math.max(0, s.unhappy - C.KITCHEN.WARM_HAPPY * mult); s.boredom = Math.max(0, s.boredom - C.KITCHEN.WARM_BORED * mult); } // comida quente
       if (s.hunger <= 0) { s.stuffed = Math.min(1, s.stuffed + 0.3); }
       var poison = (fs === 'rotten' ? 0.45 : 0) + (f.raw || it.hasRaw && f.dish !== 'stew' ? 0.3 : 0);
       if (poison && Math.random() < 0.75) { s.sick = Math.min(1, s.sick + poison * (p.fx.poisonMult || 1)); msg('Seu estômago não gostou disso...', 'warn'); }
@@ -193,26 +199,62 @@
     } });
   }
   function cook(p, it) {
-    if (!Use.nearHeat(p)) { msg('Precisa estar perto de um fogão com energia ou de uma fogueira.', 'warn'); return; }
+    if (!Use.nearHeat(p)) { msg('Precisa estar perto de um fogão (com energia ou botijão) ou de uma fogueira.', 'warn'); return; }
     var d = It.def(it);
     A.start(p, { name: 'Cozinhando', time: 8 * (1.2 - CP.Player.skillLevel(p, 'cooking') * 0.05), anim: 'work', onDone: function () {
-      if (it.dish && CP.Surv) { var cooked = swapItem(p, it, d.food.cookable, { age: 0 }); cooked.dish = CP.Surv.cookDish(it); cooked.ingr = it.ingr; cooked.potBack = true; CP.Player.addXp(p, 'cooking', 3 + it.ingr.length); msg('Pronto: ' + CP.Items.name(cooked)); return; }
-      swapItem(p, it, d.food.cookable, { age: 0 });
+      if (it.dish && CP.Surv) { Use.useHeat(p); var cooked = swapItem(p, it, d.food.cookable, { age: 0 }); cooked.warmUntil = CP.Game.state.time + C.KITCHEN.WARM_H * 3600; cooked.dish = CP.Surv.cookDish(it); cooked.ingr = it.ingr; cooked.potBack = true; CP.Player.addXp(p, 'cooking', 3 + it.ingr.length); msg('Pronto: ' + CP.Items.name(cooked)); return; }
+      Use.useHeat(p);
+      var KC = C.KITCHEN, burn = Math.max(KC.BURN_MIN, KC.BURN - CP.Player.skillLevel(p, 'cooking') * KC.BURN_PER_LVL);
+      if (Math.random() < burn) { swapItem(p, it, 'burnt_food', { age: 0 }); CP.Player.addXp(p, 'cooking', 2); msg('Queimou! Ficou mais tempo no fogo do que devia.', 'warn'); return; }
+      swapItem(p, it, d.food.cookable, { age: 0 }).warmUntil = CP.Game.state.time + KC.WARM_H * 3600;
       CP.Player.addXp(p, 'cooking', 5);
       msg('Pronto: ' + D.ITEMS[d.food.cookable].name);
     } });
   }
-  Use.nearHeat = function (p) {
-    var z = W.levelOf(p.z);
+  /* gás do fogão (botijão instalado fica no recipiente do fogão) */
+  Use.stoveGas = function (x, y, z) { var ch = W.chunkAt(x, y), c = ch && ch.containers[W.key(x, y, z)]; return c && c.gas > 0 ? c.gas : 0; };
+  /* fonte de calor ao alcance: fogão com energia, fogão com botijão ou fogueira acesa */
+  Use.heatSource = function (p) {
+    var z = W.levelOf(p.z), best = null;
     for (var dy = -1; dy <= 1; dy++) {
       for (var dx = -1; dx <= 1; dx++) {
         var x = Math.floor(p.x) + dx, y = Math.floor(p.y) + dy;
         var o = W.obj(x, y, z);
-        if (o === O.STOVE && CP.Time.powerAt(x, y)) { return true; }
-        if (o === O.CAMPFIRE && !(W.odir(x, y, z) & 4)) { return true; }
+        if (o === O.STOVE && CP.Time.powerAt(x, y)) { return { x: x, y: y, z: z, kind: 'power' }; }
+        if (o === O.STOVE && Use.stoveGas(x, y, z) > 0) { best = best || { x: x, y: y, z: z, kind: 'gas' }; }
+        if (o === O.CAMPFIRE && !(W.odir(x, y, z) & 4)) { best = best || { x: x, y: y, z: z, kind: 'fire' }; }
       }
     }
-    return false;
+    return best;
+  };
+  Use.nearHeat = function (p) { return !!Use.heatSource(p); };
+  /* gasta o gás quando a chama é do botijão */
+  Use.useHeat = function (p, mult) {
+    var hs = Use.heatSource(p);
+    if (!hs || hs.kind !== 'gas') { return; }
+    var c = W.chunkAt(hs.x, hs.y).containers[W.key(hs.x, hs.y, hs.z)];
+    c.gas = Math.max(0, c.gas - C.KITCHEN.GAS_PER_COOK * (mult || 1)); W.chunkAt(hs.x, hs.y).saveDirty = true;
+    if (c.gas <= 0) { msg('O botijão do fogão acabou.', 'warn'); }
+  };
+  /* comida que dá para esquentar: lata aberta, prato cozido, assado */
+  Use.warmable = function (it) {
+    var d = It.def(it);
+    if (!d || !d.food || d.food.raw || d.food.canned || d.food.needsCooking || it.cooked === false) { return false; }
+    return /_open$|_cooked$/.test(it.id) || !!it.dish || it.id === 'soup' || it.id === 'stew';
+  };
+  Use.warm = function (p, it, micro) {
+    var KC = C.KITCHEN;
+    A.start(p, { name: micro ? 'Esquentando no micro-ondas' : 'Esquentando', time: micro ? 1.5 : 4, anim: 'work', onDone: function () {
+      if (micro && /_open$/.test(it.id) && Math.random() < KC.SPARK) { // lata de metal no micro-ondas
+        msg('Lata de metal no micro-ondas! Faíscas e fogo!', 'danger');
+        if (CP.Fire) { CP.Fire.ignite(micro.x, micro.y, micro.z, true, 8); }
+        CP.Zombies.noise(micro.x + 0.5, micro.y + 0.5, micro.z, 10, 'bang');
+        return;
+      }
+      if (!micro) { Use.useHeat(p, 0.4); }
+      it.warmUntil = CP.Game.state.time + KC.WARM_H * 3600;
+      msg(It.name(it) + ' — pronto para comer.');
+    } });
   };
   function smoke(p, it) {
     A.start(p, { name: 'Fumando', time: 5, onDone: function () {
@@ -225,7 +267,7 @@
   /* ---------- remédios ---------- */
   function medOptions(p, it, d, out) {
     var m = d.med;
-    if (m.type === 'pain' || m.type === 'antibiotic' || m.type === 'panic' || m.type === 'happy' || m.type === 'sleep') {
+    if (m.type === 'pain' || m.type === 'antibiotic' || m.type === 'panic' || m.type === 'happy' || m.type === 'sleep' || m.type === 'flu') {
       out.push({ label: 'Tomar 1 comprimido', fn: function () {
         A.start(p, { name: 'Tomando remédio', time: 1.5, onDone: function () {
           CP.Body.takePill(p, m.type);
@@ -398,6 +440,7 @@
       });
       (r.out || []).forEach(function (o) { for (var i = 0; i < o.n; i++) { Inv.give(p, It.make(o.item, { age: 0 })); } });
       if (r.xp) { CP.Player.addXp(p, r.xp[0], r.xp[1]); }
+      if (r.needsHeat) { Use.useHeat(p); }
       if (r.id === 'stew') { Inv.give(p, It.make('pot')); }
       msg('Feito: ' + r.name);
     } });
@@ -409,7 +452,7 @@
     if (!pot) { msg('Precisa de panela com água.', 'warn'); return; }
     if (!Use.nearHeat(p)) { msg('Precisa de fogão com energia ou fogueira.', 'warn'); return; }
     A.start(p, { name: 'Fervendo água', time: 8, onDone: function () {
-      pot.item.dirty = false;
+      pot.item.dirty = false; Use.useHeat(p);
       // enche garrafas vazias com água limpa
       var n = 0;
       Inv.all(p).forEach(function (o) { if ((o.item.id === 'bottle_empty' || o.item.id === 'water_dirty') && n < 3) { swapItem(p, o.item, 'water_bottle'); n++; } });
@@ -425,7 +468,10 @@
     var missing = [];
     b.mats.forEach(function (m) { var have = Inv.count(p, m.item); if (have < m.n) { missing.push(D.ITEMS[m.item].name + ' (' + have + '/' + m.n + ')'); } });
     if (b.tool && !Inv.findTag(p, b.tool)) { missing.push('Ferramenta: ' + D.tagName(b.tool)); }
-    if (CP.Player.skillLevel(p, 'carpentry') < b.skill) { missing.push('Carpintaria ' + b.skill); }
+    if (b.tool2 && !Inv.findTag(p, b.tool2)) { missing.push('Ferramenta: ' + D.tagName(b.tool2)); }
+    if (b.torch) { var bt = Inv.findTag(p, 'blowtorch'); if (!bt || (bt.item.uses || 0) < b.torch) { missing.push('Gás do maçarico (' + (bt ? bt.item.uses || 0 : 0) + '/' + b.torch + ')'); } }
+    var sk = b.skillId || 'carpentry';
+    if (CP.Player.skillLevel(p, sk) < b.skill) { missing.push(D.SKILL[sk].name + ' ' + b.skill); }
     if (b.recipe && p.knownRecipes.indexOf(b.recipe) < 0) { missing.push('Projeto desconhecido (revista)'); }
     return { ok: missing.length === 0, missing: missing };
   };
@@ -471,14 +517,16 @@
     var stt = Build.status(p, b);
     if (!stt.ok) { msg('Faltando: ' + stt.missing.join(', '), 'warn'); return; }
     var z = W.levelOf(p.z);
-    A.start(p, { name: 'Construindo ' + b.name.toLowerCase(), time: b.time * (1.3 - CP.Player.skillLevel(p, 'carpentry') * 0.05), anim: 'work', noise: { r: C.NOISE.BUILD, every: 1.2, sound: 'hammer' }, onDone: function () {
+    var skId = b.skillId || 'carpentry';
+    A.start(p, { name: 'Construindo ' + b.name.toLowerCase(), time: b.time * (1.3 - CP.Player.skillLevel(p, skId) * 0.05), anim: 'work', noise: { r: C.NOISE.BUILD, every: 1.2, sound: b.torch ? null : 'hammer' }, onDone: function () {
       if (!Build.status(p, b).ok) { msg('Faltou material.', 'warn'); return; }
       b.mats.forEach(function (m) { Inv.consume(p, m.item, m.n); });
+      if (b.torch) { var bt = Inv.findTag(p, 'blowtorch'); bt.item.uses -= b.torch; }
       if (t.kind === 'edge') {
         var type = E[b.edge];
-        W.setEdge(t.x, t.y, z, t.side, type, 10);
-        if (type === E.DOOR) { W.setEdgeState(t.x, t.y, z, t.side, { open: false, locked: false, hp: 30, bar: 0, barHp: 0, broken: false, ext: true, built: true }); }
-        if (type === E.WALL) { W.setEdgeState(t.x, t.y, z, t.side, { hp: 40, built: true }); }
+        W.setEdge(t.x, t.y, z, t.side, type, b.style || 10);
+        if (type === E.DOOR) { W.setEdgeState(t.x, t.y, z, t.side, { open: false, locked: false, hp: b.hp || 30, bar: 0, barHp: 0, broken: false, ext: true, built: true, metal: !!b.torch }); }
+        if (type === E.WALL) { W.setEdgeState(t.x, t.y, z, t.side, { hp: b.hp || 40, built: true, metal: !!b.torch }); }
       } else if (t.kind === 'floor') {
         var l = W.lvl(t.x, t.y, z); l.floor[W.idx(t.x, t.y)] = F.WOOD; W.chunkAt(t.x, t.y).dirty = true; W.chunkAt(t.x, t.y)._roof = null;
       } else {
@@ -486,7 +534,7 @@
         if (b.obj === 'CRATE' || b.obj === 'WORKBENCH') { var c = W.chunkAt(t.x, t.y); c.containers[W.key(t.x, t.y, z)] = { items: [], gen: true }; }
         if (b.obj === 'RAIN_BARREL') { (CP.Game.state.world.rainBarrels = CP.Game.state.world.rainBarrels || []).push({ x: t.x, y: t.y, z: z, water: 0 }); }
       }
-      CP.Player.addXp(p, 'carpentry', b.xp);
+      CP.Player.addXp(p, skId, b.xp);
       CP.Game.updateFov(true);
       msg('Construído: ' + b.name);
     } });

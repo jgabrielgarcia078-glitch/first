@@ -286,7 +286,8 @@
       }
     }
     if ((o === O.SINK || o === O.MED_CABINET) && W.isIndoor(x, y, z)) { mirrorOptions(p, out); }
-    if (info.stove) { out.push({ label: 'Cozinhar (artesanato)', disabled: !CP.Time.powerAt(x, y), hint: 'Sem energia', fn: function () { if (CP.UI) { CP.UI.openCrafting(); } } }); }
+    if (info.stove) { out.push({ label: 'Cozinhar (artesanato)', disabled: !CP.Time.powerAt(x, y) && !CP.Use.stoveGas(x, y, z), hint: 'Sem energia (instale um botijão)', fn: function () { if (CP.UI) { CP.UI.openCrafting(); } } }); if (CP.Surv) { CP.Surv.stoveOptions(p, x, y, z, out); } }
+    if (o === O.COUNTER && CP.Surv) { CP.Surv.microOptions(p, x, y, z, out); }
     if (info.tree) {
       var axe = CP.Items.Inv.findTag(p, 'chop');
       out.push({ label: 'Cortar árvore', disabled: !axe, hint: 'Precisa de machado', fn: function () { chopTree(p, x, y, z); } });

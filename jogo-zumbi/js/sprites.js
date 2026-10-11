@@ -1056,7 +1056,7 @@
       case O.STOVE: bw = againstWall(dir, 0.75, 0.1); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#e2e0da'); furnitureDetail(g, o, bw, dir, rng);
         for (var bi = 0; bi < 4; bi++) { var pp = ip(bw[0] + bw[2] * (0.28 + (bi % 2) * 0.44), bw[1] + bw[3] * (0.28 + Math.floor(bi / 2) * 0.44), 30); ellipseAt(g, pp[0], pp[1], 5, 2.6, '#2a2a2a'); }
         break;
-      case O.COUNTER: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0'); furnitureDetail(g, o, bw, dir, rng); break;
+      case O.COUNTER: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0'); furnitureDetail(g, o, bw, dir, rng); if (extra === 1) { drawMicrowave(g, bw, dir); } break;
       case O.SINK: bw = againstWall(dir, 0.8, 0.0); box(g, bw[0], bw[1], bw[2], bw[3], 0, 30, '#8a6a4a'); topRect(g, bw[0], bw[1], bw[2], bw[3], 30.5, '#cfc6b0'); furnitureDetail(g, o, bw, dir, rng);
         var sc = ip(bw[0] + bw[2] / 2, bw[1] + bw[3] / 2, 31); ellipseAt(g, sc[0], sc[1], 10, 5, '#9aa4a8'); ellipseAt(g, sc[0], sc[1] + 1, 7, 3.4, '#6e787c');
         var fc2 = ip(bw[0] + bw[2] / 2 + (dir === 1 ? -0.3 : 0), bw[1] + bw[3] / 2 + (dir === 2 ? -0.3 : 0), 31); g.strokeStyle = '#b8bcc0'; g.lineWidth = 2; g.beginPath(); g.moveTo(fc2[0], fc2[1]); g.lineTo(fc2[0], fc2[1] - 9); g.lineTo(fc2[0] + (dir === 2 ? -2 : 2), fc2[1] - 7); g.stroke(); break;
@@ -1605,6 +1605,19 @@
       g.strokeStyle = '#4a3624'; g.lineWidth = rng.range(1.5, 3); g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.stroke();
       g.lineWidth = 1; g.beginPath(); g.moveTo(x + (ex - x) * 0.5, y + (ey - y) * 0.5); g.lineTo(x + (ex - x) * 0.5 + rng.range(-6, 6), y + (ey - y) * 0.5 - rng.range(2, 6)); g.stroke();
       for (var l = 0; l < 4; l++) { ellipseAt(g, x + (ex - x) * rng.next(), y + (ey - y) * rng.next() - rng.range(0, 3), rng.range(1.8, 3), rng.range(1.2, 2), rng.pick(['#3e5a2a', '#4e6a32', '#5a7436'])); }
+    }
+  }
+  /* micro-ondas em cima do balcão: caixa clara com a porta de vidro escuro virada para o lado aberto */
+  function drawMicrowave(g, bw, dir) {
+    var mw = [bw[0] + bw[2] * 0.22, bw[1] + bw[3] * 0.18, bw[2] * (dir === 1 || dir === 3 ? 0.6 : 0.42), bw[3] * (dir === 1 || dir === 3 ? 0.42 : 0.6)];
+    box(g, mw[0], mw[1], mw[2], mw[3], 31, 13, '#dcdad4');
+    var front = dir === 2 ? [[mw[0], mw[1] + mw[3]], [mw[0] + mw[2], mw[1] + mw[3]]] : (dir === 1 ? [[mw[0] + mw[2], mw[1]], [mw[0] + mw[2], mw[1] + mw[3]]] : null);
+    if (front) { // porta visível (de frente para a câmera)
+      var a = front[0], b = front[1], p0 = ip(a[0] + (b[0] - a[0]) * 0.08, a[1] + (b[1] - a[1]) * 0.08, 34), p1 = ip(a[0] + (b[0] - a[0]) * 0.7, a[1] + (b[1] - a[1]) * 0.7, 34);
+      var p2 = ip(a[0] + (b[0] - a[0]) * 0.7, a[1] + (b[1] - a[1]) * 0.7, 43), p3 = ip(a[0] + (b[0] - a[0]) * 0.08, a[1] + (b[1] - a[1]) * 0.08, 43);
+      poly(g, [p0, p1, p2, p3], '#2a2e30');
+      var k0 = ip(a[0] + (b[0] - a[0]) * 0.82, a[1] + (b[1] - a[1]) * 0.82, 41), k1 = ip(a[0] + (b[0] - a[0]) * 0.82, a[1] + (b[1] - a[1]) * 0.82, 36);
+      g.strokeStyle = '#6a6a66'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(k0[0], k0[1]); g.lineTo(k1[0], k1[1]); g.stroke();
     }
   }
   /* escada de mão apoiada na parede do lado dir (mesma convenção de againstWall): o topo passa da beirada do telhado */
