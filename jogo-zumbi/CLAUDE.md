@@ -35,13 +35,17 @@ Referências de visual já aplicadas: dia claro e colorido (grama verde viva, as
 | body.js | Necessidades, moodles, temperatura, ferimentos, primeiros socorros, infecção, sono, morte |
 | time.js | Relógio, clima, luz, energia/água, helicóptero, eventos distantes (`C.META_EVENTS`: só som + barulho que atrai zumbis, nunca há alguém lá), alarmes, rádio/TV |
 | fx.js | Sangue persistente, efeitos, chuva/neblina/relâmpago, vinheta |
+| notes.js | Textos de bilhetes (`N.gen(rng, tipo, cidade)`), recados de porta (`st.note` no estado da porta) e pichações (`N.graffiti`). Item `note` guarda o texto em `it.text` |
+| ambient.js | Mundo vivo: erosão (`C.EROSION`, mato/trepadeiras assados nos sprites de piso), neve acumulada e pegadas, vento (`sway`: sprites pré-inclinados `S.objLean`, nunca inclinar por quadro), corvos, moscas |
+| fire.js | Fogo por tile em `ws.fires` (+ `ch.fires`): inflamabilidade, vento, paredes; carboniza pisos/paredes (estilo 15), derruba o telhado a 50%; extintor/água; queimar/enterrar corpos |
+| horde.js | Grande horda como grupo virtual (`ws.horde`) que anda no tempo de jogo; vira zumbis reais só perto do jogador (`C.HORDE`) |
 | actions.js | Ações com tempo (fila) e interações com o mundo (menu de contexto e tecla E) |
 | use.js | Uso de itens, artesanato, construção (`CP.Build`) e agricultura (`CP.Farm`) |
 | vehicles.js | Carros dirigíveis (os objetos CAR do mapa viram entidades ao ativar o chunk) |
 | audio.js | Sons sintetizados (WebAudio): vozes de zumbi por formantes, tudo posicional (pan + distância + abafado por parede), reverb, limite de vozes |
 | music.js | Trilha sonora **original** composta em tempo real (nunca usar a trilha do PZ): violão Karplus-Strong, piano, pad, cello; camadas calma/tensão/perseguição pela intensidade do perigo, peças com intro/A/B/final e silêncio entre elas, sustos (`spotted`, `event`, `death`). Mixagem: nada abaixo de `C.MUSIC.LOW_CUT` (alto-falante de celular estoura com subgrave), compressor + limitador próprios, e tudo sai pelo limitador final `CP.Audio.out`. Conferir com `tests/scenarios/mix.js` (pico, cortes, % abaixo de 80 Hz) |
 | save.js | IndexedDB (stores `saves`, `chunks`, `settings`), versão de esquema e migrações |
-| ui.js | Menu (no estilo do original: título e opções à esquerda), criação de personagem, HUD (barra lateral de ícones com as mãos, relógio digital, moodles à direita, atalhos embaixo), painéis (inventário em duas janelas com colunas e abas de recipiente), menu de contexto, morte |
+| ui.js | Arrastar e soltar itens (`UI.dropTarget`/`UI.dropItem`), mapa com anotações (`p.mapNotes`), minimapa girado 45° (buffer de pixels a cada 0,5 s), rótulo do mouse (`UI.hoverText`, só tiles visíveis), bilhete aberto (`UI.showNote`). Menu (no estilo do original: título e opções à esquerda), criação de personagem, HUD (barra lateral de ícones com as mãos, relógio digital, moodles à direita, atalhos embaixo), painéis (inventário em duas janelas com colunas e abas de recipiente), menu de contexto, morte |
 | game.js | Estado da partida, loop de passo fixo (30/s), ativação de chunks, câmera, desenho |
 
 ## Regras que não podem quebrar
@@ -55,6 +59,8 @@ Referências de visual já aplicadas: dia claro e colorido (grama verde viva, as
 
 ## Desempenho
 
+- Sprites guardam só a área pintada (`trim` em `store`) e variações de luz sem uso por ~30 s são descartadas (`S.sweep`): sem isso a memória de vídeo estoura e o quadro dobra de tempo com vento/tempestade.
+- Medir desempenho sempre com `SEED=777`, zumbis removidos e o jogo pausado (os zumbis convergem no jogador e distorcem a medida).
 - Nada de filtros de tela cheia por quadro (`saturation`, `soft-light`, `overlay` custam ~10 ms sem placa de vídeo). A gradação de cor (`C.GRADE`) é aplicada uma vez em cada sprite (`store` → `gradeCanvas`) e nas cores dos personagens (`S.gradeHex`); vinheta e grão são camadas CSS (`#vignette`, `#grain`).
 
 - Zumbis só viram entidades (simuladas) a até `C.ZOMBIE.ACTIVE_IN` tiles do jogador e voltam a ser dados além de `ACTIVE_OUT` (exceto quem está perseguindo). Testes que movem zumbis devem manter o jogador dentro desse raio.
@@ -68,5 +74,7 @@ Referências de visual já aplicadas: dia claro e colorido (grama verde viva, as
 - `tests/unit-worldgen.js [seed]`: todos os tiles internos de todos os prédios são alcançáveis pela porta, e as escadas são consistentes.
 - `tests/unit-sim.js`: integridade dos dados, combate, IA (ver, ouvir, perseguir, arrombar porta, subir escada), necessidades, sono, curativo, infecção, loot, serialização.
 - `tests/unit-days.js`: 30 dias acelerados (energia, água, helicóptero, clima, plantação, migração).
+- `tests/unit-features.js`: melhorias "mais perto do original" (neve, erosão, vento, corvos, comer corpos, derrubar, sujeira, fogo, corpos, hordas, carro por peça, bilhetes, recados, fogueira apagada).
+- `tests/iface.sh`: no navegador, arrastar e soltar itens, anotações no mapa, minimapa e rótulos (falha se o roteiro `tests/scenarios/iface.js` registrar falha).
 - `tests/e2e.js`: Chromium via `file://` (menu → criação → jogo → painéis → salvar → recarregar → continuar).
-- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `uniforms` = uniformes em humanos e zumbis, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R, `mix` = pico/cortes/subgrave na saída final).
+- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `uniforms` = uniformes em humanos e zumbis, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R, `mix` = pico/cortes/subgrave na saída final, `world` = erosão/neve/fachadas, `anims` = poses de zumbi e do jogador, `fire` = incêndio/casa queimada/horda/mecânica, `iface` = interface nova, `notes` = recados/pichações/acampamento).

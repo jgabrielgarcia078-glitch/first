@@ -28,7 +28,9 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 | H | Saúde (curativos) |
 | K | Personagem e habilidades |
 | B | Artesanato e construção |
-| M | Mapa |
+| M | Mapa (clique anota com um símbolo e texto; botão direito apaga) |
+| N | Mostrar / esconder o minimapa |
+| Arrastar itens | Entre as janelas e abas do inventário, para "Equipado e vestido" (veste/empunha) ou para fora (larga no chão) |
 | 1 a 5 | Atalhos (equipar item) |
 | [ e ] | Velocidade do tempo (só sem zumbis por perto) |
 | Roda do mouse / + − | Zoom |
@@ -55,6 +57,14 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 - **Interface parecida com a do original**: ícones na barra da esquerda (com o que está nas mãos no topo), relógio digital no canto direito, moodles embaixo dele, e inventário em duas janelas (você / arredores) com colunas e abas de recipiente.
 - **Trilha sonora original**, composta na hora pelo próprio jogo: piano e violão melancólicos quando está tudo calmo (com silêncio entre as músicas), coração batendo e cordas tensas quando há zumbi por perto, percussão quando eles estão atrás de você, e um susto quando um zumbi te vê. Volume da música separado no menu (Esc).
 - **Eventos aleatórios ao longe**: tiros, rajadas, gritos, pedidos de socorro, cachorros, batida de carro, vidro quebrando, explosão, sirene e alarme de carro. Não há ninguém lá — mas o barulho é real e os zumbis vão até ele. Mais frequentes à noite.
+- **Mundo que envelhece**: com os dias o mato toma conta das rachaduras e dos gramados, trepadeiras sobem nas paredes; no inverno a neve se acumula no chão, nos telhados e nos carros (e guarda pegadas). Vento balança árvores e mato, corvos pousam e fogem, moscas rondam os corpos.
+- **Fachadas e quintais**: letreiros nas lojas, toldos, vitrines quebradas, placas de rua, outdoors, churrasqueiras, balanços, varais, casinhas de cachorro, canteiros e piscininhas.
+- **Zumbis comendo corpos**, levantando devagar do chão, cambaleando depois de um empurrão; cercado por vários, você é derrubado e devorado. Roupa fica suja, rasgada e com sangue (dá para lavar e remendar).
+- **Fogo que se espalha** pelo piso, móveis e paredes (pior com vento), casas que queimam até o telhado desabar, extintor e água para apagar; corpos podem ser queimados ou enterrados (corpos podres perto deixam você doente).
+- **Grandes hordas** que atravessam a região de tempos em tempos (dá para ouvir chegando).
+- **Mecânica de carro por peça**: motor, bateria, 4 pneus e para-brisa, com tirar, trocar e consertar.
+- **Bilhetes e recados**: bilhetes para ler (diários, listas, despedidas), recados presos nas portas de quem foi embora, pichações nas paredes ("SAQUEADO", "NÃO ENTRE"...) e acampamentos abandonados no mato.
+- **Interface**: arrastar e soltar itens, minimapa no canto, anotações no mapa e o nome das coisas quando o mouse passa por cima (portas, janelas, móveis, corpos, placas).
 - **Leve**: só os zumbis perto de você são simulados; os de longe ficam "guardados" e acordam quando você se aproxima (ou se ouvirem um barulho grande).
 
 ## Testes
@@ -63,4 +73,4 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 sh tests/run-all.sh
 ```
 
-Esse comando roda a checagem de sintaxe e de regras, a geração do mundo em 3 sementes, simulações de lógica (combate, IA, portas, escadas, necessidades, infecção), 30 dias de jogo acelerados e um teste ponta a ponta no navegador (Playwright).
+Esse comando roda a checagem de sintaxe e de regras, a geração do mundo em 3 sementes, simulações de lógica (combate, IA, portas, escadas, necessidades, infecção), 30 dias de jogo acelerados os testes das melhorias (`tests/unit-features.js`), a interface no navegador (`tests/iface.sh`: arrastar e soltar, mapa, minimapa, rótulos) e um teste ponta a ponta no navegador (Playwright).
