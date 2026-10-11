@@ -86,7 +86,15 @@
   R.draw = function (view) {
     var sn = CP.Time && CP.Game && CP.Game.running ? CP.Time.season() : 'Verão';
     R.season = { 'Verão': 0, 'Outono': 1, 'Inverno': 2, 'Primavera': 3 }[sn] || 0;
+    var Am = CP.Amb;
+    var ero = R.ero = Am && CP.Game && CP.Game.running ? Am.erosion() : 0;
+    var snow = R.snow = Am && CP.Game && CP.Game.running ? Am.snow() : 0;
+    R.wind = Am && CP.Game && CP.Game.running ? Am.wind() : 0;
+    var roofSnow = snow > 0.7 ? 2 : (snow > 0.3 ? 1 : 0);
+    R.treeSeason = R.season === 2 && snow > 0.35 ? 4 : R.season;
     var t0 = performance.now();
+    S.frame++;
+    if (S.frame % 300 === 0) { S.sweep(); }
     var g = R.g;
     var z = R.zoom, dpr = R.dpr;
     var camSX = wsx(R.camX, R.camY), camSY = wsy(R.camX, R.camY, R.camZ);
@@ -132,9 +140,14 @@
         if (sy > camSY + hh + 40 || sy < camSY - hh - 80) { continue; }
         if (voidAt(x, y, 0, view)) { continue; } // interior que você não está vendo: fica preto
         var lia = tileCode(x, y, 0, viewZ);
-        drawSprite(g, S.floor(f, fv(f, L0.fvar[i0], x, y)), lia, sx, sy);
-        var lk = litterAt(f, x, y);
-        if (lk >= 0) { drawSprite(g, S.litter(lk, (x * 7 + y * 3) & 3), lia, sx, sy); }
+        var outd = !L0.room[i0];
+        var sst = snow > 0.02 && outd ? snowStage(f, x, y, snow, i0) : 0;
+        var fvv = fv(f, L0.fvar[i0], x, y);
+        if (sst === 3) { drawSprite(g, S.snowTile(3, fvv & 3), lia, sx, sy); } else {
+          var ov = outd ? erosionAt(f, x, y, ero) : -1;
+          drawSprite(g, ov >= 0 || sst ? S.floorOv(f, fvv, ov, sst) : S.floor(f, fvv), lia, sx, sy);
+          if (!sst) { var lk = litterAt(f, x, y); if (lk >= 0) { drawSprite(g, S.litter(lk, (x * 7 + y * 3) & 3), lia, sx, sy); } }
+        }
         tiles++;
       }
     }
@@ -157,7 +170,11 @@
           var vd = zz <= viewZ && voidAt(x, y, zz, view);
           if (zz > 0 && !vd) {
             var fz = L.floor[ii];
-            if (fz === F.ROOF) { var rcd = roofCode(ch, zz, ii); drawSprite(g, S.roof(rcd), li, bx, by, fade); chimney(g, rcd, x, y, bx, by, li, fade); } else if (fz) { drawSprite(g, S.floor(fz, fv(fz, L.fvar[ii], x, y)), li, bx, by, fade); }
+            if (fz === F.ROOF) {
+              var rcd = roofCode(ch, zz, ii); drawSprite(g, S.roof(rcd, roofSnow), li, bx, by, fade); chimney(g, rcd, x, y, bx, by, li, fade);
+              var sgn = signAt(ch, zz, ii);
+              if (sgn) { drawSprite(g, sgn.spr, li, sgn.bx, sgn.by, fade); }
+            } else if (fz) { drawSprite(g, S.floor(fz, fv(fz, L.fvar[ii], x, y)), li, bx, by, fade); }
           }
           // paredes
           var wwT = L.ww[ii], wnT = L.wn[ii];
@@ -190,6 +207,89 @@
     R.stats.tiles = tiles; R.stats.ents = ents.length;
     R.stats.ms = performance.now() - t0;
   };
+
+  /* número pseudoaleatório 0..1 fixo por posição */
+  function hash01(x, y, s) {
+    var h = (x * 374761393 + y * 668265263 + s * 2246822519) | 0;
+    h = (h ^ (h >>> 13)) * 1274126177;
+    h = h ^ (h >>> 16);
+    return (h >>> 0) / 4294967296;
+  }
+  R.hash01 = hash01;
+  /* neve num tile ao ar livre: 0 nada, 1 salpicada, 2 manchas, 3 coberto (manchas maiores que um tile) */
+  function snowStage(f, x, y, snow, i) {
+    if (f === F.WATER || f === F.ROOF) { return 0; }
+    if (snow >= 0.9) { return 3; }
+    // ruído suave por chunk (calculado uma vez): a neve fica em manchas grandes, não em xadrez
+    var ch = W.chunkAt(x, y);
+    var nz = ch._snowN;
+    if (!nz) {
+      nz = ch._snowN = new Float32Array(AREA);
+      for (var k = 0; k < AREA; k++) { var wx = ch.cx * C.CHUNK + (k % C.CHUNK), wy = ch.cy * C.CHUNK + ((k / C.CHUNK) | 0); nz[k] = U.fbm(wx * 0.13, wy * 0.13, 515, 2) * 0.8 + hash01(wx, wy, 17) * 0.2; }
+    }
+    var v = snow * 1.8 + 0.25 - nz[i] * 1.7;
+    return v > 0.6 ? 3 : (v > 0.38 ? 2 : (v > 0.15 ? 1 : 0));
+  }
+  /* mato avançando com o tempo: [densidade máxima, tipo (0 rachadura, 1 gramado alto, 2 capim)] por piso */
+  var ERO = [];
+  ERO[F.ASPHALT] = [0.4, 0]; ERO[F.ASPHALT_LINE] = [0.3, 0]; ERO[F.SIDEWALK] = [0.6, 0]; ERO[F.CONCRETE] = [0.5, 2]; ERO[F.GRAVEL] = [0.7, 2];
+  ERO[F.DIRT] = [0.6, 2]; ERO[F.GRASS] = [1, 1]; ERO[F.DARKGRASS] = [0.9, 1]; ERO[F.DECK] = [0.35, 2]; ERO[F.SAND] = [0.25, 2];
+  function erosionAt(f, x, y, e) {
+    var E2 = ERO[f];
+    if (!E2 || e <= 0) { return -1; }
+    var dens = E2[0] * e, h = hash01(x, y, 5);
+    if (h >= dens) { return -1; }
+    var st = 1 + Math.min(2, Math.floor((1 - h / dens) * 3 * Math.min(1, e * 1.5)));
+    var kind = E2[1];
+    if (kind === 0 && f === F.SIDEWALK && hash01(x, y, 9) < 0.4) { kind = 2; }
+    return kind * 4 + st;
+  }
+  R.erosionAt = erosionAt;
+  R.snowStage = snowStage;
+
+  /* letreiros de loja no alto da fachada (calculados uma vez por chunk a partir dos prédios) */
+  var SIGN_TEXT = {
+    grocery: ['MERCADO', 'SUPERMERCADO', 'MERCEARIA'], pharmacy: ['FARMÁCIA', 'DROGARIA'], hardware: ['FERRAGENS', 'MATERIAIS'],
+    diner: ['LANCHONETE', 'DINER', 'CAFÉ & GRILL'], clothes: ['ROUPAS', 'MODAS', 'BOUTIQUE'], bar: ['BAR', 'TAVERNA', 'SALOON'],
+    office: ['ESCRITÓRIO', 'CONTABILIDADE', 'IMOBILIÁRIA'], gunstore: ['ARMAS & CAÇA', 'ARMARIA'], bookstore: ['LIVRARIA', 'SEBO'],
+    electronics: ['ELETRÔNICOS', 'TV & SOM'], police: ['DELEGACIA'], clinic: ['CLÍNICA', 'POSTO DE SAÚDE'], gas: ['POSTO', 'CONVENIÊNCIA'], warehouse: ['DEPÓSITO']
+  };
+  var OWNERS = ['DO JOE', 'DA MARTHA', 'DO HANK', 'DA DOT', 'DO OTIS', 'DO BUD'];
+  R.signText = function (b) {
+    var list = SIGN_TEXT[b.kind];
+    if (!list) { return null; }
+    var h = (b.x * 73856093 ^ b.y * 19349663) >>> 0;
+    var text = list[h % list.length];
+    if ((b.kind === 'grocery' || b.kind === 'diner' || b.kind === 'bar') && (h >>> 5) % 3 === 0) { text += ' ' + OWNERS[(h >>> 8) % OWNERS.length]; }
+    return text;
+  };
+  function computeSigns(ch) {
+    var m = new Map(), N = C.CHUNK;
+    ch.buildings.forEach(function (b) {
+      var text = R.signText(b);
+      if (!text || !b.door || b.kind === 'barn') { return; }
+      var h = (b.x * 73856093 ^ b.y * 19349663) >>> 0;
+      var d = b.door, axis = d.side;
+      var ix = d.x, iy = d.y;
+      if (!(ix >= b.x && ix < b.x + b.w && iy >= b.y && iy < b.y + b.h)) { if (d.side === 0) { iy = d.y - 1; } else { ix = d.x - 1; } }
+      var lo = axis === 0 ? b.x : b.y, hi = axis === 0 ? b.x + b.w : b.y + b.h;
+      var len = Math.max(2, Math.min(4, hi - lo - 1));
+      var cu = (axis === 0 ? d.x : d.y) + 1;
+      var u0 = Math.min(Math.max(lo, Math.round(cu - len / 2)), hi - len);
+      var z = b.floors || 1;
+      var wx = axis === 0 ? u0 : d.x, wy = axis === 0 ? d.y : u0;
+      var ex = axis === 0 ? u0 + len - 1 : ix, ey = axis === 0 ? iy : u0 + len - 1;
+      if ((ex >> W.chunkShift) !== ch.cx || (ey >> W.chunkShift) !== ch.cy || z >= C.LEVELS) { return; }
+      var spr = S.facadeSign(text, (h >>> 3) % S.SIGN_COLS, axis, len);
+      m.set(z * AREA + W.idx(ex, ey), { spr: spr, bx: HW * (wx - wy), by: HH * (wx + wy) - z * WH, b: b, text: text });
+    });
+    return m;
+  }
+  function signAt(ch, z, i) {
+    if (!ch._signs) { ch._signs = computeSigns(ch); }
+    return ch._signs.size ? ch._signs.get(z * AREA + i) : null;
+  }
+  R.signAt = signAt;
 
   /* variação de textura por posição nos pisos "naturais" (a cor continua vindo de fvar) */
   var NATURAL = [];
@@ -338,8 +438,24 @@
     var grime = ((x * 73856093) ^ (y * 19349663) ^ (side * 83492791)) >>> 0;
     var spr = S.wall(type, style, side, state, bar, cut, st && st.curtain ? 1 : 0, (grime >>> 7) % 3);
     drawSprite(g, spr, c, bx, by, fade);
+    if (cut) { return; }
+    // face externa voltada para a câmera: trepadeiras (erosão) e toldos de loja
+    var outFace = !W.isIndoor(x, y, z) && W.isIndoor(ax, ay, z);
+    if (!outFace) { return; }
+    if (type === E.WALL && R.ero > 0.15) {
+      var vd = (R.ero - 0.15) * 0.45, vh = hash01(x, y, 31 + side);
+      if (vh < vd) { drawSprite(g, S.vines(side, 1 + Math.min(2, Math.floor((1 - vh / vd) * 3 * Math.min(1, R.ero))), (x + y) & 3), c, bx, by, fade); }
+    }
+    if (z === 0 && (type === E.WINDOW || type === E.DOOR) && C.WALL_STYLES[style] && C.WALL_STYLES[style].store) {
+      var ab = W.building(ax, ay, 0);
+      var ah = ab ? ((ab.x * 7 + ab.y * 13) >>> 0) : 0;
+      if (ah % 10 < 7) { drawSprite(g, S.awning(side, (ah >>> 2) % 6), c, bx, by, fade); }
+    }
   }
 
+  /* quanto cada planta/objeto leve balança com o vento */
+  var SWAY = [];
+  SWAY[O.TREE] = 0.05; SWAY[O.TREE_PINE] = 0.035; SWAY[O.BUSH] = 0.08; SWAY[O.TALL_GRASS] = 0.2; SWAY[O.FLOWERBED] = 0.12; SWAY[O.CROP] = 0.14; SWAY[O.CLOTHESLINE] = 0.05;
   function drawObject(g, x, y, z, o, dir, bx, by, li, view, ch) {
     var spr;
     if (o === O.STAIRS) {
@@ -354,7 +470,7 @@
       if (!(dir & 2)) { return; }
       spr = S.obj(o, dir, 0);
     } else {
-      spr = S.obj(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.season : 0);
+      spr = S.obj(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.treeSeason : 0);
     }
     var alpha;
     var info = OI[o];
@@ -363,6 +479,9 @@
       var s = dx + dy;
       if (s > 0 && s < (info.tree ? 7 : 3) && Math.abs(dx - dy) < (info.tree ? 3.5 : 2)) { alpha = info.tree ? 0.38 : 0.55; }
     }
+    // vento: escolhe uma das versões inclinadas (pré-desenhadas) mais perto da inclinação deste quadro
+    var lean = SWAY[o] && R.wind > 0.03 && o !== O.CROP ? Math.max(-2, Math.min(2, Math.round(CP.Amb.sway(x, y, SWAY[o]) / SWAY[o] * 2))) : 0;
+    if (lean) { spr = S.objLean(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.treeSeason : 0, lean, SWAY[o] * 0.5); }
     drawSprite(g, spr, li, bx, by, alpha);
     if (o === O.CAMPFIRE || ch.fires[W.key(x, y, z)]) { drawFlame(g, bx, by); }
   }

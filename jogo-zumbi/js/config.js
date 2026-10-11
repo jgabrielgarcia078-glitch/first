@@ -36,11 +36,11 @@
   C.FLOOR = {
     NONE: 0, GRASS: 1, DIRT: 2, ASPHALT: 3, SIDEWALK: 4, WOOD: 5, TILE: 6, CARPET: 7,
     WATER: 8, SAND: 9, FARM: 10, ROOF: 11, CONCRETE: 12, GRAVEL: 13, LINOLEUM: 14,
-    DARKGRASS: 15, FURROW: 16, ASPHALT_LINE: 17, FIELD: 18
+    DARKGRASS: 15, FURROW: 16, ASPHALT_LINE: 17, FIELD: 18, DECK: 19, BURNT: 20
   };
-  C.FLOOR_COUNT = 19;
-  C.FLOOR_WALKABLE = [false, true, true, true, true, true, true, true, false, true, true, true, true, true, true, true, true, true, true];
-  C.FLOOR_OUTDOOR = [false, true, true, true, true, false, false, false, true, true, true, true, true, true, false, true, true, true, true];
+  C.FLOOR_COUNT = 21;
+  C.FLOOR_WALKABLE = [false, true, true, true, true, true, true, true, false, true, true, true, true, true, true, true, true, true, true, true, true];
+  C.FLOOR_OUTDOOR = [false, true, true, true, true, false, false, false, true, true, true, true, true, true, false, true, true, true, true, true, true];
 
   /* Bordas (paredes ficam nas bordas norte/oeste de cada tile, como no PZ). */
   C.EDGE = {
@@ -80,7 +80,8 @@
     CASH: 24, PUMP: 25, CAR: 26, LOG: 27, ROCK: 28, BARREL: 29, TREE_PINE: 30, WORKBENCH: 31,
     RAIN_BARREL: 32, CAMPFIRE: 33, CROP: 34, MED_CABINET: 35, LOCKER: 36, GENERATOR: 37,
     WALL_SHELF: 38, NIGHTSTAND: 39, DRESSER: 40, TALL_GRASS: 41, FENCE_POST: 42, CORPSE_PILE: 43,
-    BENCH: 44, TRASH_CAN: 45, POWER_POLE: 46
+    BENCH: 44, TRASH_CAN: 45, POWER_POLE: 46, STREET_SIGN: 47, BILLBOARD: 48, GRILL: 49, SWING: 50, CLOTHESLINE: 51,
+    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58
   };
   /* Propriedades por objeto: nome, sólido, recipiente (capacidade em kg), altura visual (0..1 de parede), bloqueia visão */
   C.OBJ_INFO = [];
@@ -138,6 +139,18 @@
     o(O.BENCH, 'Banco', false, 0, 0.35, false, { slow: 0.7, seat: true });
     o(O.TRASH_CAN, 'Lixeira', false, 6, 0.45, false, { slow: 0.6 });
     o(O.POWER_POLE, 'Poste de fiação', true, 0, 2.6, false);
+    o(O.STREET_SIGN, 'Placa de rua', true, 0, 1.4, false);
+    o(O.BILLBOARD, 'Outdoor', true, 0, 2.4, false);
+    o(O.GRILL, 'Churrasqueira', true, 6, 0.5, false, { dismantle: ['scrap', 2] });
+    o(O.SWING, 'Balanço', false, 0, 1.0, false, { slow: 0.7, seat: true, dismantle: ['scrap', 2] });
+    o(O.CLOTHESLINE, 'Varal', false, 4, 0.9, false, { slow: 0.85 });
+    o(O.PATIO_SET, 'Mesa de quintal', true, 0, 1.0, false, { dismantle: ['plank', 1] });
+    o(O.DOGHOUSE, 'Casinha de cachorro', true, 2, 0.45, false, { dismantle: ['plank', 2] });
+    o(O.FLOWERBED, 'Canteiro', false, 0, 0.2, false, { slow: 0.8, forage: true });
+    o(O.KIDDIE_POOL, 'Piscina de plástico', false, 0, 0.12, false, { slow: 0.6, water: true });
+    o(O.GRAVE, 'Cova', false, 0, 0.15, false, { slow: 0.85 });
+    o(O.TENT, 'Barraca', true, 12, 0.6, false, { bed: true });
+    o(O.RUBBLE, 'Entulho queimado', false, 0, 0.2, false, { slow: 0.6 });
   })();
 
   /* ---------- Tempo ---------- */
@@ -307,6 +320,16 @@
     { id: 'siren', w: 1.2, noise: 60, dist: [40, 70], maxDay: 7, msg: 'Uma sirene toca ao longe... e se cala.' },
     { id: 'caralarm', w: 1, noise: 60, dist: [30, 55], msg: 'Um alarme de carro dispara em algum lugar.' }
   ];
+
+  /* ---------- Mundo envelhecendo (erosão): mato nas rachaduras, gramado alto, trepadeiras, ferrugem ---------- */
+  C.EROSION = { START_DAY: 2, DAYS_FULL: 90, BASE: 0.12 };   // BASE: o mundo já começa um pouco abandonado
+
+  /* ---------- Neve acumulada (0..1) e vento ---------- */
+  C.SNOW = { PER_HOUR: 0.09, MELT_PER_HOUR: 0.035, MELT_TEMP: 1, FOOTPRINT_MIN: 0.2, FOOTPRINT_LIFE_H: 10, MAX_PRINTS: 500 };
+  C.WIND = { clear: 0.18, cloudy: 0.35, rain: 0.5, storm: 1, fog: 0.06, snow: 0.45 };
+
+  /* ---------- Vida ao redor: corvos que levantam voo, moscas nos corpos ---------- */
+  C.BIRDS = { FLOCKS: 4, SCARE_DIST: 4.5, ZOMBIE_SCARE_DIST: 3.2, RESPAWN_S: 40 };
 
   /* ---------- Gradação de cor (aplicada uma vez em cada sprite e nas cores dos personagens; ver sprites.js) ---------- */
   C.GRADE = { DESAT: 0.06, TINT: '#c8b88a', TINT_ALPHA: 0.1 };

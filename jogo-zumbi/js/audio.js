@@ -483,5 +483,74 @@
     Au.rainNode.f.frequency.setTargetAtTime(outdoor ? 3000 : 900, ctx.currentTime, 1);
   };
 
+  /* vento: ruído grave com rajadas lentas e um assobio leve quando forte (dentro de casa, abafado) */
+  Au.wind = function (level, outdoor) {
+    if (!ok()) { return; }
+    var ctx = Au.ctx, t = ctx.currentTime;
+    if (!Au.windNode) {
+      var src = ctx.createBufferSource(); src.buffer = Au.noiseBuf; src.loop = true; src.playbackRate.value = 0.5;
+      var f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420; f.Q.value = 0.6;
+      var w = ctx.createBiquadFilter(); w.type = 'bandpass'; w.frequency.value = 900; w.Q.value = 6;
+      var g = ctx.createGain(); g.gain.value = 0;
+      var gw = ctx.createGain(); gw.gain.value = 0;
+      src.connect(f); f.connect(g); g.connect(Au.master);
+      src.connect(w); w.connect(gw); gw.connect(Au.master);
+      src.start();
+      Au.windNode = { g: g, gw: gw, f: f, w: w };
+    }
+    var n = Au.windNode, gust = 0.7 + Math.random() * 0.6;
+    var v = Math.max(0, level - 0.1) * (outdoor ? 0.07 : 0.02) * gust;
+    n.g.gain.setTargetAtTime(v, t, 1.2);
+    n.f.frequency.setTargetAtTime((outdoor ? 300 : 180) + level * 400 * gust, t, 1.5);
+    n.gw.gain.setTargetAtTime(level > 0.55 && outdoor ? (level - 0.55) * 0.03 * gust : 0, t, 1.5);
+    n.w.frequency.setTargetAtTime(700 + Math.random() * 500, t, 2);
+  };
+  /* zumbido de moscas perto de um corpo (vol 0..1, pan -1..1) */
+  Au.flies = function (vol, pan) {
+    if (!ok()) { return; }
+    var ctx = Au.ctx, t = ctx.currentTime;
+    if (!Au.flyNode) {
+      var o1 = ctx.createOscillator(), o2 = ctx.createOscillator(); o1.type = 'sawtooth'; o2.type = 'sawtooth';
+      o1.frequency.value = 196; o2.frequency.value = 211;
+      var lfo = ctx.createOscillator(); lfo.frequency.value = 7.5; var lg = ctx.createGain(); lg.gain.value = 18;
+      lfo.connect(lg); lg.connect(o1.frequency); lg.connect(o2.frequency);
+      var f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 700; f.Q.value = 1.2;
+      var g = ctx.createGain(); g.gain.value = 0;
+      var pn = ctx.createStereoPanner ? ctx.createStereoPanner() : null;
+      o1.connect(f); o2.connect(f); f.connect(g);
+      if (pn) { g.connect(pn); pn.connect(Au.master); } else { g.connect(Au.master); }
+      o1.start(); o2.start(); lfo.start();
+      Au.flyNode = { g: g, pn: pn };
+    }
+    Au.flyNode.g.gain.setTargetAtTime(vol * 0.03, t, 0.6);
+    if (Au.flyNode.pn) { Au.flyNode.pn.pan.setTargetAtTime(pan || 0, t, 0.4); }
+  };
+  /* corvos levantando voo: grasnados e bater de asas */
+  Au.crows = function (x, y, n) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, 0, 45);
+    if (sp.g <= 0.01) { return; }
+    for (var w = 0; w < 7; w++) { (function (k) { setTimeout(function () { if (ok()) { noise(sp, 0.07, 700 + Math.random() * 300, 1.2, 0.16 * (1 - k / 8), 'bandpass', 0.003); } }, k * 75); })(w); }
+    var caws = Math.min(3, Math.max(1, Math.round(n / 2)));
+    for (var c = 0; c < caws; c++) {
+      (function (k) {
+        setTimeout(function () {
+          if (!ok()) { return; }
+          var ctx = Au.ctx, t = ctx.currentTime;
+          for (var r = 0; r < 2; r++) {
+            var o = ctx.createOscillator(); o.type = 'sawtooth';
+            var f0 = 560 + Math.random() * 120, t0 = t + r * 0.24;
+            o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(f0 * 0.72, t0 + 0.2);
+            var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1300; bp.Q.value = 2.5;
+            var ws = ctx.createWaveShaper(); ws.curve = Au.rasp;
+            var env = ctx.createGain(); env.gain.setValueAtTime(0.0001, t0); env.gain.exponentialRampToValueAtTime(1, t0 + 0.02); env.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2);
+            var out = output(sp, 0.13);
+            o.connect(ws); ws.connect(bp); bp.connect(env); env.connect(out); o.start(t0); o.stop(t0 + 0.25);
+          }
+        }, 120 + k * 380 + Math.random() * 200);
+      })(c);
+    }
+  };
+
   CP.Audio = Au;
 })(window.CP = window.CP || {});

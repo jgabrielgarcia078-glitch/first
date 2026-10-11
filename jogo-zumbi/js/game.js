@@ -52,6 +52,7 @@
 
   G.afterLoad = function () {
     var p = G.player;
+    if (CP.Amb) { CP.Amb.reset(); }
     CP.Render.camX = p.x; CP.Render.camY = p.y; CP.Render.camZ = p.z;
     G.activateChunks(true);
     G.updateFov(true);
@@ -206,6 +207,7 @@
     if (CP.Time) { CP.Time.update(dt, gameDt); }
     if (CP.Body) { CP.Body.update(p, dt, gameDt); }
     if (CP.Use) { CP.Use.updateFires(dt); }
+    if (CP.Amb) { CP.Amb.update(dt, gameDt); }
     if (p.sayT > 0) { p.sayT -= dt; }
     // efeitos
     for (var i = G.effects.length - 1; i >= 0; i--) {
@@ -267,6 +269,7 @@
       if (CP.Zombies.visibleToPlayer(zb)) { drawList.push(zb); }
     }
     if (CP.Zombies) { CP.Zombies.pushCorpses(drawList, viewZ); }
+    if (CP.Amb) { CP.Amb.pushEnts(drawList, viewZ); }
     CP.Render.draw({
       viewZ: viewZ,
       maxZ: indoor ? (onStairs ? 1 : viewZ) : C.LEVELS - 1,
@@ -284,6 +287,7 @@
   /* sobreposições em coordenadas de mundo: efeitos, mira, construção */
   G.drawOverlay = function (g) {
     if (CP.FX) { CP.FX.drawGlows(g); CP.FX.drawOverlay(g); }
+    if (CP.Amb) { CP.Amb.drawOverlay(g); }
     var p = G.player;
     if (CP.UI && CP.UI.drawBuildGhost) { CP.UI.drawBuildGhost(g); }
     G.drawHover(g, p);

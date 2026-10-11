@@ -338,7 +338,13 @@
     var lf = Math.max(0.3, bright);
     var col = CAR_COLORS[car.color] || '#777777';
     if (car.broken) { col = U.mix(col, '#3a3530', 0.4); }
+    // ferrugem com o passar dos meses (cada carro enferruja num ritmo) e neve no teto se está parado ao relento
+    if (car.rust === undefined) { car.rust = 0.4 + (U.hashStr(String(car.id)) % 600) / 1000; }
+    var rustK = CP.Amb ? Math.round(Math.max(0, CP.Amb.erosion() - 0.1) * car.rust * 10) / 10 : 0;
+    if (rustK > 0) { col = U.mix(col, '#6e4426', rustK * 0.5); }
     col = CP.Spr.gradeHex(col);
+    var snowK = CP.Amb && !car.engine && Math.abs(car.speed) < 0.1 ? Math.round(Math.min(0.85, CP.Amb.snow() * 1.1) * 10) / 10 : 0;
+    var colTop = snowK > 0 ? CP.Spr.gradeHex(U.mix(CAR_COLORS[car.color] || '#777777', '#eef1f4', snowK)) : col;
     // sombra
     var sh = corners(car, car.x, car.y, car.ang, 0.08);
     g.beginPath();
@@ -355,9 +361,17 @@
     function rect(u0, u1, v0, v1) { return [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]; }
     // lataria, capô/porta-malas e cabine com vidros inclinados (frente = +u)
     solid(g, car, rect(-0.92, 0.92, -0.38, 0.38), rect(-0.92, 0.92, -0.38, 0.38), 4, 15, sx, sy, col, col, lf);
-    solid(g, car, rect(-0.9, 0.9, -0.35, 0.35), rect(-0.9, 0.9, -0.35, 0.35), 15, 17, sx, sy, col, col, lf);
+    solid(g, car, rect(-0.9, 0.9, -0.35, 0.35), rect(-0.9, 0.9, -0.35, 0.35), 15, 17, sx, sy, colTop, col, lf);
     var glass = CP.Spr.gradeHex(car.windowBroken ? '#2a3238' : '#5d7584');
-    var top = solid(g, car, rect(-0.5, 0.38, -0.32, 0.32), rect(-0.3, 0.22, -0.27, 0.27), 17, 30, sx, sy, col, col, lf, [glass, glass, glass, glass]);
+    var top = solid(g, car, rect(-0.5, 0.38, -0.32, 0.32), rect(-0.3, 0.22, -0.27, 0.27), 17, 30, sx, sy, colTop, col, lf, [glass, glass, glass, glass]);
+    if (rustK >= 0.3) { // manchas de ferrugem na lataria
+      var rr = new U.Rng(U.hashStr(String(car.id)));
+      for (var ri = 0; ri < Math.round(rustK * 8); ri++) {
+        var ru = rr.range(-0.85, 0.85), rv = rr.chance(0.5) ? 0.38 : -0.38, rh = rr.range(6, 14);
+        var rq = iso(c * ru - s * rv, s * ru + c * rv, rh);
+        g.fillStyle = 'rgba(' + Math.round(110 * lf) + ',' + Math.round(58 * lf) + ',' + Math.round(28 * lf) + ',0.55)'; g.beginPath(); g.ellipse(sx + rq[0], sy + rq[1], rr.range(2, 4.5), rr.range(1, 2.2), 0, 0, Math.PI * 2); g.fill();
+      }
+    }
     // faróis
     var hl = [[0.93, 0.25], [0.93, -0.25]].map(function (p) { var q = iso(c * p[0] - s * p[1], s * p[0] + c * p[1], 11); return [sx + q[0], sy + q[1]]; });
     hl.forEach(function (q) { g.fillStyle = car.engine ? 'rgba(255,240,180,0.95)' : U.shade('#cfc8a8', lf); g.beginPath(); g.arc(q[0], q[1], car.engine ? 3 : 2, 0, Math.PI * 2); g.fill(); });

@@ -314,6 +314,8 @@
         for (var py = 3; py < CH; py += 10) { placeIfFree(ctx, RW, py, O.POWER_POLE, 1); }
         for (var by = 5; by < CH - 2; by += 10) { var kc = ctx.rng.next(); if (kc < 0.25) { placeIfFree(ctx, RW, by, O.BENCH, 1); } else if (kc < 0.5) { placeIfFree(ctx, RW, by, O.TRASH_CAN, 1); } }
       }
+      // placa com o nome das ruas na esquina
+      if (rn && rw) { placeIfFree(ctx, RW, RW, O.STREET_SIGN, 0); }
       // corpos antigos largados na rua, com sangue seco em volta
       if ((rn || rw) && ctx.rng.chance(0.45) && CP.Zombies) {
         var nb = ctx.rng.int(1, 3);
@@ -329,6 +331,13 @@
           for (var dd = 0; dd < 4; dd++) { ctx.c.decals.push({ x: wx + ctx.rng.range(-0.8, 0.8), y: wy + ctx.rng.range(-0.8, 0.8), z: 0, s: ctx.rng.range(3, 6), r: ctx.rng.next() }); }
         }
       }
+    }
+    // outdoor na beira da rodovia
+    if (!town && (rn || rw) && type !== T.BORDER && ctx.rng.chance(0.16)) {
+      var hzB = rn && (!rw || ctx.rng.chance(0.5));
+      var bbx = hzB ? ctx.rng.int(8, CH - 8) : RW + 2, bby = hzB ? RW + 2 : ctx.rng.int(8, CH - 8);
+      var bf = ctx.floor(bbx, bby, 0);
+      if (bf !== F.WATER && !ctx.reserved[ctx.i(bbx, bby)]) { placeIfFree(ctx, bbx, bby, O.BILLBOARD, ctx.rng.int(0, 7)); }
     }
     // carros abandonados nas estradas
     var nCars = town ? ctx.rng.int(0, 2) : (rn || rw ? ctx.rng.int(0, 1) : 0);
@@ -761,7 +770,86 @@
       // caixa de correio perto da calçada
       var mb = mailboxSpot(lot, front);
       if (mb && !ctx.obj(mb.x, mb.y, 0)) { ctx.setObj(mb.x, mb.y, 0, O.MAILBOX, 0); }
+      yardExtras(ctx, lot, r, front);
     });
+  }
+  /* quintal: varanda na frente, canteiros e de 1 a 3 coisas espalhadas (churrasqueira, balanço, varal, mesa, casinha, piscininha) */
+  var YARD_THINGS = [O.GRILL, O.SWING, O.CLOTHESLINE, O.PATIO_SET, O.DOGHOUSE, O.KIDDIE_POOL, O.GRILL, O.CLOTHESLINE];
+  function yardFree(ctx, x, y, r) {
+    if (!ctx.inside(x, y) || ctx.reserved[ctx.i(x, y)] || ctx.obj(x, y, 0) || ctx.room(x, y, 0)) { return false; }
+    if (ctx.floor(x, y, 0) !== F.GRASS) { return false; }
+    return !(x >= r.x - 1 && x <= r.x + r.w && y >= r.y - 1 && y <= r.y + r.h); // folga de 1 tile em volta da casa
+  }
+  function yardExtras(ctx, lot, r, front) {
+    var rng = ctx.rng;
+    var b = ctx.c.buildings[ctx.c.buildings.length - 1];
+    if (b && b.door && rng.chance(0.55)) { porch(ctx, r, front, b, lot); }
+    if (rng.chance(0.5)) { flowerbeds(ctx, r, front, lot); }
+    var n = rng.int(1, 3);
+    for (var k = 0; k < n; k++) {
+      var o = rng.pick(YARD_THINGS);
+      for (var t = 0; t < 14; t++) {
+        var x = rng.int(lot.x, lot.x + lot.w - 1), y = rng.int(lot.y, lot.y + lot.h - 1);
+        if (!yardFree(ctx, x, y, r)) { continue; }
+        ctx.setObj(x, y, 0, o, rng.int(0, 3)); ctx.reserved[ctx.i(x, y)] = 1;
+        break;
+      }
+    }
+  }
+  /* tiles do lado de fora da fachada: a = deslocamento ao longo da fachada a partir da porta, dep = distância da parede (1 = encostado) */
+  function frontCell(r, front, dx, dy, a, dep) {
+    if (front === 'N') { return { x: dx + a, y: r.y - dep }; }
+    if (front === 'S') { return { x: dx + a, y: r.y + r.h - 1 + dep }; }
+    if (front === 'W') { return { x: r.x - dep, y: dy + a }; }
+    return { x: r.x + r.w - 1 + dep, y: dy + a };
+  }
+  function porchOk(ctx, c, lot) {
+    if (!ctx.inside(c.x, c.y) || ctx.room(c.x, c.y, 0) || ctx.road[ctx.i(c.x, c.y)]) { return false; }
+    if (c.x < lot.x || c.y < lot.y || c.x >= lot.x + lot.w || c.y >= lot.y + lot.h) { return false; }
+    var f = ctx.floor(c.x, c.y, 0), o = ctx.obj(c.x, c.y, 0);
+    return (f === F.GRASS || f === F.CONCRETE) && !o;
+  }
+  function porch(ctx, r, front, b, lot) {
+    var dx = b.door.x - ctx.ox, dy = b.door.y - ctx.oy, rng = ctx.rng;
+    var deck = {}, depth = 0, a, dep, c;
+    for (dep = 1; dep <= 2; dep++) {
+      var row = [];
+      for (a = -1; a <= 1; a++) { c = frontCell(r, front, dx, dy, a, dep); if (porchOk(ctx, c, lot)) { row.push(c); } }
+      if (row.length < 3) { break; }
+      row.forEach(function (q) { deck[q.x + ',' + q.y] = 1; });
+      depth = dep;
+    }
+    if (!depth) { return; }
+    for (var key in deck) {
+      var xy = key.split(','), x = +xy[0], y = +xy[1];
+      ctx.setFloor(x, y, 0, F.DECK); ctx.reserved[ctx.i(x, y)] = 1;
+    }
+    var exit = frontCell(r, front, dx, dy, 0, depth + 1);
+    // grade em volta, menos do lado da casa e na saída para o caminho
+    for (var k2 in deck) {
+      var p = k2.split(','), px = +p[0], py = +p[1];
+      [[0, -1], [0, 1], [-1, 0], [1, 0]].forEach(function (d) {
+        var nx = px + d[0], ny = py + d[1];
+        if (deck[nx + ',' + ny] || !ctx.inside(nx, ny) || ctx.room(nx, ny, 0)) { return; }
+        if (nx === exit.x && ny === exit.y) { return; }
+        var ex = d[0] === 1 ? nx : px, ey = d[1] === 1 ? ny : py, side = d[0] ? 1 : 0;
+        if (ctx.getEdge(ex, ey, 0, side) === E.NONE) { ctx.edge(ex, ey, 0, side, E.FENCE, 0); }
+      });
+    }
+    // banco ou cadeira encostado na casa
+    var seat = frontCell(r, front, dx, dy, rng.chance(0.5) ? -1 : 1, 1);
+    if (deck[seat.x + ',' + seat.y] && !ctx.obj(seat.x, seat.y, 0)) { ctx.setObj(seat.x, seat.y, 0, rng.chance(0.6) ? O.BENCH : O.CHAIR, front === 'N' || front === 'S' ? 0 : 1); }
+  }
+  function flowerbeds(ctx, r, front, lot) {
+    var along = front === 'N' || front === 'S' ? r.w : r.h, b = ctx.c.buildings[ctx.c.buildings.length - 1];
+    var dx = b.door.x - ctx.ox, dy = b.door.y - ctx.oy, d0 = front === 'N' || front === 'S' ? dx - r.x : dy - r.y;
+    for (var u = 0; u < along; u++) {
+      if (Math.abs(u - d0) <= 1 || (u & 1)) { continue; }
+      var c = frontCell(r, front, dx, dy, u - d0, 1);
+      if (!ctx.inside(c.x, c.y) || ctx.reserved[ctx.i(c.x, c.y)] || ctx.obj(c.x, c.y, 0) || ctx.room(c.x, c.y, 0) || ctx.floor(c.x, c.y, 0) !== F.GRASS) { continue; }
+      if (c.x < lot.x || c.y < lot.y || c.x >= lot.x + lot.w || c.y >= lot.y + lot.h) { continue; }
+      ctx.setObj(c.x, c.y, 0, O.FLOWERBED, 0);
+    }
   }
   function yardOnly(ctx, lot) {
     for (var i = 0; i < 6; i++) {
@@ -898,6 +986,13 @@
     }
     placeDoorOnSide(ctx, r, 0, back, ext, true);
     placeWindows(ctx, r, 0, ext, 2);
+    // vitrines quebradas por saqueadores
+    ['N', 'S', 'E', 'W'].forEach(function (sd) {
+      perimeterEdges(r, sd).forEach(function (e) {
+        if (ctx.getEdge(e.x, e.y, 0, e.side) !== E.WINDOW || !rng.chance(0.22)) { return; }
+        ctx.edgeState(e.x, e.y, 0, e.side, { open: false, locked: false, hp: 0, bar: 0, barHp: 0, broken: true, glass: false });
+      });
+    });
     // prateleiras em fileiras (corredores)
     if (fill.shelf) {
       var horizontal = front === 'N' || front === 'S';

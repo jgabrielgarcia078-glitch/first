@@ -69,6 +69,7 @@
         g.drawImage(sp, sx(d.x, d.y) - 24 * sc, sy(d.x, d.y, d.z) - 12 * sc, 48 * sc, 24 * sc);
       }
     }
+    if (CP.Amb) { CP.Amb.drawPrints(g, lv); }
   };
 
   /* efeitos em coordenadas de mundo (depois de tudo) */

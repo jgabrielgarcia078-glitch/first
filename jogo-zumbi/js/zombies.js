@@ -165,6 +165,7 @@
     if (!G || !G.zombies) { return; }
     var mult = ((G.settings && G.settings.hearing) || 1) * ZC.HEARING_MULT;
     var r = radius * mult;
+    if (CP.Amb) { CP.Amb.onNoise(x, y, z, radius); }
     var zs = G.zombies;
     for (var i = 0; i < zs.length; i++) {
       var zb = zs[i];
@@ -630,6 +631,7 @@
       look = this.dLook;
     }
     CP.Spr.drawHuman(g, sx, sy, look, { ang: this.ang, dead: true, phase: 0 }, Math.max(0.2, bright * 0.9));
+    if (CP.Amb) { CP.Amb.drawFlies(g, sx, sy, this, bright); }
   }
 
   /* ---------- migração e reaparecimento (chamado uma vez por dia de jogo) ---------- */
