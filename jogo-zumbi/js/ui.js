@@ -238,7 +238,7 @@
     var occOut = D.OCC_OUTFIT[cr.occupation] || (cr.female ? 'civil_f' : 'civil_m');
     var outfit = D.OUTFITS[occOut][0];
     var look = CP.Spr.buildLook({ skin: cr.look.skin, hair: cr.look.hair, hairStyle: cr.look.hairStyle, beard: cr.look.beard, female: cr.female },
-      outfit.map(function (id) { var d = D.ITEMS[id]; return { id: id, color: d && d.cloth && d.cloth.colors ? d.cloth.colors[0] : '#777777' }; }));
+      outfit.map(function (spec) { var pr = spec.split(':'), d = D.ITEMS[pr[0]]; return { id: pr[0], color: pr[1] || (d && d.cloth && d.cloth.colors ? d.cloth.colors[0] : '#777777') }; }));
     g.save(); g.scale(2.4, 2.4);
     var t = performance.now() / 1000;
     CP.Spr.drawHuman(g, 33, 72, look, { ang: Math.PI * 0.25 + Math.sin(t * 0.6) * 0.6, phase: (t * 0.8) % 1, moving: true }, 1);

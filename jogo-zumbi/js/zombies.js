@@ -11,12 +11,12 @@
   Z.makeData = function (rng, x, y, z, bldKind, roomType) {
     var female = rng.chance(0.48);
     var kind = 'civil';
-    if (bldKind === 'police' && rng.chance(0.6)) { kind = 'police'; } else if (bldKind === 'clinic' && rng.chance(0.6)) { kind = 'doctor'; } else if ((bldKind === 'hardware' || bldKind === 'warehouse' || bldKind === 'barn') && rng.chance(0.4)) { kind = 'worker'; } else if (rng.chance(0.02)) { kind = 'police'; } else if (rng.chance(0.015)) { kind = 'fire'; }
+    if (bldKind === 'police' && rng.chance(0.6)) { kind = 'police'; } else if (bldKind === 'clinic' && rng.chance(0.6)) { kind = 'doctor'; } else if ((bldKind === 'hardware' || bldKind === 'warehouse' || bldKind === 'barn') && rng.chance(0.4)) { kind = 'worker'; } else if ((bldKind === 'diner' || bldKind === 'bar') && rng.chance(0.6)) { kind = rng.chance(0.5) ? 'chef' : 'fastfood'; } else if (rng.chance(0.02)) { kind = 'police'; } else if (rng.chance(0.015)) { kind = 'fire'; } else if (rng.chance(0.015)) { kind = 'fastfood'; } else if (rng.chance(0.012)) { kind = 'roadworker'; } else if (rng.chance(0.01)) { kind = rng.chance(0.5) ? 'ranger' : 'chef'; }
     var outfitKey = kind === 'civil' ? (female ? 'civil_f' : 'civil_m') : kind;
     var ids = rng.pick(D.OUTFITS[outfitKey]);
-    var outfit = ids.map(function (id) {
-      var d = D.ITEMS[id];
-      return { id: id, color: d && d.cloth && d.cloth.colors ? rng.pick(d.cloth.colors) : '#666' };
+    var outfit = ids.map(function (spec) {
+      var pr = spec.split(':'), id = pr[0], d = D.ITEMS[id];
+      return { id: id, color: pr[1] || (d && d.cloth && d.cloth.colors ? rng.pick(d.cloth.colors) : '#666') };
     });
     var settings = (CP.Game && CP.Game.settings) || {};
     var sp = C.ZOMBIE_SPEED_SETTINGS[settings.zombieSpeed || 'shambler'] || C.ZOMBIE_SPEED_SETTINGS.shambler;

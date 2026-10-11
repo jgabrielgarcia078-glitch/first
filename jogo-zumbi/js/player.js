@@ -84,7 +84,7 @@
     var rng = new U.Rng((Date.now() ^ 0x1234) >>> 0);
     var outfitKey = D.OCC_OUTFIT[occ.id] || (p.female ? 'civil_f' : 'civil_m');
     var outfit = rng.pick(D.OUTFITS[outfitKey]);
-    outfit.forEach(function (id) { var it = CP.Items.make(id, null, rng); P.wear(p, it); });
+    outfit.forEach(function (spec) { var pr = spec.split(':'); var it = CP.Items.make(pr[0], null, rng); if (pr[1]) { it.color = pr[1]; } P.wear(p, it); });
     if (!p.worn.shoes) { P.wear(p, CP.Items.make('sneakers', null, rng)); }
     // itens iniciais
     CP.Items.Inv.give(p, CP.Items.make('water_bottle', null, rng));

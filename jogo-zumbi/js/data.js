@@ -373,6 +373,11 @@
   cloth('cap', 'Boné', '🧢', 0.1, 'hat', ['head'], 0, 5, 0.05, ['#bc4749', '#3d5a80', '#2b2d42', '#e9c46a']);
   cloth('helmet', 'Capacete de moto', '⛑️', 1.5, 'hat', ['head', 'neck'], 60, 90, 0.3, ['#2b2d42', '#bc4749']);
   cloth('beanie', 'Gorro', '🧶', 0.1, 'hat', ['head'], 0, 10, 0.3, ['#264653', '#9a3a3a']);
+  cloth('police_cap', 'Quepe de policial', '👮', 0.2, 'hat', ['head'], 0, 10, 0.1, ['#1f2a44']);
+  cloth('ranger_hat', 'Chapéu de guarda-florestal', '🤠', 0.3, 'hat', ['head'], 0, 10, 0.15, ['#9a8a5a']);
+  cloth('apron', 'Avental', '🥼', 0.2, 'vest', ['torso', 'belly', 'groin'], 0, 5, 0.05, ['#f0eee8', '#2a2a2a', '#8a3a2a']);
+  cloth('hivis_vest', 'Colete refletivo', '🦺', 0.2, 'vest', TORSO, 0, 5, 0.05, ['#e8762a', '#d8e03a']);
+  cloth('chef_pants', 'Calça de cozinheiro', '👖', 0.4, 'pants', LEGS, 0, 15, 0.25, ['#e8e8e4'], { pattern: 'check' });
   cloth('scarf', 'Cachecol', '🧣', 0.2, 'neck', ['neck'], 5, 30, 0.3, ['#9a3a3a', '#3a5a8a']);
   cloth('dress', 'Vestido', '👗', 0.3, 'shirt', TORSO.concat(['groin', 'thighL', 'thighR']), 0, 10, 0.15, ['#9f86c0', '#bc4749', '#2a9d8f', '#f2e8cf']);
   cloth('scrubs', 'Jaleco hospitalar', '🥼', 0.3, 'jacket', TORSO.concat(ARMS_U), 0, 15, 0.15, ['#5fa8a0', '#e8e8e8']);
@@ -471,9 +476,14 @@
     police: [['police_jacket', 'shirt', 'police_pants', 'shoes']],
     doctor: [['scrubs', 'tshirt', 'pants', 'shoes']],
     worker: [['tshirt', 'jeans', 'boots', 'gloves'], ['jacket', 'jeans', 'boots']],
-    fire: [['fire_jacket', 'pants', 'boots']]
+    fire: [['fire_jacket', 'pants', 'boots']],
+    ranger: [['ranger_hat', 'shirt:#a89a6a', 'jacket:#5a6a3a', 'pants:#4a5a3a', 'boots'], ['ranger_hat', 'shirt:#a89a6a', 'pants:#5a5a3a', 'boots']],
+    chef: [['shirt:#f2f0ea', 'chef_pants', 'apron:#f0eee8', 'shoes'], ['tshirt:#e0e0e0', 'chef_pants', 'apron:#2a2a2a', 'sneakers']],
+    fastfood: [['cap:#c83a2a', 'tshirt:#c83a2a', 'pants:#2b2d42', 'apron:#2a2a2a', 'sneakers'], ['cap:#2a5a9a', 'tshirt:#e9c46a', 'pants:#2b2d42', 'sneakers']],
+    roadworker: [['cap:#e9c46a', 'tshirt:#8d99ae', 'hivis_vest', 'jeans', 'boots']]
   };
-  D.OCC_OUTFIT = { police: 'police', doctor: 'doctor', nurse: 'doctor', firefighter: 'fire', construction: 'worker', lumberjack: 'worker', mechanic: 'worker', carpenter: 'worker', metalworker: 'worker' };
+  D.OUTFITS.police = [['police_cap', 'police_jacket', 'shirt:#8a9aa8', 'police_pants', 'shoes'], ['police_cap', 'shirt:#3a4a6a', 'police_pants', 'shoes']];
+  D.OCC_OUTFIT = { police: 'police', doctor: 'doctor', nurse: 'doctor', firefighter: 'fire', construction: 'roadworker', ranger: 'ranger', chef: 'chef', burger: 'fastfood', lumberjack: 'worker', mechanic: 'worker', carpenter: 'worker', metalworker: 'worker' };
 
   CP.D = D;
 })(window.CP = window.CP || {});
