@@ -6,7 +6,7 @@ Toda a arte e todos os sons são gerados por código. Não há nenhum arquivo do
 ## Como abrir
 
 Dê um duplo clique em **`index.html`**. Funciona direto no navegador (Chrome, Edge ou Firefox), sem instalar nada e sem servidor.
-O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, acabou: o save é apagado e você começa outro sobrevivente.
+O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, acabou para aquele sobrevivente — mas o mundo continua e você pode começar outro nele.
 
 ## Controles
 
@@ -31,12 +31,13 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 | M | Mapa (clique anota com um símbolo e texto; botão direito apaga) |
 | N | Mostrar / esconder o minimapa |
 | O | Modo de busca: anda devagar procurando coisas no chão (frutas, cogumelos, minhocas, gravetos, pedras, ervas) |
+| J | Diário do sobrevivente |
 | Clique esquerdo agachado, com faca, atrás de um zumbi distraído | Matar em silêncio |
 | Arrastar itens | Entre as janelas e abas do inventário, para "Equipado e vestido" (veste/empunha) ou para fora (larga no chão) |
 | 1 a 5 | Atalhos (equipar item) |
 | [ e ] | Velocidade do tempo (só sem zumbis por perto) |
 | Roda do mouse / + − | Zoom |
-| Esc | Fechar janela / pausa |
+| Esc | Fechar janela / pausa (volume, gráficos, escala da interface e **troca de teclas**) |
 | F1 | Ajuda |
 | No carro | G liga o motor · W/S acelera e freia · A/D vira · Espaço freia · Q buzina · R rádio · L sirene (viatura e ambulância) · E sai |
 
@@ -74,6 +75,22 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 - **Chaves de casa**: moradores que viraram zumbi às vezes têm a chave no bolso, e às vezes há uma reserva debaixo do vaso. Com a chave, dá para destrancar e trancar a porta da frente por fora.
 - **Morrer não é o fim do mundo**: o corpo fica onde caiu (ou se levanta como zumbi, com tudo o que você levava) e você pode começar um novo sobrevivente no mesmo mundo, com o tempo continuando de onde parou.
 - **Interface**: arrastar e soltar itens, minimapa no canto, mapa com zoom (roda) e arrastar, nomes das ruas, anotações no mapa e o nome das coisas quando o mouse passa por cima (portas, janelas, móveis, corpos, placas, pichações, armadilhas).
+- **Golpes de verdade**: machado e taco por cima da cabeça, lança e faca em estocada; arma longa e mochila aparecem nas costas. Sentar, ler, comer e dormir coberto têm pose própria.
+- **Corpo que muda**: o cabelo cresce e a barba aparece com os dias (corte e faça a barba no espelho do banheiro com tesoura ou lâmina), engordar e emagrecer muda a silhueta, curativos aparecem no corpo, ferimentos graves deixam cicatriz e perna machucada faz mancar.
+- **Clima forte**: nevasca que fecha a visão, raio que põe fogo em árvore, galhos caídos depois da tempestade; velas, tochas e lampiões para iluminar (a tocha apaga na chuva).
+- **Lugares especiais**: escola e prefeitura em toda cidade, hospital e shopping nas maiores, e uma base militar escondida no mato (com fardas, rações e armas).
+- **Animais vivos**: coelhos, veados e pássaros no mato. Fogem de você e de barulho; chegue agachado por trás ou use arma de fogo. O bicho abatido vira carne.
+- **Mover móveis**: pegue um móvel vazio (precisa de força para os pesados), carregue e coloque onde quiser — encostado numa porta fechada, ele a trava e os zumbis demoram muito mais para entrar.
+- **Escada de mão e telhado**: apoie a escada numa parede e suba no telhado, onde os zumbis não chegam.
+- **Resfriado**: frio e roupa molhada podem dar resfriado; espirros e tosse fazem barulho (lenço de papel abafa), descanse aquecido ou tome remédio para gripe.
+- **Cozinha completa**: botijão de gás no fogão quando a energia acaba, micro-ondas (nunca coloque lata de metal!), comida que pode queimar, comida quente que anima e latas abertas que dá para esquentar.
+- **Metalurgia**: com maçarico e máscara de solda, construa paredes e portões de metal e blinde um carro com chapas.
+- **Rádio**: estações que vão saindo do ar com os dias, o sistema de emergência que se despede, walkie-talkie e rádio amador para falar com outros sobreviventes (às vezes alguém responde e conta onde há coisas boas, que vão para o mapa). Rádio alto chama zumbis.
+- **Carros**: porta-luvas e banco do passageiro para guardar coisas, e picapes com reboque para engatar (mais carga, carro mais lento).
+- **Sono de verdade**: insônia quando está estressado ou com dor, pesadelos, barulho perto acorda e o despertador toca na hora marcada.
+- **Zumbis mais espertos**: alguns giram a maçaneta de porta destrancada, eles seguem na direção em que você fugiu e ouvem motor de carro de longe.
+- **Diário do sobrevivente** (J): dias vivo, zumbis mortos por tipo de arma, lugares visitados, linha do tempo e todos os sobreviventes que já passaram pelo mundo.
+- **Desafios e opções do mundo**: inverno eterno, cidade lotada, seis meses depois, sem energia; resistência, força, visão, audição e memória dos zumbis; quando acabam a energia e a água.
 - **Leve**: só os zumbis perto de você são simulados; os de longe ficam "guardados" e acordam quando você se aproxima (ou se ouvirem um barulho grande).
 
 ## Testes
@@ -82,4 +99,4 @@ O jogo salva sozinho a cada minuto no próprio navegador (IndexedDB). Morreu, ac
 sh tests/run-all.sh
 ```
 
-Esse comando roda a checagem de sintaxe e de regras, a geração do mundo em 3 sementes, simulações de lógica (combate, IA, portas, escadas, necessidades, infecção), 30 dias de jogo acelerados os testes das melhorias (`tests/unit-features.js`), a interface no navegador (`tests/iface.sh`: arrastar e soltar, mapa, minimapa, rótulos), a morte e o mesmo mundo (`tests/death.sh`) e um teste ponta a ponta no navegador (Playwright).
+Esse comando roda a checagem de sintaxe e de regras, a geração do mundo em 3 sementes, simulações de lógica (combate, IA, portas, escadas, necessidades, infecção), 30 dias de jogo acelerados, os testes das melhorias (`tests/unit-features.js`), os desafios, o diário e a troca de teclas (`tests/unit-modes.js`), a interface no navegador (`tests/iface.sh`: arrastar e soltar, mapa, minimapa, rótulos), a morte e o mesmo mundo (`tests/death.sh`) e um teste ponta a ponta no navegador (Playwright).
