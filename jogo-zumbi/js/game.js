@@ -209,6 +209,7 @@
     if (CP.Use) { CP.Use.updateFires(dt); }
     if (CP.Amb) { CP.Amb.update(dt, gameDt); }
     if (CP.Horde) { CP.Horde.update(dt, gameDt); }
+    if (CP.Vehicles) { CP.Vehicles.update(dt); }
     if (p.sayT > 0) { p.sayT -= dt; }
     // efeitos
     for (var i = G.effects.length - 1; i >= 0; i--) {

@@ -216,6 +216,17 @@
     }
     if (CP.Combat) { CP.Combat.playerUpdate(p, dt); }
     if (CP.Actions) { CP.Actions.update(p, dt, gameDt); }
+    // vapor da respiração no frio (mais rápido ofegante)
+    if (!p.dead && !p.vehicle && CP.FX && CP.Time) {
+      p.breathT = (p.breathT || 0) - dt;
+      if (p.breathT <= 0) {
+        var tx = Math.floor(p.x), ty = Math.floor(p.y), out = !W.isIndoor(tx, ty, W.levelOf(p.z));
+        var cold = CP.Time.temperature(out) < C.BREATH_TEMP;
+        var pant = p.running || p.body.stats.endurance < 0.5;
+        p.breathT = pant ? U.randRange(0.7, 1.0) : U.randRange(1.8, 2.8);
+        if (cold) { CP.FX.breath(p.x, p.y, p.z, p.ang); }
+      }
+    }
   };
 
   /* ponto do mundo sob o mouse, considerando que se mira na altura do peito (não nos pés) */
@@ -230,8 +241,16 @@
     var l = p.look;
     var bag = null;
     if (w.back) { var bid = w.back.id; bag = bid === 'military_bag' ? '#4a5a3a' : (bid === 'schoolbag' ? '#8a2f2f' : '#5a4a3a'); }
-    return CP.Spr.buildLook({ skin: l.skin, hair: l.hair, hairStyle: l.hairStyle, beard: l.beard, female: p.female, blood: p.bloodSpots || null, bag: bag, seed: 0 },
+    var lk = CP.Spr.buildLook({ skin: l.skin, hair: l.hair, hairStyle: l.hairStyle, beard: l.beard, female: p.female, blood: p.bloodSpots || null, bag: bag, seed: 0 },
       [w.hat, w.neck, w.shirt, w.jacket, w.vest, w.pants, w.shoes, w.gloves]);
+    // molhado: roupa e cabelo mais escuros (em 4 degraus, para o cache de cores)
+    var wet = p.body && p.body.stats ? p.body.stats.wet || 0 : 0;
+    if (wet > 0.12) {
+      var k = Math.round(Math.min(1, wet) * 4) / 4 * 0.34;
+      ['shirt', 'sleeveCol', 'jacket', 'vest', 'pants', 'hat', 'hair', 'scarf', 'shoes'].forEach(function (f) { if (lk[f]) { lk[f] = U.mix(lk[f], '#151a22', k); } });
+      lk.wet = k;
+    }
+    return lk;
   };
   P.draw = function (g, sx, sy, bright) {
     var p = this;

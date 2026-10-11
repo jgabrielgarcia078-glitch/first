@@ -282,6 +282,30 @@
     tone(sp, 950, 0.5, 0.18, 'square', 0.75, 0.01);
     setTimeout(function () { if (ok()) { tone(sp, 700, 0.5, 0.18, 'square', 1.3, 0.01); } }, 550);
   };
+  /* buzina de carro: dois tons quadrados juntos */
+  Au.horn = function (x, y) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, 0, 60);
+    if (sp.g <= 0.01) { return; }
+    tone(sp, 415, 0.6, 0.13, 'square', 1, 0.01); tone(sp, 520, 0.6, 0.1, 'square', 1, 0.01);
+  };
+  /* sirene: sobe e desce (chamada a cada ~1,2 s) */
+  var sirenUp = false;
+  Au.siren = function (x, y) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, 0, 90);
+    if (sp.g <= 0.01) { return; }
+    sirenUp = !sirenUp;
+    tone(sp, sirenUp ? 620 : 1000, 1.15, 0.1, 'sawtooth', sirenUp ? 1.6 : 0.62, 0.02);
+  };
+  /* rádio do carro: chiado baixo com voz distante */
+  Au.radioHum = function (x, y) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, 0, 14);
+    if (sp.g <= 0.01) { return; }
+    noise(sp, 1.2, 1800, 0.8, 0.035, 'bandpass', 0.05);
+    for (var i = 0; i < 5; i++) { (function (k) { setTimeout(function () { if (ok()) { tone(spatial(x, y, 0, 14), 180 + Math.random() * 120, 0.18, 0.025, 'triangle', 1.1, 0.02); } }, k * 220); })(i); }
+  };
   Au.thunder = function () {
     if (!ok()) { return; }
     var sp = Object.assign({}, CENTER, { pan: Math.random() * 1.4 - 0.7, outdoor: true, d: 30 });

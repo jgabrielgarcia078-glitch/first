@@ -189,7 +189,8 @@
   C.NOISE = {
     STEP_WALK: 4, STEP_RUN: 10, STEP_SNEAK: 1.5, SWING: 5, HIT: 7, SHOVE: 5,
     DOOR: 8, DOOR_BASH: 14, WINDOW_BREAK: 22, SHOUT: 30, GUNSHOT: 60, ALARM: 55,
-    CAR_ALARM: 45, BARRICADE: 15, CHOP: 18, BUILD: 15, HELICOPTER: 45, META: 60
+    CAR_ALARM: 45, BARRICADE: 15, CHOP: 18, BUILD: 15, HELICOPTER: 45, META: 60,
+    HORN: 32, SIREN: 70, RADIO: 9
   };
 
   /* ---------- Zumbis (equivalente às opções de sandbox do PZ) ---------- */
@@ -343,6 +344,7 @@
   /* ---------- Interface: anotações no mapa, rótulos ao passar o mouse ---------- */
   C.MAP_NOTES_MAX = 120;
   C.CURTAIN_CHANCE = 0.65;   // janelas de casa com cortina
+  C.BREATH_TEMP = 4;         // °C: abaixo disso a respiração vira vapor
   C.HOVER_RANGE = 14;        // tiles: até onde o rótulo do mouse aparece (só no que está à vista)
 
   /* ---------- Fogo (js/fire.js) ---------- */

@@ -1089,7 +1089,7 @@
       g = CP.Render.toWorld(mx, my + k * zm, lv);
       x = Math.floor(g.x); y = Math.floor(g.y);
       if (!vis(x, y)) { continue; }
-      if (k === 0 && CP.Vehicles) { var car = CP.Vehicles.carAt(g.x, g.y, 0.1); if (car) { return 'Carro · ' + Math.round(car.fuel || 0) + ' L de gasolina'; } }
+      if (k === 0 && CP.Vehicles) { var car = CP.Vehicles.carAt(g.x, g.y, 0.1); if (car) { return CP.Vehicles.modelName(car) + ' · ' + Math.round(car.fuel || 0) + ' L de gasolina'; } }
       if (CP.Fire && CP.Fire.burningAt(x, y, lv)) { return 'Fogo!'; }
       var ch = W.chunkAt(x, y);
       if (k <= 8 && ch) {
@@ -1136,7 +1136,7 @@
       ['R', 'Recarregar arma (no modo construção: girar)'], ['F', 'Lanterna'], ['Q', 'Gritar (atrai zumbis!)'], ['Z', 'Sentar / levantar'],
       ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa (clique anota, botão direito apaga)'], ['N', 'Mostrar/esconder o minimapa'],
       ['Arrastar itens', 'Entre as janelas e abas do inventário; solte fora para largar no chão'],
-      ['Carro', 'Clique direito: entrar · G liga o motor · W/S acelera/freia · A/D vira · Espaço freio · E sai'],
+      ['Carro', 'Clique direito: entrar · G liga o motor · W/S acelera/freia · A/D vira · Espaço freio · Q buzina · R rádio · L sirene (viatura/ambulância) · E sai'],
       ['1 a 5', 'Atalhos (equipar item)'], ['[ e ]', 'Velocidade do tempo (só sem zumbis por perto)'], ['Roda do mouse / + −', 'Zoom'], ['Esc', 'Fechar janela / pausa']
     ].map(function (k) { return '<b>' + k[0] + '</b><span>' + k[1] + '</span>'; }).join('') + '</div>' +
       '<h3>Dicas</h3><div style="font-size:13px;line-height:1.5">• Zumbis ouvem barulho e veem você. Ande agachado, evite correr perto deles.<br>• Uma mordida quase sempre é fatal (infecção). Arranhões e cortes têm chance menor. Roupas grossas protegem.<br>• Empurre (Espaço) e pise em zumbis caídos para economizar arma e fôlego.<br>• Barrique janelas e portas (martelo + tábuas + pregos). Desmonte móveis para conseguir tábuas.<br>• A energia e a água acabam em algumas semanas: encha garrafas e panelas antes.<br>• Quando o helicóptero passar, fique dentro de uma construção.<br>• Durma em camas (clique direito) e leia livros para multiplicar o XP.<br>• O jogo salva sozinho a cada minuto. Morreu, acabou: começa um novo sobrevivente.</div>';
@@ -1328,8 +1328,9 @@
         case 'Space': if (!p.vehicle) { CP.Combat.spaceAction(p); } break;
         case 'KeyC': p.sneaking = !p.sneaking; break;
         case 'KeyF': CP.Use.toggleFlashlight(p); break;
-        case 'KeyQ': UI.say(p, U.pick(['Ei!', 'Aqui!', 'Venham!', 'Socorro!'])); CP.Zombies.noise(p.x, p.y, p.z, C.NOISE.SHOUT, 'shout'); break;
-        case 'KeyR': if (CP.Build.mode) { CP.Build.mode.side = 1 - CP.Build.mode.side; } else { CP.Combat.reload(p); } break;
+        case 'KeyQ': if (p.vehicle && CP.Vehicles) { CP.Vehicles.horn(p); break; } UI.say(p, U.pick(['Ei!', 'Aqui!', 'Venham!', 'Socorro!'])); CP.Zombies.noise(p.x, p.y, p.z, C.NOISE.SHOUT, 'shout'); break;
+        case 'KeyL': if (p.vehicle && CP.Vehicles) { CP.Vehicles.toggleSiren(p); } break;
+        case 'KeyR': if (p.vehicle && CP.Vehicles) { CP.Vehicles.toggleRadio(p); } else if (CP.Build.mode) { CP.Build.mode.side = 1 - CP.Build.mode.side; } else { CP.Combat.reload(p); } break;
         case 'KeyZ': p.sitting = !p.sitting; if (p.sitting) { UI.toast('Sentado (descansa mais rápido).'); } break;
         case 'Tab': case 'KeyI': UI.lootFocus = null; UI.toggle('inv'); break;
         case 'KeyH': UI.toggle('health'); break;

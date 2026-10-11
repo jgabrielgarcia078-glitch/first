@@ -547,5 +547,60 @@ if (car) {
   ok(corpse.age > 15 && corpse.age < 17, 'idade do corpo em dias (' + (corpse.age || 0).toFixed(1) + ')');
   cch.corpses.splice(cch.corpses.indexOf(corpse), 1);
 }
+
+/* ---------- S3: modelos de carro, buzina, sirene, rádio, roupa molhada, respiração ---------- */
+{
+  const V = CP.Vehicles, q = G.player;
+  const counts = {};
+  let nCars = 0;
+  for (let cy = 4; cy < 40 && nCars < 160; cy += 2) for (let cx = 4; cx < 40 && nCars < 160; cx += 2) {
+    const ch = W.ensureChunk(cx, cy); if (ch.active) continue;
+    V.activateChunk(ch);
+    (ch.cars || []).forEach(c => { counts[V.modelOf(c)] = (counts[V.modelOf(c)] || 0) + 1; nCars++; });
+    V.deactivateChunk(ch);
+  }
+  ok(nCars > 30 && Object.keys(counts).length >= 4, 'vários modelos de carro (' + JSON.stringify(counts) + ')');
+  ok(V.modelName({ model: 'police' }) === 'Viatura' && V.modelName({}) === 'Sedã', 'nome do modelo (carro antigo sem modelo vira sedã)');
+  // buzina chama zumbis
+  G.activateChunks(true); clearZombies();
+  const open4 = findOpen(q.x, q.y, 3); q.x = open4.x; q.y = open4.y;
+  const car = { id: 'teste', x: q.x, y: q.y, z: 0, ang: 0, color: 1, model: 'police', speed: 0, steer: 0, fuel: 10, cond: 1, keyIn: true, engine: false, broken: false, trunk: [], hornT: 0 };
+  V.active.push(car); V.parts(car).battery = 1;
+  q.vehicle = car;
+  const zd = CP.Zombies.makeData(new U.Rng(91), q.x + 24, q.y, 0); zd.crawler = false; zd.fakeDead = false;
+  const zh = CP.Zombies.fromData(zd); zh.state = 'idle'; zh.idleT = 999; G.zombies.push(zh);
+  V.horn(q); tick(0.5);
+  ok(zh.state === 'investigate' && zh.target && U.dist(zh.target.x, zh.target.y, car.x, car.y) < 5, 'buzina chama zumbi a 24 tiles');
+  // sirene só em viatura/ambulância
+  ok(V.toggleSiren(q) && car.siren, 'viatura liga a sirene');
+  const zd2 = CP.Zombies.makeData(new U.Rng(92), q.x - 40, q.y, 0); zd2.crawler = false; zd2.fakeDead = false;
+  const zs2 = CP.Zombies.fromData(zd2); zs2.state = 'idle'; zs2.idleT = 999; G.zombies.push(zs2);
+  tick(2);
+  ok(zs2.state === 'investigate' || zs2.state === 'chase', 'sirene chama zumbi a 40 tiles');
+  const b0 = V.parts(car).battery; tick(5);
+  ok(V.parts(car).battery < b0, 'sirene com motor desligado gasta a bateria');
+  V.toggleSiren(q);
+  car.model = 'sedan'; ok(!V.toggleSiren(q), 'sedã não tem sirene');
+  // rádio
+  V.toggleRadio(q); ok(car.radio, 'rádio do carro liga');
+  const bd0 = q.body.stats.boredom = 0.5; tick(9);
+  ok(q.body.stats.boredom < bd0, 'ouvir o rádio diminui o tédio');
+  V.toggleRadio(q);
+  q.vehicle = null; V.active.splice(V.active.indexOf(car), 1); clearZombies();
+  // roupa molhada fica mais escura
+  q.body.stats.wet = 0; const dry = CP.Player.lookFor(q);
+  q.body.stats.wet = 0.9; const wetL = CP.Player.lookFor(q);
+  ok(wetL.wet > 0 && (wetL.pants !== dry.pants || wetL.shirt !== dry.shirt), 'molhado: roupa mais escura');
+  q.body.stats.wet = 0;
+  // respiração no frio
+  const tempF = CP.Time.temperature; CP.Time.temperature = () => -6;
+  let sawBreath = false; G.effects.length = 0;
+  for (let i = 0; i < 12; i++) { tick(0.3); if (G.effects.some(e => e.type === 'breath')) sawBreath = true; }
+  ok(sawBreath, 'no frio a respiração solta vapor');
+  CP.Time.temperature = () => 22; G.effects.length = 0; sawBreath = false;
+  for (let i = 0; i < 12; i++) { tick(0.3); if (G.effects.some(e => e.type === 'breath')) sawBreath = true; }
+  ok(!sawBreath, 'no calor não');
+  CP.Time.temperature = tempF;
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

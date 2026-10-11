@@ -14,6 +14,25 @@
   };
   var CAR_COLORS = ['#8c2b2b', '#2b4c8c', '#d8d4c8', '#2e2e30', '#5b7b4a', '#b8862f', '#6a6a70', '#7a3f6e', '#c9c2a4', '#3c6d73', '#a14a24', '#425066'];
   V.COLORS = CAR_COLORS;
+  /* modelos: forma da lataria, cor fixa (viatura/ambulância), giroflex e o que pode ter no porta-malas */
+  CAR_COLORS.push('#e8e6e0', '#1c1c20');
+  var MODELS = {
+    sedan: { name: 'Sedã', w: 52 },
+    pickup: { name: 'Picape', w: 20, trunk: ['plank', 'rope', 'wrench', 'gas_can_empty'] },
+    van: { name: 'Van', w: 13, trunk: ['crate_item', 'tote', 'water_bottle'] },
+    police: { name: 'Viatura', w: 8, color: CAR_COLORS.length - 1, bar: true, trunk: ['nightstick', 'shells', 'ammo9', 'flashlight', 'bandage'] },
+    ambulance: { name: 'Ambulância', w: 7, color: CAR_COLORS.length - 2, bar: true, trunk: ['bandage', 'disinfectant', 'painkillers', 'first_aid_kit', 'suture_needle', 'splint'] }
+  };
+  V.MODELS = MODELS;
+  function pickModel(rng) {
+    var tot = 0, k;
+    for (k in MODELS) { tot += MODELS[k].w; }
+    var r = rng.next() * tot;
+    for (k in MODELS) { r -= MODELS[k].w; if (r <= 0) { return k; } }
+    return 'sedan';
+  }
+  V.modelOf = function (car) { return MODELS[car.model] ? car.model : 'sedan'; };
+  V.modelName = function (car) { return MODELS[V.modelOf(car)].name; };
 
   /* ---------- conversão dos objetos CAR do mapa em entidades ---------- */
   V.activateChunk = function (ch) {
@@ -39,11 +58,14 @@
             keyIn: rng.chance(0.25), keyFits: rng.chance(0.35), locked: rng.chance(0.6), alarm: rng.chance(0.3),
             engine: false, broken: false, trunk: null, hornT: 0
           };
+          car.model = pickModel(rng);
+          if (MODELS[car.model].color !== undefined) { car.color = MODELS[car.model].color; }
           // porta-malas: aproveita o loot já gerado do objeto (se o jogador abriu) ou gera agora
           var key = W.key(x, y, 0);
           var cont = ch.containers[key];
           if (!cont || !cont.gen) { cont = { items: [], gen: true }; if (CP.Loot) { CP.Loot.fill(cont, x, y, 0, O.CAR); } }
           car.trunk = cont.items;
+          (MODELS[car.model].trunk || []).forEach(function (id) { if (rng.chance(0.45) && D.ITEMS[id]) { car.trunk.push(CP.Items.make(id, null, rng)); } });
           delete ch.containers[key];
           L.obj[i] = 0; L.odir[i] = 0;
           var bx = horiz ? x - 1 : x, by = horiz ? y : y - 1;
@@ -240,7 +262,7 @@
     CP.Actions.start(p, { name: 'Entrando no carro', time: 1.2, onDone: function () {
       p.vehicle = car; car.speed = 0;
       p.sneaking = false;
-      if (CP.UI) { CP.UI.toast(car.keyIn ? 'A chave está na ignição. G liga o motor, W/S acelera/freia, A/D vira, E sai.' : 'Sem chave na ignição. G liga (se tiver chave ou fizer ligação direta). E sai.'); }
+      if (CP.UI) { CP.UI.toast((car.keyIn ? 'A chave está na ignição. G liga o motor, W/S acelera/freia, A/D vira, E sai.' : 'Sem chave na ignição. G liga (se tiver chave ou fizer ligação direta). E sai.') + ' Q buzina, R rádio' + (MODELS[V.modelOf(car)].bar ? ', L sirene.' : '.')); }
     } });
   };
   V.exit = function (p) {
@@ -295,7 +317,7 @@
     var d = U.dist(p.x, p.y, car.x, car.y);
     if (d > 2.6) { return; }
     V.syncCond(car);
-    out.push({ label: 'Carro: ' + Math.round(car.fuel) + ' L de gasolina · estado ' + Math.round(car.cond * 100) + '%', disabled: true });
+    out.push({ label: V.modelName(car) + ': ' + Math.round(car.fuel) + ' L de gasolina · estado ' + Math.round(car.cond * 100) + '%', disabled: true });
     out.push({ label: 'Mecânica (ver peças)', fn: function () { if (CP.UI && CP.UI.openMechanics) { CP.UI.openMechanics(car); } } });
     out.push({ label: 'Entrar no carro', key: 'E', fn: function () { V.enter(p, car); } });
     out.push({ label: 'Abrir porta-malas', fn: function () { if (CP.UI) { CP.UI.openCar(car); } } });
@@ -442,6 +464,10 @@
     g.beginPath();
     sh.forEach(function (c2, i) { var q = iso(c2[0] - car.x, c2[1] - car.y, 0); if (i === 0) { g.moveTo(sx + q[0], sy + q[1]); } else { g.lineTo(sx + q[0], sy + q[1]); } });
     g.closePath(); g.fillStyle = 'rgba(0,0,0,0.3)'; g.fill();
+    if (car.siren) { // reflexo do giroflex no chão em volta
+      var gb = Math.floor(performance.now() / 160) % 2;
+      g.fillStyle = gb ? 'rgba(70,100,255,0.16)' : 'rgba(255,70,50,0.16)'; g.beginPath(); g.ellipse(sx, sy, 70, 35, 0, 0, Math.PI * 2); g.fill();
+    }
     // rodas
     var c = Math.cos(car.ang), s = Math.sin(car.ang);
     var ptw = V.parts(car), wheelPart = ['tireFR', 'tireFL', 'tireRR', 'tireRL'];
@@ -455,11 +481,44 @@
       g.fillStyle = '#5a5a58'; g.beginPath(); g.ellipse(sx + q[0], sy + q[1] - (flatW ? 0.6 : 0), 2.6, flatW ? 1.6 : 2.2, 0, 0, Math.PI * 2); g.fill();
     });
     function rect(u0, u1, v0, v1) { return [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]; }
-    // lataria, capô/porta-malas e cabine com vidros inclinados (frente = +u)
-    solid(g, car, rect(-0.92, 0.92, -0.38, 0.38), rect(-0.92, 0.92, -0.38, 0.38), 4, 15, sx, sy, col, col, lf);
-    solid(g, car, rect(-0.9, 0.9, -0.35, 0.35), rect(-0.9, 0.9, -0.35, 0.35), 15, 17, sx, sy, colTop, col, lf);
-    var glass = CP.Spr.gradeHex(car.windowBroken ? '#2a3238' : '#5d7584');
-    var top = solid(g, car, rect(-0.5, 0.38, -0.32, 0.32), rect(-0.3, 0.22, -0.27, 0.27), 17, 30, sx, sy, colTop, col, lf, [glass, glass, glass, glass]);
+    // lataria, capô/porta-malas e cabine com vidros inclinados (frente = +u); cada modelo tem a sua forma
+    var model = V.modelOf(car), glass = CP.Spr.gradeHex(car.windowBroken ? '#2a3238' : '#5d7584'), top;
+    var white = CP.Spr.gradeHex('#e8e6e0'), red = CP.Spr.gradeHex('#b02420');
+    if (model === 'van' || model === 'ambulance') {
+      solid(g, car, rect(-0.92, 0.92, -0.38, 0.38), rect(-0.92, 0.92, -0.38, 0.38), 4, 15, sx, sy, col, col, lf);
+      solid(g, car, rect(0.55, 0.92, -0.37, 0.37), rect(0.55, 0.9, -0.36, 0.36), 15, 18, sx, sy, colTop, col, lf);
+      // caixa alta (vidro só na frente)
+      top = solid(g, car, rect(-0.92, 0.58, -0.38, 0.38), rect(-0.92, 0.46, -0.36, 0.36), 15, 36, sx, sy, colTop, col, lf, [col, glass, col, col]);
+      if (model === 'ambulance') {
+        [-0.385, 0.385].forEach(function (v) { var a = iso(c * -0.9 - s * v, s * -0.9 + c * v, 22), b = iso(c * 0.5 - s * v, s * 0.5 + c * v, 22); g.strokeStyle = U.shade(red, lf); g.lineWidth = 3; g.beginPath(); g.moveTo(sx + a[0], sy + a[1]); g.lineTo(sx + b[0], sy + b[1]); g.stroke(); });
+        var cr = iso(-s * 0, c * 0, 37.5); g.fillStyle = U.shade(red, lf); g.fillRect(sx + cr[0] - 1.5, sy + cr[1] - 4, 3, 8); g.fillRect(sx + cr[0] - 4, sy + cr[1] - 1.5, 8, 3);
+      }
+    } else if (model === 'pickup') {
+      solid(g, car, rect(-0.92, 0.92, -0.38, 0.38), rect(-0.92, 0.92, -0.38, 0.38), 4, 15, sx, sy, col, col, lf);
+      solid(g, car, rect(0.45, 0.92, -0.36, 0.36), rect(0.45, 0.9, -0.35, 0.35), 15, 17, sx, sy, colTop, col, lf);
+      top = solid(g, car, rect(-0.05, 0.48, -0.35, 0.35), rect(0.02, 0.34, -0.31, 0.31), 15, 31, sx, sy, colTop, col, lf, [glass, glass, glass, glass]);
+      // caçamba aberta: bordas finas e o fundo escuro
+      var bedBase = [[-0.92, -0.38], [-0.08, -0.38], [-0.08, 0.38], [-0.92, 0.38]];
+      g.beginPath(); bedBase.forEach(function (bp, i2) { var q2 = iso(c * bp[0] - s * bp[1], s * bp[0] + c * bp[1], 15); if (i2 === 0) { g.moveTo(sx + q2[0], sy + q2[1]); } else { g.lineTo(sx + q2[0], sy + q2[1]); } }); g.closePath();
+      g.fillStyle = U.shade('#2a2622', lf); g.fill();
+      [[-0.92, -0.38, -0.08, -0.38], [-0.92, 0.38, -0.08, 0.38], [-0.92, -0.38, -0.92, 0.38]].forEach(function (e2) { var a = iso(c * e2[0] - s * e2[1], s * e2[0] + c * e2[1], 20), b = iso(c * e2[2] - s * e2[3], s * e2[2] + c * e2[3], 20), a0 = iso(c * e2[0] - s * e2[1], s * e2[0] + c * e2[1], 15), b0 = iso(c * e2[2] - s * e2[3], s * e2[2] + c * e2[3], 15); g.beginPath(); g.moveTo(sx + a0[0], sy + a0[1]); g.lineTo(sx + b0[0], sy + b0[1]); g.lineTo(sx + b[0], sy + b[1]); g.lineTo(sx + a[0], sy + a[1]); g.closePath(); g.fillStyle = U.shade(col, 0.9 * lf); g.fill(); g.strokeStyle = 'rgba(0,0,0,0.3)'; g.stroke(); });
+    } else {
+      solid(g, car, rect(-0.92, 0.92, -0.38, 0.38), rect(-0.92, 0.92, -0.38, 0.38), 4, 15, sx, sy, col, col, lf);
+      solid(g, car, rect(-0.9, 0.9, -0.35, 0.35), rect(-0.9, 0.9, -0.35, 0.35), 15, 17, sx, sy, model === 'police' ? white : colTop, col, lf);
+      top = solid(g, car, rect(-0.5, 0.38, -0.32, 0.32), rect(-0.3, 0.22, -0.27, 0.27), 17, 30, sx, sy, model === 'police' ? white : colTop, col, lf, [glass, glass, glass, glass]);
+      if (model === 'police') { // portas brancas
+        [-0.385, 0.385].forEach(function (v) { var a = iso(c * -0.35 - s * v, s * -0.35 + c * v, 9), b = iso(c * 0.35 - s * v, s * 0.35 + c * v, 9); g.strokeStyle = U.shade(white, lf); g.lineWidth = 8; g.beginPath(); g.moveTo(sx + a[0], sy + a[1]); g.lineTo(sx + b[0], sy + b[1]); g.stroke(); });
+      }
+    }
+    if (MODELS[model].bar) { // giroflex no teto: pisca vermelho/azul com a sirene ligada
+      var bh = model === 'police' ? 31 : 37, bu = model === 'police' ? -0.04 : 0.35, blink = car.siren ? Math.floor(performance.now() / 160) % 2 : -1;
+      [-0.14, 0.14].forEach(function (v, bi) {
+        var q3 = iso(c * bu - s * v, s * bu + c * v, bh);
+        var on = blink === bi, cc = bi === 0 ? '#d02a20' : '#2a50e0';
+        g.fillStyle = on ? cc : U.shade(U.mix(cc, '#222', 0.45), lf); g.beginPath(); g.ellipse(sx + q3[0], sy + q3[1], 3.6, 2.2, 0, 0, Math.PI * 2); g.fill();
+        if (on) { g.fillStyle = bi === 0 ? 'rgba(255,70,50,0.35)' : 'rgba(70,100,255,0.35)'; g.beginPath(); g.ellipse(sx + q3[0], sy + q3[1], 7, 4.5, 0, 0, Math.PI * 2); g.fill(); }
+      });
+    }
     if (rustK >= 0.3) { // manchas de ferrugem na lataria
       var rr = new U.Rng(U.hashStr(String(car.id)));
       for (var ri = 0; ri < Math.round(rustK * 8); ri++) {
@@ -474,6 +533,61 @@
     if (top && !car.windowBroken) { g.strokeStyle = 'rgba(255,255,255,' + (0.2 * lf).toFixed(2) + ')'; g.lineWidth = 2; g.beginPath(); g.moveTo(top[1][0], top[1][1] + 3); g.lineTo(top[2][0], top[2][1] + 3); g.stroke(); }
   }
   V.drawCar = drawCar;
+
+  /* buzina (Q dentro do carro), sirene (L, viatura e ambulância) e rádio (R): fazem barulho e chamam zumbis */
+  V.horn = function (p) {
+    var car = p.vehicle;
+    if (!car) { return; }
+    if ((V.parts(car).battery || 0) < 0.05) { if (CP.UI) { CP.UI.toast('A bateria está descarregada.', 'warn'); } return; }
+    if (car.hornT > 0) { return; }
+    car.hornT = 0.7;
+    if (CP.Audio && CP.Audio.horn) { CP.Audio.horn(car.x, car.y); }
+    CP.Zombies.noise(car.x, car.y, 0, C.NOISE.HORN, 'horn');
+  };
+  V.toggleSiren = function (p) {
+    var car = p.vehicle;
+    if (!car || !MODELS[V.modelOf(car)].bar) { return false; }
+    if (!car.siren && (V.parts(car).battery || 0) < 0.05) { if (CP.UI) { CP.UI.toast('A bateria está descarregada.', 'warn'); } return false; }
+    car.siren = !car.siren; car.sirenT = 0;
+    if (CP.UI) { CP.UI.toast(car.siren ? 'Sirene ligada — todos os zumbis da região vão ouvir!' : 'Sirene desligada.', car.siren ? 'warn' : ''); }
+    return true;
+  };
+  V.toggleRadio = function (p) {
+    var car = p.vehicle;
+    if (!car) { return; }
+    if (!car.radio && (V.parts(car).battery || 0) < 0.05) { if (CP.UI) { CP.UI.toast('A bateria está descarregada.', 'warn'); } return; }
+    car.radio = !car.radio; car.radioT = 0;
+    if (CP.Audio) { CP.Audio.click(); }
+    if (CP.UI) { CP.UI.toast(car.radio ? 'Rádio do carro ligado.' : 'Rádio do carro desligado.'); }
+  };
+  V.update = function (dt) {
+    for (var i = 0; i < V.active.length; i++) {
+      var car = V.active[i], pt;
+      if (car.hornT > 0) { car.hornT -= dt; }
+      if (!car.siren && !car.radio) { continue; }
+      pt = V.parts(car);
+      var drain = (car.siren ? 0.0025 : 0) + (car.radio ? 0.0006 : 0);
+      if (!car.engine) { pt.battery = Math.max(0, (pt.battery || 0) - drain * dt); }
+      if ((pt.battery || 0) < 0.03) { car.siren = false; car.radio = false; continue; }
+      if (car.siren) {
+        car.sirenT = (car.sirenT || 0) - dt;
+        if (car.sirenT <= 0) { car.sirenT = 1.2; CP.Zombies.noise(car.x, car.y, 0, C.NOISE.SIREN, 'siren'); if (CP.Audio && CP.Audio.siren) { CP.Audio.siren(car.x, car.y); } }
+      }
+      if (car.radio) {
+        car.radioT = (car.radioT || 0) - dt;
+        if (car.radioT <= 0) {
+          car.radioT = 4; CP.Zombies.noise(car.x, car.y, 0, C.NOISE.RADIO, 'radio');
+          var p = CP.Game.player;
+          if (p.vehicle === car) {
+            car.radioMsgT = (car.radioMsgT || 0) - 4;
+            if (car.radioMsgT <= 0) { car.radioMsgT = 24; if (CP.UI) { CP.UI.toast('Rádio: ' + CP.Time.broadcast(), 'info'); } }
+            p.body.stats.boredom = Math.max(0, p.body.stats.boredom - 0.01);
+          }
+          if (CP.Audio && CP.Audio.radioHum) { CP.Audio.radioHum(car.x, car.y); }
+        }
+      }
+    }
+  };
 
   /* luz dos faróis */
   V.lightSources = function (out) {

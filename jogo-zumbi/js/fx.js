@@ -57,6 +57,7 @@
   FX.noiseRing = function (x, y, z, r) { if (CP.Game.viewDebug) { CP.Game.effects.push({ type: 'ring', x: x, y: y, z: z, r: r, t: 0, life: 0.6 }); } };
   FX.floatText = function (x, y, z, text, color) { if (text) { CP.Game.effects.push({ type: 'text', x: x, y: y, z: z, text: text, color: color || '#fff', t: 0, life: 1.1 }); } };
   FX.lightning = function () { FX.flash = 0.6; };
+  FX.breath = function (x, y, z, ang) { CP.Game.effects.push({ type: 'breath', x: x, y: y, z: z, ang: ang, t: 0, life: 1.3 }); };
 
   /* respingo de sangue pontilhado (8 formas × 9 níveis de luz, em cache) */
   var splats = [];
@@ -126,6 +127,10 @@
         var rng2 = new U.Rng(Math.floor(e.seed * 1e9));
         g.fillStyle = 'rgba(150,110,60,' + (1 - k) + ')';
         for (var q = 0; q < 8; q++) { g.fillRect(X + rng2.range(-14, 14) * (1 + k), Y - 40 + rng2.range(-10, 10) + k * 30, 3, 1.5); }
+      } else if (e.type === 'breath') { // vapor da respiração no frio
+        var bx2 = X + Math.cos(e.ang) * 7 - Math.sin(e.ang) * 7 + k * 6 * (Math.cos(e.ang) - Math.sin(e.ang)), by2 = Y - 52 - k * 10 + (Math.cos(e.ang) + Math.sin(e.ang)) * 3;
+        g.fillStyle = 'rgba(235,240,245,' + (0.6 * (1 - k) * (k < 0.15 ? k / 0.15 : 1)).toFixed(3) + ')';
+        g.beginPath(); g.ellipse(bx2, by2, 3 + k * 9, 2 + k * 5, 0, 0, Math.PI * 2); g.fill(); g.beginPath(); g.ellipse(bx2 + 3 + k * 4, by2 - 2 - k * 3, 2 + k * 6, 1.4 + k * 3.5, 0, 0, Math.PI * 2); g.fill();
       } else if (e.type === 'ring') {
         g.strokeStyle = 'rgba(255,255,255,' + (0.4 * (1 - k)) + ')'; g.lineWidth = 1;
         g.beginPath(); g.ellipse(X, Y, e.r * HW * k * 1.4, e.r * HH * k * 1.4, 0, 0, Math.PI * 2); g.stroke();
