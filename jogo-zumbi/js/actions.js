@@ -133,6 +133,11 @@
           out.push({ label: 'Abrir janela', key: 'E', fn: function () { A.start(p, { name: 'Abrindo janela', time: 0.9, anim: 'work', onDone: function () { st.open = true; st.locked = false; CP.Zombies.noise(mid.x, mid.y, z, 5, 'window'); if (!playerIndoorSide(p, e, z)) { breakIn(e.x, e.y, z); } } }); } });
         }
       }
+      if (playerIndoorSide(p, e, z)) {
+        if (st.hasCurt) { out.push({ label: st.curtain ? 'Abrir cortina' : 'Fechar cortina', fn: function () { st.curtain = !st.curtain; W.chunkAt(e.x, e.y).saveDirty = true; CP.Game.updateFov(true); if (CP.Audio) { CP.Audio.click(); } } }); } else if (has(p, 'sheet')) {
+          out.push({ label: 'Pendurar lençol como cortina', fn: function () { A.start(p, { name: 'Pendurando lençol', time: 2.5, anim: 'work', onDone: function () { if (!CP.Items.Inv.consume(p, 'sheet', 1)) { return; } st.hasCurt = true; st.curtain = true; W.chunkAt(e.x, e.y).saveDirty = true; CP.Game.updateFov(true); } }); } });
+        }
+      }
       if (!st.broken) { out.push({ label: 'Quebrar janela', fn: function () { smashWindow(p, e, z, st); } }); }
       if (st.bar < 4 && (st.broken || !st.open) && playerIndoorSide(p, e, z)) { barricadeOpt(p, e, z, st, out); }
     } else if (type === E.FENCE) {
@@ -505,6 +510,7 @@
     edges.sort(function (a, b) { return a.d - b.d; });
     for (var i = 0; i < 2; i++) { if (edges[i].d < 0.4) { edgeOptions(p, edges[i].e, out); } }
     objOptions(p, x, y, z, out);
+    lightSwitch(p, x, y, z, out);
     if (CP.Fire) { CP.Fire.options(p, x, y, z, out); }
     // outra parte de cama/carro etc.
     lakeOptions(p, x, y, z, out);
@@ -525,6 +531,19 @@
     if (CP.Build && CP.Build.tileOptions) { CP.Build.tileOptions(p, x, y, z, out); }
     return out;
   };
+
+  /* interruptor: a luz do cômodo onde o jogador está (precisa de energia para acender) */
+  function lightSwitch(p, x, y, z, out) {
+    var rm = W.room(Math.floor(p.x), Math.floor(p.y), z);
+    if (!rm || W.room(x, y, z) !== rm || p.vehicle) { return; }
+    var power = CP.Time.powerAt(Math.floor(p.x), Math.floor(p.y));
+    out.push({ label: rm.lit ? 'Apagar a luz' : 'Acender a luz', disabled: !rm.lit && !power, hint: 'Sem energia', fn: function () {
+      rm.lit = !rm.lit; W.chunkAt(Math.floor(p.x), Math.floor(p.y)).saveDirty = true;
+      if (CP.Audio) { CP.Audio.click(); }
+      CP.Game.updateLight();
+    } });
+  }
+  A.lightSwitch = lightSwitch;
 
   /* tecla E: interação mais provável na frente do jogador */
   A.interact = function (p) {

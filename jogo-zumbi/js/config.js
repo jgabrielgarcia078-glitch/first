@@ -204,6 +204,7 @@
     SPEED_CRAWL: 0.35,
     HP_MIN: 1.4, HP_MAX: 2.2,  // "vida" (arma média tira ~1 por golpe)
     SIGHT_DAY: 18, SIGHT_NIGHT: 7,
+    LIGHT_ATTRACT: 22, LIGHT_CHANCE: 0.35,   // à noite, luz acesa (lanterna, cômodo iluminado) vista de até X tiles chama zumbis
     SIGHT_CONE_DEG: 200,
     HEARING_MULT: 1.0,
     MEMORY_SECONDS: 30,        // quanto tempo continua indo ao último ponto
@@ -340,6 +341,7 @@
 
   /* ---------- Interface: anotações no mapa, rótulos ao passar o mouse ---------- */
   C.MAP_NOTES_MAX = 120;
+  C.CURTAIN_CHANCE = 0.65;   // janelas de casa com cortina
   C.HOVER_RANGE = 14;        // tiles: até onde o rótulo do mouse aparece (só no que está à vista)
 
   /* ---------- Fogo (js/fire.js) ---------- */

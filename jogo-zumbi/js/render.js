@@ -53,6 +53,7 @@
   /* código de luz de um tile: bits 0-3 = nível de luz visível, 4-7 = nível de luz "de memória" (fora da visão),
    * 8-10 = quanto do tile está fora da visão (0 = visível, 4 = todo); entre 1 e 3 mistura as duas versões (borda suave) */
   function lcode(liV, liF, q) { return liV | (liF << 4) | (q << 8); }
+  var FULL = lcode(S.LIGHT_STEPS.length - 1, S.LIGHT_STEPS.length - 1, 0);
   function drawSprite(g, spr, c, sx, sy, alpha) {
     var a = alpha !== undefined ? alpha : 1;
     var q = c >> 8, X = sx - spr.ax, Y = sy - spr.ay;
@@ -92,6 +93,7 @@
     R.wind = Am && CP.Game && CP.Game.running ? Am.wind() : 0;
     var roofSnow = snow > 0.7 ? 2 : (snow > 0.3 ? 1 : 0);
     R.treeSeason = R.season === 2 && snow > 0.35 ? 4 : R.season;
+    R.nightPower = !!(CP.Time && CP.Game && CP.Game.running && CP.Time.isNight() && CP.Time.powerOn());
     var t0 = performance.now();
     S.frame++;
     if (S.frame % 300 === 0) { S.sweep(); }
@@ -485,9 +487,15 @@
     var lc2 = tileCode(ax, ay, z, view.viewZ);
     var c = lcode(Math.max(lc & 15, lc2 & 15), Math.max((lc >> 4) & 15, (lc2 >> 4) & 15), Math.min(lc >> 8, lc2 >> 8));
     var grime = ((x * 73856093) ^ (y * 19349663) ^ (side * 83492791)) >>> 0;
-    var spr = S.wall(type, style, side, state, bar, cut, st && st.curtain ? 1 : 0, (grime >>> 7) % 3);
+    var curt = st ? (st.curtain ? 1 : (st.hasCurt ? 2 : 0)) : 0;
+    var spr = S.wall(type, style, side, state, bar, cut, curt, (grime >>> 7) % 3);
     drawSprite(g, spr, c, bx, by, fade);
     if (cut) { return; }
+    // janela acesa à noite: cômodo com luz e energia, sem cortina fechada nem tábuas
+    if (type === E.WINDOW && R.nightPower && curt !== 1 && bar < 3 && state !== 2) {
+      var inX = W.isIndoor(x, y, z) ? x : ax, inY = W.isIndoor(x, y, z) ? y : ay, rm = W.room(inX, inY, z);
+      if (rm && rm.lit && CP.Time.powerAt(inX, inY) && W.building(inX, inY, z) !== view.bld) { drawSprite(g, S.windowGlow(side, curt), FULL, bx, by, fade); }
+    }
     if (st && st.note && type === E.DOOR && state === 0) { drawSprite(g, S.doorNote(side), c, bx, by, fade); }
     // face externa voltada para a câmera: pichações, trepadeiras (erosão) e toldos de loja
     var outFace = !W.isIndoor(x, y, z) && W.isIndoor(ax, ay, z);

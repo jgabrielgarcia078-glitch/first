@@ -100,6 +100,21 @@
   };
   T.visionMult = function () { return 1; };
   T.isNight = function () { return T.ambient() < 0.45; };
+  /* janela de cômodo aceso joga um pouco de luz quente para fora */
+  function windowLight(out, x, y, z) {
+    for (var side = 0; side < 2; side++) {
+      if (W.edgeType(x, y, z, side) !== C.EDGE.WINDOW) { continue; }
+      var ax = side === 0 ? x : x - 1, ay = side === 0 ? y - 1 : y;
+      var inA = W.isIndoor(x, y, z), inB = W.isIndoor(ax, ay, z);
+      if (inA === inB) { continue; }
+      var st = W.edgeState(x, y, z, side);
+      if (st && (st.curtain || st.bar >= 3)) { continue; }
+      var rm = inA ? W.room(x, y, z) : W.room(ax, ay, z);
+      if (!rm || !rm.lit || !T.powerAt(x, y)) { continue; }
+      var outX = inA ? ax : x, outY = inA ? ay : y;
+      out.push({ x: outX + 0.5, y: outY + 0.5, z: z, r: 2.6, i: 0.6, indoor: false });
+    }
+  }
   T.lightSources = function (p) {
     var out = [];
     var lz = W.levelOf(p.z);
@@ -112,8 +127,10 @@
     out.push({ x: p.x, y: p.y, z: lz, r: 3.2, i: 0.42 });
     var V = CP.Vis;
     if (night) {
+      var pw = T.powerOn();
       for (var y = V.oy; y < V.oy + V.size; y++) {
         for (var x = V.ox; x < V.ox + V.size; x++) {
+          if (pw) { windowLight(out, x, y, lz); }
           var o = W.obj(x, y, lz);
           if (!o) { continue; }
           if (o === O.LAMPPOST && T.powerAt(x, y)) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 7, i: 0.85, indoor: false, glow: 'lamp' }); }

@@ -227,7 +227,27 @@
   }
 
   /* ---------- atualização ---------- */
-  var hashT = 0, strayT = 0;
+  var hashT = 0, strayT = 0, lightT = 1.5;
+  /* à noite, luz acesa chama atenção de longe: lanterna ligada ou cômodo iluminado visto pela janela (cortina fechada esconde) */
+  Z.playerGlows = function (p) {
+    if (!CP.Time || !CP.Time.isNight() || p.dead || p.vehicle) { return false; }
+    if (p.flashlightOn) { return true; }
+    var lz = W.levelOf(p.z), rm = W.room(Math.floor(p.x), Math.floor(p.y), lz);
+    return !!(rm && rm.lit && CP.Time.powerAt(Math.floor(p.x), Math.floor(p.y)));
+  };
+  function lightAttract(p) {
+    if (!Z.playerGlows(p)) { return; }
+    var zs = CP.Game.zombies, R2 = ZC.LIGHT_ATTRACT * ZC.LIGHT_ATTRACT, lz = W.levelOf(p.z);
+    for (var i = 0; i < zs.length; i++) {
+      var zb = zs[i];
+      if (zb.state !== 'idle' && zb.state !== 'wander') { continue; }
+      var d2 = U.dist2(zb.x, zb.y, p.x, p.y);
+      if (d2 > R2 || d2 < 4 || Math.abs(zb.z - p.z) > 0.5 || Math.random() > ZC.LIGHT_CHANCE) { continue; }
+      if (!W.lineOfSight(zb.x, zb.y, p.x, p.y, lz, 60)) { continue; }
+      zb.target = { x: p.x + U.randRange(-2, 2), y: p.y + U.randRange(-2, 2), z: p.z };
+      zb.memT = ZC.MEMORY_SECONDS * 0.5; zb.state = 'investigate'; zb.path = null; zb.repathT = U.randRange(0, 0.5);
+    }
+  }
   Z.update = function (dt) {
     var G = CP.Game;
     var p = G.player;
@@ -251,6 +271,8 @@
       if (zb.attackT > 0 && U.dist2(zb.x, zb.y, p.x, p.y) < 2.2) { attackers++; }
     }
     Z.attackers = attackers;
+    lightT -= dt;
+    if (lightT <= 0) { lightT = 1.5; lightAttract(p); }
     strayT -= dt;
     if (strayT <= 0) { strayT = 2; Z.storeStrays(); }
     Z.syncT = (Z.syncT || 0) - dt;

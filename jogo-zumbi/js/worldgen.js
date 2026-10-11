@@ -486,7 +486,7 @@
     return e;
   }
 
-  function placeWindows(ctx, r, z, style, every) {
+  function placeWindows(ctx, r, z, style, every, curt) {
     ['N', 'S', 'E', 'W'].forEach(function (s) {
       var edges = perimeterEdges(r, s);
       for (var k = 1; k < edges.length - 1; k++) {
@@ -499,7 +499,9 @@
         if (internalWallAt(ctx, e, z)) { continue; }
         if ((k % every) === 1 || ctx.rng.chance(0.08)) {
           ctx.edge(e.x, e.y, z, e.side, E.WINDOW, style);
-          ctx.edgeState(e.x, e.y, z, e.side, { open: false, locked: ctx.rng.chance(0.4), hp: 8, bar: 0, barHp: 0, broken: false, glass: true });
+          var wst = { open: false, locked: ctx.rng.chance(0.4), hp: 8, bar: 0, barHp: 0, broken: false, glass: true };
+          if (curt && ctx.rng.chance(curt)) { wst.hasCurt = true; wst.curtain = ctx.rng.chance(0.35); }
+          ctx.edgeState(e.x, e.y, z, e.side, wst);
         }
       }
     });
@@ -699,7 +701,7 @@
         ctx.c.buildings[bld].door = { x: ctx.ox + fd.x, y: ctx.oy + fd.y, side: fd.side };
         if (rng.chance(0.5)) { placeDoorOnSide(ctx, r, 0, { N: 'S', S: 'N', E: 'W', W: 'E' }[front], ext, rng.chance(0.6)); }
       }
-      placeWindows(ctx, r, z, ext, 3);
+      placeWindows(ctx, r, z, ext, 3, C.CURTAIN_CHANCE);
       // móveis
       leaves.forEach(function (lf, li) {
         var id = ids[li];

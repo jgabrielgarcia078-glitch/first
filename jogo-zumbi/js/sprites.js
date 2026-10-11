@@ -521,6 +521,20 @@
     signMap[key] = s0;
     return s0;
   };
+  /* janela acesa vista de fora à noite (vidro amarelado; desenhada sem escurecer) */
+  var glowArr = [];
+  S.windowGlow = function (side, curt) {
+    var k = side * 3 + (curt || 0);
+    if (glowArr[k]) { return glowArr[k]; }
+    var pad = 6, c = mk(TW * 2, HH + WH + pad * 2 + 4), g = c.getContext('2d');
+    var ox = TW, oy = WH + pad;
+    var a = wp(side, 0.5, WH * 0.45), b = wp(side, 0.5, WH * 0.78);
+    var gr = g.createLinearGradient(a[0] + ox, a[1] + oy, b[0] + ox, b[1] + oy);
+    gr.addColorStop(0, 'rgba(255,214,140,0.92)'); gr.addColorStop(1, 'rgba(255,188,100,0.8)');
+    if (curt === 2) { wquad(g, side, 0.33, 0.67, WH * 0.40, WH * 0.78, gr, ox, oy); } else { wquad(g, side, 0.25, 0.75, WH * 0.40, WH * 0.78, gr, ox, oy); }
+    wline(g, side, 0.5, WH * 0.40, 0.5, WH * 0.78, 'rgba(90,60,30,0.7)', 1.5, ox, oy);
+    return (glowArr[k] = store('wg' + k, c, ox, oy, false, true));
+  };
   /* bilhete preso na porta (papel com fita, no plano da parede) */
   var noteArr = [];
   S.doorNote = function (side) {
@@ -864,7 +878,16 @@
           var q1 = wp(side, 0.77, H * 0.38), q2 = wp(side, 0.6, H * 0.38), q3 = wp(side, 0.72, H * 0.55);
           poly(g, [[q1[0] + ox, q1[1] + oy], [q2[0] + ox, q2[1] + oy], [q3[0] + ox, q3[1] + oy]], shard[0]);
         }
-        if (extra === 1) { wquad(g, side, 0.23, 0.77, H * 0.38, H * 0.80, 'rgba(160,60,60,0.85)', ox, oy); }
+        if (extra === 1 || extra === 2) {
+          // cortina: fechada cobre o vidro; aberta fica franzida nos cantos
+          var cc = U.shade('#8a5a48', faceF), cd = U.shade('#6a4234', faceF);
+          var spans = extra === 1 ? [[0.23, 0.77]] : [[0.23, 0.33], [0.67, 0.77]];
+          spans.forEach(function (sp) {
+            wquad(g, side, sp[0], sp[1], H * 0.38, H * 0.80, cc, ox, oy);
+            for (var f = sp[0] + 0.045; f < sp[1] - 0.01; f += 0.07) { wline(g, side, f, H * 0.39, f, H * 0.79, cd, 1.4, ox, oy); }
+          });
+          wline(g, side, 0.2, H * 0.81, 0.8, H * 0.81, '#3a3530', 1.5, ox, oy);
+        }
       }
       if ((type === E.DOOR || type === E.DOORWAY || type === E.GARAGE) && !cut) {
         // vão

@@ -426,5 +426,75 @@ if (car) {
   ok(!(L.odir[ii] & 4) && CP.Use.nearHeat(q), 'fogueira acesa esquenta');
   L.obj[ii] = 0; L.odir[ii] = 0;
 }
+
+/* ---------- S1: cortinas, interruptor, janelas acesas, luz que atrai zumbis ---------- */
+{
+  const E = C.EDGE, q = G.player;
+  // acha uma janela de casa com cortina, com o lado de dentro andável
+  let win = null;
+  for (const k in G.activeChunks) {
+    const ch = G.activeChunks[k];
+    for (const key in ch.edges) {
+      const st = ch.edges[key]; if (!st || !st.hasCurt || st.broken) continue;
+      const kk = +key, side = kk % 2, ix = ((kk - side) / 2) % (C.CHUNK * C.CHUNK), z = Math.floor(((kk - side) / 2) / (C.CHUNK * C.CHUNK));
+      if (z !== 0) continue;
+      const ex = ch.cx * C.CHUNK + (ix & (C.CHUNK - 1)), ey = ch.cy * C.CHUNK + (ix >> Math.log2(C.CHUNK));
+      if (W.edgeType(ex, ey, 0, side) !== E.WINDOW) continue;
+      const inX = W.isIndoor(ex, ey, 0) ? ex : (side === 1 ? ex - 1 : ex), inY = W.isIndoor(ex, ey, 0) ? ey : (side === 0 ? ey - 1 : ey);
+      if (!W.isIndoor(inX, inY, 0) || !W.tileWalkable(inX, inY, 0) || W.obj(inX, inY, 0)) continue;
+      win = { ex, ey, side, st, inX, inY }; break;
+    }
+    if (win) break;
+  }
+  let curtCount = 0;
+  for (const k in G.activeChunks) for (const key in G.activeChunks[k].edges) { const st = G.activeChunks[k].edges[key]; if (st && st.hasCurt) curtCount++; }
+  ok(curtCount > 0, 'janelas de casa nascem com cortina (' + curtCount + ')');
+  ok(W.edgeBlocksSight(E.WINDOW, { curtain: true }) && !W.edgeBlocksSight(E.WINDOW, { hasCurt: true, curtain: false }), 'cortina fechada bloqueia a visão, aberta não');
+  if (win) {
+    q.x = win.inX + 0.5; q.y = win.inY + 0.5; q.z = 0; q.vehicle = null; clearZombies();
+    const mx = win.side === 0 ? win.ex + 0.5 : win.ex + 0.08, my = win.side === 0 ? win.ey + 0.08 : win.ey + 0.5;
+    const before = win.st.curtain;
+    let o = CP.Actions.contextOptions(q, mx, my).find(x => /cortina/.test(x.label));
+    ok(!!o, 'de dentro dá para ' + (o ? o.label.toLowerCase() : 'mexer na cortina'));
+    if (o) { o.fn(); ok(win.st.curtain === !before, 'cortina mudou de estado'); }
+    // interruptor
+    G.state.world.powerOffDay = 999;
+    const rm = W.room(win.inX, win.inY, 0); rm.lit = false;
+    o = CP.Actions.contextOptions(q, q.x, q.y).find(x => /Acender a luz/.test(x.label));
+    ok(o && !o.disabled, 'interruptor: acender a luz com energia');
+    if (o) { o.fn(); ok(rm.lit, 'luz do cômodo acesa'); }
+    o = CP.Actions.contextOptions(q, q.x, q.y).find(x => /Apagar a luz/.test(x.label));
+    ok(!!o, 'interruptor: apagar a luz');
+    // janela acesa à noite joga luz para fora
+    const t0 = G.state.time; G.state.time = Math.ceil(t0 / 86400) * 86400 + (23 - C.START_HOUR) * 3600;
+    G.state.world.weather = { type: 'clear', until: CP.Time.hours() + 50 };
+    win.st.curtain = false; win.st.bar = 0;
+    const srcs = CP.Time.lightSources(q);
+    ok(CP.Time.isNight() && srcs.some(sr => sr.r === 2.6), 'janela de cômodo aceso ilumina o lado de fora à noite');
+    win.st.curtain = true;
+    ok(!CP.Time.lightSources(q).some(sr => sr.r === 2.6 && Math.abs(sr.x - (win.side === 0 ? win.ex + 0.5 : win.ex + 0.5)) < 1.2 && Math.abs(sr.y - win.ey - 0.5) < 1.6), 'cortina fechada esconde a luz');
+    G.state.time = t0;
+  }
+  // luz atrai zumbis à noite (lanterna em área aberta)
+  const open2 = findOpen(q.x + 40, q.y, 2) || findOpen(q.x, q.y, 2);
+  q.x = open2.x; q.y = open2.y; q.z = 0; G.activateChunks(true); clearZombies();
+  const t1 = G.state.time; G.state.time = Math.ceil(t1 / 86400) * 86400 + (23 - C.START_HOUR) * 3600;
+  G.state.world.weather = { type: 'clear', until: CP.Time.hours() + 50 };
+  const zs = [];
+  const toMeEarly = z => (z.state === 'investigate' || z.state === 'chase') && z.target && U.dist(z.target.x, z.target.y, q.x, q.y) < 4;
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * 6.283, zx = q.x + Math.cos(a) * 15, zy = q.y + Math.sin(a) * 15;
+    if (!W.tileWalkable(Math.floor(zx), Math.floor(zy), 0)) continue;
+    const zd = CP.Zombies.makeData(new U.Rng(1000 + i), zx, zy, 0); zd.crawler = false; zd.fakeDead = false;
+    const zb = CP.Zombies.fromData(zd); zb.state = 'idle'; zb.idleT = 999; zb.ang = a; G.zombies.push(zb); zs.push(zb);
+  }
+  q.flashlightOn = false; G.updateFov(true); tick(4);
+  zs.forEach(z => { if (!toMeEarly(z)) { z.state = 'idle'; z.target = null; } });
+  const toMe = z => (z.state === 'investigate' || z.state === 'chase') && z.target && U.dist(z.target.x, z.target.y, q.x, q.y) < 4;
+  ok(!zs.some(toMe), 'sem luz, zumbis longe não reparam no jogador à noite (' + zs.map(z => z.state + (z.target ? '@' + (z.target.x - q.x).toFixed(0) + ',' + (z.target.y - q.y).toFixed(0) : '')).join(' ') + ' luz ' + CP.Vis.lightAt(Math.floor(q.x), Math.floor(q.y), 0).toFixed(2) + ')');
+  CP.Items.Inv.give(q, CP.Items.make('flashlight')); q.flashlightOn = true; tick(5);
+  ok(zs.some(toMe), 'lanterna acesa à noite chama zumbis de longe (' + zs.filter(toMe).length + '/' + zs.length + ')');
+  q.flashlightOn = false; clearZombies(); G.state.time = t1;
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);
