@@ -245,6 +245,28 @@
     if (w.back) { var bid = w.back.id; bag = bid === 'military_bag' ? '#4a5a3a' : (bid === 'schoolbag' ? '#8a2f2f' : '#5a4a3a'); }
     var lk = CP.Spr.buildLook({ skin: l.skin, hair: l.hair, hairStyle: l.hairStyle, beard: l.beard, female: p.female, blood: p.bloodSpots || null, bag: bag, seed: 0 },
       [w.hat, w.neck, w.shirt, w.jacket, w.vest, w.pants, w.shoes, w.gloves]);
+    // corpo e aparência que mudam com o tempo: peso, cabelo/barba crescendo, curativos, cicatrizes, mancar
+    var T = CP.Game.state ? CP.Game.state.time : 0, GR = C.GROOM;
+    p.groom = p.groom || { cut: T, shave: T };
+    var cutD = (T - p.groom.cut) / 86400, shaveD = (T - p.groom.shave) / 86400;
+    var base = l.hairStyle || 'curto', gi = GR.GROWTH.indexOf(base);
+    if (gi >= 0 && base !== 'careca') { lk.hairStyle = GR.GROWTH[Math.min(GR.GROWTH.length - 1, gi + Math.floor(cutD / GR.HAIR_DAYS))]; }
+    if (!p.female && !l.beard) {
+      if (shaveD >= GR.BEARD_DAYS) { lk.beard = true; } else if (shaveD >= GR.STUBBLE_DAYS) { lk.stubble = Math.min(1, (shaveD - GR.STUBBLE_DAYS) / (GR.BEARD_DAYS - GR.STUBBLE_DAYS)); }
+    }
+    if (p.body && p.body.stats) {
+      var kg = p.body.stats.weight || C.BODY_LOOK.REF_KG;
+      lk.fat = U.clamp(Math.round((kg - C.BODY_LOOK.REF_KG) / C.BODY_LOOK.KG_PER_STEP), -2, 2);
+      var bands = null;
+      for (var pid in p.body.parts) {
+        var wd = p.body.parts[pid].wounds;
+        for (var wi = 0; wi < wd.length; wi++) { if (wd[wi].bandage) { bands = bands || {}; bands[pid] = wd[wi].bandage.dirty > 0.6 ? '#9a7a6a' : (wd[wi].bleeding ? '#d8b0a8' : '#ece8de'); } }
+      }
+      if (bands) { lk.bandages = bands; }
+      var sc = p.body.scars || [];
+      if (sc.indexOf('head') >= 0) { lk.faceScar = true; }
+      if (sc.indexOf('farmL') >= 0 || sc.indexOf('farmR') >= 0) { lk.armScar = { L: sc.indexOf('farmL') >= 0, R: sc.indexOf('farmR') >= 0 }; }
+    }
     // arma longa guardada vai pendurada nas costas (como no original)
     var bw = null;
     for (var bi = 0; bi < p.inv.length && !bw; bi++) { var bd = D.ITEMS[p.inv[bi].id]; if (bd.weapon && /^(blunt_long|axe|spear|blade_long|rifle|shotgun)$/.test(bd.weapon.type)) { bw = bd.weapon.type; } }
@@ -277,6 +299,10 @@
     if (anim === 'read') { pose.read = 1; }
     if (anim === 'eat') { pose.sip = now + 0.01; pose.weapon = null; }
     if (p.sleeping && oinf && oinf.bed && ob !== C.OBJ.SOFA) { pose.cover = '#5f6f8c'; }
+    if (CP.Body && p.body && !p.dead) { // perna machucada: manca do lado ferido
+      var li = CP.Body.legInjury(p);
+      if (li > 0.08) { var lw = 0; ['thighL', 'shinL', 'footL'].forEach(function (id) { lw += p.body.parts[id].wounds.length; }); var rw = 0; ['thighR', 'shinR', 'footR'].forEach(function (id) { rw += p.body.parts[id].wounds.length; }); pose.limp = lw >= rw ? -1 : 1; }
+    }
     var exA = p.action && p.action.opts.exercise;
     if (exA) { // exercício: flexão deitado, agachamento, abdominal e polichinelo
       var ph = Math.sin(now * (exA === 'jack' ? 7 : 4));

@@ -353,6 +353,9 @@
   /* exercícios: XP, cansaço e dor muscular (0..1) por série */
   C.EXERCISE = { TIME: 14, ENDURANCE: 0.22, STRAIN: 0.28, STRAIN_DECAY_H: 0.025, MAX_STRAIN: 0.75 };
   C.BREATH_TEMP = 4;
+  /* cabelo e barba crescem; peso muda a silhueta (kg de referência e quanto engorda/emagrece na tela) */
+  C.GROOM = { HAIR_DAYS: 12, STUBBLE_DAYS: 2, BEARD_DAYS: 10, GROWTH: ['careca', 'raspado', 'curto', 'médio', 'longo'] };
+  C.BODY_LOOK = { REF_KG: 80, KG_PER_STEP: 12 };
   C.KEYS = { RESIDENT: 0.4, SPARE: 0.22 };   // chance do morador-zumbi ter a chave; chance de achar a reserva debaixo do capacho         // °C: abaixo disso a respiração vira vapor
   C.HOVER_RANGE = 14;        // tiles: até onde o rótulo do mouse aparece (só no que está à vista)
 

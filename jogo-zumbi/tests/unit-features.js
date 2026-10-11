@@ -814,5 +814,41 @@ if (car) {
   Inv.give(q, CP.Items.make('axe'));
   ok(CP.Player.lookFor(q).backWeapon === 'axe', 'machado guardado aparece nas costas');
 }
+
+/* ---------- T2: corpo que muda, barba/cabelo, curativos e cicatrizes visíveis, mancar ---------- */
+{
+  const q = G.player, T0 = G.state.time;
+  q.female = false; q.look.beard = false; q.look.hairStyle = 'curto'; q.groom = { cut: T0, shave: T0 };
+  let lk = CP.Player.lookFor(q);
+  ok(lk.hairStyle === 'curto' && !lk.beard && !lk.stubble, 'recém cortado e barbeado');
+  G.state.time = T0 + 86400 * 5; lk = CP.Player.lookFor(q);
+  ok(lk.stubble > 0 && !lk.beard, 'barba por fazer depois de alguns dias');
+  G.state.time = T0 + 86400 * 30; lk = CP.Player.lookFor(q);
+  ok(lk.beard && lk.hairStyle === 'longo', 'em um mês: barba cheia e cabelo comprido (' + lk.hairStyle + ')');
+  // espelho
+  const sx = Math.floor(q.x) + 1, sy = Math.floor(q.y), L = W.lvl(sx, sy, 0), ii = W.idx(sx, sy), o0 = L.obj[ii];
+  const indoorF = W.isIndoor; W.isIndoor = () => true;
+  L.obj[ii] = O.SINK; Inv.give(q, CP.Items.make('scissors')); Inv.give(q, CP.Items.make('razor'));
+  let opts = CP.Actions.contextOptions(q, sx + 0.5, sy + 0.5);
+  const cut = opts.find(o => /deixar curto/.test(o.label)), shave = opts.find(o => /Fazer a barba/.test(o.label));
+  ok(cut && !cut.disabled && shave && !shave.disabled, 'espelho: cortar o cabelo e fazer a barba');
+  cut.fn(); tick(7); shave.fn(); tick(6);
+  W.isIndoor = indoorF; L.obj[ii] = o0;
+  lk = CP.Player.lookFor(q);
+  ok(lk.hairStyle === 'curto' && !lk.beard && !lk.stubble, 'cortado e barbeado de novo');
+  G.state.time = T0;
+  // peso
+  const w0 = q.body.stats.weight; q.body.stats.weight = 105; const fat = CP.Player.lookFor(q).fat; q.body.stats.weight = 58; const thin = CP.Player.lookFor(q).fat; q.body.stats.weight = w0;
+  ok(fat > 0 && thin < 0, 'peso muda a silhueta (' + fat + ' / ' + thin + ')');
+  // curativo visível, mancar e cicatriz
+  CP.Body.addWound(q, 'shinL', 'deep', { bleeding: false });
+  ok(CP.Player.lookFor(q) && CP.Body.legInjury(q) > 0, 'ferida na perna');
+  q.body.parts.shinL.wounds[0].bandage = { dirty: 0 };
+  ok(CP.Player.lookFor(q).bandages && CP.Player.lookFor(q).bandages.shinL, 'curativo aparece na canela');
+  CP.Body.addWound(q, 'head', 'laceration', { bleeding: false });
+  q.body.parts.head.wounds.forEach(w => { w.sev = 0.001; }); q.body.parts.shinL.wounds.forEach(w => { w.sev = 0.001; w.stitched = true; });
+  CP.Body.update(q, 0.1, 3600 * 6);
+  ok((q.body.scars || []).indexOf('head') >= 0 && CP.Player.lookFor(q).faceScar, 'corte na cabeça deixa cicatriz no rosto');
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

@@ -283,6 +283,7 @@
         out.push({ label: 'Apagar fogueira', fn: function () { lv0.odir[ii0] |= 4; W.chunkAt(x, y).dirty = true; CP.Game.updateLight(); if (CP.Audio && CP.Audio.hiss) { CP.Audio.hiss(x + 0.5, y + 0.5); } } });
       }
     }
+    if ((o === O.SINK || o === O.MED_CABINET) && W.isIndoor(x, y, z)) { mirrorOptions(p, out); }
     if (info.stove) { out.push({ label: 'Cozinhar (artesanato)', disabled: !CP.Time.powerAt(x, y), hint: 'Sem energia', fn: function () { if (CP.UI) { CP.UI.openCrafting(); } } }); }
     if (info.tree) {
       var axe = CP.Items.Inv.findTag(p, 'chop');
@@ -613,6 +614,25 @@
     c.ang = Math.atan2(p.y - c.y, p.x - c.x) + Math.PI;
     if (p.moving && CP.Amb && CP.Amb.stepPrint) { CP.Amb.stepPrint(c, 'drag', 0.5); }
   };
+
+  /* espelho do banheiro: cortar o cabelo (tesoura) e fazer a barba (lâmina) */
+  function mirrorOptions(p, out) {
+    var sc = CP.Items.Inv.findTag(p, 'scissors') || CP.Items.Inv.findTag(p, 'knife'), rz = CP.Items.Inv.findTag(p, 'razor');
+    var cur = CP.Player.lookFor(p).hairStyle, order = C.GROOM.GROWTH, ci = order.indexOf(cur);
+    out.push({ label: 'Espelho: cortar o cabelo...', sub: true });
+    order.forEach(function (st, i) {
+      if (i >= ci && ci >= 0) { return; }
+      out.push({ label: '   deixar ' + st, disabled: !sc, hint: 'Precisa de tesoura (ou faca)', fn: function () {
+        A.start(p, { name: 'Cortando o cabelo', time: 6, anim: 'work', onDone: function () { p.look.hairStyle = st; p.groom.cut = CP.Game.state.time; p.body.stats.unhappy = Math.max(0, p.body.stats.unhappy - 0.05); msg('Cabelo cortado: ' + st + '.'); } });
+      } });
+    });
+    if (!p.female) {
+      out.push({ label: 'Fazer a barba', disabled: !rz, hint: 'Precisa de lâmina de barbear', fn: function () {
+        A.start(p, { name: 'Fazendo a barba', time: 5, anim: 'work', onDone: function () { p.look.beard = false; p.groom.shave = CP.Game.state.time; p.body.stats.unhappy = Math.max(0, p.body.stats.unhappy - 0.04); msg('Barba feita.'); } });
+      } });
+    }
+  }
+  A.mirrorOptions = mirrorOptions;
 
   /* chaves de casa: a chave abre a porta da frente do prédio dela */
   function doorBuilding(e, z) {

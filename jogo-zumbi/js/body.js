@@ -286,7 +286,10 @@
           if (w.infected > 0.6) { B.hurt(p, 0.6 * h, 'Morreu de infecção no ferimento'); }
         }
         if (w.bandage && w.bandage.dirty >= 1 && w.disinfected) { w.disinfected = false; }
-        if (w.sev <= 0) { ws.splice(i, 1); }
+        if (w.sev <= 0) {
+          ws.splice(i, 1);
+          if (w.type === 'deep' || w.type === 'laceration' || w.type === 'bite' || w.type === 'burn' || w.type === 'bullet' || w.stitched) { b.scars = b.scars || []; if (b.scars.length < 16) { b.scars.push(k); } }
+        }
       }
     }
     if (bleed > 0) {

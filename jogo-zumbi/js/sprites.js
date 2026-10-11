@@ -1904,10 +1904,10 @@
     var ph = pose.phase * TAU;
     var mv = pose.moving ? 1 : 0;
     var amp = pose.run ? 0.36 : (Zb ? 0.2 : 0.25);
-    var limpSide = Zb ? ((seed & 1) ? 1 : -1) : 0;
+    var limpSide = Zb ? ((seed & 1) ? 1 : -1) : (pose.limp || 0);   // perna machucada: manca
     var swing = mv * Math.sin(ph) * amp;
     var bob = mv * Math.abs(Math.sin(ph)) * (pose.run ? 2.4 : 1.2);
-    if (Zb && mv) { bob = Math.max(0, Math.sin(ph) * limpSide) * 2.4; }
+    if ((Zb || limpSide) && mv) { bob = Math.max(0, Math.sin(ph) * limpSide) * 2.4; }
     var kneel = pose.kneel || 0, eatT = pose.eat || 0, stag = pose.stagger || 0, strug = pose.struggle || 0, tt0 = pose.t || 0;
     var sit = pose.sit || 0, readB = pose.read || 0, sip = pose.sip || 0;   // sentado (1 cadeira, 2 chão), lendo, comendo/bebendo
     var style = pose.attack ? (ATTACK_STYLE[pose.weapon] || 'swing') : '';
@@ -1924,7 +1924,7 @@
       var dd = nodrop || !drop ? 0 : drop * U.clamp((h - dropFrom) / (dropFull - dropFrom), 0, 1);
       return [sx + HW * (a - b) + swayX * k, sy + HH * (a + b) - h - bob * k + dd];
     }
-    var bulk = look.jacket ? 0.012 : 0;
+    var bulk = (look.jacket ? 0.012 : 0) + (look.fat || 0) * 0.028;   // gordo/magro muda a largura do corpo
     var shW = (F ? 0.15 : 0.185) + bulk, chW = (F ? 0.135 : 0.165) + bulk, waW = (F ? 0.1 : 0.135) + bulk, hipW = (F ? 0.15 : 0.128) + bulk * 0.5;
     var legSp = F ? 0.068 : 0.072;
     var dHip = 0.092, dWa = 0.086, dCh = (F ? 0.118 : 0.102) + bulk, dSh = 0.08;
@@ -2008,6 +2008,12 @@
       if (legsT === 'shorts') { limb(g, hip, lerp2(hip, knee, 0.7), (F ? 3.6 : 3.5), 2.8, dk(look.pants, kk)); }
       if (bare && Zb) { g.fillStyle = 'rgba(60,30,40,0.35)'; g.beginPath(); g.arc((knee[0] + ankle[0]) / 2, (knee[1] + ankle[1]) / 2, 1.2, 0, TAU); g.fill(); }
       limb(g, heel, toe, F ? 1.6 : 1.9, F ? 1.5 : 1.9, look.shoes ? dk(look.shoes, kk) : dk(skin, kk * 0.92));
+      var lb = look.bandages, sdL = side === 1 ? 'R' : 'L';
+      if (lb) {
+        if (lb['thigh' + sdL]) { limb(g, lerp2(hip, knee, 0.35), lerp2(hip, knee, 0.7), 3.6, 3.2, dk(lb['thigh' + sdL], kk)); }
+        if (lb['shin' + sdL]) { limb(g, lerp2(knee, ankle, 0.3), lerp2(knee, ankle, 0.65), 2.6, 2.3, dk(lb['shin' + sdL], kk)); }
+        if (lb['foot' + sdL]) { limb(g, heel, toe, 2.1, 2.1, dk(lb['foot' + sdL], kk)); }
+      }
       var stn = look.stain;
       if (stn && legsT === 'long') { // calça suja (joelhos e barra), com sangue ou rasgada
         if (stn.dl > 0.05) {
@@ -2116,6 +2122,13 @@
       }
       if (Zb && sleeve !== 'long') { var m2 = lerp2(el, hd, 0.4); g.fillStyle = 'rgba(70,35,50,0.4)'; g.beginPath(); g.arc(m2[0], m2[1], 1.3, 0, TAU); g.fill(); }
       blob(g, hd[0], hd[1] + 0.3, F ? 1.3 : 1.5, F ? 1.5 : 1.7, look.gloves ? dk(look.gloves, kk) : sk, false);
+      var bnd = look.bandages, sd2 = side === 1 ? 'R' : 'L';
+      if (bnd) { // curativos visíveis (por cima da roupa, para dar para ver)
+        if (bnd['farm' + sd2]) { var bq = lerp2(el, hd, 0.45); limb(g, lerp2(el, hd, 0.3), lerp2(el, hd, 0.6), 2.2, 2.0, dk(bnd['farm' + sd2], kk)); g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(bq[0] - 1.5, bq[1], 3, 0.6); }
+        if (bnd['uarm' + sd2]) { limb(g, lerp2(sh, el, 0.35), lerp2(sh, el, 0.7), 2.8, 2.6, dk(bnd['uarm' + sd2], kk)); }
+        if (bnd['hand' + sd2]) { blob(g, hd[0], hd[1] + 0.2, 1.7, 1.6, dk(bnd['hand' + sd2], kk), false); }
+      }
+      if (look.armScar && look.armScar[sd2] && sleeve !== 'long') { var sq = lerp2(el, hd, 0.5); g.strokeStyle = dk('#b0705e', kk); g.lineWidth = 0.5; g.beginPath(); g.moveTo(sq[0] - 1, sq[1] - 0.5); g.lineTo(sq[0] + 1, sq[1] + 0.6); g.stroke(); }
       if (side === 1 && pose.weapon && !Zb && !readB) { drawWeapon(g, hd, pose, fx, fy, lf, style); }
       if (side === 1 && sip) { blob(g, hd[0] + 1, hd[1] - 1.5, 1.6, 2.2, col(pose.sipCol || '#b8b4a8')); }
       if (side === nearSide && readB) { // livro aberto entre as mãos
@@ -2354,12 +2367,18 @@
           g.fillStyle = 'rgba(0,0,0,0.16)'; g.fillRect(fcx + fsx * 0.6 - 0.4, fcy + 0.6, 0.9, 1.1);
           g.fillStyle = F ? col('#9c4f4a') : dk(skin, 0.62);
           g.fillRect(fcx + fsx * 0.4 - 0.9, fcy + 1.9, 1.5, F ? 0.7 : 0.5);
+          if (look.stubble && !look.beard) { g.fillStyle = 'rgba(30,24,20,' + (0.18 + look.stubble * 0.2).toFixed(2) + ')'; g.beginPath(); g.ellipse(fcx + fsx * 0.3, fcy + 1.8, 2.3, 1.7, 0, 0, Math.PI); g.fill(); }
+          if (look.faceScar) { g.strokeStyle = shq('#b0705e', lf); g.lineWidth = 0.6; g.beginPath(); g.moveTo(e2x + 0.6, e2y - 1.5); g.lineTo(e2x + 1.4, e2y + 1.8); g.stroke(); }
           if (look.beard) {
             g.fillStyle = col(hair);
             g.beginPath(); g.ellipse(fcx + fsx * 0.3, fcy + 2.0, 2.1, 1.5, 0, 0, Math.PI); g.fill();
             g.fillRect(fcx + fsx * 0.4 - 1.2, fcy + 1.3, 2.0, 0.6);
           }
         }
+      }
+      if (look.bandages && (look.bandages.head || look.bandages.neck)) { // faixa na cabeça / no pescoço
+        if (look.bandages.head) { g.strokeStyle = col(look.bandages.head); g.lineWidth = 1.6; g.beginPath(); g.ellipse(x, y - 1.2, rX + 0.2, rY * 0.45, 0, 0, TAU); g.stroke(); }
+        if (look.bandages.neck) { blob(g, x, y + rY + 0.6, 2.4, 1.2, col(look.bandages.neck), false); }
       }
       // chapéus
       if (look.hat) {
