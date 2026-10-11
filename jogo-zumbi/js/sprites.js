@@ -1303,6 +1303,7 @@
     blade(0, H - 4); blade(1, H - 12);
   }
   var BILLBOARD_TEXT = [['MOTEL ESTRELA', '2 KM — TV A CORES'], ['COMA NO DINER', 'DA RODOVIA 9'], ['SEGUROS FAMÍLIA', 'PROTEJA QUEM VOCÊ AMA'], ['VOTE CARLSON', 'PARA XERIFE'], ['CERVEJA GELADA', 'PRÓXIMA SAÍDA'], ['TRATORES JOHNSON', '& FILHOS DESDE 1951'], ['FEIRA DO CONDADO', 'AGOSTO — RODEIO'], ['FÉ E ESPERANÇA', 'IGREJA DO VALE']];
+  S.BILLBOARD_TEXT = BILLBOARD_TEXT;
   function drawBillboard(g, dir, rng) {
     var t = ip(0.5, 0.5, 0), W0 = 112, H0 = 48, top = 196;
     ellipseAt(g, t[0], t[1] + 2, 40, 9, 'rgba(0,0,0,0.22)');

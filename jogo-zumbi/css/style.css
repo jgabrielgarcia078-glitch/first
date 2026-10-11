@@ -306,3 +306,24 @@ table.mech td.mbar .bar i { display: block; height: 100%; border-radius: 3px; }
 table.mech td.mbar span { font-size: 11px; color: #bbb; }
 table.mech button { margin: 0 2px; }
 .mech-head { margin-bottom: 8px; font-size: 13px; }
+
+/* arrastar e soltar itens */
+.drag-ghost { position: fixed; z-index: 60; pointer-events: none; display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; font-size: 13px; color: #f0ead8; background: rgba(28,27,24,0.92); border: 1px solid rgba(214,191,134,0.7); box-shadow: 0 4px 14px rgba(0,0,0,0.6); white-space: nowrap; }
+.drag-ghost .ico { font-size: 16px; }
+.item.dragging { opacity: 0.4; }
+.pane-wrap.drop-on .pane { outline: 2px solid rgba(214,191,134,0.75); outline-offset: -2px; }
+.tab-v.drop-on { background: rgba(214,191,134,0.45) !important; }
+
+/* anotações do mapa */
+.mapnotes { display: flex; align-items: center; gap: 3px; margin: 6px 0; flex-wrap: wrap; }
+.mapnotes .msym { width: 30px; padding: 2px 0; font-size: 16px; font-weight: 700; text-shadow: 0 1px 1px #000; }
+.mapnotes .msym.on { background: rgba(214,191,134,0.3); border-color: rgba(214,191,134,0.9); }
+.mapnotes input { flex: 1; min-width: 140px; margin-left: 6px; }
+#mapc { cursor: crosshair; }
+
+/* minimapa (canto de baixo à direita) */
+#minimap { position: fixed; right: 10px; bottom: 10px; }
+#minimap canvas { display: block; cursor: pointer; }
+
+/* rótulo ao passar o mouse */
+#hover-label { position: fixed; display: none; z-index: 5; padding: 2px 8px; font-size: 13px; color: #f2eee2; background: rgba(10,10,9,0.72); border: 1px solid rgba(160,154,136,0.3); white-space: nowrap; text-shadow: 0 1px 1px #000; }

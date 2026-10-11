@@ -9,5 +9,6 @@ run node tests/unit-worldgen.js 12345
 run node tests/unit-sim.js
 run node tests/unit-days.js
 run node tests/unit-features.js
+run sh tests/iface.sh "${1:-/tmp/condado-e2e}-iface"
 run node tests/e2e.js "${1:-/tmp/condado-e2e}"
 echo "TODOS OS TESTES OK"

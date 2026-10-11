@@ -338,6 +338,10 @@
     HEAR_DIST: 95, MEMORY_S: 150
   };
 
+  /* ---------- Interface: anotações no mapa, rótulos ao passar o mouse ---------- */
+  C.MAP_NOTES_MAX = 120;
+  C.HOVER_RANGE = 14;        // tiles: até onde o rótulo do mouse aparece (só no que está à vista)
+
   /* ---------- Fogo (js/fire.js) ---------- */
   C.FIRE = {
     MAX_TILES: 260,          // limite de tiles queimando ao mesmo tempo

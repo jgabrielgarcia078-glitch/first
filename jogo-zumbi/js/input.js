@@ -31,8 +31,9 @@
     window.addEventListener('blur', function () { I.down = {}; I.mouse.left = I.mouse.right = false; });
     canvas.addEventListener('mousemove', function (e) {
       if (I.mouse.right && (Math.abs(e.clientX - I.mouse.x) + Math.abs(e.clientY - I.mouse.y) > 3)) { I.rightMoved = true; }
-      I.mouse.x = e.clientX; I.mouse.y = e.clientY;
+      I.mouse.x = e.clientX; I.mouse.y = e.clientY; I.mouse.onCanvas = true;
     });
+    canvas.addEventListener('mouseleave', function () { I.mouse.onCanvas = false; });
     canvas.addEventListener('mousedown', function (e) {
       I.mouse.x = e.clientX; I.mouse.y = e.clientY;
       if (e.button === 0) { I.mouse.left = true; I.clicks.push({ button: 0, x: e.clientX, y: e.clientY, shift: e.shiftKey, ctrl: e.ctrlKey }); }

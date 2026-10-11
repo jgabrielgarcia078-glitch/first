@@ -92,7 +92,7 @@
       gr.style.backgroundImage = 'url(' + gc.toDataURL() + ')';
       document.body.insertBefore(gr, root);
     }
-    ['hud-top', 'moodles', 'hud-left', 'hud-bottom', 'hud-right', 'toasts', 'action-label', 'fps', 'build-hint', 'panels', 'screens', 'ctxwrap'].forEach(function (id) {
+    ['hud-top', 'moodles', 'hud-left', 'hud-bottom', 'hud-right', 'minimap', 'hover-label', 'toasts', 'action-label', 'fps', 'build-hint', 'panels', 'screens', 'ctxwrap'].forEach(function (id) {
       var e = h('div', { id: id });
       root.appendChild(e);
       $[id] = e;
@@ -103,6 +103,8 @@
     root.addEventListener('input', onInput);
     root.addEventListener('change', onInput);
     root.addEventListener('mousedown', startDrag);
+    root.addEventListener('mousedown', startItemDrag);
+    root.addEventListener('mousedown', onMapMouse);
     document.addEventListener('mousedown', function (e) {
       if (UI.ctxOpen && !e.target.closest('.ctx')) { closeCtx(); }
     }, true);
@@ -274,14 +276,17 @@
 
   /* ================= HUD ================= */
   function clearHud() {
-    ['hud-top', 'moodles', 'hud-left', 'hud-bottom', 'hud-right', 'action-label', 'fps', 'build-hint', 'panels'].forEach(function (id) { $[id].innerHTML = ''; });
+    ['hud-top', 'moodles', 'hud-left', 'hud-bottom', 'hud-right', 'minimap', 'action-label', 'fps', 'build-hint', 'panels'].forEach(function (id) { $[id].innerHTML = ''; });
+    $['hover-label'].style.display = 'none';
     UI.open = {};
     closeCtx();
   }
   function buildHud() {
     clearHud();
     $['hud-right'].innerHTML = '<div class="equip pe" id="equip"></div>' + [['inv', 'Inventário (I)'], ['health', 'Saúde (H)'], ['skills', 'Personagem (K)'], ['craft', 'Artesanato e construção (B)'], ['map', 'Mapa (M)'], ['help', 'Como jogar (F1)'], ['pause', 'Menu (Esc)']].map(function (b) { return '<button class="sb pe" id="sb-' + b[0] + '" data-a="toggle" data-p="' + b[0] + '" title="' + b[1] + '">' + svgIcon(SB_SVG[b[0]], 24) + '</button>'; }).join('');
-    UI.hudT = 0;
+    $.minimap.innerHTML = '<canvas width="176" height="176" class="pe" data-a="toggle" data-p="map" title="Minimapa (N esconde · clique abre o mapa)"></canvas>';
+    $.minimap.style.display = UI.prefs.minimap === false ? 'none' : '';
+    UI.hudT = 0; miniT = 0;
   }
   function updateHud() {
     var p = P(), T = CP.Time;
@@ -478,7 +483,7 @@
   /* janela no estilo do original: título, colunas e abas verticais de recipiente à direita */
   function invPane(title, info, btn, tabs, side, cur, rows) {
     var tb = tabs.map(function (t, i) { return '<button class="tab-v pe' + (i === cur ? ' on' : '') + (t.empty ? ' empty' : '') + '" data-a="invtab" data-side="' + side + '" data-i="' + i + '" title="' + esc(t.name) + '">' + svgIcon(t.icon, 18) + '</button>'; }).join('');
-    return '<div class="pane-wrap"><div class="tabs-h">' + tb + '</div><div class="pane"><div class="pane-h"><b>' + esc(title) + '</b><span class="pane-i">' + info + '</span>' + (btn || '') + '</div>' +
+    return '<div class="pane-wrap" data-side="' + side + '"><div class="tabs-h">' + tb + '</div><div class="pane"><div class="pane-h"><b>' + esc(title) + '</b><span class="pane-i">' + info + '</span>' + (btn || '') + '</div>' +
       '<div class="pane-main"><div class="pane-list"><div class="cols-h"><span>Tipo</span><span>Categoria</span><span>Peso</span></div>' + rows + '</div></div></div></div>';
   }
   function renderInv() {
@@ -548,12 +553,13 @@
   }
   /* transferências levam tempo (como no PZ) */
   function transferTime(p, it) { return (0.25 + Math.min(3, CP.Items.weight(it) * 0.12)) * (p.fx.invSpeed || 1); }
-  function moveToPlayer(r, dest) {
+  function moveToPlayer(r, dest, destCap, destName) {
     var p = P();
     var it = r.item;
     var target = dest || p.inv;
     var cap = dest ? null : CP.Items.Inv.capacity(p) * 2.5;
     if (cap && CP.Items.Inv.containerWeight(p.inv) + CP.Items.weight(it) > Math.max(cap, C.CARRY_HARD_MAX)) { UI.toast('Você não consegue carregar mais nada.', 'warn'); return; }
+    if (dest && destCap && CP.Items.Inv.containerWeight(dest) + CP.Items.weight(it) > destCap) { UI.toast((destName || 'A bolsa') + ' está cheia.', 'warn'); return; }
     CP.Actions.start(p, { name: 'Pegando ' + D.ITEMS[it.id].name, time: transferTime(p, it), onDone: function () {
       if (r.list.indexOf(it) < 0) { return; }
       CP.Items.Inv.removeFrom(r.list, it);
@@ -574,6 +580,73 @@
       if (UI.open.inv) { renderInv(); }
     } });
   }
+  /* arrastar e soltar itens: entre as janelas, nas abas de recipiente, em "Equipado e vestido" ou fora (larga no chão) */
+  UI.dragEndT = 0;
+  function startItemDrag(e) {
+    if (e.button !== 0) { return; }
+    var el = e.target.closest('.item[data-ref]');
+    if (!el) { return; }
+    var r = UI.refs[+el.getAttribute('data-ref')];
+    if (!r) { return; }
+    var sx = e.clientX, sy = e.clientY, ghost = null, over = null;
+    function mark(t) { if (over === t) { return; } if (over) { over.classList.remove('drop-on'); } over = t; if (over) { over.classList.add('drop-on'); } }
+    function mv(ev) {
+      if (!ghost) {
+        if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 6) { return; }
+        ghost = h('div', { class: 'drag-ghost' }, '<span class="ico">' + D.ITEMS[r.item.id].icon + '</span>' + esc(CP.Items.name(r.item)));
+        root.appendChild(ghost);
+        el.classList.add('dragging');
+      }
+      ghost.style.left = (ev.clientX + 12) + 'px'; ghost.style.top = (ev.clientY + 8) + 'px';
+      var tg = document.elementFromPoint(ev.clientX, ev.clientY);
+      mark(tg ? (tg.closest('.tab-v[data-side]') || tg.closest('.pane-wrap')) : null);
+    }
+    function up(ev) {
+      document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up);
+      mark(null);
+      if (!ghost) { return; }
+      ghost.parentNode.removeChild(ghost); el.classList.remove('dragging');
+      UI.dragEndT = performance.now();
+      UI.dropItem(r, dropTarget(document.elementFromPoint(ev.clientX, ev.clientY)));
+    }
+    document.addEventListener('mousemove', mv);
+    document.addEventListener('mouseup', up);
+  }
+  /* para onde o item foi solto: { kind: 'player'|'worn'|'loot'|'floor', c?, src? } */
+  function dropTarget(tg) {
+    if (!tg) { return { kind: 'floor' }; }
+    var tab = tg.closest('.tab-v[data-side]'), pane = tg.closest('.pane-wrap');
+    if (!tab && !pane) { return tg.closest('.panel, .ctx, #hud-right, #hud-bottom') ? null : { kind: 'floor' }; }
+    var side = (tab || pane).getAttribute('data-side');
+    var i = tab ? +tab.getAttribute('data-i') : (side === 'p' ? UI.invTab : UI.lootTab);
+    if (side === 'p') {
+      var conts = CP.Items.Inv.containers(P());
+      return i < conts.length ? { kind: 'player', c: conts[i] } : { kind: 'worn' };
+    }
+    var src = (UI.lootSources || [])[i];
+    return src ? { kind: 'loot', src: src } : null;
+  }
+  UI.dropTarget = dropTarget;
+  UI.dropItem = function (r, t) {
+    var p = P(), it = r.item, d = D.ITEMS[it.id];
+    if (!t || p.dead) { return; }
+    function fromList() { if (r.list) { CP.Items.Inv.removeFrom(r.list, it); } }
+    if (t.kind === 'player') {
+      if (t.c.owner === it || (r.list && r.list === t.c.items)) { return; }
+      if (r.where === 'loot') { moveToPlayer(r, t.c.main ? null : t.c.items, t.c.main ? null : t.c.cap, t.c.name); } else { moveToList(r, t.c.items, t.c.main ? null : t.c.cap, t.c.name); }
+    } else if (t.kind === 'worn') {
+      if (CP.Items.Inv.isWorn(p, it) || p.hand1 === it || p.hand2 === it) { return; }
+      if (d.cloth || d.bag) { fromList(); CP.Use.wearItem(p, it); } else if (d.weapon || d.gun || d.light || d.throwable) { fromList(); CP.Use.equip(p, it, 'hand1'); } else { UI.toast('Isso não dá para vestir nem empunhar.', 'warn'); return; }
+    } else if (t.kind === 'loot') {
+      if (r.list && r.list === t.src.items) { return; }
+      moveToList(r, t.src.items, t.src.floor ? null : t.src.cap, t.src.name);
+    } else if (t.kind === 'floor') {
+      var fl = W.floorItems(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z), true);
+      if (r.list === fl) { return; }
+      moveToList(r, fl, null, 'Chão');
+    }
+    if (UI.open.inv) { setTimeout(renderInv, 30); }
+  };
   function itemMenu(refIdx, mx, my) {
     var r = UI.refs[refIdx];
     if (!r) { return; }
@@ -782,18 +855,65 @@
 
   /* ---------- mapa ---------- */
   var MAP_COLORS = { 0: '#3a3530', 1: '#2f4a28', 2: '#4f6a34', 3: '#6a6a3a', 4: '#5a5a5e', 5: '#6a6a70', 6: '#2c5470' };
+  var TILE_COLORS = ['#000', '#4a6a34', '#6a5a44', '#36373b', '#8a8984', '#7a5a38', '#b8bcb8', '#6a5060', '#2c5470', '#b8a878', '#4a3a2a', '#5a3a30', '#7a7974', '#7a746e', '#a8a28a', '#3e5a2a', '#4a3a2a', '#36373b', '#6a7a3a', '#7a5a38', '#2a2622'];
+  /* símbolos das anotações do mapa (como os do original: X, exclamação, estrela, casa...) */
+  var MAP_SYMS = [['✕', '#e04848', 'Perigo'], ['!', '#f0c040', 'Atenção'], ['★', '#f0e070', 'Importante'], ['▲', '#80c8f0', 'Base'], ['☠', '#e8e8e8', 'Zumbis'], ['✚', '#ff7a7a', 'Remédios'], ['●', '#70d070', 'Comida'], ['?', '#c890f0', 'Ver depois']];
+  UI.mapSym = 0;
+  /* cor de um tile já visto (null = nunca visto) — usada no mapa local e no minimapa */
+  function tileColor(wx, wy) {
+    var cc = W.chunkAt(wx, wy), ii = W.idx(wx, wy);
+    if (!cc || !cc.seen || !cc.seen[ii]) { return null; }
+    var l = cc.levels[0];
+    if (l.wn[ii] === C.EDGE.WALL || l.ww[ii] === C.EDGE.WALL || l.wn[ii] === C.EDGE.WINDOW || l.ww[ii] === C.EDGE.WINDOW) { return '#d8d4c8'; }
+    var o = l.obj[ii];
+    if (W.isIndoor(wx, wy, 0)) { return '#8a7a6a'; }
+    if (o && C.OBJ_INFO[o].tree) { return '#2a4020'; }
+    if (o === C.OBJ.CAR) { return '#b04030'; }
+    return TILE_COLORS[l.floor[ii]] || '#555';
+  }
   function renderMap() {
     var b = body('map');
     if (!b) { return; }
-    b.innerHTML = '<div class="tabs"><button class="small' + (UI.mapMode === 'region' ? ' on' : '') + '" data-a="mapmode" data-m="region">Região</button><button class="small' + (UI.mapMode === 'local' ? ' on' : '') + '" data-a="mapmode" data-m="local">Local</button></div><canvas id="mapc" width="576" height="576"></canvas><div class="muted" style="font-size:12px;margin-top:6px">' + (P().mapRevealed ? 'Mapa da região completo.' : 'Só aparecem os lugares que você já viu. Leia um mapa (posto de gasolina) para ver tudo.') + '</div>';
+    var syms = MAP_SYMS.map(function (sy, i) { return '<button class="small msym' + (UI.mapSym === i ? ' on' : '') + '" data-a="mapsym" data-i="' + i + '" title="' + sy[2] + '" style="color:' + sy[1] + '">' + sy[0] + '</button>'; }).join('') +
+      '<button class="small msym' + (UI.mapSym === -1 ? ' on' : '') + '" data-a="mapsym" data-i="-1" title="Apagar anotação">⌫</button>';
+    b.innerHTML = '<div class="tabs"><button class="small' + (UI.mapMode === 'region' ? ' on' : '') + '" data-a="mapmode" data-m="region">Região</button><button class="small' + (UI.mapMode === 'local' ? ' on' : '') + '" data-a="mapmode" data-m="local">Local</button></div>' +
+      '<div class="mapnotes">' + syms + '<input id="mapnote-text" maxlength="24" placeholder="texto da anotação (opcional)"></div>' +
+      '<canvas id="mapc" width="576" height="576"></canvas><div class="muted" style="font-size:12px;margin-top:6px">' + (P().mapRevealed ? 'Mapa da região completo.' : 'Só aparecem os lugares que você já viu. Leia um mapa (posto de gasolina) para ver tudo.') + ' Clique no mapa para anotar · botão direito apaga.</div>';
     drawMap();
+  }
+  /* conversão mundo ↔ pixel do mapa no modo atual */
+  function mapXf(cv) {
+    var p = P(), m = W.macro;
+    if (UI.mapMode === 'region') {
+      var s = cv.width / m.n / C.CHUNK;
+      return { toPx: function (x, y) { return [x * s, y * s]; }, toW: function (px, py) { return [px / s, py / s]; } };
+    }
+    var R = 96, sc = cv.width / (R * 2), ox = Math.floor(p.x) - R, oy = Math.floor(p.y) - R;
+    return { toPx: function (x, y) { return [(x - ox) * sc, (y - oy) * sc]; }, toW: function (px, py) { return [px / sc + ox, py / sc + oy]; } };
+  }
+  function drawNotes(g, toPx, w, hgt, size) {
+    var notes = P().mapNotes || [];
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    notes.forEach(function (n) {
+      var q = toPx(n.x, n.y), sy = MAP_SYMS[n.s] || MAP_SYMS[0];
+      if (q[0] < -20 || q[1] < -20 || q[0] > w + 20 || q[1] > hgt + 20) { return; }
+      g.font = 'bold ' + size + 'px system-ui, sans-serif';
+      g.fillStyle = 'rgba(0,0,0,0.75)'; g.fillText(sy[0], q[0] + 1, q[1] + 1);
+      g.fillStyle = sy[1]; g.fillText(sy[0], q[0], q[1]);
+      if (n.t && size >= 14) {
+        g.font = '11px system-ui, sans-serif'; g.textAlign = 'left';
+        g.fillStyle = 'rgba(0,0,0,0.8)'; g.fillText(n.t, q[0] + size * 0.6 + 1, q[1] + 1);
+        g.fillStyle = '#f0ead8'; g.fillText(n.t, q[0] + size * 0.6, q[1]);
+        g.textAlign = 'center';
+      }
+    });
   }
   function drawMap() {
     var cv = document.getElementById('mapc');
     if (!cv) { return; }
     var g = cv.getContext('2d'), p = P(), m = W.macro;
     g.fillStyle = '#0c0d0f'; g.fillRect(0, 0, cv.width, cv.height);
-    var x, y;
+    var x, y, xf = mapXf(cv);
     if (UI.mapMode === 'region') {
       var s = cv.width / m.n;
       for (y = 0; y < m.n; y++) {
@@ -811,28 +931,183 @@
       }
       g.font = '11px system-ui'; g.fillStyle = '#e8e4da'; g.textAlign = 'center';
       m.towns.forEach(function (t) { var ch = W.chunkByIndex(t.x, t.y); if (p.mapRevealed || (ch && ch.seen)) { g.fillText(t.name, t.x * s + s / 2, t.y * s - 4); } });
-      g.fillStyle = '#ff4040';
-      g.beginPath(); g.arc(p.x / C.CHUNK * s, p.y / C.CHUNK * s, 4, 0, Math.PI * 2); g.fill();
     } else {
       var R = 96, sc = cv.width / (R * 2);
       var ox = Math.floor(p.x) - R, oy = Math.floor(p.y) - R;
-      var colors = ['#000', '#4a6a34', '#6a5a44', '#36373b', '#8a8984', '#7a5a38', '#b8bcb8', '#6a5060', '#2c5470', '#b8a878', '#4a3a2a', '#5a3a30', '#7a7974', '#7a746e', '#a8a28a', '#3e5a2a', '#4a3a2a', '#36373b', '#6a7a3a'];
       for (y = 0; y < R * 2; y++) {
         for (x = 0; x < R * 2; x++) {
-          var wx = ox + x, wy = oy + y;
-          var cc = W.chunkAt(wx, wy);
-          if (!cc || !cc.seen || !cc.seen[W.idx(wx, wy)]) { continue; }
-          var f = cc.levels[0].floor[W.idx(wx, wy)];
-          var o = cc.levels[0].obj[W.idx(wx, wy)];
-          g.fillStyle = W.isIndoor(wx, wy, 0) ? '#8a7a6a' : (o && C.OBJ_INFO[o].tree ? '#2a4020' : colors[f] || '#555');
+          var col = tileColor(ox + x, oy + y);
+          if (!col) { continue; }
+          g.fillStyle = col;
           g.fillRect(x * sc, y * sc, sc + 0.4, sc + 0.4);
-          var l = cc.levels[0], ii = W.idx(wx, wy);
-          if (l.wn[ii] === C.EDGE.WALL || l.wn[ii] === C.EDGE.WINDOW) { g.fillStyle = '#ddd'; g.fillRect(x * sc, y * sc, sc, 1); }
-          if (l.ww[ii] === C.EDGE.WALL || l.ww[ii] === C.EDGE.WINDOW) { g.fillStyle = '#ddd'; g.fillRect(x * sc, y * sc, 1, sc); }
         }
       }
-      g.fillStyle = '#ff4040'; g.beginPath(); g.arc(R * sc, R * sc, 4, 0, Math.PI * 2); g.fill();
     }
+    drawNotes(g, xf.toPx, cv.width, cv.height, 16);
+    var pp = xf.toPx(p.x, p.y);
+    g.fillStyle = '#ff4040'; g.strokeStyle = '#000'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(pp[0], pp[1], 4.5, 0, Math.PI * 2); g.fill(); g.stroke();
+  }
+  /* clique no mapa: põe anotação (esquerdo) ou apaga a mais próxima (direito / borracha) */
+  function onMapMouse(e) {
+    var cv = e.target;
+    if (!cv || cv.id !== 'mapc') { return; }
+    e.preventDefault();
+    var rc = cv.getBoundingClientRect(), k = cv.width / rc.width;
+    var mx = (e.clientX - rc.left) * k, my = (e.clientY - rc.top) * k;
+    UI.mapClick(mx, my, e.button === 2 || UI.mapSym < 0);
+  }
+  UI.mapClick = function (mx, my, erase) {
+    var cv = document.getElementById('mapc');
+    if (!cv) { return; }
+    var p = P(), xf = mapXf(cv);
+    p.mapNotes = p.mapNotes || [];
+    if (erase) {
+      var best = -1, bd = 14;
+      p.mapNotes.forEach(function (n, i) { var q = xf.toPx(n.x, n.y), d = U.dist(q[0], q[1], mx, my); if (d < bd) { bd = d; best = i; } });
+      if (best >= 0) { p.mapNotes.splice(best, 1); }
+    } else {
+      if (p.mapNotes.length >= C.MAP_NOTES_MAX) { UI.toast('Mapa cheio de anotações. Apague algumas (botão direito).', 'warn'); return; }
+      var w = xf.toW(mx, my), inp = document.getElementById('mapnote-text');
+      p.mapNotes.push({ x: Math.round(w[0] * 10) / 10, y: Math.round(w[1] * 10) / 10, s: UI.mapSym, t: inp && inp.value ? inp.value.slice(0, 24) : '' });
+      if (inp) { inp.value = ''; }
+    }
+    drawMap();
+  };
+
+  /* ---------- minimapa (canto de baixo, girado 45° como a vista isométrica) ---------- */
+  var miniT = 0, miniBuf = null, MINI_R = 40, rgbCache = {};
+  function hexRgb(hx) {
+    var c = rgbCache[hx];
+    if (!c) { var n = parseInt(hx.slice(1), 16); c = rgbCache[hx] = hx.length === 4 ? [((n >> 8) & 15) * 17, ((n >> 4) & 15) * 17, (n & 15) * 17] : [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+    return c;
+  }
+  function drawMinimap(dt) {
+    var cv = $.minimap.firstChild;
+    if (!cv || $.minimap.style.display === 'none') { return; }
+    var p = P();
+    miniT -= dt;
+    var S2 = MINI_R * 2;
+    if (miniT <= 0 || !miniBuf) {
+      miniT = 0.5;
+      if (!miniBuf) { miniBuf = document.createElement('canvas'); miniBuf.width = miniBuf.height = S2; }
+      var bx = miniBuf.getContext('2d'), im = bx.createImageData(S2, S2), d = im.data;
+      var ox = Math.floor(p.x) - MINI_R, oy = Math.floor(p.y) - MINI_R;
+      for (var y = 0; y < S2; y++) {
+        for (var x = 0; x < S2; x++) {
+          var col = tileColor(ox + x, oy + y), o = (y * S2 + x) * 4;
+          if (!col) { d[o + 3] = 0; continue; }
+          var c = hexRgb(col); d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 235;
+        }
+      }
+      bx.putImageData(im, 0, 0);
+      miniBuf.ox = ox; miniBuf.oy = oy;
+    }
+    var g = cv.getContext('2d'), Wc = cv.width, sc = Wc / S2 * 1.3;
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, Wc, Wc);
+    g.fillStyle = 'rgba(8,8,7,0.72)'; g.fillRect(0, 0, Wc, Wc);
+    g.save();
+    g.beginPath(); g.rect(2, 2, Wc - 4, Wc - 4); g.clip();
+    g.translate(Wc / 2, Wc / 2); g.rotate(Math.PI / 4); g.scale(sc, sc);
+    var cx = p.x - miniBuf.ox, cy = p.y - miniBuf.oy;
+    g.imageSmoothingEnabled = false;
+    g.drawImage(miniBuf, -cx, -cy);
+    g.restore();
+    // anotações e o jogador (em coordenadas de tela, para o texto não girar)
+    var cs = Math.cos(Math.PI / 4), sn = Math.sin(Math.PI / 4);
+    var toPx = function (wx, wy) { var dx = (wx - p.x) * sc, dy = (wy - p.y) * sc; return [Wc / 2 + dx * cs - dy * sn, Wc / 2 + dx * sn + dy * cs]; };
+    drawNotes(g, toPx, Wc, Wc, 12);
+    var a = p.ang + Math.PI / 4;
+    g.fillStyle = '#ff4a40'; g.strokeStyle = '#000'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(Wc / 2 + Math.cos(a) * 6, Wc / 2 + Math.sin(a) * 6); g.lineTo(Wc / 2 + Math.cos(a + 2.5) * 4.5, Wc / 2 + Math.sin(a + 2.5) * 4.5); g.lineTo(Wc / 2 + Math.cos(a - 2.5) * 4.5, Wc / 2 + Math.sin(a - 2.5) * 4.5); g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = 'rgba(160,154,136,0.45)'; g.strokeRect(0.5, 0.5, Wc - 1, Wc - 1);
+    g.fillStyle = 'rgba(230,226,214,0.75)'; g.font = 'bold 10px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('N', Wc - 11, 11);
+  }
+  UI.toggleMinimap = function () {
+    UI.prefs.minimap = UI.prefs.minimap === false;
+    $.minimap.style.display = UI.prefs.minimap ? '' : 'none';
+    CP.Save.saveSettings(UI.prefs);
+  };
+
+  /* ---------- rótulo ao passar o mouse (portas, janelas, móveis, corpos, placas...) ---------- */
+  var STREETS = ['Rua das Acácias', 'Rua Principal', 'Av. dos Pioneiros', 'Rua do Moinho', 'Rua Carvalho', 'Rua da Ponte', 'Rua Jefferson', 'Rua da Escola', 'Av. Central', 'Rua dos Pinheiros', 'Rua do Mercado', 'Rua Lincoln', 'Rua Velha', 'Rua da Igreja', 'Rua do Lago', 'Rua 7'];
+  UI.streetName = function (n) { return STREETS[((n * 2654435761) >>> 0) % STREETS.length]; };
+  var hoverT = 0, hoverTxt = '';
+  function edgeLabel(x, y, z, side) {
+    var t = W.edgeType(x, y, z, side), E = C.EDGE;
+    if (t !== E.DOOR && t !== E.WINDOW && t !== E.GARAGE) { return null; }
+    var st = W.edgeState(x, y, z, side) || {}, bits = [];
+    var nm = t === E.WINDOW ? 'Janela' : (t === E.GARAGE ? 'Portão da garagem' : 'Porta');
+    if (st.broken) { bits.push(t === E.WINDOW ? 'quebrada' : 'arrombada'); } else { bits.push(st.open ? 'aberta' : 'fechada'); }
+    if (st.bar > 0) { bits.push('barricada'); }
+    if (st.curtain) { bits.push('com cortina'); }
+    if (t === E.DOOR) {
+      var b = W.building(x, y, z) || (side === 0 ? W.building(x, y - 1, z) : W.building(x - 1, y, z));
+      var sign = b && CP.Render.signText ? CP.Render.signText(b) : null;
+      if (sign) { nm += ' — ' + sign; }
+    }
+    return nm + ' (' + bits.join(', ') + ')';
+  }
+  UI.hoverText = function (mx, my) {
+    var p = P(), lv = W.levelOf(p.z), V = CP.Vis, zm = CP.Render.zoom, k, g, x, y;
+    var vis = function (tx, ty) { return V.isVisible(tx, ty, lv); };
+    // 1) portas e janelas: testa a parede em várias alturas (a mais perto da câmera ganha)
+    for (k = 72; k >= 4; k -= 6) {
+      g = CP.Render.toWorld(mx, my + k * zm, lv);
+      x = Math.floor(g.x); y = Math.floor(g.y);
+      var fx = g.x - x, fy = g.y - y, cand = [];
+      if (fy < 0.14) { cand.push([x, y, 0, fx]); } else if (fy > 0.86) { cand.push([x, y + 1, 0, fx]); }
+      if (fx < 0.14) { cand.push([x, y, 1, fy]); } else if (fx > 0.86) { cand.push([x + 1, y, 1, fy]); }
+      for (var c = 0; c < cand.length; c++) {
+        var e = cand[c];
+        if (k > 70 || e[3] < 0.08 || e[3] > 0.92) { continue; }
+        var ex = e[0], ey = e[1];
+        if (!vis(ex, ey) && !vis(e[2] === 0 ? ex : ex - 1, e[2] === 0 ? ey - 1 : ey)) { continue; }
+        var lb = edgeLabel(ex, ey, lv, e[2]);
+        if (lb) { return lb; }
+      }
+    }
+    // 2) o que está no chão / móveis (de trás para a frente da tela)
+    for (k = 0; k <= 40; k += 8) {
+      g = CP.Render.toWorld(mx, my + k * zm, lv);
+      x = Math.floor(g.x); y = Math.floor(g.y);
+      if (!vis(x, y)) { continue; }
+      if (k === 0 && CP.Vehicles) { var car = CP.Vehicles.carAt(g.x, g.y, 0.1); if (car) { return 'Carro · ' + Math.round(car.fuel || 0) + ' L de gasolina'; } }
+      if (CP.Fire && CP.Fire.burningAt(x, y, lv)) { return 'Fogo!'; }
+      var ch = W.chunkAt(x, y);
+      if (k <= 8 && ch) {
+        for (var ci = 0; ci < ch.corpses.length; ci++) {
+          var co = ch.corpses[ci];
+          if (Math.floor(co.x) === x && Math.floor(co.y) === y && W.levelOf(co.z) === lv) { return (co.burnt ? 'Corpo queimado' : 'Corpo') + (co.items && co.items.length ? ' · dá para revistar' : ''); }
+        }
+      }
+      var o = W.obj(x, y, lv);
+      var oi = o ? C.OBJ_INFO[o] : null;
+      if (oi && !oi.tree && !oi.forage && o !== C.OBJ.CAR && o !== C.OBJ.LAMPPOST && k <= oi.h * C.WALL_H + 8) {
+        if (o === C.OBJ.BILLBOARD && CP.Spr.BILLBOARD_TEXT) { var bt = CP.Spr.BILLBOARD_TEXT[W.odir(x, y, lv) % CP.Spr.BILLBOARD_TEXT.length]; return 'Outdoor: "' + bt[0] + ' — ' + bt[1] + '"'; }
+        if (o === C.OBJ.STREET_SIGN) { return 'Placa: ' + UI.streetName(x >> W.chunkShift) + ' × ' + UI.streetName(1000 + (y >> W.chunkShift)); }
+        return oi.name;
+      }
+      if (k === 0 && ch) {
+        var fi = ch.items[W.key(x, y, lv)];
+        if (fi && fi.length) { return fi.length === 1 ? CP.Items.name(fi[0]) + ' (no chão)' : fi.length + ' itens no chão'; }
+      }
+    }
+    return '';
+  };
+  function hoverLabel() {
+    var el = $['hover-label'], p = P(), In = CP.Input;
+    hoverT -= 1 / 60;
+    var off = !In.mouse.onCanvas || p.dead || p.sleeping || p.aiming || UI.ctxOpen || (CP.Build && CP.Build.mode) || G().paused;
+    if (off) { if (hoverTxt) { hoverTxt = ''; el.style.display = 'none'; } return; }
+    if (hoverT <= 0) {
+      hoverT = 0.08;
+      var w = CP.Render.toWorld(In.mouse.x, In.mouse.y, W.levelOf(p.z));
+      var txt = U.dist(w.x, w.y, p.x, p.y) > C.HOVER_RANGE ? '' : UI.hoverText(In.mouse.x, In.mouse.y);
+      if (txt !== hoverTxt) { hoverTxt = txt; el.textContent = txt; el.style.display = txt ? 'block' : 'none'; }
+    }
+    if (hoverTxt) { el.style.left = (In.mouse.x + 16) + 'px'; el.style.top = (In.mouse.y + 14) + 'px'; }
   }
 
   /* ---------- ajuda ---------- */
@@ -843,7 +1118,8 @@
       ['Clique esquerdo', 'Atacar com a arma na mão (sem arma: empurrar)'], ['Segurar botão direito', 'Mirar (armas de fogo / arremessos) — clique esquerdo dispara'],
       ['Clique direito rápido', 'Menu de contexto (portas, janelas, móveis, chão...)'], ['Espaço', 'Empurrar zumbi / pisar em zumbi caído'], ['E', 'Interagir com o que está à frente'],
       ['R', 'Recarregar arma (no modo construção: girar)'], ['F', 'Lanterna'], ['Q', 'Gritar (atrai zumbis!)'], ['Z', 'Sentar / levantar'],
-      ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa'],
+      ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa (clique anota, botão direito apaga)'], ['N', 'Mostrar/esconder o minimapa'],
+      ['Arrastar itens', 'Entre as janelas e abas do inventário; solte fora para largar no chão'],
       ['Carro', 'Clique direito: entrar · G liga o motor · W/S acelera/freia · A/D vira · Espaço freio · E sai'],
       ['1 a 5', 'Atalhos (equipar item)'], ['[ e ]', 'Velocidade do tempo (só sem zumbis por perto)'], ['Roda do mouse / + −', 'Zoom'], ['Esc', 'Fechar janela / pausa']
     ].map(function (k) { return '<b>' + k[0] + '</b><span>' + k[1] + '</span>'; }).join('') + '</div>' +
@@ -938,7 +1214,7 @@
       case 'close': UI.toggle(t.getAttribute('data-p'), false); break;
       case 'speed': G().speedIndex = +t.getAttribute('data-i'); clampSpeed(); updateHud(); break;
       case 'hot': hotbar(+t.getAttribute('data-i')); break;
-      case 'item': itemMenu(+t.getAttribute('data-ref'), e.clientX, e.clientY); break;
+      case 'item': if (performance.now() - UI.dragEndT > 120) { itemMenu(+t.getAttribute('data-ref'), e.clientX, e.clientY); } break;
       case 'takeall':
         var src = UI.lootSources[+t.getAttribute('data-s')];
         if (src) { src.items.slice().forEach(function (it) { moveToPlayer({ item: it, list: src.items, src: src }); }); }
@@ -955,6 +1231,7 @@
       case 'build': CP.Build.start(D.BUILD[t.getAttribute('data-id')]); UI.toggle('craft', false); break;
       case 'boil': CP.Use.boil(P()); break;
       case 'mapmode': UI.mapMode = t.getAttribute('data-m'); renderMap(); break;
+      case 'mapsym': UI.mapSym = +t.getAttribute('data-i'); renderMap(); break;
       case 'save': CP.Save.save().then(function (ok) { if (ok) { UI.toast('Jogo salvo.', 'good'); } }); break;
       case 'quit': CP.Save.save().then(function () { UI.toggle('pause', false); G().running = false; UI.showMenu(); }); break;
     }
@@ -1043,6 +1320,7 @@
         case 'KeyK': UI.toggle('skills'); break;
         case 'KeyB': UI.toggle('craft'); break;
         case 'KeyM': UI.toggle('map'); break;
+        case 'KeyN': UI.toggleMinimap(); break;
         case 'F1': UI.toggle('help'); break;
         case 'BracketRight': G().speedIndex = Math.min(C.GAME_SPEEDS.length - 1, G().speedIndex + 1); clampSpeed(); break;
         case 'BracketLeft': G().speedIndex = Math.max(0, G().speedIndex - 1); break;
@@ -1110,6 +1388,8 @@
     UI.hudT -= dt;
     if (UI.hudT <= 0) { UI.hudT = 0.2; updateHud(); }
     checkHints(dt);
+    drawMinimap(dt);
+    hoverLabel();
     UI.panelT -= dt;
     if (UI.panelT <= 0) {
       UI.panelT = 0.35;
