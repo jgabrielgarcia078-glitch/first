@@ -282,10 +282,10 @@
     if (p.dead || p.dragged) { return; }
     if (p.vehicle) {
       var car = p.vehicle;
-      if (!car.windowBroken && car.cond > 0.25) {
-        car.cond = Math.max(0, car.cond - 0.01);
+      if (!car.windowBroken) {
+        car.winHp = (car.winHp === undefined ? 1 : car.winHp) - U.randRange(0.04, 0.09);
         if (CP.Audio) { CP.Audio.thump(car.x, car.y, 0, true); }
-        if (car.cond < 0.35 && Math.random() < 0.3) { car.windowBroken = true; if (CP.UI) { CP.UI.toast('Os zumbis quebraram o vidro do carro!', 'danger'); } }
+        if (car.winHp <= 0) { car.windowBroken = true; if (CP.UI) { CP.UI.toast('Os zumbis quebraram o vidro do carro!', 'danger'); } }
         return;
       }
     }

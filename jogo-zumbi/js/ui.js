@@ -361,7 +361,8 @@
     craft: { title: 'Artesanato e construção', render: renderCraft },
     map: { title: 'Mapa', render: renderMap },
     help: { title: 'Como jogar', render: renderHelp },
-    pause: { title: 'Pausa', render: renderPause }
+    pause: { title: 'Pausa', render: renderPause },
+    mech: { title: 'Mecânica do carro', render: renderMech }
   };
   UI.toggle = function (name, force) {
     var on = force !== undefined ? force : !UI.open[name];
@@ -383,6 +384,27 @@
   UI.openCrafting = function () { UI.toggle('craft', true); };
   UI.openLoot = function (x, y, z) { UI.lootFocus = { x: x, y: y, z: z }; UI.toggle('inv', true); renderInv(); };
   UI.equip = function (it, hand) { CP.Use.equip(P(), it, hand); };
+  UI.openMechanics = function (car) { UI.mechCar = car; UI.toggle('mech', true); };
+  /* peças do carro com o estado e o que dá para fazer com cada uma */
+  function mechSig() { var car = UI.mechCar; if (!car) { return ''; } var pt = CP.Vehicles.parts(car), p = P(); return JSON.stringify(pt) + '|' + (p.action ? 1 : 0) + '|' + CP.Items.Inv.all(p).length + '|' + Math.round(U.dist(p.x, p.y, car.x, car.y)); }
+  function renderMech() {
+    var b = body('mech'), car = UI.mechCar, p = P();
+    if (!b || !car) { return; }
+    UI.sigs.mech = mechSig();
+    var V = CP.Vehicles, rows = V.partActions(p, car);
+    V.syncCond(car);
+    var html = '<div class="mech-head">Gasolina: <b>' + Math.round(car.fuel) + ' L</b> · Estado geral: <b>' + Math.round(car.cond * 100) + '%</b>' + (U.dist(p.x, p.y, car.x, car.y) >= 2.8 ? ' <span class="muted">(chegue perto do carro para mexer)</span>' : '') + '</div><table class="mech">';
+    rows.forEach(function (r) {
+      var v = r.value, has = v !== null && v !== undefined;
+      var pct = has ? Math.round(v * 100) : 0, colr = !has ? '#666' : (v > 0.6 ? '#7ec46a' : (v > 0.25 ? '#e0b44a' : '#d9534f'));
+      var txt = !has ? 'sem' : (r.part === 'battery' ? pct + '% de carga' : (r.part.indexOf('tire') === 0 && v <= 0.05 ? 'furado' : pct + '%'));
+      html += '<tr><td>' + esc(r.name) + '</td><td class="mbar"><div class="bar"><i style="width:' + pct + '%;background:' + colr + '"></i></div><span>' + txt + '</span></td><td>';
+      r.acts.forEach(function (a) { html += '<button class="small"' + (a.ok ? '' : ' disabled title="' + esc(a.hint) + '"') + ' data-a="mech" data-part="' + r.part + '" data-act="' + a.id + '">' + esc(a.label) + '</button>'; });
+      html += '</td></tr>';
+    });
+    html += '</table><div class="muted" style="font-size:12px;margin-top:6px">Pneus e bateria: chave de roda · Para-brisa: chave de fenda · Motor: sucata + chave de roda (Mecânica acelera e melhora o conserto).</div>';
+    b.innerHTML = html;
+  }
   UI.openCar = function (car) { UI.lootCar = car; UI.lootFocus = null; UI.toggle('inv', true); renderInv(); };
 
   /* arrastar painéis pelo cabeçalho */
@@ -895,6 +917,7 @@
     switch (a) {
       case 'menu-new': UI.creation = null; UI.toggle('pause', false); G().running = false; clearHud(); UI.showCreate(); break;
       case 'menu-continue': continueGame(); break;
+      case 'mech': if (UI.mechCar) { CP.Vehicles.partAction(P(), UI.mechCar, t.getAttribute('data-part'), t.getAttribute('data-act')); } break;
       case 'to-menu': UI.showMenu(); G().running = false; break;
       case 'help': UI.toggle('help', true); break;
       case 'create-back': UI.creation = null; UI.showMenu(); break;
@@ -1093,6 +1116,7 @@
       if (UI.open.inv && !UI.ctxOpen) { nearbySources(P()); var sg = invSig(); if (sg !== UI.sigs.inv) { renderInv(); } }
       if (UI.open.health && !UI.ctxOpen && healthSig() !== UI.sigs.health) { renderHealth(); }
       if (UI.open.map) { drawMap(); }
+      if (UI.open.mech && mechSig() !== UI.sigs.mech) { renderMech(); }
     }
     // som ambiente
     var p = P();

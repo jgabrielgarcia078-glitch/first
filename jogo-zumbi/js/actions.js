@@ -492,6 +492,7 @@
     edges.sort(function (a, b) { return a.d - b.d; });
     for (var i = 0; i < 2; i++) { if (edges[i].d < 0.4) { edgeOptions(p, edges[i].e, out); } }
     objOptions(p, x, y, z, out);
+    if (CP.Fire) { CP.Fire.options(p, x, y, z, out); }
     // outra parte de cama/carro etc.
     lakeOptions(p, x, y, z, out);
     // cadáveres e itens no chão
@@ -499,6 +500,7 @@
     if (ch) {
       var corpses = ch.corpses.filter(function (c) { return Math.floor(c.x) === x && Math.floor(c.y) === y && W.levelOf(c.z) === z; });
       if (corpses.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) { out.push({ label: 'Revistar corpo', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } }); }
+      if (CP.Fire) { CP.Fire.corpseOptions(p, x, y, z, corpses, out); }
       var fi = W.floorItems(x, y, z);
       if (fi && fi.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) { out.push({ label: 'Ver itens no chão (' + fi.length + ')', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } }); }
     }

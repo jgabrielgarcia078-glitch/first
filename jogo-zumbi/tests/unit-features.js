@@ -227,5 +227,140 @@ const self = opts.find(o => o.label === 'Lavar-se');
 ok(self && !self.disabled, 'pode se lavar quando tem sangue no corpo');
 self.fn(); tick(8);
 ok(q.bloodSpots.length === 0, 'lavou o sangue do corpo');
+/* ================= RODADA 3: mecânicas ================= */
+const Inv = CP.Items.Inv;
+/* ---------- remendar ---------- */
+const sh = q.worn.jacket || q.worn.shirt; sh.holes = 2; sh.cond = 0.5;
+Inv.give(q, CP.Items.make('needle')); Inv.give(q, CP.Items.make('thread')); Inv.give(q, CP.Items.make('rag'));
+let io = CP.Use.itemOptions(q, sh, 'player');
+const rem = io.find(o => /^Remendar/.test(o.label));
+ok(rem && !rem.disabled, 'roupa rasgada tem "Remendar" com agulha, linha e pano');
+rem.fn(); tick(8);
+ok(sh.holes === 1 && sh.cond > 0.6, 'remendou: 1 buraco a menos e mais proteção (' + sh.holes + ', ' + sh.cond.toFixed(2) + ')');
+ok(!Inv.findId(q, 'rag') && Inv.findTag(q, 'thread').item.uses === 7, 'gastou o pano e 1 uso da linha');
+ok(/rasgada/.test(CP.Items.name(sh)), 'nome mostra que ainda está rasgada: ' + CP.Items.name(sh));
+
+/* ---------- fogo que se espalha numa casa ---------- */
+let house = null;
+for (const ch of W.allChunks()) { for (const b of ch.buildings) { if (b.kind === 'house' && b.floors === 1 && !b.story && b.w >= 8 && b.h >= 8 && ch.active) { house = b; break; } } if (house) break; }
+if (!house) for (const ch of W.allChunks()) { for (const b of ch.buildings) { if (b.kind === 'house' && b.floors === 1 && !b.story) { house = b; break; } } if (house) break; }
+ok(!!house, 'achou uma casa térrea');
+const hx0 = house.x + Math.floor(house.w / 2), hy0 = house.y + Math.floor(house.h / 2);
+q.x = house.x - 16; q.y = house.y - 16; q.z = 0; q.dead = false; q.body.health = 100;
+G.state.world.weather = { type: 'clear', until: CP.Time.hours() + 500 };
+G.state.world.fires = []; CP.Fire.ignite(hx0, hy0, 0, true, 30);
+ok(CP.Fire.burningAt(hx0, hy0, 0), 'o fogo pegou no meio da casa');
+let maxFires = 0;
+for (let i = 0; i < 40; i++) { clearZombies(); tick(1); maxFires = Math.max(maxFires, G.state.world.fires.length); }
+ok(maxFires >= 6, 'o fogo se espalhou pela casa (' + maxFires + ' tiles queimando ao mesmo tempo)');
+for (let i = 0; i < 400 && G.state.world.fires.length; i++) { clearZombies(); q.body.stats.hunger = 0.1; q.body.stats.thirst = 0.1; tick(1); }
+ok(G.state.world.fires.length === 0, 'o incêndio acabou sozinho');
+ok(!q.dead, 'o jogador longe do fogo continua vivo ' + (q.deathCause || ''));
+let outsideBurnt = 0;
+for (let y = house.y - 8; y < house.y + house.h + 8; y++) for (let x = house.x - 8; x < house.x + house.w + 8; x++) { if (!W.isIndoor(x, y, 0) && W.floor(x, y, 0) === F.BURNT) outsideBurnt++; }
+ok(outsideBurnt < 60, 'o fogo não vira um incêndio sem fim pela grama (' + outsideBurnt + ' tiles queimados fora)');
+let burnt = 0, charred = 0, rubble = 0;
+for (let y = house.y; y < house.y + house.h; y++) for (let x = house.x; x < house.x + house.w; x++) { if (W.floor(x, y, 0) === F.BURNT) burnt++; if (W.obj(x, y, 0) === O.RUBBLE) rubble++; }
+for (let y = house.y; y <= house.y + house.h; y++) for (let x = house.x; x <= house.x + house.w; x++) { const l = W.lvl(x, y, 0), i = W.idx(x, y); if (l.wns[i] === C.FIRE.BURNT_STYLE || l.wws[i] === C.FIRE.BURNT_STYLE) charred++; }
+ok(burnt >= house.w * house.h * 0.4, 'chão carbonizado (' + burnt + '/' + house.w * house.h + ')');
+ok(charred > 4, 'paredes pretas (' + charred + ')');
+// apagar
+G.state.world.fires = [];
+const ox = q.x, oy = q.y;
+CP.Fire.ignite(Math.floor(ox) + 1, Math.floor(oy), 0, true, 60);
+Inv.give(q, CP.Items.make('extinguisher'));
+let fo = CP.Actions.contextOptions(q, Math.floor(ox) + 1.5, Math.floor(oy) + 0.5);
+const ap = fo.find(o => /extintor/.test(o.label));
+ok(ap && !ap.disabled, 'opção de apagar com o extintor');
+ap.fn(); tick(2);
+ok(!CP.Fire.burningAt(Math.floor(ox) + 1, Math.floor(oy), 0), 'apagou o fogo');
+ok(CP.Fire.flammability(Math.floor(ox) + 1, Math.floor(oy), 0) === 0, 'molhado não pega fogo de novo logo');
+
+/* ---------- corpos: queimar, enterrar, cheiro ---------- */
+const op2 = findOpen(q.x, q.y, 2);
+q.x = op2.x; q.y = op2.y;
+const chq = W.chunkAt(Math.floor(q.x), Math.floor(q.y));
+function mkCorpse(x, y, age) { const lk = CP.Zombies.fromData(CP.Zombies.makeData(new U.Rng(9), 0, 0, 0)).look; const c = { x: x, y: y, z: 0, ang: 0, look: lk, items: [CP.Items.make('wallet')], t: G.state.time - age }; chq.corpses.push(c); return c; }
+const cb = mkCorpse(Math.floor(q.x) + 1.5, Math.floor(q.y) + 0.5, 3600);
+const gas = CP.Items.make('gas_can'); gas.fuel = 5; Inv.give(q, gas); Inv.give(q, CP.Items.make('lighter'));
+fo = CP.Actions.contextOptions(q, cb.x, cb.y);
+const qb = fo.find(o => /^Queimar corpo/.test(o.label));
+ok(qb && !qb.disabled, 'corpo: opção "Queimar" com gasolina e isqueiro');
+qb.fn(); tick(4);
+ok(cb.burnt && CP.Fire.burningAt(Math.floor(cb.x), Math.floor(cb.y), 0) && gas.fuel === 4, 'o corpo pega fogo e gasta 1 L');
+G.state.world.fires = []; for (const k in chq.fires) delete chq.fires[k];
+q.x = op2.x; q.y = op2.y;
+const tile = findOpen(q.x + 3, q.y, 0) || { x: q.x + 3, y: q.y };
+const ft = W.floor(Math.floor(tile.x), Math.floor(tile.y), 0);
+const cg = mkCorpse(Math.floor(tile.x) + 0.5, Math.floor(tile.y) + 0.5, 3600);
+q.x = cg.x - 1; q.y = cg.y;
+Inv.give(q, CP.Items.make('shovel'));
+fo = CP.Actions.contextOptions(q, cg.x, cg.y);
+const en = fo.find(o => /^Enterrar/.test(o.label));
+const soft = [F.GRASS, F.DARKGRASS, F.DIRT, F.SAND, F.FARM, F.FIELD, F.FURROW, F.BURNT].indexOf(ft) >= 0;
+ok(en && en.disabled === !soft, 'opção "Enterrar" com pá (piso ' + ft + ', ' + (soft ? 'macio' : 'duro') + ')');
+if (soft) {
+  en.fn(); tick(14);
+  ok(chq.corpses.indexOf(cg) < 0 && W.obj(Math.floor(cg.x), Math.floor(cg.y), 0) === O.GRAVE, 'enterrou: corpo some e fica uma cova');
+  ok((W.floorItems(Math.floor(cg.x), Math.floor(cg.y), 0) || []).some(it => it.id === 'wallet'), 'os itens do corpo ficam no chão');
+}
+// cheiro
+q.body.stats.sick = 0; q.smellWarned = false;
+for (let i = 0; i < 6; i++) mkCorpse(q.x + (i % 3) - 1, q.y + 2 + (i >> 1) * 0.3, 86400 * 2);
+for (let i = 0; i < 3; i++) { q._smellT = 0; CP.Body.update(q, 1 / 30, 3600 * 0.5); }
+ok(q.body.stats.sick > 0.02 && CP.Fire.smellCount >= 6, 'muitos corpos apodrecendo perto deixam enjoado (sick ' + q.body.stats.sick.toFixed(3) + ', ' + CP.Fire.smellCount + ' corpos)');
+chq.corpses.length = 0;
+
+/* ---------- grandes hordas ---------- */
+clearZombies();
+const wsw = G.state.world; wsw.horde = null; wsw.nextHorde = 0;
+CP.Horde.update(1 / 30, 1);
+const hd = wsw.horde;
+ok(hd && hd.n >= 40 && U.dist(hd.x, hd.y, q.x, q.y) > 70, 'uma horda começa longe (' + (hd && hd.n) + ' zumbis a ' + (hd && U.dist(hd.x, hd.y, q.x, q.y).toFixed(0)) + ' tiles)');
+ok(wsw.nextHorde > G.state.time / 86400 + 3, 'a próxima fica para daqui a alguns dias');
+const d0 = U.dist(hd.x, hd.y, hd.tx, hd.ty);
+for (let i = 0; i < 60; i++) CP.Horde.update(1, G.gameSecondsPerReal());
+ok(U.dist(hd.x, hd.y, hd.tx, hd.ty) < d0 - 25, 'o grupo anda em direção ao outro lado');
+const zBefore = G.zombies.length;
+hd.x = q.x + 20; hd.y = q.y + 5;
+CP.Horde.update(1 / 30, 1);
+ok(!wsw.horde && G.zombies.length - zBefore >= hd.n * 0.6, 'perto do jogador vira zumbis de verdade (' + (G.zombies.length - zBefore) + ')');
+ok(G.zombies.slice(zBefore).every(z => z.state === 'wander' && z.target), 'todos andando juntos para o destino');
+clearZombies();
+wsw.horde = null; wsw.nextHorde = 0; CP.Horde.update(1 / 30, 1);
+const h2 = wsw.horde; h2.x = h2.tx; h2.y = h2.ty;
+let before = 0; for (const ch of W.allChunks()) before += ch.zombies.length;
+CP.Horde.update(1 / 30, 1);
+let after = 0; for (const ch of W.allChunks()) after += ch.zombies.length;
+ok(!wsw.horde && after > before, 'passou longe: espalhou ' + (after - before) + ' zumbis nos quarteirões do destino');
+clearZombies();
+
+/* ---------- mecânica de carros por peça ---------- */
+G.activateChunks(true);
+let car = null;
+for (let r = 0; r < 4 && !car; r++) { for (const c of CP.Vehicles.active) { car = c; break; } if (!car) { q.x += 32; G.activateChunks(true); } }
+ok(!!car, 'achou um carro');
+if (car) {
+  const V = CP.Vehicles, pt = V.parts(car);
+  ok(V.PARTS.every(k => k in pt), 'carro tem motor, bateria, 4 pneus e para-brisa');
+  q.x = car.x + 1.6; q.y = car.y; q.z = 0; q.vehicle = null;
+  Inv.give(q, CP.Items.make('wrench'));
+  pt.tireFL = 0.8;
+  let rows = V.partActions(q, car);
+  const tr = rows.find(r => r.part === 'tireFL');
+  ok(tr.acts[0].id === 'remove' && tr.acts[0].ok, 'pode remover o pneu com chave de roda');
+  V.partAction(q, car, 'tireFL', 'remove'); tick(8);
+  ok(pt.tireFL === null && Inv.findId(q, 'car_tire'), 'pneu removido vira item no inventário');
+  ok(V.flatTires(car) >= 1, 'sem pneu conta como furado');
+  V.partAction(q, car, 'tireFL', 'install'); tick(8);
+  ok(Math.abs(pt.tireFL - 0.8) < 1e-6 && !Inv.findId(q, 'car_tire'), 'pneu reinstalado com o mesmo estado');
+  pt.battery = 0.05; car.keyIn = true; car.fuel = 10; car.broken = false; pt.engine = 0.9;
+  q.vehicle = car; CP.Vehicles.toggleEngine(q); tick(3);
+  ok(!car.engine, 'bateria descarregada: o carro não liga');
+  pt.battery = 0.9;
+  for (let k = 0; k < 6 && !car.engine; k++) { CP.Vehicles.toggleEngine(q); tick(3); }
+  ok(car.engine, 'com bateria boa e motor bom, liga');
+  car.engine = false; q.vehicle = null;
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

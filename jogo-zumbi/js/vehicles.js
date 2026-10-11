@@ -80,6 +80,38 @@
     ch.saveDirty = true;
   }
 
+  /* ---------- peças ---------- */
+  /* motor (0..1), bateria (carga 0..1), pneus (0 = furado, null = sem), para-brisa (0..1, null = sem) */
+  V.PARTS = ['engine', 'battery', 'tireFL', 'tireFR', 'tireRL', 'tireRR', 'windshield'];
+  V.PART_NAMES = { engine: 'Motor', battery: 'Bateria', tireFL: 'Pneu dianteiro esquerdo', tireFR: 'Pneu dianteiro direito', tireRL: 'Pneu traseiro esquerdo', tireRR: 'Pneu traseiro direito', windshield: 'Para-brisa' };
+  V.PART_ITEM = { battery: 'car_battery', tireFL: 'car_tire', tireFR: 'car_tire', tireRL: 'car_tire', tireRR: 'car_tire', windshield: 'windshield' };
+  var TIRES = ['tireFL', 'tireFR', 'tireRL', 'tireRR'];
+  V.parts = function (car) {
+    if (car.parts) { return car.parts; }
+    var rng = new U.Rng(U.hashStr(String(car.id)) ^ 0x9a17);
+    var c = car.cond === undefined ? 0.7 : car.cond;
+    var pt = { engine: U.clamp(c * rng.range(0.75, 1.1), 0.05, 1), battery: rng.chance(0.3) ? rng.range(0, 0.12) : rng.range(0.35, 1), windshield: rng.range(0.55, 1) };
+    TIRES.forEach(function (t) { pt[t] = rng.chance(0.12) ? 0 : rng.range(0.4, 1); });
+    car.parts = pt;
+    return pt;
+  };
+  /* estado geral (para mostrar e para o resto do jogo) a partir das peças */
+  V.syncCond = function (car) {
+    var pt = V.parts(car), tsum = 0;
+    TIRES.forEach(function (t) { tsum += pt[t] || 0; });
+    car.cond = U.clamp(pt.engine * 0.5 + tsum / 4 * 0.25 + (pt.windshield || 0) * 0.25, 0, 1);
+    car.broken = pt.engine <= 0.02;
+    return car.cond;
+  };
+  V.flatTires = function (car) { var pt = V.parts(car), n = 0; TIRES.forEach(function (t) { if (!pt[t] || pt[t] <= 0.05) { n++; } }); return n; };
+  function damageParts(car, impact) {
+    var pt = V.parts(car);
+    pt.engine = Math.max(0, pt.engine - impact * 0.009);
+    if (pt.windshield) { pt.windshield = Math.max(0, pt.windshield - impact * 0.012); }
+    if (Math.random() < impact * 0.03) { var t = U.pick(TIRES); if (pt[t]) { pt[t] = Math.max(0, pt[t] - U.randRange(0.2, 0.7)); } }
+    V.syncCond(car);
+  }
+
   /* ---------- geometria ---------- */
   function corners(car, x, y, ang, grow) {
     var g = grow || 0;
@@ -135,8 +167,12 @@
     var up = In.isDown('KeyW') || In.isDown('ArrowUp'), dn = In.isDown('KeyS') || In.isDown('ArrowDown');
     var lf = In.isDown('KeyA') || In.isDown('ArrowLeft'), rt = In.isDown('KeyD') || In.isDown('ArrowRight');
     if (In.blockGame) { up = dn = lf = rt = false; }
-    var running = car.engine && car.fuel > 0 && !car.broken;
-    var maxF = V.MAX_FWD * (0.55 + car.cond * 0.45);
+    var pt = V.parts(car);
+    var running = car.engine && car.fuel > 0 && !car.broken && pt.engine > 0.02;
+    if (car.engine && pt.engine <= 0.02) { car.engine = false; if (CP.UI) { CP.UI.toast('O motor morreu.', 'danger'); } }
+    var flat = V.flatTires(car);
+    var maxF = V.MAX_FWD * (0.45 + pt.engine * 0.55) * (flat ? Math.max(0.35, 1 - flat * 0.25) : 1);
+    if (running) { pt.battery = Math.min(1, (pt.battery || 0) + dt * 0.004); }
     if (running && up) { car.speed = Math.min(maxF, car.speed + V.ACCEL * dt * (car.speed < 0 ? 2 : 1)); } else if (running && dn) { car.speed = car.speed > 0.2 ? car.speed - V.BRAKE * dt : Math.max(-V.MAX_REV, car.speed - V.ACCEL * 0.6 * dt); } else {
       var dr = V.DRAG * dt * (Math.abs(car.speed) > 0.1 ? 1 : 3);
       car.speed = car.speed > 0 ? Math.max(0, car.speed - dr) : Math.min(0, car.speed + dr);
@@ -146,6 +182,9 @@
     var steerIn = (rt ? 1 : 0) - (lf ? 1 : 0);
     car.steer += (steerIn - car.steer) * Math.min(1, dt * 6);
     var turn = car.steer * V.STEER * dt * U.clamp(Math.abs(car.speed) / 4, 0, 1) * (car.speed >= 0 ? 1 : -1);
+    // pneu furado puxa o carro para o lado dele
+    var pull = ((!pt.tireFL || pt.tireFL <= 0.05) + (!pt.tireRL || pt.tireRL <= 0.05) - (!pt.tireFR || pt.tireFR <= 0.05) - (!pt.tireRR || pt.tireRR <= 0.05));
+    if (pull) { turn -= pull * 0.25 * dt * U.clamp(Math.abs(car.speed) / 6, 0, 1); }
     var nang = car.ang + turn;
     var dist = car.speed * dt;
     var nx = car.x + Math.cos(nang) * dist, ny = car.y + Math.sin(nang) * dist;
@@ -158,14 +197,14 @@
         // batida
         var impact = Math.abs(car.speed);
         if (impact > 4) {
-          car.cond = Math.max(0, car.cond - impact * 0.012);
+          damageParts(car, impact);
           if (CP.Audio) { CP.Audio.thump(car.x, car.y, 0, true); }
           CP.Zombies.noise(car.x, car.y, 0, 20, 'crash');
           if (impact > 9) {
             CP.Body.addWound(p, U.pick(['head', 'torso', 'farmL', 'farmR']), impact > 11 ? 'deep' : 'laceration', { cause: 'Morreu num acidente de carro' });
             if (CP.UI) { CP.UI.toast('Batida forte!', 'danger'); }
           }
-          if (car.cond <= 0) { car.broken = true; car.engine = false; if (CP.UI) { CP.UI.toast('O carro quebrou.', 'danger'); } }
+          if (car.broken && car.engine) { car.engine = false; if (CP.UI) { CP.UI.toast('O motor quebrou.', 'danger'); } }
         }
         car.speed = -car.speed * 0.25;
       }
@@ -178,7 +217,7 @@
         if (zb.state === 'dead' || !inside(car, zb.x, zb.y, 0.3)) { continue; }
         var sp = Math.abs(car.speed);
         var killed = CP.Zombies.damage(zb, sp * 0.22, car.ang, { knockdown: true, knock: sp * 0.15, cause: 'car' });
-        car.cond = Math.max(0, car.cond - 0.004 * sp);
+        damageParts(car, sp * 0.35);
         car.speed *= killed ? 0.92 : 0.8;
         if (CP.Audio) { CP.Audio.hit('blunt_long', killed, zb.x, zb.y, zb.z); }
       }
@@ -241,8 +280,11 @@
     if (CP.UI) { CP.UI.toast(CP.Items.Inv.findId(p, 'car_key') ? 'A chave que você tem não serve neste carro.' : 'Sem chave. É preciso saber fazer ligação direta (Ladrão/Mecânico, ou Elétrica 1 + Mecânica 2).', 'warn'); }
   };
   function startEngine(p, car, time, chance) {
+    var pt = V.parts(car);
+    if (!pt.battery || pt.battery < 0.15) { if (CP.UI) { CP.UI.toast(pt.battery === null ? 'Não tem bateria no carro.' : 'Só um clique... a bateria está descarregada.', 'warn'); } if (CP.Audio) { CP.Audio.click(); } return; }
     CP.Actions.start(p, { name: 'Dando partida', time: time, onDone: function () {
-      if (Math.random() < chance * (0.6 + car.cond * 0.4)) { car.engine = true; CP.Zombies.noise(car.x, car.y, 0, 25, 'engine'); if (CP.UI) { CP.UI.toast('Motor ligado.', 'good'); } } else if (CP.UI) { CP.UI.toast('O motor engasgou. Tente de novo.', 'warn'); }
+      pt.battery = Math.max(0, pt.battery - 0.04);
+      if (Math.random() < chance * (0.35 + pt.engine * 0.65)) { car.engine = true; CP.Zombies.noise(car.x, car.y, 0, 25, 'engine'); if (CP.UI) { CP.UI.toast('Motor ligado.', 'good'); } } else if (CP.UI) { CP.UI.toast(pt.engine < 0.3 ? 'O motor engasga... está muito estragado.' : 'O motor engasgou. Tente de novo.', 'warn'); }
     } });
   }
 
@@ -252,7 +294,9 @@
     if (!car || p.vehicle) { return; }
     var d = U.dist(p.x, p.y, car.x, car.y);
     if (d > 2.6) { return; }
+    V.syncCond(car);
     out.push({ label: 'Carro: ' + Math.round(car.fuel) + ' L de gasolina · estado ' + Math.round(car.cond * 100) + '%', disabled: true });
+    out.push({ label: 'Mecânica (ver peças)', fn: function () { if (CP.UI && CP.UI.openMechanics) { CP.UI.openMechanics(car); } } });
     out.push({ label: 'Entrar no carro', key: 'E', fn: function () { V.enter(p, car); } });
     out.push({ label: 'Abrir porta-malas', fn: function () { if (CP.UI) { CP.UI.openCar(car); } } });
     if (car.locked && !car.windowBroken) {
@@ -275,13 +319,61 @@
         if (CP.UI) { CP.UI.toast('Abasteceu ' + Math.round(add) + ' L.'); }
       } });
     } });
-    if (car.cond < 0.95 && CP.Items.Inv.findTag(p, 'wrench')) {
-      out.push({ label: 'Consertar (chave de roda + sucata)', disabled: !CP.Items.Inv.findId(p, 'scrap'), hint: 'Precisa de sucata de metal', fn: function () {
-        CP.Actions.start(p, { name: 'Consertando o carro', time: 12 - CP.Player.skillLevel(p, 'mechanics'), noise: { r: 10, every: 2, sound: 'hammer' }, onDone: function () {
-          if (!CP.Items.Inv.consume(p, 'scrap', 1)) { return; }
-          car.cond = Math.min(1, car.cond + 0.15 + CP.Player.skillLevel(p, 'mechanics') * 0.03); car.broken = false;
-          CP.Player.addXp(p, 'mechanics', 5);
-        } });
+  };
+
+  /* ---------- painel de mecânica: remover/instalar peças, consertar o motor ---------- */
+  /* lista de ações possíveis para cada peça (usada pela interface) */
+  V.partActions = function (p, car) {
+    var pt = V.parts(car), Inv = CP.Items.Inv, mech = CP.Player.skillLevel(p, 'mechanics');
+    var wrench = Inv.findTag(p, 'wrench'), screw = Inv.findTag(p, 'screwdriver');
+    var near = U.dist(p.x, p.y, car.x, car.y) < 2.8 && !p.vehicle;
+    return V.PARTS.map(function (k) {
+      var v = pt[k], row = { part: k, name: V.PART_NAMES[k], value: v, acts: [] };
+      if (k === 'engine') {
+        row.acts.push({ id: 'repair', label: 'Consertar (sucata + chave de roda)', ok: near && !!wrench && !!Inv.findId(p, 'scrap') && v < 1, hint: 'Precisa de chave de roda e sucata de metal' });
+        return row;
+      }
+      var tool = k === 'windshield' ? screw : wrench, toolName = k === 'windshield' ? 'chave de fenda' : 'chave de roda';
+      if (v === null || v === undefined) {
+        var item = Inv.findId(p, V.PART_ITEM[k]);
+        row.acts.push({ id: 'install', label: 'Instalar', ok: near && !!tool && !!item, hint: 'Precisa de ' + D.ITEMS[V.PART_ITEM[k]].name.toLowerCase() + ' e ' + toolName });
+      } else {
+        row.acts.push({ id: 'remove', label: 'Remover', ok: near && !!tool && !(k === 'battery' && car.engine), hint: car.engine && k === 'battery' ? 'Desligue o motor' : 'Precisa de ' + toolName });
+      }
+      return row;
+    });
+  };
+  V.partAction = function (p, car, part, act) {
+    var pt = V.parts(car), Inv = CP.Items.Inv, mech = CP.Player.skillLevel(p, 'mechanics');
+    var times = { engine: 12, battery: 4, windshield: 10 }, t = (times[part] || 6) * (1 - mech * 0.05);
+    var name = V.PART_NAMES[part];
+    if (act === 'repair') {
+      CP.Actions.start(p, { name: 'Consertando o motor', time: t, anim: 'work', noise: { r: 10, every: 2, sound: 'hammer' }, onDone: function () {
+        if (!Inv.consume(p, 'scrap', 1)) { return; }
+        pt.engine = Math.min(1, pt.engine + 0.15 + mech * 0.03); V.syncCond(car);
+        CP.Player.addXp(p, 'mechanics', 5);
+        if (CP.UI) { CP.UI.toast('Motor em ' + Math.round(pt.engine * 100) + '%.'); }
+      } });
+    } else if (act === 'remove') {
+      CP.Actions.start(p, { name: 'Removendo: ' + name.toLowerCase(), time: t, anim: 'work', noise: { r: 6, every: 2 }, onDone: function () {
+        var v = pt[part];
+        if (v === null || v === undefined) { return; }
+        var it = CP.Items.make(V.PART_ITEM[part], part === 'battery' ? { charge: v } : { cond: v });
+        Inv.give(p, it);
+        pt[part] = null; V.syncCond(car);
+        if (part === 'windshield') { car.windowBroken = true; }
+        CP.Player.addXp(p, 'mechanics', 3);
+      } });
+    } else if (act === 'install') {
+      var found = Inv.findId(p, V.PART_ITEM[part]);
+      if (!found) { return; }
+      CP.Actions.start(p, { name: 'Instalando: ' + name.toLowerCase(), time: t, anim: 'work', noise: { r: 6, every: 2 }, onDone: function () {
+        var f2 = Inv.findId(p, V.PART_ITEM[part]);
+        if (!f2) { return; }
+        Inv.detach(p, f2.item);
+        pt[part] = part === 'battery' ? (f2.item.charge !== undefined ? f2.item.charge : 0.8) : (f2.item.cond !== undefined ? f2.item.cond : 1);
+        V.syncCond(car);
+        CP.Player.addXp(p, 'mechanics', 4);
       } });
     }
   };
@@ -352,11 +444,15 @@
     g.closePath(); g.fillStyle = 'rgba(0,0,0,0.3)'; g.fill();
     // rodas
     var c = Math.cos(car.ang), s = Math.sin(car.ang);
-    [[0.6, 0.4], [0.6, -0.4], [-0.6, 0.4], [-0.6, -0.4]].forEach(function (w) {
+    var ptw = V.parts(car), wheelPart = ['tireFR', 'tireFL', 'tireRR', 'tireRL'];
+    [[0.6, 0.4], [0.6, -0.4], [-0.6, 0.4], [-0.6, -0.4]].forEach(function (w, wi) {
+      var tv = ptw[wheelPart[wi]];
       var wx = c * w[0] - s * w[1], wy = s * w[0] + c * w[1];
-      var q = iso(wx, wy, 6);
-      g.fillStyle = '#121212'; g.beginPath(); g.ellipse(sx + q[0], sy + q[1], 6.5, 5.5, 0, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#5a5a58'; g.beginPath(); g.ellipse(sx + q[0], sy + q[1], 2.6, 2.2, 0, 0, Math.PI * 2); g.fill();
+      var flatW = tv === 0 || (tv && tv <= 0.05), gone = tv === null || tv === undefined;
+      var q = iso(wx, wy, gone ? 3 : (flatW ? 4 : 6));
+      if (gone) { g.fillStyle = '#3a3a38'; g.fillRect(sx + q[0] - 2, sy + q[1] - 1, 4, 2); return; } // só o cubo
+      g.fillStyle = '#121212'; g.beginPath(); g.ellipse(sx + q[0], sy + q[1], 6.5, flatW ? 3.6 : 5.5, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#5a5a58'; g.beginPath(); g.ellipse(sx + q[0], sy + q[1] - (flatW ? 0.6 : 0), 2.6, flatW ? 1.6 : 2.2, 0, 0, Math.PI * 2); g.fill();
     });
     function rect(u0, u1, v0, v1) { return [[u0, v0], [u1, v0], [u1, v1], [u0, v1]]; }
     // lataria, capô/porta-malas e cabine com vidros inclinados (frente = +u)
@@ -383,7 +479,7 @@
   V.lightSources = function (out) {
     for (var i = 0; i < V.active.length; i++) {
       var car = V.active[i];
-      if (car.engine) { out.push({ x: car.x + Math.cos(car.ang) * 1.2, y: car.y + Math.sin(car.ang) * 1.2, z: 0, r: 12, i: 0.9, cone: { ang: car.ang, half: 0.45 }, indoor: false }); }
+      if (car.engine && (V.parts(car).battery || 0) > 0.05) { out.push({ x: car.x + Math.cos(car.ang) * 1.2, y: car.y + Math.sin(car.ang) * 1.2, z: 0, r: 12, i: 0.9, cone: { ang: car.ang, half: 0.45 }, indoor: false }); }
     }
   };
 

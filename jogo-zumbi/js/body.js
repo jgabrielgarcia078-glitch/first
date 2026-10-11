@@ -155,6 +155,9 @@
     if (s.boredom > 0.5) { s.unhappy = Math.min(1, s.unhappy + 0.02 * (s.boredom - 0.4) * h * 4); }
     if (s.stress > 0.5) { s.unhappy = Math.min(1, s.unhappy + 0.01 * h * 4); }
     if (b.meds.antidep > 0) { s.unhappy = Math.max(0, s.unhappy - 0.05 * h); }
+    // cheiro de corpos apodrecendo por perto (checado a cada 5 s)
+    p._smellAcc = (p._smellAcc || 0) + h; p._smellT = (p._smellT || 0) - dt;
+    if (p._smellT <= 0 && CP.Fire) { p._smellT = 5; CP.Fire.corpseSickness(p, p._smellAcc); p._smellAcc = 0; }
     var grime = B.grime(p);
     if (grime > 0.5 && !sleeping) { s.unhappy = Math.min(1, s.unhappy + 0.006 * (grime - 0.4) * h * 4); } // roupa imunda de sangue e lama
     s.unhappy = Math.max(0, s.unhappy - 0.004 * h);

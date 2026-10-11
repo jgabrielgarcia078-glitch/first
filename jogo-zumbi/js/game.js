@@ -208,6 +208,7 @@
     if (CP.Body) { CP.Body.update(p, dt, gameDt); }
     if (CP.Use) { CP.Use.updateFires(dt); }
     if (CP.Amb) { CP.Amb.update(dt, gameDt); }
+    if (CP.Horde) { CP.Horde.update(dt, gameDt); }
     if (p.sayT > 0) { p.sayT -= dt; }
     // efeitos
     for (var i = G.effects.length - 1; i >= 0; i--) {
@@ -290,6 +291,7 @@
   /* sobreposições em coordenadas de mundo: efeitos, mira, construção */
   G.drawOverlay = function (g) {
     if (CP.FX) { CP.FX.drawGlows(g); CP.FX.drawOverlay(g); }
+    if (CP.Fire) { CP.Fire.drawSmoke(g); }
     if (CP.Amb) { CP.Amb.drawOverlay(g); }
     var p = G.player;
     if (CP.UI && CP.UI.drawBuildGhost) { CP.UI.drawBuildGhost(g); }

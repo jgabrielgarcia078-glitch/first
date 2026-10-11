@@ -74,6 +74,15 @@
     if (d.light) { n += it.on ? ' (ligada)' : ''; }
     if (it.water !== undefined && d.water) { n += ' [' + Math.round(it.water) + ' L]'; }
     if (it.fuel !== undefined && d.fuel) { n += ' [' + Math.round(it.fuel) + ' L]'; }
+    if (d.cloth) {
+      var tags = [];
+      if (it.holes) { tags.push(it.holes > 1 ? it.holes + ' buracos' : 'rasgada'); }
+      if ((it.blood || 0) > 0.3) { tags.push('com sangue'); }
+      if ((it.dirt || 0) > 0.3) { tags.push('suja'); }
+      if (tags.length) { n += ' (' + tags.join(', ') + ')'; }
+    }
+    if (d.uses && it.uses !== undefined && d.uses > 1) { n += ' [' + it.uses + '/' + d.uses + ']'; }
+    if (d.carPart) { var pv = it.charge !== undefined ? it.charge : it.cond; if (pv !== undefined) { n += ' (' + Math.round(pv * 100) + '%' + (it.charge !== undefined ? ' de carga' : '') + ')'; } }
     return n;
   };
   It.baseWeight = function (it) {
@@ -242,6 +251,10 @@
       case O.CAR: return 'car';
       case O.DUMPSTER: return 'dumpster';
       case O.CASH: return rt === 'gas' ? 'gas' : 'office';
+      case O.GRILL: return 'grill';
+      case O.CLOTHESLINE: return 'clothesline';
+      case O.DOGHOUSE: return 'doghouse';
+      case O.TENT: return 'camp';
       default: return D.LOOT[rt] ? rt : 'crate';
     }
   }

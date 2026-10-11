@@ -47,6 +47,10 @@
       if (Inv.isWorn(p, it)) { out.push({ label: 'Tirar', fn: function () { Use.takeOff(p, it); } }); } else { out.push({ label: 'Vestir', fn: function () { Use.wearItem(p, it); } }); }
     }
     if (d.cloth && !Inv.isWorn(p, it)) { out.push({ label: 'Rasgar em panos', fn: function () { rip(p, it); } }); }
+    if (d.cloth && ((it.holes || 0) > 0 || (it.cond !== undefined && it.cond < 0.9))) {
+      var hasKit = Inv.findTag(p, 'needle') && Inv.findTag(p, 'thread') && Inv.findId(p, 'rag');
+      out.push({ label: 'Remendar (agulha, linha e pano)', disabled: !hasKit, hint: 'Precisa de agulha, linha e um pano', fn: function () { Use.patch(p, it); } });
+    }
     if (d.light) { out.push({ label: p.flashlightOn ? 'Desligar lanterna (F)' : 'Ligar lanterna (F)', disabled: it.charge <= 0, hint: 'Sem pilha', fn: function () { Use.toggleFlashlight(p); } }); if (it.charge < 0.9 && Inv.findId(p, 'battery')) { out.push({ label: 'Trocar pilha', fn: function () { Inv.consume(p, 'battery', 1); it.charge = 1; msg('Pilha trocada.'); } }); } }
     if (It.hasTag(it, 'radio')) { out.push({ label: 'Ouvir rádio', fn: function () { A.start(p, { name: 'Ouvindo rádio', time: 4, onDone: function () { msg('Rádio: ' + CP.Time.broadcast()); p.body.stats.boredom = Math.max(0, p.body.stats.boredom - 0.05); } }); } }); }
     if (d.throwable) { out.push({ label: 'Arremessar (no mouse)', fn: function () { Use.equip(p, it, 'hand1'); msg('Mire com o botão direito e clique com o esquerdo para arremessar.'); } }); }
@@ -56,6 +60,21 @@
     if (d.bag && it.items && it.items.length && !Inv.isWorn(p, it)) { out.push({ label: 'Esvaziar no chão', fn: function () { var fl = W.floorItems(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z), true); it.items.splice(0).forEach(function (x) { fl.push(x); }); } }); }
     out.push({ label: 'Largar no chão', fn: function () { Use.drop(p, it); } });
     return out;
+  };
+
+  /* remendar: fecha um buraco e recupera parte da proteção; gasta 1 pano e 1 uso de linha */
+  Use.patch = function (p, it) {
+    init();
+    var lvl = CP.Player.skillLevel(p, 'tailoring');
+    A.start(p, { name: 'Remendando', time: Math.max(2.5, 6 - lvl * 0.4), anim: 'work', onDone: function () {
+      var th = Inv.findTag(p, 'thread');
+      if (!Inv.findTag(p, 'needle') || !th || !Inv.consume(p, 'rag', 1)) { msg('Faltou material para remendar.', 'warn'); return; }
+      if (th.item.uses !== undefined) { th.item.uses--; if (th.item.uses <= 0) { Inv.detach(p, th.item); msg('A linha acabou.'); } } else { Inv.detach(p, th.item); }
+      if (it.holes) { it.holes--; }
+      it.cond = Math.min(1, (it.cond === undefined ? 1 : it.cond) + 0.12 + lvl * 0.025);
+      CP.Player.addXp(p, 'tailoring', 4);
+      msg('Remendado: ' + It.def(it).name + (it.holes ? ' (ainda tem ' + it.holes + ' buraco' + (it.holes > 1 ? 's' : '') + ')' : '') + '.');
+    } });
   };
 
   function swapItem(p, it, newId, opts) {
@@ -316,37 +335,9 @@
       if (!d.throwable.fire && it.id !== 'empty_beer') { W.floorItems(Math.floor(tx), Math.floor(ty), z, true).push(it); }
     }, 400);
   };
-  /* fogo: área 3x3 por 25 s, queima zumbis e o jogador */
-  Use.fire = function (x, y, z) {
-    var ws = CP.Game.state.world;
-    ws.fires = ws.fires || [];
-    for (var dy = -1; dy <= 1; dy++) {
-      for (var dx = -1; dx <= 1; dx++) {
-        if (Math.random() < 0.25 && (dx || dy)) { continue; }
-        ws.fires.push({ x: x + dx, y: y + dy, z: z, t: U.randRange(15, 30) });
-        var ch = W.chunkAt(x + dx, y + dy);
-        if (ch) { ch.fires[W.key(x + dx, y + dy, z)] = 1; }
-      }
-    }
-    CP.Zombies.noise(x, y, z, 25, 'fire');
-  };
-  Use.updateFires = function (dt) {
-    var ws = CP.Game.state.world;
-    if (!ws.fires || !ws.fires.length) { return; }
-    var p = CP.Game.player;
-    for (var i = ws.fires.length - 1; i >= 0; i--) {
-      var f = ws.fires[i];
-      f.t -= dt;
-      var zs = CP.Zombies.near(f.x + 0.5, f.y + 0.5, 0.9, []);
-      zs.forEach(function (zb) { if (Math.abs(zb.z - f.z) < 0.5) { CP.Zombies.damage(zb, 0.6 * dt, undefined, { cause: 'fire' }); } });
-      if (Math.floor(p.x) === f.x && Math.floor(p.y) === f.y && W.levelOf(p.z) === f.z && Math.random() < dt * 2) { CP.Body.addWound(p, U.pick(['footL', 'footR', 'shinL', 'shinR']), 'burn', { cause: 'Morreu queimado' }); }
-      if (f.t <= 0) {
-        var ch = W.chunkAt(f.x, f.y);
-        if (ch) { delete ch.fires[W.key(f.x, f.y, f.z)]; }
-        ws.fires.splice(i, 1);
-      }
-    }
-  };
+  /* fogo (molotov): área 3x3 que se espalha — ver js/fire.js */
+  Use.fire = function (x, y, z) { CP.Fire.burst(x, y, z); };
+  Use.updateFires = function (dt) { CP.Fire.update(dt); };
 
   /* ================= ARTESANATO ================= */
   function catMatch(p, it, need) {

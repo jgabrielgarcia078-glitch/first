@@ -1208,6 +1208,47 @@
         if (ctx.inside(zx, zy) && ctx.room(zx, zy, 0) && !ctx.obj(zx, zy, 0)) { addZombie(ctx, zx, zy, 0, 'house', null); }
       }
     });
+    // casa que pegou fogo: chão carbonizado, entulho, paredes pretas, telhado caído em partes, corpos queimados
+    c.buildings.forEach(function (b) {
+      if (b.kind !== 'house' || b.story || !rng.chance(0.035)) { return; }
+      b.story = 'burnt';
+      var x0 = b.x - ctx.ox, y0 = b.y - ctx.oy, BS = C.FIRE.BURNT_STYLE;
+      for (var z = 0; z < b.floors; z++) {
+        for (var y = y0; y <= y0 + b.h; y++) {
+          for (var x = x0; x <= x0 + b.w; x++) {
+            if (!ctx.inside(x, y)) { continue; }
+            var inRect = x < x0 + b.w && y < y0 + b.h;
+            if (inRect && ctx.room(x, y, z)) {
+              if (z === 0) { ctx.setFloor(x, y, z, F.BURNT, (x + y) & 3); }
+              var o = ctx.obj(x, y, z);
+              if (o && o !== O.STAIRS) { ctx.setObj(x, y, z, rng.chance(0.6) && C.OBJ_INFO[o].solid ? O.RUBBLE : 0, 0); }
+              if (o === 0 && z === 0 && rng.chance(0.08)) { ctx.setObj(x, y, z, O.RUBBLE, 0); }
+            }
+            for (var side = 0; side < 2; side++) {
+              var t = ctx.getEdge(x, y, z, side);
+              if (!t) { continue; }
+              var L = ctx.L(z), i = ctx.i(x, y), key = (z * CH * CH + i) * 2 + side;
+              if (side === 0) { L.wns[i] = BS; } else { L.wws[i] = BS; }
+              if (t === E.WINDOW) { c.edges[key] = { open: false, locked: false, hp: 0, bar: 0, barHp: 0, broken: true, glass: false }; }
+              if (t === E.DOOR) { c.edges[key] = { open: true, locked: false, hp: 0, bar: 0, barHp: 0, broken: true, ext: !!(c.edges[key] && c.edges[key].ext) }; }
+            }
+          }
+        }
+      }
+      // telhado desabou: a ruína fica a céu aberto
+      b.roofGone = true;
+      for (var ry = y0; ry < y0 + b.h; ry++) { for (var rx = x0; rx < x0 + b.w; rx++) { if (ctx.inside(rx, ry) && ctx.floor(rx, ry, b.floors) === F.ROOF) { ctx.setFloor(rx, ry, b.floors, F.NONE, 0); } } }
+      // corpos carbonizados
+      if (CP.Zombies) {
+        for (var cn = 0; cn < rng.int(0, 2); cn++) {
+          var cx2 = x0 + rng.int(0, b.w - 1), cy2 = y0 + rng.int(0, b.h - 1);
+          if (!ctx.inside(cx2, cy2) || !ctx.room(cx2, cy2, 0)) { continue; }
+          var lk2 = CP.Zombies.fromData(CP.Zombies.makeData(rng, ctx.ox + cx2 + 0.5, ctx.oy + cy2 + 0.5, 0, null, null)).look;
+          lk2.zombie = false;
+          c.corpses.push({ x: ctx.ox + cx2 + 0.5, y: ctx.oy + cy2 + 0.5, z: 0, ang: rng.range(0, 6.28), look: lk2, items: [], t: -86400 * 5, burnt: true });
+        }
+      }
+    });
     // festa em casa: muitos zumbis numa sala
     c.buildings.forEach(function (b) {
       if (b.kind !== 'house' || b.story || !rng.chance(0.025)) { return; }

@@ -67,7 +67,8 @@
     { name: 'concreto', base: '#8d8d88', trim: '#62625e' },
     { name: 'metal ondulado', base: '#8c9094', trim: '#5c6064', ribs: true },
     { name: 'loja de tijolo', base: '#8e4a3c', trim: '#3a3a3a', brick: true, store: true },
-    { name: 'loja de reboco', base: '#c8bca4', trim: '#4a4a48', store: true }
+    { name: 'loja de reboco', base: '#c8bca4', trim: '#4a4a48', store: true },
+    { name: 'queimada', base: '#4a423a', trim: '#24201b' }
   ];
   C.EXTERIOR_STYLES = [0, 1, 2, 3, 4, 5];
   C.INTERIOR_STYLES = [6, 7, 8, 10, 0];
@@ -327,6 +328,29 @@
   /* ---------- Neve acumulada (0..1) e vento ---------- */
   C.SNOW = { PER_HOUR: 0.09, MELT_PER_HOUR: 0.035, MELT_TEMP: 1, FOOTPRINT_MIN: 0.2, FOOTPRINT_LIFE_H: 10, MAX_PRINTS: 500 };
   C.WIND = { clear: 0.18, cloudy: 0.35, rain: 0.5, storm: 1, fog: 0.06, snow: 0.45 };
+
+  /* ---------- Grandes hordas que atravessam a região (js/horde.js) ---------- */
+  C.HORDE = {
+    FIRST_MIN: 3, FIRST_MAX: 5, GAP_MIN: 4, GAP_MAX: 8,   // dias até a primeira e entre elas
+    BASE: 45, PER_DAY: 4, MAX: 110,                        // tamanho
+    START_DIST: 85, PASS_OFFSET: 14,                       // começa a ~85 tiles e passa a até ~14 do jogador
+    SPEED: 0.55,                                           // tiles por segundo real (o grupo todo)
+    HEAR_DIST: 95, MEMORY_S: 150
+  };
+
+  /* ---------- Fogo (js/fire.js) ---------- */
+  C.FIRE = {
+    MAX_TILES: 260,          // limite de tiles queimando ao mesmo tempo
+    BURN_MIN: 14, BURN_PER_FLAM: 20,   // s que um tile queima: mínimo + inflamabilidade × isto
+    SPREAD: 0.16,            // chance por s de pegar no vizinho (× inflamabilidade × vento)
+    SPREAD_UP: 0.02,         // chance por s de subir para o andar de cima
+    ROOF_COLLAPSE: 0.5,      // fração do térreo queimada para o telhado desabar inteiro
+    BURNT_STYLE: 15,         // estilo de parede carbonizada (C.WALL_STYLES)
+    MAX_LIGHTS: 30,
+    BURNT_CORPSE_S: 6 * 3600, // corpo queimado vira cinza depois disso (s de jogo)
+    ROT_AFTER_S: 86400,      // corpo começa a feder depois de 1 dia
+    SMELL_R: 7, SMELL_MIN: 4, SICK_PER_HOUR: 0.02
+  };
 
   /* ---------- Vida ao redor: corvos que levantam voo, moscas nos corpos ---------- */
   C.BIRDS = { FLOCKS: 4, SCARE_DIST: 4.5, ZOMBIE_SCARE_DIST: 3.2, RESPAWN_S: 40 };

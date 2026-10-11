@@ -351,6 +351,18 @@
     osc.start(t); vib.start(t); src.start(t, Math.random());
     osc.stop(t + dur + 0.05); vib.stop(t + dur + 0.05); src.stop(t + dur + 0.05);
   }
+  /* horda ao longe: coro de gemidos graves (k = 0..1, mais perto = mais alto) */
+  Au.hordeMoan = function (ang, dist, k) {
+    if (!ok()) { return; }
+    var pan = U.clamp((Math.cos(ang) - Math.sin(ang)) * 0.6, -0.9, 0.9);
+    var o = farOut(pan, dist, 0.22 + 0.4 * k);
+    var t = Au.ctx.currentTime + 0.05, n = 5 + Math.round(k * 4);
+    for (var i = 0; i < n; i++) {
+      var f0 = 70 + Math.random() * 45, dur = 1.8 + Math.random() * 1.6, t0 = t + Math.random() * 1.6;
+      humanVoice(o, t0, [[0, f0], [0.4, f0 * 1.15], [1, f0 * 0.8]], [[0, 'o'], [0.5, 'u'], [1, 'o']], dur, 0.07 + Math.random() * 0.05, 0.5);
+    }
+    burst(o, t, 3.5, 160, 'lowpass', 0.5, 0.08 + 0.12 * k, 0.8); // passos arrastados de muitos
+  };
   /* kind: gunshot, gunfire, scream, help, dogs, crash, glass, explosion, siren; ang = direção no mundo; dist = tiles */
   Au.distant = function (kind, ang, dist) {
     if (!ok()) { return; }
@@ -525,6 +537,15 @@
     Au.flyNode.g.gain.setTargetAtTime(vol * 0.03, t, 0.6);
     if (Au.flyNode.pn) { Au.flyNode.pn.pan.setTargetAtTime(pan || 0, t, 0.4); }
   };
+  /* fogo: estalos (intensidade 0..1 = tamanho do incêndio) e chiado da água apagando */
+  Au.crackle = function (x, y, z, k) {
+    if (!ok()) { return; }
+    var sp = spatial(x, y, z, 26);
+    if (sp.g <= 0.02) { return; }
+    noise(sp, 0.03 + Math.random() * 0.04, 2500 + Math.random() * 2500, 2, 0.1 + k * 0.12, 'bandpass', 0.001);
+    if (Math.random() < 0.4) { noise(sp, 0.25, 300, 0.8, 0.06 + k * 0.08, 'lowpass', 0.05); }
+  };
+  Au.hiss = function (x, y) { if (ok()) { noise(spatial(x, y, 0, 20), 0.9, 4000, 0.6, 0.25, 'highpass', 0.02); } };
   /* zumbi comendo: rasgar molhado e mastigar */
   Au.chew = function (x, y, z) {
     if (!ok()) { return; }

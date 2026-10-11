@@ -184,6 +184,7 @@
           // objeto
           var o = L.obj[ii];
           if (o && !vd) { drawObject(g, x, y, zz, o, L.odir[ii], bx, by, li, view, ch); if (o === O.POWER_POLE) { poles.push(x, y, L.odir[ii], li); } }
+          if (ch.fires[zz * AREA + ii] && !vd) { drawFlame(g, bx, by, x * 7 + y * 13, 1); }
           // itens no chão
           var its = ch.items[zz * AREA + ii];
           if (its && its.length && !vd) { drawSprite(g, S.groundItems(its.length), li, bx, by); }
@@ -484,17 +485,22 @@
     var lean = SWAY[o] && R.wind > 0.03 && o !== O.CROP ? Math.max(-2, Math.min(2, Math.round(CP.Amb.sway(x, y, SWAY[o]) / SWAY[o] * 2))) : 0;
     if (lean) { spr = S.objLean(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.treeSeason : 0, lean, SWAY[o] * 0.5); }
     drawSprite(g, spr, li, bx, by, alpha);
-    if (o === O.CAMPFIRE || ch.fires[W.key(x, y, z)]) { drawFlame(g, bx, by); }
+    if (o === O.CAMPFIRE) { drawFlame(g, bx, by, 0, 0); }
   }
-  function drawFlame(g, bx, by) {
+  /* chamas: big = incêndio (várias línguas de fogo espalhadas no tile) */
+  function drawFlame(g, bx, by, seed, big) {
     var t = performance.now() / 120;
-    var c = [bx, by + HH];
-    for (var i = 0; i < 3; i++) {
-      var hgt = 14 + Math.sin(t + i * 2) * 4;
-      g.fillStyle = ['rgba(255,190,60,0.9)', 'rgba(255,120,30,0.85)', 'rgba(255,240,150,0.9)'][i];
-      g.beginPath();
-      g.moveTo(c[0] - 7 + i * 3, c[1]); g.quadraticCurveTo(c[0] + Math.sin(t + i) * 4, c[1] - hgt * 1.6, c[0] + 7 - i * 3, c[1]);
-      g.fill();
+    var tongues = big ? 4 : 1;
+    for (var k = 0; k < tongues; k++) {
+      var ox = big ? ((seed * (k + 3) * 7) % 30) - 15 : 0, oy = big ? ((seed * (k + 5) * 3) % 12) - 6 : 0, sc = big ? 1.2 + ((seed + k) % 3) * 0.35 : 1;
+      var c = [bx + ox, by + HH + oy];
+      for (var i = 0; i < 3; i++) {
+        var hgt = (14 + Math.sin(t + i * 2 + k * 1.7) * 4) * sc;
+        g.fillStyle = ['rgba(255,190,60,0.9)', 'rgba(255,120,30,0.85)', 'rgba(255,240,150,0.9)'][i];
+        g.beginPath();
+        g.moveTo(c[0] - (7 - i * 3) * sc, c[1]); g.quadraticCurveTo(c[0] + Math.sin(t + i + k) * 4 * sc, c[1] - hgt * 1.6, c[0] + (7 - i * 3) * sc, c[1]);
+        g.fill();
+      }
     }
   }
 

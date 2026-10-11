@@ -695,6 +695,11 @@
   }
   function drawCorpse(g, sx, sy, bright) {
     var look = this.look;
+    if (this.burnt) { // carbonizado
+      if (!this.bLook) { this.bLook = Object.assign({}, look, { skin: '#2c241e', shirt: '#1e1a16', jacket: look.jacket ? '#1a1612' : null, pants: '#221c18', hair: '#141210', hat: null, blood: null }); }
+      CP.Spr.drawHuman(g, sx, sy, this.bLook, { ang: this.ang, dead: true, phase: 0 }, Math.max(0.2, bright * 0.9));
+      return;
+    }
     if (this.decay > 0.05) {
       if (!this.dLook || this.dLookAt !== Math.round(this.decay * 10)) {
         this.dLookAt = Math.round(this.decay * 10);

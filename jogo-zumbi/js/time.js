@@ -122,8 +122,7 @@
       }
     }
     if (CP.Vehicles) { CP.Vehicles.lightSources(out); }
-    var fires = ws().fires || [];
-    fires.forEach(function (f) { if (W.levelOf(f.z) === lz) { out.push({ x: f.x + 0.5, y: f.y + 0.5, z: lz, r: 6, i: 0.9, glow: 'fire' }); } });
+    if (CP.Fire) { CP.Fire.lightSources(out, p, lz); }
     var heli = ws().heli;
     if (heli && night) { out.push({ x: heli.x, y: heli.y, z: 0, r: 6, i: 0.9, indoor: false }); }
     return out;
