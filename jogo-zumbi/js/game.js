@@ -50,6 +50,18 @@
     G.afterLoad();
   };
 
+  /* novo sobrevivente no mesmo mundo (depois de morrer): o tempo, os chunks e os zumbis continuam */
+  G.newSurvivor = function (opts) {
+    var seed = G.state.seed;
+    var spawn = G.findSpawn(seed, opts.townIndex, Math.floor(G.state.time / 3600));
+    W.ensureAround(Math.floor(spawn.x), Math.floor(spawn.y), C.LOAD_RADIUS);
+    G.player = CP.Player.create(opts.character || {}, spawn.x, spawn.y, spawn.z || 0);
+    G.state.survivors = (G.state.survivors || 1) + 1;
+    G.effects = []; G.texts = [];
+    G.clearAround(spawn.x, spawn.y, spawn.z || 0, 9);
+    G.afterLoad();
+  };
+
   G.afterLoad = function () {
     var p = G.player;
     if (CP.Amb) { CP.Amb.reset(); }
@@ -63,10 +75,10 @@
   };
 
   /* ponto inicial: dentro de uma casa na cidade escolhida (ou na primeira) */
-  G.findSpawn = function (seed, townIndex) {
+  G.findSpawn = function (seed, townIndex, salt) {
     var m = W.macro;
     var t = m.towns[townIndex || 0] || m.towns[0];
-    var rng = new U.Rng(seed ^ 0xabc);
+    var rng = new U.Rng((seed ^ 0xabc) + (salt || 0) * 7919);
     for (var attempt = 0; attempt < 60; attempt++) {
       var cx = t.x + rng.int(-t.r + 1, t.r - 1), cy = t.y + rng.int(-t.r + 1, t.r - 1);
       var ch = W.ensureChunk(cx, cy);

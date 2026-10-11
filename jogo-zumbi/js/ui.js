@@ -105,6 +105,7 @@
     root.addEventListener('mousedown', startDrag);
     root.addEventListener('mousedown', startItemDrag);
     root.addEventListener('mousedown', onMapMouse);
+    root.addEventListener('wheel', onMapWheel, { passive: false });
     document.addEventListener('mousedown', function (e) {
       if (UI.ctxOpen && !e.target.closest('.ctx')) { closeCtx(); }
     }, true);
@@ -144,7 +145,7 @@
     CP.Save.hasSave().then(function (r) {
       UI.hasSave = !!r;
       var b = document.getElementById('btn-continue');
-      if (b && r) { b.disabled = false; b.textContent = 'Continuar — ' + r.meta.name + ' (dia ' + (Math.floor(r.meta.days) + 1) + ')'; }
+      if (b && r) { b.disabled = false; b.textContent = r.player === null || (r.meta && r.meta.dead) ? 'Continuar o mundo — novo sobrevivente (dia ' + (Math.floor(r.meta.days) + 1) + ')' : 'Continuar — ' + r.meta.name + ' (dia ' + (Math.floor(r.meta.days) + 1) + ')'; }
     });
   };
   function drawMenuBackground(dt) {
@@ -168,9 +169,9 @@
     apocalypse: { name: 'Apocalipse (difícil)', popMult: 1.4, lootMult: 0.7, zombieSpeed: 'shambler', infection: true, toughness: 1.1 },
     sprinters: { name: 'Corredores (insano)', popMult: 1, lootMult: 0.8, zombieSpeed: 'sprinters', infection: true, toughness: 1 }
   };
-  function newCreation() {
-    var seed = (Math.random() * 1e9) >>> 0;
-    W.init(seed);
+  function newCreation(keepWorld) {
+    var seed = keepWorld && G().state ? G().state.seed : (Math.random() * 1e9) >>> 0;
+    if (!keepWorld) { W.init(seed); }
     var female = Math.random() < 0.5;
     return {
       name: female ? U.pick(['Ana', 'Júlia', 'Carla', 'Marta', 'Paula', 'Rita', 'Sofia']) + ' ' + U.pick(['Souza', 'Lima', 'Costa', 'Rocha', 'Alves']) : U.pick(['João', 'Pedro', 'Carlos', 'Lucas', 'Rafael', 'Bruno', 'Marcos']) + ' ' + U.pick(['Souza', 'Lima', 'Costa', 'Rocha', 'Alves']),
@@ -179,9 +180,10 @@
       seed: seed, town: 0, preset: 'survivor', settings: Object.assign({}, PRESETS.survivor), dayMinutes: C.REAL_MINUTES_PER_DAY
     };
   }
-  UI.showCreate = function () {
+  UI.showCreate = function (opts) {
     UI.screen = 'create';
-    UI.creation = UI.creation || newCreation();
+    UI.creation = UI.creation || newCreation(opts && opts.sameWorld);
+    if (opts && opts.sameWorld) { UI.creation.sameWorld = true; UI.creation.town = 0; }
     renderCreate();
   };
   function renderCreate() {
@@ -205,8 +207,20 @@
     var presets = Object.keys(PRESETS).map(function (k) { return '<option value="' + k + '"' + (k === cr.preset ? ' selected' : '') + '>' + PRESETS[k].name + '</option>'; }).join('');
     function sw(list, key, cur) { return '<div class="swatches">' + list.map(function (c) { return '<div class="swatch' + (c === cur ? ' sel' : '') + '" style="background:' + c + '" data-a="look" data-k="' + key + '" data-v="' + c + '"></div>'; }).join('') + '</div>'; }
     var styles = C.HAIR_STYLES.map(function (s) { return '<option' + (s === cr.look.hairStyle ? ' selected' : '') + '>' + s + '</option>'; }).join('');
+    var worldHtml = cr.sameWorld ? '<h3>Mundo</h3><div class="desc">Mesmo mundo, dia ' + (Math.floor(CP.Time.daysSurvived()) + 1) + '. O tempo continua de onde parou e tudo o que ficou para trás (inclusive o seu sobrevivente anterior) ainda está lá.</div>' +
+      '<div class="row"><label>Cidade</label><select data-a="town">' + towns + '</select></div>' :
+      '<h3>Mundo</h3>' +
+      '<div class="row"><label>Cidade</label><select data-a="town">' + towns + '</select></div>' +
+      '<div class="row"><label>Semente</label><input data-a="seed" value="' + cr.seed + '" style="width:110px"><button class="small" data-a="reseed">🎲</button></div>' +
+      '<div class="row"><label>Dificuldade</label><select data-a="preset">' + presets + '</select></div>' +
+      '<div class="row"><label>Zumbis</label><select data-a="zspeed">' +
+      [['shambler', 'Lentos (arrastados)'], ['mixed', 'Mistos'], ['fast', 'Rápidos'], ['sprinters', 'Corredores']].map(function (o) { return '<option value="' + o[0] + '"' + (cr.settings.zombieSpeed === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="row"><label>População</label><input type="range" min="0.2" max="2" step="0.1" value="' + cr.settings.popMult + '" data-a="pop"><span>' + cr.settings.popMult.toFixed(1) + '×</span></div>' +
+      '<div class="row"><label>Saque</label><input type="range" min="0.3" max="2.5" step="0.1" value="' + cr.settings.lootMult + '" data-a="loot"><span>' + cr.settings.lootMult.toFixed(1) + '×</span></div>' +
+      '<div class="row"><label>Infecção</label><label style="min-width:auto"><input type="checkbox" data-a="infection"' + (cr.settings.infection ? ' checked' : '') + '> mordidas transformam</label></div>' +
+      '<div class="row"><label>Duração do dia</label><select data-a="daylen">' + [30, 60, 90, 120].map(function (m) { return '<option value="' + m + '"' + (m === cr.dayMinutes ? ' selected' : '') + '>' + m + ' min reais</option>'; }).join('') + '</select></div>';
     $.screens.innerHTML = '<div class="screen solid"><div class="create">' +
-      '<div class="title"><h2>Novo sobrevivente</h2><div><button data-a="create-back">Voltar</button> <button class="primary" data-a="create-start"' + (v.ok ? '' : ' disabled') + '>Começar ▶</button></div></div>' +
+      '<div class="title"><h2>' + (cr.sameWorld ? 'Novo sobrevivente — mesmo mundo' : 'Novo sobrevivente') + '</h2><div><button data-a="create-back">Voltar</button> <button class="primary" data-a="create-start"' + (v.ok ? '' : ' disabled') + '>Começar ▶</button></div></div>' +
       '<div class="col"><h3>Ocupação</h3>' + occHtml + '<div class="desc">' + occDesc + '</div></div>' +
       '<div class="col"><div class="points-box">Pontos: <span class="' + (v.points >= 0 ? 'good' : 'danger') + '">' + v.points + '</span></div>' +
       '<div class="errors">' + v.errors.map(esc).join(' · ') + '</div>' +
@@ -218,16 +232,7 @@
       '<div class="row"><label>Pele</label>' + sw(C.SKIN_TONES, 'skin', cr.look.skin) + '</div>' +
       '<div class="row"><label>Cabelo</label>' + sw(C.HAIR_COLORS, 'hair', cr.look.hair) + '</div>' +
       '<div class="row"><label>Penteado</label><select data-a="hairstyle">' + styles + '</select>' + (cr.female ? '' : ' <label style="min-width:auto"><input type="checkbox" data-a="beard"' + (cr.look.beard ? ' checked' : '') + '> barba</label>') + '</div>' +
-      '<h3>Mundo</h3>' +
-      '<div class="row"><label>Cidade</label><select data-a="town">' + towns + '</select></div>' +
-      '<div class="row"><label>Semente</label><input data-a="seed" value="' + cr.seed + '" style="width:110px"><button class="small" data-a="reseed">🎲</button></div>' +
-      '<div class="row"><label>Dificuldade</label><select data-a="preset">' + presets + '</select></div>' +
-      '<div class="row"><label>Zumbis</label><select data-a="zspeed">' +
-      [['shambler', 'Lentos (arrastados)'], ['mixed', 'Mistos'], ['fast', 'Rápidos'], ['sprinters', 'Corredores']].map(function (o) { return '<option value="' + o[0] + '"' + (cr.settings.zombieSpeed === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
-      '<div class="row"><label>População</label><input type="range" min="0.2" max="2" step="0.1" value="' + cr.settings.popMult + '" data-a="pop"><span>' + cr.settings.popMult.toFixed(1) + '×</span></div>' +
-      '<div class="row"><label>Saque</label><input type="range" min="0.3" max="2.5" step="0.1" value="' + cr.settings.lootMult + '" data-a="loot"><span>' + cr.settings.lootMult.toFixed(1) + '×</span></div>' +
-      '<div class="row"><label>Infecção</label><label style="min-width:auto"><input type="checkbox" data-a="infection"' + (cr.settings.infection ? ' checked' : '') + '> mordidas transformam</label></div>' +
-      '<div class="row"><label>Duração do dia</label><select data-a="daylen">' + [30, 60, 90, 120].map(function (m) { return '<option value="' + m + '"' + (m === cr.dayMinutes ? ' selected' : '') + '>' + m + ' min reais</option>'; }).join('') + '</select></div>' +
+      worldHtml +
       '</div></div></div>';
     drawPreview();
   }
@@ -252,6 +257,14 @@
     var cr = UI.creation;
     var v = CP.Player.validate(cr);
     if (!v.ok) { return; }
+    if (cr.sameWorld && G().state) {
+      G().newSurvivor({ townIndex: +cr.town, character: { name: cr.name, female: cr.female, occupation: cr.occupation, traits: cr.traits.slice(), look: cr.look } });
+      enterGame();
+      UI.toast('Dia ' + (Math.floor(CP.Time.daysSurvived()) + 1) + '. Outro sobrevivente acorda em ' + W.macro.towns[+cr.town].name + '. O mundo seguiu em frente.', 'info');
+      UI.creation = null;
+      CP.Save.save();
+      return;
+    }
     CP.Save.deleteSave().then(function () {
       G().newGame({ seed: cr.seed, townIndex: +cr.town, settings: Object.assign({}, cr.settings, { dayMinutes: cr.dayMinutes }), character: { name: cr.name, female: cr.female, occupation: cr.occupation, traits: cr.traits.slice(), look: cr.look } });
       enterGame();
@@ -263,7 +276,10 @@
   }
   function continueGame() {
     $.screens.innerHTML = '<div class="screen solid"><div class="menu-box"><h2>Carregando...</h2></div></div>';
-    CP.Save.load().then(function () { enterGame(); UI.toast('Jogo carregado.', 'good'); }).catch(function (e) { UI.showMenu(); UI.toast('Não foi possível carregar: ' + e.message, 'danger'); });
+    CP.Save.load().then(function (rec) {
+      if (!rec.player) { $.screens.innerHTML = ''; UI.creation = null; UI.showCreate({ sameWorld: true }); return; }
+      enterGame(); UI.toast('Jogo carregado.', 'good');
+    }).catch(function (e) { UI.showMenu(); UI.toast('Não foi possível carregar: ' + e.message, 'danger'); });
   }
   function enterGame() {
     UI.screen = 'game';
@@ -886,25 +902,97 @@
     if (o === C.OBJ.CAR) { return '#b04030'; }
     return TILE_COLORS[l.floor[ii]] || '#555';
   }
+  /* mapa com zoom (roda) e arrastar; 'Região' mostra tudo, 'Local' aproxima no jogador */
+  UI.mapView = null;
+  var MAP_ZMIN = 576 / (48 * 32), MAP_ZMAX = 8;
+  function mapView() {
+    var p = P();
+    if (!UI.mapView) { UI.mapView = { cx: p.x, cy: p.y, z: 1.5 }; }
+    return UI.mapView;
+  }
+  function setMapMode(m) {
+    var p = P(), N = W.macro.n * C.CHUNK;
+    UI.mapMode = m;
+    UI.mapView = m === 'region' ? { cx: N / 2, cy: N / 2, z: 576 / N } : { cx: p.x, cy: p.y, z: 3 };
+  }
   function renderMap() {
     var b = body('map');
     if (!b) { return; }
+    if (!UI.mapView) { setMapMode(UI.mapMode || 'region'); }
     var syms = MAP_SYMS.map(function (sy, i) { return '<button class="small msym' + (UI.mapSym === i ? ' on' : '') + '" data-a="mapsym" data-i="' + i + '" title="' + sy[2] + '" style="color:' + sy[1] + '">' + sy[0] + '</button>'; }).join('') +
       '<button class="small msym' + (UI.mapSym === -1 ? ' on' : '') + '" data-a="mapsym" data-i="-1" title="Apagar anotação">⌫</button>';
-    b.innerHTML = '<div class="tabs"><button class="small' + (UI.mapMode === 'region' ? ' on' : '') + '" data-a="mapmode" data-m="region">Região</button><button class="small' + (UI.mapMode === 'local' ? ' on' : '') + '" data-a="mapmode" data-m="local">Local</button></div>' +
+    b.innerHTML = '<div class="tabs"><button class="small' + (UI.mapMode === 'region' ? ' on' : '') + '" data-a="mapmode" data-m="region">Região</button><button class="small' + (UI.mapMode === 'local' ? ' on' : '') + '" data-a="mapmode" data-m="local">Local</button>' +
+      '<button class="small" data-a="mapzoom" data-d="1" title="Aproximar">+</button><button class="small" data-a="mapzoom" data-d="-1" title="Afastar">−</button><button class="small" data-a="mapmode" data-m="local" title="Centralizar em você">◎</button></div>' +
       '<div class="mapnotes">' + syms + '<input id="mapnote-text" maxlength="24" placeholder="texto da anotação (opcional)"></div>' +
-      '<canvas id="mapc" width="576" height="576"></canvas><div class="muted" style="font-size:12px;margin-top:6px">' + (P().mapRevealed ? 'Mapa da região completo.' : 'Só aparecem os lugares que você já viu. Leia um mapa (posto de gasolina) para ver tudo.') + ' Clique no mapa para anotar · botão direito apaga.</div>';
+      '<canvas id="mapc" width="576" height="576"></canvas><div class="muted" style="font-size:12px;margin-top:6px">' + (P().mapRevealed ? 'Mapa da região completo.' : 'Só aparecem os lugares que você já viu. Leia um mapa (posto de gasolina) para ver tudo.') + ' Roda: zoom · arrastar: mover · clique: anotar · botão direito: apagar.</div>';
     drawMap();
   }
-  /* conversão mundo ↔ pixel do mapa no modo atual */
+  /* conversão mundo ↔ pixel do mapa */
   function mapXf(cv) {
-    var p = P(), m = W.macro;
-    if (UI.mapMode === 'region') {
-      var s = cv.width / m.n / C.CHUNK;
-      return { toPx: function (x, y) { return [x * s, y * s]; }, toW: function (px, py) { return [px / s, py / s]; } };
+    var v = mapView(), W2 = cv.width / 2, H2 = cv.height / 2;
+    return { toPx: function (x, y) { return [(x - v.cx) * v.z + W2, (y - v.cy) * v.z + H2]; }, toW: function (px, py) { return [(px - W2) / v.z + v.cx, (py - H2) / v.z + v.cy]; } };
+  }
+  UI.mapXf = function () { var cv = document.getElementById('mapc'); return cv ? mapXf(cv) : null; };
+  var mapBuf = null;
+  function drawMap() {
+    var cv = document.getElementById('mapc');
+    if (!cv) { return; }
+    var g = cv.getContext('2d'), p = P(), m = W.macro, v = mapView(), xf = mapXf(cv);
+    g.fillStyle = '#0c0d0f'; g.fillRect(0, 0, cv.width, cv.height);
+    var x, y, CH = C.CHUNK;
+    var w0 = xf.toW(0, 0), w1 = xf.toW(cv.width, cv.height);
+    var s = CH * v.z;
+    if (v.z < 1.6 || p.mapRevealed) {
+      // de longe (ou com o mapa da região lido): blocos por chunk (tipo de terreno + estradas)
+      for (y = Math.max(0, Math.floor(w0[1] / CH)); y <= Math.min(m.n - 1, Math.floor(w1[1] / CH)); y++) {
+        for (x = Math.max(0, Math.floor(w0[0] / CH)); x <= Math.min(m.n - 1, Math.floor(w1[0] / CH)); x++) {
+          var ch = W.chunkByIndex(x, y);
+          if (!(p.mapRevealed || (ch && ch.seen))) { continue; }
+          var q = xf.toPx(x * CH, y * CH), t = m.type[y * m.n + x];
+          g.fillStyle = MAP_COLORS[t] || '#444'; g.fillRect(q[0], q[1], s + 0.5, s + 0.5);
+          g.fillStyle = '#26272a';
+          if (m.roadN[y * m.n + x]) { g.fillRect(q[0], q[1], s, Math.max(1, s * 0.16)); }
+          if (m.roadW[y * m.n + x]) { g.fillRect(q[0], q[1], Math.max(1, s * 0.16), s); }
+        }
+      }
     }
-    var R = 96, sc = cv.width / (R * 2), ox = Math.floor(p.x) - R, oy = Math.floor(p.y) - R;
-    return { toPx: function (x, y) { return [(x - ox) * sc, (y - oy) * sc]; }, toW: function (px, py) { return [px / sc + ox, py / sc + oy]; } };
+    if (v.z >= 1.6) {
+      // de perto: tile por tile do que já foi visto (num buffer de pixels, ampliado sem suavizar)
+      var tx0 = Math.floor(w0[0]), ty0 = Math.floor(w0[1]), tw = Math.ceil(w1[0]) - tx0 + 1, th = Math.ceil(w1[1]) - ty0 + 1;
+      if (!mapBuf || mapBuf.width !== tw || mapBuf.height !== th) { mapBuf = document.createElement('canvas'); mapBuf.width = tw; mapBuf.height = th; }
+      var bx = mapBuf.getContext('2d'), im = bx.createImageData(tw, th), d = im.data;
+      for (y = 0; y < th; y++) {
+        for (x = 0; x < tw; x++) {
+          var col = tileColor(tx0 + x, ty0 + y), o = (y * tw + x) * 4;
+          if (!col) { continue; }
+          var c = hexRgb(col); d[o] = c[0]; d[o + 1] = c[1]; d[o + 2] = c[2]; d[o + 3] = 255;
+        }
+      }
+      bx.putImageData(im, 0, 0);
+      var q0 = xf.toPx(tx0, ty0);
+      g.imageSmoothingEnabled = false;
+      g.drawImage(mapBuf, q0[0], q0[1], tw * v.z, th * v.z);
+      // nomes das ruas
+      if (v.z >= 2.5) {
+        g.font = '11px system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+        for (y = Math.max(0, Math.floor(w0[1] / CH)); y <= Math.min(m.n - 1, Math.floor(w1[1] / CH)); y++) {
+          for (x = Math.max(0, Math.floor(w0[0] / CH)); x <= Math.min(m.n - 1, Math.floor(w1[0] / CH)); x++) {
+            var ch2 = W.chunkByIndex(x, y);
+            if (!(p.mapRevealed || (ch2 && ch2.seen))) { continue; }
+            if (m.roadN[y * m.n + x]) { var qa = xf.toPx(x * CH + CH / 2, y * CH + C.ROAD_W / 2); outlined(g, UI.streetName(1000 + y), qa[0], qa[1], 0); }
+            if (m.roadW[y * m.n + x]) { var qb = xf.toPx(x * CH + C.ROAD_W / 2, y * CH + CH / 2); outlined(g, UI.streetName(x), qb[0], qb[1], -Math.PI / 2); }
+          }
+        }
+      }
+    }
+    if (v.z < 2.5) {
+      g.font = '11px system-ui'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      m.towns.forEach(function (t) { var ch = W.chunkByIndex(t.x, t.y); if (p.mapRevealed || (ch && ch.seen)) { var qt = xf.toPx(t.x * CH + CH / 2, t.y * CH); outlined(g, t.name, qt[0], qt[1] - 4, 0); } });
+    }
+    drawNotes(g, xf.toPx, cv.width, cv.height, 16);
+    var pp = xf.toPx(p.x, p.y);
+    g.fillStyle = '#ff4040'; g.strokeStyle = '#000'; g.lineWidth = 1.5;
+    g.beginPath(); g.arc(pp[0], pp[1], 4.5, 0, Math.PI * 2); g.fill(); g.stroke();
   }
   function drawNotes(g, toPx, w, hgt, size) {
     var notes = P().mapNotes || [];
@@ -923,54 +1011,49 @@
       }
     });
   }
-  function drawMap() {
+  function outlined(g, text, x, y, rot) {
+    g.save(); g.translate(x, y); if (rot) { g.rotate(rot); }
+    g.fillStyle = 'rgba(0,0,0,0.75)'; g.fillText(text, 1, 1);
+    g.fillStyle = '#ece6d4'; g.fillText(text, 0, 0);
+    g.restore();
+  }
+  UI.mapZoom = function (dir, px, py) {
     var cv = document.getElementById('mapc');
     if (!cv) { return; }
-    var g = cv.getContext('2d'), p = P(), m = W.macro;
-    g.fillStyle = '#0c0d0f'; g.fillRect(0, 0, cv.width, cv.height);
-    var x, y, xf = mapXf(cv);
-    if (UI.mapMode === 'region') {
-      var s = cv.width / m.n;
-      for (y = 0; y < m.n; y++) {
-        for (x = 0; x < m.n; x++) {
-          var ch = W.chunkByIndex(x, y);
-          var known = p.mapRevealed || (ch && ch.seen);
-          if (!known) { continue; }
-          var t = m.type[y * m.n + x];
-          g.fillStyle = MAP_COLORS[t] || '#444';
-          g.fillRect(x * s, y * s, s + 0.5, s + 0.5);
-          g.fillStyle = '#26272a';
-          if (m.roadN[y * m.n + x]) { g.fillRect(x * s, y * s, s, s * 0.16); }
-          if (m.roadW[y * m.n + x]) { g.fillRect(x * s, y * s, s * 0.16, s); }
-        }
-      }
-      g.font = '11px system-ui'; g.fillStyle = '#e8e4da'; g.textAlign = 'center';
-      m.towns.forEach(function (t) { var ch = W.chunkByIndex(t.x, t.y); if (p.mapRevealed || (ch && ch.seen)) { g.fillText(t.name, t.x * s + s / 2, t.y * s - 4); } });
-    } else {
-      var R = 96, sc = cv.width / (R * 2);
-      var ox = Math.floor(p.x) - R, oy = Math.floor(p.y) - R;
-      for (y = 0; y < R * 2; y++) {
-        for (x = 0; x < R * 2; x++) {
-          var col = tileColor(ox + x, oy + y);
-          if (!col) { continue; }
-          g.fillStyle = col;
-          g.fillRect(x * sc, y * sc, sc + 0.4, sc + 0.4);
-        }
-      }
-    }
-    drawNotes(g, xf.toPx, cv.width, cv.height, 16);
-    var pp = xf.toPx(p.x, p.y);
-    g.fillStyle = '#ff4040'; g.strokeStyle = '#000'; g.lineWidth = 1.5;
-    g.beginPath(); g.arc(pp[0], pp[1], 4.5, 0, Math.PI * 2); g.fill(); g.stroke();
-  }
-  /* clique no mapa: põe anotação (esquerdo) ou apaga a mais próxima (direito / borracha) */
+    var v = mapView(), xf = mapXf(cv);
+    px = px === undefined ? cv.width / 2 : px; py = py === undefined ? cv.height / 2 : py;
+    var before = xf.toW(px, py);
+    v.z = U.clamp(v.z * (dir > 0 ? 1.4 : 1 / 1.4), MAP_ZMIN, MAP_ZMAX);
+    var after = mapXf(cv).toW(px, py);
+    v.cx += before[0] - after[0]; v.cy += before[1] - after[1];
+    drawMap();
+  };
+  /* mouse no mapa: clique anota, botão direito apaga, arrastar move, roda dá zoom */
   function onMapMouse(e) {
     var cv = e.target;
     if (!cv || cv.id !== 'mapc') { return; }
     e.preventDefault();
     var rc = cv.getBoundingClientRect(), k = cv.width / rc.width;
-    var mx = (e.clientX - rc.left) * k, my = (e.clientY - rc.top) * k;
-    UI.mapClick(mx, my, e.button === 2 || UI.mapSym < 0);
+    var sx = e.clientX, sy = e.clientY, moved = false, v = mapView(), cx0 = v.cx, cy0 = v.cy, btn = e.button;
+    function mv(ev) {
+      var dx = ev.clientX - sx, dy = ev.clientY - sy;
+      if (!moved && Math.abs(dx) + Math.abs(dy) < 5) { return; }
+      moved = true;
+      if (btn === 0) { v.cx = cx0 - dx * k / v.z; v.cy = cy0 - dy * k / v.z; drawMap(); }
+    }
+    function up(ev) {
+      document.removeEventListener('mousemove', mv); document.removeEventListener('mouseup', up);
+      if (moved) { return; }
+      UI.mapClick((ev.clientX - rc.left) * k, (ev.clientY - rc.top) * k, btn === 2 || UI.mapSym < 0);
+    }
+    document.addEventListener('mousemove', mv); document.addEventListener('mouseup', up);
+  }
+  function onMapWheel(e) {
+    var cv = e.target;
+    if (!cv || cv.id !== 'mapc') { return; }
+    e.preventDefault();
+    var rc = cv.getBoundingClientRect(), k = cv.width / rc.width;
+    UI.mapZoom(e.deltaY < 0 ? 1 : -1, (e.clientX - rc.left) * k, (e.clientY - rc.top) * k);
   }
   UI.mapClick = function (mx, my, erase) {
     var cv = document.getElementById('mapc');
@@ -1046,8 +1129,7 @@
   };
 
   /* ---------- rótulo ao passar o mouse (portas, janelas, móveis, corpos, placas...) ---------- */
-  var STREETS = ['Rua das Acácias', 'Rua Principal', 'Av. dos Pioneiros', 'Rua do Moinho', 'Rua Carvalho', 'Rua da Ponte', 'Rua Jefferson', 'Rua da Escola', 'Av. Central', 'Rua dos Pinheiros', 'Rua do Mercado', 'Rua Lincoln', 'Rua Velha', 'Rua da Igreja', 'Rua do Lago', 'Rua 7'];
-  UI.streetName = function (n) { return STREETS[((n * 2654435761) >>> 0) % STREETS.length]; };
+  UI.streetName = function (n) { return CP.Notes.streetName(n); };
   var hoverT = 0, hoverTxt = '';
   function edgeLabel(x, y, z, side) {
     var t = W.edgeType(x, y, z, side), E = C.EDGE;
@@ -1096,7 +1178,7 @@
       if (k <= 8 && ch) {
         for (var ci = 0; ci < ch.corpses.length; ci++) {
           var co = ch.corpses[ci];
-          if (Math.floor(co.x) === x && Math.floor(co.y) === y && W.levelOf(co.z) === lv) { return (co.burnt ? 'Corpo queimado' : 'Corpo') + (co.items && co.items.length ? ' · dá para revistar' : ''); }
+          if (Math.floor(co.x) === x && Math.floor(co.y) === y && W.levelOf(co.z) === lv) { return (co.burnt ? 'Corpo queimado' : (co.player ? 'Corpo de ' + co.player : 'Corpo')) + (co.items && co.items.length ? ' · dá para revistar' : ''); }
         }
       }
       var o = W.obj(x, y, lv);
@@ -1162,13 +1244,14 @@
     Object.keys(UI.open).forEach(function (n) { if (UI.open[n]) { UI.toggle(n, false); } });
     closeCtx();
     var p = P();
-    CP.Save.deleteSave();
+    CP.Save.saveDead();
     var days = CP.Time.daysSurvived();
     $.screens.innerHTML = '<div class="screen"><div class="death"><h1>Assim você morreu</h1><div class="cause">' + esc(p.deathCause) + '</div>' +
       '<div class="stats"><span>Sobrevivente</span><b>' + esc(p.name) + '</b><span>Ocupação</span><b>' + esc(D.OCC[p.occupation].name) + '</b>' +
       '<span>Sobreviveu</span><b>' + plural(Math.floor(days), 'dia', 'dias') + ' e ' + plural(Math.floor((days % 1) * 24), 'hora', 'horas') + '</b><span>Zumbis mortos</span><b>' + p.kills + '</b>' +
       '<span>Habilidade mais alta</span><b>' + bestSkill(p) + '</b></div>' +
-      '<button class="primary" data-a="menu-new">Novo sobrevivente</button> <button data-a="to-menu">Menu</button></div></div>';
+      '<div class="muted" style="margin:10px 0">' + (/levantou/.test(p.deathCause) ? 'Seu corpo se levantou e agora anda por aí com tudo o que você levava.' : 'Seu corpo ficou onde caiu, com tudo o que você levava.') + '</div>' +
+      '<button class="primary" data-a="menu-sameworld">Novo sobrevivente neste mundo</button> <button data-a="menu-new">Novo mundo</button> <button data-a="to-menu">Menu</button></div></div>';
   }
   function plural(n, one, many) { return n + ' ' + (n === 1 ? one : many); }
   function bestSkill(p) {
@@ -1211,6 +1294,7 @@
     switch (a) {
       case 'menu-new': UI.creation = null; UI.toggle('pause', false); G().running = false; clearHud(); UI.showCreate(); break;
       case 'menu-continue': continueGame(); break;
+      case 'menu-sameworld': UI.creation = null; UI.toggle('pause', false); G().running = false; clearHud(); UI.showCreate({ sameWorld: true }); break;
       case 'mech': if (UI.mechCar) { CP.Vehicles.partAction(P(), UI.mechCar, t.getAttribute('data-part'), t.getAttribute('data-act')); } break;
       case 'to-menu': UI.showMenu(); G().running = false; break;
       case 'help': UI.toggle('help', true); break;
@@ -1248,7 +1332,8 @@
       case 'craft': CP.Use.craft(P(), D.RECIPE[t.getAttribute('data-id')]); setTimeout(renderCraft, 100); break;
       case 'build': CP.Build.start(D.BUILD[t.getAttribute('data-id')]); UI.toggle('craft', false); break;
       case 'boil': CP.Use.boil(P()); break;
-      case 'mapmode': UI.mapMode = t.getAttribute('data-m'); renderMap(); break;
+      case 'mapmode': setMapMode(t.getAttribute('data-m')); renderMap(); break;
+      case 'mapzoom': UI.mapZoom(+t.getAttribute('data-d')); break;
       case 'mapsym': UI.mapSym = +t.getAttribute('data-i'); renderMap(); break;
       case 'save': CP.Save.save().then(function (ok) { if (ok) { UI.toast('Jogo salvo.', 'good'); } }); break;
       case 'quit': CP.Save.save().then(function () { UI.toggle('pause', false); G().running = false; UI.showMenu(); }); break;
@@ -1415,7 +1500,7 @@
       UI.panelT = 0.35;
       if (UI.open.inv && !UI.ctxOpen) { nearbySources(P()); var sg = invSig(); if (sg !== UI.sigs.inv) { renderInv(); } }
       if (UI.open.health && !UI.ctxOpen && healthSig() !== UI.sigs.health) { renderHealth(); }
-      if (UI.open.map) { drawMap(); }
+      if (UI.open.map) { var mk = Math.floor(P().x) + ',' + Math.floor(P().y); UI.mapRedrawT = (UI.mapRedrawT || 0) - 0.35; if (mk !== UI.mapKey || UI.mapRedrawT <= 0) { UI.mapKey = mk; UI.mapRedrawT = 2; drawMap(); } }
       if (UI.open.mech && mechSig() !== UI.sigs.mech) { renderMech(); }
     }
     // som ambiente

@@ -45,7 +45,7 @@
       vx: 0, vy: 0, phase: Math.random(), moving: false, seesPlayer: false, idleT: U.randRange(2, 10),
       groanT: U.randRange(8, 40), lastSeenT: 99
     };
-    zb.look = CP.Spr.buildLook({ skin: d.skin, hair: d.hair, hairStyle: d.hairStyle, female: d.female, zombie: true, seed: d.seed || zb.id, blood: d.blood },
+    zb.look = d.look ? d.look : CP.Spr.buildLook({ skin: d.skin, hair: d.hair, hairStyle: d.hairStyle, female: d.female, zombie: true, seed: d.seed || zb.id, blood: d.blood },
       (d.outfit || []).map(function (o) { return { id: o.id, color: U.mix(o.color, '#5a5a4a', 0.35) }; }));
     zb.draw = drawZombie;
     return zb;

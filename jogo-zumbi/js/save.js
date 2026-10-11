@@ -92,6 +92,27 @@
     }).catch(function (e) { S.busy = false; console.error('Erro ao salvar', e); if (CP.UI) { CP.UI.toast('Erro ao salvar: ' + e.message, 'danger'); } return false; });
   };
 
+  /* morreu: guarda o mundo sem jogador (dá para continuar com um novo sobrevivente no mesmo mundo) */
+  S.saveDead = function () {
+    var G = CP.Game, p = G.player;
+    if (!G.state || S.busy) { return Promise.resolve(false); }
+    S.busy = true;
+    var record = {
+      version: C.SCHEMA_VERSION, savedAt: Date.now(),
+      meta: { name: p ? p.name : '', dead: true, occupation: p ? p.occupation : '', days: CP.Time.daysSurvived(), kills: G.state.kills, town: (W.macro.towns[0] || {}).name },
+      state: plain(G.state), player: null, settings: plain(G.settings),
+      zombies: G.zombies.map(function (z) { return plain(CP.Zombies.toData(z)); })
+    };
+    var chunks = W.allChunks().filter(function (c) { return c.saveDirty || c.active || c.dirty; });
+    return S.open().then(function () {
+      var t = tx(['saves', 'chunks'], 'readwrite');
+      t.objectStore('saves').put(record, S.slot);
+      var cs = t.objectStore('chunks');
+      chunks.forEach(function (ch) { cs.put(S.serializeChunk(ch), S.slot + ':' + ch.cx + ',' + ch.cy); });
+      return done(t);
+    }).then(function () { S.busy = false; return true; }).catch(function (e) { S.busy = false; console.error('Erro ao salvar o mundo', e); return false; });
+  };
+
   S.hasSave = function () {
     return S.open().then(function () { return req2p(tx(['saves'], 'readonly').objectStore('saves').get(S.slot)); }).then(function (r) { return r || null; }).catch(function () { return null; });
   };
@@ -117,6 +138,12 @@
     }).then(function () {
       G.settings = Object.assign({}, G.settings, record.settings || {});
       G.state = record.state;
+      if (!record.player) { // mundo de um sobrevivente que morreu: falta criar o próximo
+        G.player = null; G.zombies = (record.zombies || []).map(function (d) { return CP.Zombies.fromData(d); });
+        G.effects = []; G.texts = []; G.activeChunks = {};
+        if (CP.Vehicles) { CP.Vehicles.reset(); }
+        return record;
+      }
       var p = record.player;
       p.draw = CP.Player.draw;
       p.action = null; p.queue = []; p.sleeping = false; p.anim = { phase: 0, attack: 0, shove: 0 };

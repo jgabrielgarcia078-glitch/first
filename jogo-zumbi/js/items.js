@@ -74,6 +74,7 @@
     if (d.gun) { n += ' [' + (it.ammo || 0) + '/' + d.gun.mag + ']'; }
     if (d.light) { n += it.on ? ' (ligada)' : ''; }
     if (it.ingr && CP.Surv) { n += CP.Surv.dishName(it); }
+    if (it.keyLabel) { n += ' (' + it.keyLabel + ')'; }
     if (d.note) { n += it.seen ? ': “' + (CP.Notes ? CP.Notes.title(it.text) : '') + '”' : ' (não lido)'; }
     if (it.water !== undefined && d.water) { n += ' [' + Math.round(it.water) + ' L]'; }
     if (it.fuel !== undefined && d.fuel) { n += ' [' + Math.round(it.fuel) + ' L]'; }
@@ -290,6 +291,8 @@
   /* itens carregados por um zumbi (ao morrer) */
   Loot.zombie = function (zd, rng) {
     var out = [];
+    // o que o zumbi carrega de verdade (chave de casa do morador, as coisas de um sobrevivente que virou zumbi)
+    if (zd.carry) { zd.carry.forEach(function (c) { out.push(c.id ? JSON.parse(JSON.stringify(c)) : c); }); if (zd.player) { return out; } }
     var extras = [['wallet', 3], ['keyring', 2], ['cigarettes', 1.5], ['lighter', 1], ['photo', 1], ['candy', 1], ['watch', 1], ['bandage', 0.5], ['painkillers', 0.4], ['knife', 0.3], ['flashlight', 0.3], ['water_bottle', 0.5], ['ammo9', 0.2], ['car_key', 0.5]];
     var n = rng.chance(0.55) ? rng.int(1, 2) : 0;
     for (var i = 0; i < n; i++) { out.push(It.make(rng.weighted(extras), null, rng)); }

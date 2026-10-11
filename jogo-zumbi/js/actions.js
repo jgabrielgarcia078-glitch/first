@@ -102,15 +102,19 @@
         if (has(p, 'hammer') || has(p, 'crowbar')) { out.push({ label: 'Remover tábua da barricada', fn: function () { unbarricade(p, e, z); } }); }
       } else if (st.open) {
         out.push({ label: 'Fechar porta', key: 'E', fn: function () { toggleDoor(p, e, z, st); } });
+      } else if (st.locked && !playerIndoorSide(p, e, z) && keyFor(p, e, z)) {
+        out.push({ label: 'Destrancar com a chave', key: 'E', fn: function () { A.start(p, { name: 'Destrancando', time: 1.2, onDone: function () { st.locked = false; msg('Porta destrancada com a chave.'); if (CP.Audio) { CP.Audio.click(); } } }); } });
       } else if (st.locked) {
         if (playerIndoorSide(p, e, z)) { out.push({ label: 'Destrancar porta', key: 'E', fn: function () { st.locked = false; msg('Porta destrancada.'); if (CP.Audio) { CP.Audio.click(); } } }); } else {
           out.push({ label: 'Porta trancada', disabled: true });
+          if (st.ext && !st.spareChecked) { out.push({ label: 'Procurar chave reserva (capacho, vaso)', fn: function () { lookForSpare(p, e, z, st); } }); }
           if (has(p, 'crowbar')) { out.push({ label: 'Arrombar com pé de cabra', fn: function () { pry(p, e, z, st); } }); }
           out.push({ label: 'Chutar a porta', fn: function () { kickDoor(p, e, z, st); } });
         }
       } else {
         out.push({ label: 'Abrir porta', key: 'E', fn: function () { toggleDoor(p, e, z, st); } });
         if (playerIndoorSide(p, e, z) && st.ext) { out.push({ label: 'Trancar porta', fn: function () { st.locked = true; msg('Porta trancada.'); if (CP.Audio) { CP.Audio.click(); } } }); }
+        if (!playerIndoorSide(p, e, z) && !st.open && keyFor(p, e, z)) { out.push({ label: 'Trancar com a chave', fn: function () { st.locked = true; msg('Porta trancada com a chave.'); if (CP.Audio) { CP.Audio.click(); } } }); }
       }
       if (!st.open && st.bar < 4 && playerIndoorSide(p, e, z)) { barricadeOpt(p, e, z, st, out); }
     } else if (type === E.WINDOW) {
@@ -609,6 +613,34 @@
     c.ang = Math.atan2(p.y - c.y, p.x - c.x) + Math.PI;
     if (p.moving && CP.Amb && CP.Amb.stepPrint) { CP.Amb.stepPrint(c, 'drag', 0.5); }
   };
+
+  /* chaves de casa: a chave abre a porta da frente do prédio dela */
+  function doorBuilding(e, z) {
+    var a = W.building(e.x, e.y, z);
+    return a || (e.side === 0 ? W.building(e.x, e.y - 1, z) : W.building(e.x - 1, e.y, z));
+  }
+  function keyFor(p, e, z) {
+    var b = doorBuilding(e, z);
+    if (!b || !CP.Notes) { return null; }
+    var id = CP.Notes.keyId(b);
+    return CP.Items.Inv.find(p, function (it) { return it.id === 'house_key' && it.keyId === id; });
+  }
+  A.keyFor = keyFor;
+  function lookForSpare(p, e, z, st) {
+    A.start(p, { name: 'Procurando a chave reserva', time: 3, anim: 'work', onDone: function () {
+      st.spareChecked = true;
+      var b = doorBuilding(e, z);
+      if (b && CP.Notes) {
+        var h = ((b.x * 2246822519) ^ (b.y * 3266489917) ^ 0x51ed) >>> 0;
+        if ((h % 1000) / 1000 < C.KEYS.SPARE && b) {
+          CP.Items.Inv.give(p, CP.Items.make('house_key', { keyId: CP.Notes.keyId(b), keyLabel: CP.Notes.address(b) }));
+          msg('Achou uma chave escondida debaixo do vaso!', 'good');
+          return;
+        }
+      }
+      msg('Nenhuma chave escondida aqui.');
+    } });
+  }
 
   /* interruptor: a luz do cômodo onde o jogador está (precisa de energia para acender) */
   function lightSwitch(p, x, y, z, out) {

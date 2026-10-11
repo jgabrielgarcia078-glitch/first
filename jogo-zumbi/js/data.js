@@ -344,6 +344,7 @@
   def('generator_item', { name: 'Gerador portátil', icon: '⚡', w: 30, cat: 'tool', tags: ['generator'] });
   def('map', { name: 'Mapa da região', icon: '🗺️', w: 0.05, cat: 'misc', tags: ['map'] });
   def('note', { name: 'Bilhete', icon: '📝', w: 0.01, cat: 'misc', note: 'any' });
+  def('house_key', { name: 'Chave de casa', icon: '🗝️', w: 0.02, cat: 'misc' });
   def('car_key', { name: 'Chave de carro', icon: '🔑', w: 0.02, cat: 'misc' });
   def('molotov', { name: 'Coquetel molotov', icon: '🍾', w: 0.8, cat: 'throwable', throwable: { fire: true, noise: 20 } });
   def('empty_beer', { name: 'Garrafa de vidro', icon: '🍾', w: 0.3, cat: 'throwable', throwable: { noise: 18 }, tags: ['glass_bottle'] });

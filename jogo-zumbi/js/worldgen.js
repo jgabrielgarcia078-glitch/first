@@ -1149,7 +1149,10 @@
       }
       var room = roomId ? ctx.c.rooms[roomId] : null;
       var bldKind = room ? ctx.c.buildings[room.bld].kind : null;
-      ctx.c.zombies.push(CP.Zombies ? CP.Zombies.makeData(ctx.rng, ctx.ox + lx + 0.5, ctx.oy + ly + 0.5, z, bldKind, room && room.type) : { x: ctx.ox + lx + 0.5, y: ctx.oy + ly + 0.5, z: z });
+      var zdat = CP.Zombies ? CP.Zombies.makeData(ctx.rng, ctx.ox + lx + 0.5, ctx.oy + ly + 0.5, z, bldKind, room && room.type) : { x: ctx.ox + lx + 0.5, y: ctx.oy + ly + 0.5, z: z };
+      // morador que virou zumbi: às vezes ainda tem a chave da casa no bolso
+      if (bldKind === 'house' && CP.Notes && ctx.rng.chance(C.KEYS.RESIDENT)) { var hb = ctx.c.buildings[room.bld]; zdat.carry = [{ id: 'house_key', keyId: CP.Notes.keyId(hb), keyLabel: CP.Notes.address(hb) }]; }
+      ctx.c.zombies.push(zdat);
       n--;
     }
   }

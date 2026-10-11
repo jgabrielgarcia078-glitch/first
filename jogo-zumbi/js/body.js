@@ -467,6 +467,14 @@
   };
 
   /* ---------- morte ---------- */
+  /* tudo o que o jogador carrega (mochila com o que tem dentro, mãos, roupas) */
+  B.belongings = function (p) {
+    var out = [];
+    function add(it) { if (it && out.indexOf(it) < 0) { out.push(it); } }
+    p.inv.forEach(add); add(p.hand1); add(p.hand2);
+    for (var s in p.worn) { add(p.worn[s]); }
+    return JSON.parse(JSON.stringify(out));
+  };
   B.die = function (p, cause) {
     if (p.dead) { return; }
     p.dead = true;
@@ -475,17 +483,22 @@
     p.body.health = 0;
     var G = CP.Game;
     G.over = true;
+    var look = CP.Player.lookFor(p), items = B.belongings(p);
     if (/infec/.test(p.deathCause) && CP.Zombies) {
-      var look = CP.Player.lookFor(p);
+      // levanta como zumbi, com as roupas e as coisas que tinha (o próximo sobrevivente pode encontrá-lo)
       var d = CP.Zombies.makeData(new U.Rng(7), p.x, p.y, p.z, null, null);
-      d.crawler = false; d.fakeDead = false;
+      d.crawler = false; d.fakeDead = false; d.carry = items; d.player = p.name;
+      d.look = Object.assign({}, look, { zombie: true, skin: U.mix(look.skin, '#7f8c75', 0.6), hair: look.hair ? U.mix(look.hair, '#4a4334', 0.38) : look.hair });
       var zb = CP.Zombies.fromData(d);
-      zb.look = Object.assign({}, look, { zombie: true, skin: U.mix(look.skin, '#7f8c75', 0.6) });
       zb.state = 'down'; zb.downT = 2.5;
       G.zombies.push(zb);
       p.deathCause += ' (e levantou outra vez...)';
-      p.hidden = true;
+    } else {
+      // o corpo fica onde caiu, com tudo o que levava
+      var ch = W.chunkAt(Math.floor(p.x), Math.floor(p.y));
+      if (ch) { ch.corpses.push({ x: p.x, y: p.y, z: W.levelOf(p.z), ang: p.ang, look: look, items: items, t: G.state.time, player: p.name }); ch.dirty = true; ch.saveDirty = true; }
     }
+    p.hidden = true;
     U.emit('player:dead', { cause: p.deathCause });
   };
 

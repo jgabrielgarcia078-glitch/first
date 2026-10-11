@@ -60,6 +60,11 @@
     goodbye: ['FOMOS PRO NORTE', 'VAZIO', 'X']
   };
   N.KINDS = Object.keys(TEMPL);
+  /* nomes de rua (por linha/coluna de quarteirão) e o endereço de uma casa */
+  var STREETS = ['Rua das Acácias', 'Rua Principal', 'Av. dos Pioneiros', 'Rua do Moinho', 'Rua Carvalho', 'Rua da Ponte', 'Rua Jefferson', 'Rua da Escola', 'Av. Central', 'Rua dos Pinheiros', 'Rua do Mercado', 'Rua Lincoln', 'Rua Velha', 'Rua da Igreja', 'Rua do Lago', 'Rua 7'];
+  N.streetName = function (n) { return STREETS[((n * 2654435761) >>> 0) % STREETS.length]; };
+  N.address = function (b) { var sh = CP.W ? CP.W.chunkShift : 5; return N.streetName(1000 + (b.y >> sh)) + ', ' + (100 + (((b.x * 31 + b.y * 17) >>> 0) % 900)); };
+  N.keyId = function (b) { return b.x + ',' + b.y; };
 
   function fill(t, rng, town) {
     var a = rng.pick(NAMES), b = rng.pick(NAMES), c = rng.pick(['Miller', 'Johnson', 'Carlson', 'Baker', 'Hayes', 'Turner', 'Price', 'Walsh']);

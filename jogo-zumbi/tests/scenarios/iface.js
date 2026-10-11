@@ -102,8 +102,22 @@ module.exports = async (page, shot, log) => {
   const n2 = await page.evaluate(() => CP.Game.player.mapNotes.length);
   log('anotações', n1, '→', n2);
   if (n1 !== 3 || n2 !== 2) fail.push('anotações: ' + n1 + ' → ' + n2);
+  // zoom com a roda e arrastar para mover (sem criar anotação)
+  const z0 = await page.evaluate(() => CP.UI.mapView.z);
+  await page.mouse.move(mc.x + mc.w * 0.5, mc.y + mc.w * 0.5); await page.mouse.wheel(0, -200); await page.waitForTimeout(150);
+  const z1 = await page.evaluate(() => CP.UI.mapView.z);
+  const cx0 = await page.evaluate(() => CP.UI.mapView.cx), notes0 = await page.evaluate(() => CP.Game.player.mapNotes.length);
+  await page.mouse.down(); await page.mouse.move(mc.x + mc.w * 0.5 + 120, mc.y + mc.w * 0.5 + 30, { steps: 6 }); await page.mouse.up();
+  await page.waitForTimeout(150);
+  const cx1 = await page.evaluate(() => CP.UI.mapView.cx), notes1 = await page.evaluate(() => CP.Game.player.mapNotes.length);
+  log('mapa zoom', z0.toFixed(2), '→', z1.toFixed(2), 'arrastar cx', cx0.toFixed(1), '→', cx1.toFixed(1));
+  if (!(z1 > z0)) fail.push('roda não deu zoom no mapa');
+  if (!(cx1 < cx0) || notes1 !== notes0) fail.push('arrastar o mapa não moveu (ou criou anotação)');
+  await page.evaluate(() => { CP.UI.mapView.z = 5; CP.UI.mapView.cx = CP.Game.player.x; CP.UI.mapView.cy = CP.Game.player.y; CP.Game.player.mapRevealed = true; CP.UI.toggle('map', false); CP.UI.toggle('map', true); });
+  await page.waitForTimeout(300);
+  await shot('mapa-perto-ruas');
   // região
-  await page.evaluate(() => { CP.UI.mapMode = 'region'; CP.UI.toggle('map', false); CP.UI.toggle('map', true); });
+  await page.evaluate(() => { CP.Game.player.mapRevealed = false; CP.UI.mapView = null; CP.UI.mapMode = 'region'; CP.UI.toggle('map', false); CP.UI.toggle('map', true); });
   await page.waitForTimeout(300);
   await shot('mapa-regiao');
   await page.evaluate(() => CP.UI.toggle('map', false));

@@ -17,13 +17,15 @@ function findOpen(cx, cy, r) {
     }
     if (good) return { x: x + 0.5, y: y + 0.5 };
   }
-  return null;
+  return firstOpen; // perto daqui não tem: volta para a primeira área aberta achada
 }
+let firstOpen = null;
 
 G.newGame({ seed: 4242, settings: { popMult: 1 }, character: { name: 'Teste', occupation: 'unemployed', traits: [] } });
 const p = G.player;
 clearZombies();
 const open = findOpen(p.x, p.y, 3);
+firstOpen = open;
 ok(!!open, 'achou área aberta');
 p.x = open.x; p.y = open.y; p.z = 0;
 const A = CP.Amb;
@@ -765,6 +767,42 @@ if (car) {
   const sw = CP.Use.itemOptions(q, Inv.findId(q, 'cheese').item, 'player').find(x => /sanduíche/.test(x.label)); sw.fn(); tick(3);
   const sand = Inv.findId(q, 'sandwich');
   ok(sand && sand.item.ingr.length === 2 && !Inv.findId(q, 'bread'), 'sanduíche de pão com queijo');
+}
+
+/* ---------- S6: chaves de casa, pertences ao morrer ---------- */
+{
+  const q = G.player;
+  // moradores-zumbi com a chave da casa no bolso
+  let withKey = 0, zd0 = null;
+  for (let cy = 0; cy < 30; cy++) for (let cx = 0; cx < C.WORLD_CHUNKS; cx++) { const ch = W.ensureChunk(cx, cy); ch.zombies.forEach(z => { if (z.carry && z.carry[0].id === 'house_key') { withKey++; zd0 = zd0 || z; } }); }
+  ok(withKey > 10, 'moradores-zumbi com chave de casa (' + withKey + ')');
+  const loot = CP.Items.Loot.zombie(zd0, new U.Rng(3));
+  ok(loot.some(i => i.id === 'house_key' && i.keyId === zd0.carry[0].keyId), 'matar o morador dá a chave');
+  ok(/Chave de casa \(.+, \d+\)/.test(CP.Items.name(loot.find(i => i.id === 'house_key'))), 'chave mostra o endereço (' + CP.Items.name(loot.find(i => i.id === 'house_key')) + ')');
+  // porta da frente trancada: destrancar com a chave certa
+  let door = null;
+  for (const k in G.activeChunks) { const ch = G.activeChunks[k]; for (const b of ch.buildings) { if (b.kind === 'house' && b.door && !door) door = { b, d: b.door }; } }
+  const st = W.edgeState(door.d.x, door.d.y, 0, door.d.side) || {}; st.locked = true; st.open = false; st.broken = false; st.bar = 0; st.ext = true; st.spareChecked = false; W.setEdgeState(door.d.x, door.d.y, 0, door.d.side, st);
+  const inA = W.isIndoor(door.d.x, door.d.y, 0);
+  const outT = inA ? (door.d.side === 0 ? { x: door.d.x, y: door.d.y - 1 } : { x: door.d.x - 1, y: door.d.y }) : { x: door.d.x, y: door.d.y };
+  q.x = outT.x + 0.5; q.y = outT.y + 0.5; q.z = 0; clearZombies();
+  const mx = door.d.side === 0 ? door.d.x + 0.5 : door.d.x + (inA ? -0.06 : 0.06), my = door.d.side === 0 ? door.d.y + (inA ? -0.06 : 0.06) : door.d.y + 0.5;
+  let opts = CP.Actions.contextOptions(q, mx, my);
+  ok(!opts.some(o => /chave$/.test(o.label) && /Destrancar/.test(o.label)), 'sem a chave não destranca');
+  const spare = opts.find(o => /chave reserva/.test(o.label));
+  ok(!!spare, 'pode procurar chave reserva no capacho');
+  spare.fn(); tick(4);
+  ok(st.spareChecked && !CP.Actions.contextOptions(q, mx, my).some(o => /chave reserva/.test(o.label)), 'só dá para procurar uma vez');
+  Inv.give(q, CP.Items.make('house_key', { keyId: CP.Notes.keyId(door.b), keyLabel: CP.Notes.address(door.b) }));
+  const un = CP.Actions.contextOptions(q, mx, my).find(o => /Destrancar com a chave/.test(o.label));
+  ok(!!un && un.key === 'E', 'com a chave: destrancar (E)');
+  un.fn(); tick(2);
+  ok(!st.locked, 'porta destrancada');
+  const lk = CP.Actions.contextOptions(q, mx, my).find(o => /Trancar com a chave/.test(o.label));
+  ok(!!lk, 'trancar de fora com a chave'); lk.fn(); ok(st.locked, 'trancada de novo');
+  // pertences ao morrer (sem morrer de verdade: só a lista)
+  const bl = CP.Body.belongings(q);
+  ok(bl.length >= Inv.all(q).length && bl.some(i => i.id === 'house_key'), 'pertences incluem inventário, mãos e roupas (' + bl.length + ')');
 }
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);
