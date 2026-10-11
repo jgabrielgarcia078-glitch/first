@@ -46,7 +46,7 @@
       if (p.reloadT <= 0) { finishReload(p); }
     }
     if (In.blockGame || p.sleeping || p.dead || p.vehicle) { return; }
-    var wantAttack = In.mouse.left && !p.uiClickGuard && !p.dragging;
+    var wantAttack = In.mouse.left && !p.uiClickGuard && !p.dragging && !p.carry;
     if (wantAttack && p.anim.attack <= 0 && p.anim.shove <= 0 && p.attackCd <= 0 && !p.action) {
       var wp = weaponOf(p);
       if (wp && wp.def.gun) {

@@ -593,7 +593,7 @@
     var st = W.edgeState(b.x, b.y, b.z, b.side);
     var type = W.edgeType(b.x, b.y, b.z, b.side);
     if (!st) { st = { open: false, locked: false, hp: type === E.WINDOW ? 8 : 25, bar: 0, barHp: 0, broken: false, glass: type === E.WINDOW }; W.setEdgeState(b.x, b.y, b.z, b.side, st); }
-    var dmg = ZC.BASH_DAMAGE * ((CP.Game.settings.strength) || 1) * U.randRange(0.6, 1.4);
+    var dmg = ZC.BASH_DAMAGE * ((CP.Game.settings.strength) || 1) * U.randRange(0.6, 1.4) * (CP.Surv ? CP.Surv.bashMult(st) : 1);
     var mx = b.side === 0 ? b.x + 0.5 : b.x, my = b.side === 0 ? b.y : b.y + 0.5;
     Z.noise(mx, my, b.z, C.NOISE.DOOR_BASH, 'bash');
     if (CP.Audio) { CP.Audio.thump(mx, my, b.z, type === E.WINDOW && !st.bar); }

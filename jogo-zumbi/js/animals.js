@@ -8,7 +8,7 @@
   var HW = C.TILE_W / 2, HH = C.TILE_H / 2;
   var An = { list: [], spawnT: 2 };
   var SPECIES = {
-    rabbit: { hp: 0.25, walk: 0.7, flee: 3.6, fear: 6, r: 0.18, item: 'dead_rabbit', name: 'Coelho' },
+    rabbit: { hp: 0.2, walk: 0.7, flee: 3.6, fear: 6, r: 0.18, item: 'dead_rabbit', name: 'Coelho' },
     deer: { hp: 3, walk: 0.9, flee: 4.8, fear: 10, r: 0.4, item: 'venison', name: 'Veado' },
     bird: { hp: 0.1, walk: 0.4, flee: 0, fear: 4, r: 0.12, item: 'dead_bird', name: 'Pássaro' }
   };

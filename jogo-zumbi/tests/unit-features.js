@@ -935,5 +935,74 @@ if (car) {
   dr2.x += 100; An.update(0.05); ok(An.list.indexOf(dr2) < 0, 'bicho longe some');
   An.reset(); G.state.world.weather = W0;
 }
+/* ---------- T5: mover móveis (porta travada) e escada de mão até o telhado ---------- */
+{
+  const q = G.player, Sv = CP.Surv, E = C.EDGE;
+  q.x = firstOpen.x; q.y = firstOpen.y; q.z = 0; q.vehicle = null; q.carry = null; q.dragging = null; q.action = null; G.activateChunks(true); clearZombies();
+  // uma casa térrea com porta
+  let hs = null;
+  for (const ch of W.allChunks()) { if (!ch.active) continue; for (const b of ch.buildings) if (b.kind === 'house' && b.floors === 1 && b.door && W.edgeType(b.door.x, b.door.y, 0, b.door.side) === E.DOOR) { hs = b; break; } if (hs) break; }
+  ok(!!hs, 'achou casa térrea com porta');
+  const d = hs.door, inA = W.isIndoor(d.x, d.y, 0), inT = inA ? { x: d.x, y: d.y } : (d.side === 0 ? { x: d.x, y: d.y - 1 } : { x: d.x - 1, y: d.y });
+  const st = W.edgeState(d.x, d.y, 0, d.side) || (W.setEdgeState(d.x, d.y, 0, d.side, { open: false, locked: false, hp: 25, bar: 0, barHp: 0, broken: false }), W.edgeState(d.x, d.y, 0, d.side));
+  st.open = false; st.locked = false; st.bar = 0; st.broken = false; st.block = false;
+  // limpa o tile de dentro da porta e põe uma mesa ao lado para pegar
+  const L0 = W.lvl(inT.x, inT.y, 0); L0.obj[W.idx(inT.x, inT.y)] = 0;
+  let tbl = null;
+  for (const dd of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, -1], [1, -1], [-1, 1]]) { const x = inT.x + dd[0], y = inT.y + dd[1]; if (W.isIndoor(x, y, 0) && W.building(x, y, 0) === W.building(inT.x, inT.y, 0) && !W.blockedBetween(inT.x, inT.y, x, y, 0, false)) { if (!tbl) tbl = { x, y }; } }
+  ok(!!tbl, 'tile vizinho dentro da casa');
+  const Lt = W.lvl(tbl.x, tbl.y, 0); Lt.obj[W.idx(tbl.x, tbl.y)] = O.TABLE; Lt.odir[W.idx(tbl.x, tbl.y)] = 2;
+  q.x = inT.x + 0.5; q.y = inT.y + 0.5;
+  const opts = CP.Actions.contextOptions(q, tbl.x + 0.5, tbl.y + 0.5), pk = opts.find(o => /^Pegar mesa/.test(o.label));
+  ok(pk && !pk.disabled, 'dá para pegar a mesa');
+  pk.fn(); tick(6);
+  ok(q.carry && q.carry.o === O.TABLE && !W.obj(tbl.x, tbl.y, 0), 'mesa nas mãos, tile vazio');
+  ok(Sv.carrySpeed(q) < 0.9 && Sv.carrySpeed(q) > 0.3, 'carregando anda mais devagar (' + Sv.carrySpeed(q).toFixed(2) + ')');
+  ok(!CP.Actions.contextOptions(q, tbl.x + 0.5, tbl.y + 0.5).some(o => /^Pegar/.test(o.label)), 'não pega outro com as mãos ocupadas');
+  // coloca encostada na porta (por dentro)
+  q.x = tbl.x + 0.5; q.y = tbl.y + 0.5;
+  const pl = CP.Actions.contextOptions(q, inT.x + 0.5, inT.y + 0.5).find(o => /^Colocar mesa aqui/.test(o.label));
+  ok(pl && !pl.disabled, 'opção de colocar a mesa');
+  pl.fn(); tick(3);
+  ok(!q.carry && W.obj(inT.x, inT.y, 0) === O.TABLE && st.block, 'mesa no lugar trava a porta');
+  ok(Sv.bashMult(st) < 0.5, 'porta travada aguenta mais os zumbis');
+  // de fora não abre
+  const out = inA ? (d.side === 0 ? { x: d.x, y: d.y - 1 } : { x: d.x - 1, y: d.y }) : { x: d.x, y: d.y };
+  q.x = out.x + 0.5; q.y = out.y + 0.5;
+  const mid = d.side === 0 ? { x: d.x + 0.5, y: d.y } : { x: d.x, y: d.y + 0.5 };
+  const dop = CP.Actions.contextOptions(q, mid.x + (d.side === 1 ? (q.x < mid.x ? -0.1 : 0.1) : 0), mid.y + (d.side === 0 ? (q.y < mid.y ? -0.1 : 0.1) : 0));
+  ok(dop.some(o => /travada por um móvel/.test(o.label)) && !dop.some(o => o.label === 'Abrir porta'), 'porta travada não abre');
+  // tira a mesa: destrava
+  q.x = tbl.x + 0.5; q.y = tbl.y + 0.5;
+  CP.Actions.contextOptions(q, inT.x + 0.5, inT.y + 0.5).find(o => /^Pegar mesa/.test(o.label)).fn(); tick(6);
+  ok(q.carry && !st.block, 'tirou a mesa: porta destravada');
+  q.carry = null;
+  ok(Sv.strNeeded(40) === 4 && Sv.strNeeded(10) === 0, 'móvel pesado pede força');
+  // recipiente cheio não sai do lugar
+  Lt.obj[W.idx(tbl.x, tbl.y)] = O.CRATE; W.chunkAt(tbl.x, tbl.y).containers[W.key(tbl.x, tbl.y, 0)] = { items: [CP.Items.make('nails')], gen: true };
+  const cr = CP.Actions.contextOptions(q, tbl.x + 0.5, tbl.y + 0.5).find(o => /^Pegar caixote/.test(o.label));
+  ok(cr && cr.disabled && /Esvazie/.test(cr.hint), 'caixote cheio: esvazie antes');
+  Lt.obj[W.idx(tbl.x, tbl.y)] = 0;
+  // escada de mão: parede de fora com telhado em cima
+  let spot = null;
+  for (let y = hs.y - 1; y <= hs.y + hs.h && !spot; y++) for (let x = hs.x - 1; x <= hs.x + hs.w && !spot; x++) {
+    if (W.isIndoor(x, y, 0) || !W.tileWalkable(x, y, 0) || W.obj(x, y, 0)) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (W.isIndoor(x + dx, y + dy, 0) && W.floor(x + dx, y + dy, 1) === F.ROOF && W.edgeType(dx === 1 ? x + 1 : x, dy === 1 ? y + 1 : y, 0, dx ? 1 : 0) === E.WALL) { spot = { x, y, a: Math.atan2(dy, dx) }; break; }
+  }
+  ok(!!spot, 'parede de fora com telhado');
+  q.x = spot.x + 0.5; q.y = spot.y + 0.5; q.ang = spot.a; clearZombies();
+  const lad = CP.Items.make('step_ladder'); Inv.give(q, lad);
+  const lo = CP.Use.itemOptions(q, lad, 'player').find(o => /Apoiar a escada/.test(o.label));
+  ok(lo && !lo.disabled, 'dá para apoiar a escada na parede'); lo.fn(); tick(4);
+  ok(W.obj(spot.x, spot.y, 0) === O.LADDER && !Inv.findId(q, 'step_ladder'), 'escada apoiada');
+  const up = CP.Actions.contextOptions(q, spot.x + 0.5, spot.y + 0.5).find(o => o.label === 'Subir no telhado');
+  ok(!!up, 'opção de subir'); up.fn(); tick(4);
+  ok(W.levelOf(q.z) === 1 && W.floor(Math.floor(q.x), Math.floor(q.y), 1) === F.ROOF, 'em cima do telhado');
+  const dn = CP.Actions.contextOptions(q, q.x, q.y).find(o => o.label === 'Descer pela escada');
+  ok(!!dn, 'no telhado: descer pela escada'); dn.fn(); tick(4);
+  ok(W.levelOf(q.z) === 0 && Math.floor(q.x) === spot.x && Math.floor(q.y) === spot.y, 'desceu');
+  CP.Actions.contextOptions(q, spot.x + 0.5, spot.y + 0.5).find(o => o.label === 'Recolher a escada').fn(); tick(3);
+  ok(!W.obj(spot.x, spot.y, 0) && Inv.findId(q, 'step_ladder'), 'escada recolhida');
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

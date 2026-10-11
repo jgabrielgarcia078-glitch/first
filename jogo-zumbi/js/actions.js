@@ -98,6 +98,7 @@
     }
     if (type === E.DOOR || type === E.GARAGE) {
       if (st.broken) { return; }
+      if (st.block && !st.open) { out.push({ label: 'Porta travada por um móvel', disabled: true }); return; }
       if (st.bar > 0) {
         if (has(p, 'hammer') || has(p, 'crowbar')) { out.push({ label: 'Remover tábua da barricada', fn: function () { unbarricade(p, e, z); } }); }
       } else if (st.open) {
@@ -291,6 +292,8 @@
       out.push({ label: 'Cortar árvore', disabled: !axe, hint: 'Precisa de machado', fn: function () { chopTree(p, x, y, z); } });
     }
     if (info.trap && CP.Surv) { CP.Surv.trapOptions(p, x, y, z, out); }
+    if (info.ladder && CP.Surv) { CP.Surv.ladderOptions(p, x, y, z, out); }
+    if (info.move && CP.Surv) { CP.Surv.furnOptions(p, x, y, z, out); }
     if (info.forage) { out.push({ label: 'Procurar algo útil (coleta)', fn: function () { forage(p, x, y, z); } }); }
     if (info.dismantle) {
       var tool = info.dismantle[0] === 'scrap' ? (has(p, 'screwdriver') || has(p, 'wrench')) : (has(p, 'hammer') || has(p, 'saw'));
@@ -524,6 +527,7 @@
     edges.sort(function (a, b) { return a.d - b.d; });
     if (p.dragging) { out.push({ label: 'Soltar o corpo', key: 'E', fn: function () { A.dropCorpse(p); } }); }
     for (var i = 0; i < 2; i++) { if (edges[i].d < 0.4) { edgeOptions(p, edges[i].e, out); ropeUpOptions(p, edges[i].e, out); } }
+    if (CP.Surv) { CP.Surv.carryOptions(p, x, y, z, out); CP.Surv.roofOptions(p, out); }
     objOptions(p, x, y, z, out);
     lightSwitch(p, x, y, z, out);
     if (CP.Fire) { CP.Fire.options(p, x, y, z, out); }

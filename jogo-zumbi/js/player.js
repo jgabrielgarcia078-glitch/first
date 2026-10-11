@@ -172,7 +172,7 @@
     }
     var len = Math.sqrt(mx * mx + my * my);
     p.aiming = canControl && In.aiming();
-    p.running = canControl && len > 0 && (In.isDown('ShiftLeft') || In.isDown('ShiftRight')) && !p.aiming && !p.dragging && (!CP.Body || CP.Body.canRun(p));
+    p.running = canControl && len > 0 && (In.isDown('ShiftLeft') || In.isDown('ShiftRight')) && !p.aiming && !p.dragging && !p.carry && (!CP.Body || CP.Body.canRun(p));
     if (p.stealth) { len = 0; } // segurando o zumbi: não anda
     if (p.running && p.sneaking) { p.sneaking = false; }
     // olhar para o mouse ao mirar/atacar
@@ -185,7 +185,7 @@
       if (p.action && p.action.cancelOnMove !== false && CP.Actions) { CP.Actions.cancel(p, 'moveu'); }
       if (p.sitting) { p.sitting = false; }
       mx /= len; my /= len;
-      var sp = P.speed(p) * (p.anim.attack > 0 ? 0.35 : 1) * (p.dragging ? C.COMBAT.DRAG_SPEED : 1);
+      var sp = P.speed(p) * (p.anim.attack > 0 ? 0.35 : 1) * (p.dragging ? C.COMBAT.DRAG_SPEED : 1) * (p.carry && CP.Surv ? CP.Surv.carrySpeed(p) : 1);
       var dx = mx * sp * dt, dy = my * sp * dt;
       var ox = p.x, oy = p.y;
       W.moveCircle(p, dx, dy, C.PLAYER_RADIUS);
@@ -281,6 +281,13 @@
     }
     return lk;
   };
+  /* móvel nas mãos: a sprite do objeto, menor, na frente do peito */
+  function drawCarry(g, p, sx, sy, b) {
+    var c = p.carry, spr = CP.Spr.obj(c.o, c.dir, 0), k = Math.min(0.5, 34 / (C.OBJ_INFO[c.o].h * C.WALL_H + 20)); // móvel alto fica menor para não cobrir o corpo
+    var fx = Math.cos(p.ang), fy = Math.sin(p.ang), ox = C.TILE_W / 2 * (fx - fy) * 0.42, oy = C.TILE_H / 2 * (fx + fy) * 0.42;
+    var img = CP.Spr.lit(spr, CP.Spr.lightIndex(b));
+    g.drawImage(img, sx + ox - spr.ax * k, sy + oy - 12 - (spr.ay + C.TILE_H / 2) * k, img.width * k, img.height * k);
+  }
   P.draw = function (g, sx, sy, bright) {
     var p = this;
     var look = P.lookFor(p);
@@ -308,9 +315,13 @@
       var ph = Math.sin(now * (exA === 'jack' ? 7 : 4));
       if (exA === 'pushup') { pose.down = true; pose.crawl = true; pose.phase = 0; sy -= Math.max(0, ph) * 3; } else if (exA === 'situp') { pose.kneel = ph > 0 ? 1 : 0.6; } else if (exA === 'squat') { pose.crouch = ph > 0; } else { pose.moving = true; pose.phase = (now * 1.8) % 1; sy -= Math.abs(ph) * 3; }
     }
+    if (p.carry && !p.dead && !p.sleeping) { pose.carry = 1; pose.weapon = null; pose.sit = 0; }
     if (p.dragged && !p.dead) { pose.down = true; pose.crawl = true; pose.phase = (now * 2.4) % 1; } // debatendo-se no chão
     var b = Math.max(0.35, bright);
+    var behind = pose.carry && Math.cos(p.ang) + Math.sin(p.ang) < 0; // de costas para a câmera: o móvel fica atrás do corpo
+    if (behind) { drawCarry(g, p, sx, sy, b); }
     CP.Spr.drawHuman(g, sx, sy, look, pose, b);
+    if (pose.carry && !behind) { drawCarry(g, p, sx, sy, b); }
     var fl = CP.Time && CP.Time.handFlame(p);
     if (fl && !p.dead && !p.sleeping) { // chama na mão
       var hx = sx + (p.hand1 === fl ? 7 : -7) * Math.cos(p.ang - 0.8), hy = sy - (pose.sit ? 20 : 28) + Math.sin(p.ang - 0.8) * 3, fk = 1 + Math.sin(now * 23) * 0.15 + Math.sin(now * 37) * 0.1;

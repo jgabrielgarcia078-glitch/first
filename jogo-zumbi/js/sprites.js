@@ -1112,6 +1112,7 @@
       case O.TRAP_BOX: drawTrapBox(g, dir); break;
       case O.TRAP_SNARE: drawTrapSnare(g, dir); break;
       case O.BRANCHES: drawBranches(g, rng, dir); break;
+      case O.LADDER: drawLadder(g, dir); break;
       default: box(g, 0.2, 0.2, 0.6, 0.6, 0, 20, '#f0f');
     }
     return (objArr[nk] = store(key, c, ax, ay));
@@ -1606,6 +1607,19 @@
       for (var l = 0; l < 4; l++) { ellipseAt(g, x + (ex - x) * rng.next(), y + (ey - y) * rng.next() - rng.range(0, 3), rng.range(1.8, 3), rng.range(1.2, 2), rng.pick(['#3e5a2a', '#4e6a32', '#5a7436'])); }
     }
   }
+  /* escada de mão apoiada na parede do lado dir (mesma convenção de againstWall): o topo passa da beirada do telhado */
+  function drawLadder(g, dir) {
+    function at(d, sx, h) { var u = dir === 2 || dir === 0 ? sx : (dir === 1 ? d : 1 - d), v = dir === 2 ? d : (dir === 0 ? 1 - d : sx); return ip(u, v, h); }
+    var top = WH + 8, rails = [0.36, 0.64];
+    g.lineCap = 'round';
+    rails.forEach(function (sx, i) { var a = at(0.72, sx, 0), b = at(0.03, sx, top); g.strokeStyle = i ? '#9aa0a4' : '#7e8488'; g.lineWidth = 2.6; g.beginPath(); g.moveTo(a[0], a[1]); g.lineTo(b[0], b[1]); g.stroke(); });
+    for (var k = 1; k < 9; k++) {
+      var t = k / 9, d = 0.72 - 0.69 * t, h = top * t, a1 = at(d, rails[0], h), b1 = at(d, rails[1], h);
+      g.strokeStyle = '#b4b8ba'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(a1[0], a1[1]); g.lineTo(b1[0], b1[1]); g.stroke();
+    }
+    rails.forEach(function (sx) { var a = at(0.72, sx, 0); ellipseAt(g, a[0], a[1] + 0.5, 2.2, 1.1, '#2a2a2a'); });
+    g.lineCap = 'butt';
+  }
   function drawRubble(g, rng) {
     var t = ip(0.5, 0.5, 0);
     for (var i = 0; i < 9; i++) {
@@ -1921,7 +1935,7 @@
     var bob = mv * Math.abs(Math.sin(ph)) * (pose.run ? 2.4 : 1.2);
     if ((Zb || limpSide) && mv) { bob = Math.max(0, Math.sin(ph) * limpSide) * 2.4; }
     var kneel = pose.kneel || 0, eatT = pose.eat || 0, stag = pose.stagger || 0, strug = pose.struggle || 0, tt0 = pose.t || 0;
-    var sit = pose.sit || 0, readB = pose.read || 0, sip = pose.sip || 0;   // sentado (1 cadeira, 2 chão), lendo, comendo/bebendo
+    var sit = pose.sit || 0, readB = pose.read || 0, sip = pose.sip || 0, carryB = pose.carry || 0;   // sentado (1 cadeira, 2 chão), lendo, comendo/bebendo
     var style = pose.attack ? (ATTACK_STYLE[pose.weapon] || 'swing') : '';
     var lean = (pose.crouch ? 0.1 : 0) + (pose.run ? 0.08 : 0) + (Zb ? 0.11 : 0) + (pose.lunge ? 0.08 : 0) + kneel * 0.2 + (eatT ? 0.16 + 0.05 * Math.sin(eatT * 5) : 0) - stag * 0.16 - strug * 0.1;
     var swayX = Zb ? Math.sin(ph * 0.5 + seed) * 1.6 : 0;
@@ -2053,6 +2067,9 @@
       if (!wh && h1 && (style === 'overhead' || style === 'thrust')) { // arma de duas mãos: a outra mão segura logo abaixo
         hand = [h1[0] - (style === 'thrust' ? HW * fx * 0.1 : 1.5), h1[1] + (style === 'thrust' ? 1 : 4)];
         elbow = lerp2(sh, hand, 0.5); elbow = [elbow[0] + side * nearSide * 2, elbow[1] + 1];
+      } else if (carryB) { // carregando um móvel: braços esticados à frente, mãos afastadas
+        hand = P(L + 0.26, side * 0.15, shH - 6);
+        elbow = P(L + 0.12, side * (shW + 0.05), shH - 9);
       } else if (readB) { // lendo: as duas mãos seguram o livro na frente do peito
         hand = P(L + 0.2, side * 0.055, waistH + 3);
         elbow = P(L + 0.05, side * (shW + 0.02), waistH - 1);

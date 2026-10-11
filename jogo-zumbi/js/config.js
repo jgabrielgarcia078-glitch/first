@@ -82,7 +82,7 @@
     RAIN_BARREL: 32, CAMPFIRE: 33, CROP: 34, MED_CABINET: 35, LOCKER: 36, GENERATOR: 37,
     WALL_SHELF: 38, NIGHTSTAND: 39, DRESSER: 40, TALL_GRASS: 41, FENCE_POST: 42, CORPSE_PILE: 43,
     BENCH: 44, TRASH_CAN: 45, POWER_POLE: 46, STREET_SIGN: 47, BILLBOARD: 48, GRILL: 49, SWING: 50, CLOTHESLINE: 51,
-    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58, TRAP_BOX: 59, TRAP_SNARE: 60, BRANCHES: 61
+    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58, TRAP_BOX: 59, TRAP_SNARE: 60, BRANCHES: 61, LADDER: 62
   };
   /* Propriedades por objeto: nome, sólido, recipiente (capacidade em kg), altura visual (0..1 de parede), bloqueia visão */
   C.OBJ_INFO = [];
@@ -100,53 +100,53 @@
     o(O.TALL_GRASS, 'Mato alto', false, 0, 0.3, false, { slow: 0.8, forage: true });
     o(O.BED_HEAD, 'Cama', true, 0, 0.32, false, { bed: true, dismantle: ['plank', 3] });
     o(O.BED_FOOT, 'Cama', true, 0, 0.28, false, { bed: true });
-    o(O.FRIDGE, 'Geladeira', true, 25, 0.95, false, { fridge: true, dismantle: ['scrap', 3] });
-    o(O.STOVE, 'Fogão', true, 10, 0.5, false, { stove: true, dismantle: ['scrap', 2] });
-    o(O.COUNTER, 'Balcão', true, 20, 0.5, false, { dismantle: ['plank', 2] });
+    o(O.FRIDGE, 'Geladeira', true, 25, 0.95, false, { move: 40, fridge: true, dismantle: ['scrap', 3] });
+    o(O.STOVE, 'Fogão', true, 10, 0.5, false, { move: 30, stove: true, dismantle: ['scrap', 2] });
+    o(O.COUNTER, 'Balcão', true, 20, 0.5, false, { move: 25, dismantle: ['plank', 2] });
     o(O.SINK, 'Pia', true, 8, 0.5, false, { water: true });
-    o(O.TABLE, 'Mesa', true, 0, 0.42, false, { dismantle: ['plank', 2] });
-    o(O.CHAIR, 'Cadeira', false, 0, 0.5, false, { slow: 0.7, seat: true, dismantle: ['plank', 1] });
-    o(O.SOFA, 'Sofá', true, 0, 0.38, false, { seat: true, bed: true, dismantle: ['plank', 2] });
-    o(O.SHELF, 'Estante', true, 18, 0.95, false, { dismantle: ['plank', 3] });
-    o(O.WARDROBE, 'Guarda-roupa', true, 30, 1.0, false, { dismantle: ['plank', 4] });
-    o(O.DRESSER, 'Cômoda', true, 20, 0.5, false, { dismantle: ['plank', 2] });
-    o(O.NIGHTSTAND, 'Criado-mudo', true, 6, 0.35, false, { dismantle: ['plank', 1] });
+    o(O.TABLE, 'Mesa', true, 0, 0.42, false, { move: 15, dismantle: ['plank', 2] });
+    o(O.CHAIR, 'Cadeira', false, 0, 0.5, false, { move: 5, slow: 0.7, seat: true, dismantle: ['plank', 1] });
+    o(O.SOFA, 'Sofá', true, 0, 0.38, false, { move: 30, seat: true, bed: true, dismantle: ['plank', 2] });
+    o(O.SHELF, 'Estante', true, 18, 0.95, false, { move: 20, dismantle: ['plank', 3] });
+    o(O.WARDROBE, 'Guarda-roupa', true, 30, 1.0, false, { move: 35, dismantle: ['plank', 4] });
+    o(O.DRESSER, 'Cômoda', true, 20, 0.5, false, { move: 20, dismantle: ['plank', 2] });
+    o(O.NIGHTSTAND, 'Criado-mudo', true, 6, 0.35, false, { move: 6, dismantle: ['plank', 1] });
     o(O.TOILET, 'Vaso sanitário', true, 0, 0.35, false, { water: true, waterTank: 6 });
     o(O.BATHTUB, 'Banheira', true, 0, 0.3, false, { water: true });
-    o(O.TV, 'Televisão', true, 0, 0.55, false, { tv: true });
-    o(O.CRATE, 'Caixote', true, 30, 0.45, false, { dismantle: ['plank', 2] });
+    o(O.TV, 'Televisão', true, 0, 0.55, false, { move: 12, tv: true });
+    o(O.CRATE, 'Caixote', true, 30, 0.45, false, { move: 10, dismantle: ['plank', 2] });
     o(O.DUMPSTER, 'Caçamba', true, 40, 0.6, false);
     o(O.LAMPPOST, 'Poste', true, 0, 2.4, false, { light: 6 });
     o(O.MAILBOX, 'Caixa de correio', true, 2, 0.5, false);
     o(O.STAIRS, 'Escada', false, 0, 1, false, { stairs: true });
-    o(O.DESK, 'Escrivaninha', true, 12, 0.45, false, { dismantle: ['plank', 2] });
-    o(O.SHOP_SHELF, 'Prateleira', true, 30, 0.85, false, { dismantle: ['scrap', 2] });
+    o(O.DESK, 'Escrivaninha', true, 12, 0.45, false, { move: 18, dismantle: ['plank', 2] });
+    o(O.SHOP_SHELF, 'Prateleira', true, 30, 0.85, false, { move: 25, dismantle: ['scrap', 2] });
     o(O.CASH, 'Caixa registradora', true, 4, 0.55, false);
     o(O.PUMP, 'Bomba de gasolina', true, 0, 0.8, false, { fuel: true });
     o(O.CAR, 'Carro abandonado', true, 25, 0.6, false, { car: true });
     o(O.LOG, 'Tora', true, 0, 0.25, false);
     o(O.ROCK, 'Pedra', true, 0, 0.3, false);
-    o(O.BARREL, 'Barril', true, 15, 0.55, false);
-    o(O.WORKBENCH, 'Bancada', true, 25, 0.5, false, { dismantle: ['plank', 3] });
+    o(O.BARREL, 'Barril', true, 15, 0.55, false, { move: 12 });
+    o(O.WORKBENCH, 'Bancada', true, 25, 0.5, false, { move: 30, dismantle: ['plank', 3] });
     o(O.RAIN_BARREL, 'Coletor de chuva', true, 0, 0.6, false, { rain: true, waterCap: 40 });
     o(O.CAMPFIRE, 'Fogueira', false, 0, 0.2, false, { fire: true, light: 5 });
     o(O.CROP, 'Plantação', false, 0, 0.3, false, { crop: true });
-    o(O.MED_CABINET, 'Armário de remédios', true, 6, 0.6, false);
-    o(O.LOCKER, 'Armário metálico', true, 20, 1.0, false);
+    o(O.MED_CABINET, 'Armário de remédios', true, 6, 0.6, false, { move: 6 });
+    o(O.LOCKER, 'Armário metálico', true, 20, 1.0, false, { move: 30 });
     o(O.GENERATOR, 'Gerador', true, 0, 0.5, false, { generator: true });
     o(O.WALL_SHELF, 'Prateleira de parede', false, 8, 0.0, false);
     o(O.FENCE_POST, 'Mourão', true, 0, 0.5, false);
     o(O.CORPSE_PILE, 'Pilha de corpos', true, 0, 0.3, false);
-    o(O.BENCH, 'Banco', false, 0, 0.35, false, { slow: 0.7, seat: true });
-    o(O.TRASH_CAN, 'Lixeira', false, 6, 0.45, false, { slow: 0.6 });
+    o(O.BENCH, 'Banco', false, 0, 0.35, false, { move: 10, slow: 0.7, seat: true });
+    o(O.TRASH_CAN, 'Lixeira', false, 6, 0.45, false, { move: 4, slow: 0.6 });
     o(O.POWER_POLE, 'Poste de fiação', true, 0, 2.6, false);
     o(O.STREET_SIGN, 'Placa de rua', true, 0, 1.4, false);
     o(O.BILLBOARD, 'Outdoor', true, 0, 2.4, false);
-    o(O.GRILL, 'Churrasqueira', true, 6, 0.5, false, { dismantle: ['scrap', 2] });
+    o(O.GRILL, 'Churrasqueira', true, 6, 0.5, false, { move: 10, dismantle: ['scrap', 2] });
     o(O.SWING, 'Balanço', false, 0, 1.0, false, { slow: 0.7, seat: true, dismantle: ['scrap', 2] });
     o(O.CLOTHESLINE, 'Varal', false, 4, 0.9, false, { slow: 0.85 });
-    o(O.PATIO_SET, 'Mesa de quintal', true, 0, 1.0, false, { dismantle: ['plank', 1] });
-    o(O.DOGHOUSE, 'Casinha de cachorro', true, 2, 0.45, false, { dismantle: ['plank', 2] });
+    o(O.PATIO_SET, 'Mesa de quintal', true, 0, 1.0, false, { move: 10, dismantle: ['plank', 1] });
+    o(O.DOGHOUSE, 'Casinha de cachorro', true, 2, 0.45, false, { move: 10, dismantle: ['plank', 2] });
     o(O.FLOWERBED, 'Canteiro', false, 0, 0.2, false, { slow: 0.8, forage: true });
     o(O.KIDDIE_POOL, 'Piscina de plástico', false, 0, 0.12, false, { slow: 0.6, water: true });
     o(O.GRAVE, 'Cova', false, 0, 0.15, false, { slow: 0.85 });
@@ -155,6 +155,7 @@
     o(O.TRAP_BOX, 'Armadilha de caixa', false, 0, 0.25, false, { trap: 'box' });
     o(O.TRAP_SNARE, 'Armadilha de laço', false, 0, 0.2, false, { trap: 'snare' });
     o(O.BRANCHES, 'Galhos caídos', false, 0, 0.25, false, { slow: 0.7, branches: true });
+    o(O.LADDER, 'Escada de mão', false, 0, 1.3, false, { slow: 0.85, ladder: true });
   })();
 
   /* ---------- Tempo ---------- */
@@ -351,6 +352,9 @@
   /* armadilhas (chance por hora de pegar um bicho; mais no mato e com isca; longe do jogador) */
   /* animais vivos no mato (animals.js): no máximo MAX por perto, nascem entre SPAWN_MIN e SPAWN_MAX tiles do jogador, tentativa a cada SPAWN_EVERY s, somem além de DESPAWN */
   C.ANIMALS = { MAX: 8, SPAWN_MIN: 14, SPAWN_MAX: 24, SPAWN_EVERY: 4, DESPAWN: 45, SNEAK_BEHIND: 0.25 };
+  /* carregar móveis (survival.js): velocidade andando com o móvel nas mãos (cai com o peso, sobe com a força);
+   * força mínima = (kg - FREE_KG) / KG_PER_STR; porta com móvel encostado (fechada) leva só BLOCK_MULT do dano dos zumbis */
+  C.FURNITURE = { SPEED: 0.75, KG_SLOW: 0.008, STR_FAST: 0.02, FREE_KG: 20, KG_PER_STR: 5, BLOCK_MULT: 0.35, PICK_TIME: 2.5, PLACE_TIME: 1.5 };
   C.TRAPS = { BASE: 0.03, FOREST: 2.2, FIELD: 1.3, TOWN: 0.35, BAIT: 2.5, MIN_DIST: 12, ANIMALS: { box: [['dead_rabbit', 5], ['dead_squirrel', 4], ['dead_rat', 2]], snare: [['dead_rabbit', 4], ['dead_bird', 4], ['dead_squirrel', 2]] } };
   /* modo de busca (O): procura coisas no chão em volta enquanto anda devagar */
   C.SEARCH = { EVERY: 1.6, RADIUS: 3, PER_LEVEL: 0.6, SPEED: 0.6, MARK_S: 90 };

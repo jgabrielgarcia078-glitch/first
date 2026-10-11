@@ -292,6 +292,172 @@
       g.fillText(m.icon, mx, my - 8 - Math.sin(now * 3 + i) * 2); g.globalAlpha = 1;
     }
   };
+  /* ================= MÓVEIS: pegar, carregar e colocar (barricada atrás da porta) ================= */
+  var FU = C.FURNITURE, E = C.EDGE;
+  function finfo(o) { return C.OBJ_INFO[o]; }
+  Sv.strNeeded = function (kg) { return Math.max(0, Math.ceil((kg - FU.FREE_KG) / FU.KG_PER_STR)); };
+  Sv.carrySpeed = function (p) {
+    if (!p.carry) { return 1; }
+    return U.clamp(FU.SPEED - p.carry.kg * FU.KG_SLOW + skill(p, 'strength') * FU.STR_FAST, 0.35, 0.9);
+  };
+  /* as 4 bordas de um tile: [x, y, side] */
+  function tileEdges(x, y) { return [[x, y, 0], [x, y + 1, 0], [x, y, 1], [x + 1, y, 1]]; }
+  function isDoor(t) { return t === E.DOOR || t === E.GARAGE; }
+  /* um móvel sólido encostado numa porta fechada a trava (a porta ganha st.block) */
+  function blockDoors(x, y, z) {
+    var n = 0;
+    tileEdges(x, y).forEach(function (e) {
+      if (!isDoor(W.edgeType(e[0], e[1], z, e[2]))) { return; }
+      var st = W.edgeState(e[0], e[1], z, e[2]);
+      if (!st) { st = { open: false, locked: false, hp: 25, bar: 0, barHp: 0, broken: false }; W.setEdgeState(e[0], e[1], z, e[2], st); }
+      if (st.open || st.broken) { return; }
+      st.block = true; n++;
+    });
+    return n;
+  }
+  /* tirou o móvel: a porta só continua travada se ainda houver móvel sólido de um dos lados */
+  function unblockDoors(x, y, z) {
+    tileEdges(x, y).forEach(function (e) {
+      var st = W.edgeState(e[0], e[1], z, e[2]);
+      if (!st || !st.block) { return; }
+      var a = e[2] === 0 ? [e[0], e[1] - 1] : [e[0] - 1, e[1]], b = [e[0], e[1]];
+      st.block = [a, b].some(function (t) { var o = W.obj(t[0], t[1], z); return o && finfo(o).move && finfo(o).solid; });
+    });
+  }
+  Sv.furnOptions = function (p, x, y, z, out) {
+    var o = W.obj(x, y, z), info = finfo(o);
+    if (!info.move || p.carry || p.vehicle) { return; }
+    var cont = info.cap ? W.container(x, y, z) : null, full = cont && cont.items.length > 0;
+    var need = Sv.strNeeded(info.move), weak = skill(p, 'strength') < need;
+    out.push({ label: 'Pegar ' + info.name.toLowerCase() + ' (' + info.move + ' kg)', disabled: full || weak || !!p.dragging,
+      hint: full ? 'Esvazie antes' : (weak ? 'Precisa de força ' + need : 'Solte o corpo antes'), fn: function () { Sv.pickFurniture(p, x, y, z); } });
+  };
+  Sv.pickFurniture = function (p, x, y, z) {
+    var o = W.obj(x, y, z), info = finfo(o);
+    if (!info || !info.move || p.carry) { return false; }
+    p.ang = Math.atan2(y + 0.5 - p.y, x + 0.5 - p.x);
+    CP.Actions.start(p, { name: 'Pegando ' + info.name.toLowerCase(), time: FU.PICK_TIME * (1 + info.move / 40), anim: 'work', noise: { r: 4, every: 1.5 }, onDone: function () {
+      if (W.obj(x, y, z) !== o || p.carry) { return; }
+      var ch = W.chunkAt(x, y), k = W.key(x, y, z), cont = ch.containers[k];
+      if (cont && cont.items.length) { msg('Esvazie antes de carregar.', 'warn'); return; }
+      delete ch.containers[k];
+      var l = W.lvl(x, y, z), i = W.idx(x, y);
+      p.carry = { o: o, dir: l.odir[i] & 3, kg: info.move, name: info.name };
+      l.obj[i] = 0; l.odir[i] = 0; ch.dirty = true; ch.saveDirty = true;
+      unblockDoors(x, y, z);
+      p.running = false; p.sitting = false;
+      if (p.body) { p.body.stats.endurance = Math.max(0, p.body.stats.endurance - info.move * 0.002); }
+      CP.Player.addXp(p, 'strength', 0.2);
+      CP.Game.updateFov(true);
+      msg('Carregando: ' + info.name + '. Clique direito num lugar livre para colocar (E coloca à frente).');
+    } });
+    return true;
+  };
+  function placeOk(p, x, y, z) {
+    if (U.dist(p.x, p.y, x + 0.5, y + 0.5) > 1.9) { return 'Longe demais'; }
+    if (Math.floor(p.x) === x && Math.floor(p.y) === y) { return 'Você está no caminho'; }
+    if (!W.floor(x, y, z) || W.obj(x, y, z) || !W.tileWalkable(x, y, z) || W.stairAt(x, y)) { return 'Espaço ocupado'; }
+    if (CP.Vehicles && CP.Vehicles.carAt && CP.Vehicles.carAt(x + 0.5, y + 0.5, 0.3)) { return 'Tem um carro aqui'; }
+    return '';
+  }
+  Sv.placeFurniture = function (p, x, y, z) {
+    var c = p.carry;
+    if (!c) { return false; }
+    var err = placeOk(p, x, y, z);
+    if (err) { msg(err, 'warn'); return false; }
+    p.ang = Math.atan2(y + 0.5 - p.y, x + 0.5 - p.x);
+    CP.Actions.start(p, { name: 'Colocando ' + c.name.toLowerCase(), time: FU.PLACE_TIME, anim: 'work', onDone: function () {
+      if (p.carry !== c || placeOk(p, x, y, z)) { return; }
+      var ch = W.chunkAt(x, y), l = W.lvl(x, y, z), i = W.idx(x, y);
+      l.obj[i] = c.o; l.odir[i] = c.dir; ch.dirty = true; ch.saveDirty = true;
+      if (finfo(c.o).cap) { ch.containers[W.key(x, y, z)] = { items: [], gen: true }; }
+      p.carry = null;
+      var nb = finfo(c.o).solid ? blockDoors(x, y, z) : 0;
+      CP.Game.updateFov(true);
+      msg(nb ? 'A porta está travada pelo móvel.' : c.name + ' colocado.');
+    } });
+    return true;
+  };
+  var DIR_NAMES = ['sul', 'oeste', 'norte', 'leste'];
+  Sv.carryOptions = function (p, x, y, z, out) {
+    var c = p.carry;
+    if (!c) { return; }
+    var err = placeOk(p, x, y, z);
+    out.push({ label: 'Colocar ' + c.name.toLowerCase() + ' aqui', key: err ? undefined : 'E', disabled: !!err, hint: err, fn: function () { Sv.placeFurniture(p, x, y, z); } });
+    out.push({ label: 'Girar ' + c.name.toLowerCase() + ' (encosta no lado ' + DIR_NAMES[(c.dir + 1) & 3] + ')', fn: function () { c.dir = (c.dir + 1) & 3; } });
+  };
+  /* porta travada por móvel: zumbis demoram bem mais para derrubar */
+  Sv.bashMult = function (st) { return st && st.block ? FU.BLOCK_MULT : 1; };
+
+  /* ================= ESCADA DE MÃO E TELHADO ================= */
+  var LDIR = [[0, 1, 0, 1, 0], [-1, 0, 0, 0, 1], [0, -1, 0, 0, 0], [1, 0, 1, 0, 1]]; // dir → [dx, dy, ex, ey, side] (vizinho do outro lado da parede e a borda)
+  function ladderTop(x, y, z, dir) {
+    var d = LDIR[dir];
+    return { x: x + d[0], y: y + d[1], z: z + 1, edge: { x: x + d[2], y: y + d[3], side: d[4] } };
+  }
+  /* lado da parede (com telhado andável em cima) mais à frente do jogador */
+  function ladderSpot(p) {
+    var z = lvl(p), x = Math.floor(p.x), y = Math.floor(p.y);
+    if (z + 1 >= C.LEVELS || W.isIndoor(x, y, z) || W.obj(x, y, z)) { return null; }
+    var best = null, bd = 9;
+    for (var dir = 0; dir < 4; dir++) {
+      var t = ladderTop(x, y, z, dir), et = W.edgeType(t.edge.x, t.edge.y, z, t.edge.side);
+      if (!et || et === E.DOORWAY) { continue; }
+      if (!W.tileWalkable(t.x, t.y, t.z) || W.isIndoor(t.x, t.y, t.z)) { continue; }
+      var da = Math.abs(U.angleDiff(p.ang, Math.atan2(LDIR[dir][1], LDIR[dir][0])));
+      if (da < bd) { bd = da; best = { x: x, y: y, z: z, dir: dir }; }
+    }
+    return best;
+  }
+  Sv.ladderItemOptions = function (p, it, out) {
+    var sp = ladderSpot(p);
+    out.push({ label: 'Apoiar a escada na parede', disabled: !sp, hint: 'Fique colado numa parede com telhado em cima', fn: function () { Sv.placeLadder(p, it); } });
+  };
+  Sv.placeLadder = function (p, it) {
+    var sp = ladderSpot(p);
+    if (!sp) { msg('Encoste numa parede com telhado em cima.', 'warn'); return false; }
+    CP.Actions.start(p, { name: 'Apoiando a escada', time: 2.5, anim: 'work', onDone: function () {
+      if (W.obj(sp.x, sp.y, sp.z)) { return; }
+      CP.Items.Inv.detach(p, it);
+      var l = W.lvl(sp.x, sp.y, sp.z), i = W.idx(sp.x, sp.y);
+      l.obj[i] = O.LADDER; l.odir[i] = sp.dir;
+      var ch = W.chunkAt(sp.x, sp.y); ch.dirty = true; ch.saveDirty = true;
+      msg('Escada apoiada. Zumbis não sobem escada.');
+    } });
+    return true;
+  };
+  Sv.climbLadder = function (p, x, y, z, up) {
+    var dir = W.odir(x, y, z) & 3, t = ladderTop(x, y, z, dir);
+    var dest = up ? t : { x: x, y: y, z: z };
+    if (!W.tileWalkable(dest.x, dest.y, dest.z)) { msg('Não dá: tem algo no caminho.', 'warn'); return false; }
+    p.ang = up ? Math.atan2(LDIR[dir][1], LDIR[dir][0]) : Math.atan2(-LDIR[dir][1], -LDIR[dir][0]);
+    CP.Actions.start(p, { name: up ? 'Subindo a escada' : 'Descendo a escada', time: up ? 2.2 : 1.8, anim: 'climb', onDone: function () {
+      if (W.obj(x, y, z) !== O.LADDER) { return; }
+      p.x = dest.x + 0.5; p.y = dest.y + 0.5; p.z = dest.z;
+      CP.Player.addXp(p, 'fitness', 0.2);
+      CP.Game.updateFov(true);
+      if (up) { msg('Você está no telhado.'); }
+    } });
+    return true;
+  };
+  Sv.ladderOptions = function (p, x, y, z, out) {
+    if (W.obj(x, y, z) !== O.LADDER || U.dist(p.x, p.y, x + 0.5, y + 0.5) > 1.6 || p.carry) { return; }
+    out.push({ label: 'Subir no telhado', key: 'E', fn: function () { Sv.climbLadder(p, x, y, z, true); } });
+    out.push({ label: 'Recolher a escada', fn: function () { CP.Actions.start(p, { name: 'Recolhendo a escada', time: 2, anim: 'work', onDone: function () { if (W.obj(x, y, z) !== O.LADDER) { return; } var l = W.lvl(x, y, z); l.obj[W.idx(x, y)] = 0; l.odir[W.idx(x, y)] = 0; var ch = W.chunkAt(x, y); ch.dirty = true; ch.saveDirty = true; CP.Items.Inv.give(p, CP.Items.make('step_ladder')); } }); } });
+  };
+  /* no telhado: escada logo abaixo na beirada → descer */
+  Sv.roofOptions = function (p, out) {
+    var z = lvl(p);
+    if (z < 1 || p.carry) { return; }
+    var x = Math.floor(p.x), y = Math.floor(p.y);
+    for (var dir = 0; dir < 4; dir++) {
+      var d = LDIR[dir], lx = x - d[0], ly = y - d[1];
+      if (W.obj(lx, ly, z - 1) === O.LADDER && (W.odir(lx, ly, z - 1) & 3) === dir) {
+        out.push({ label: 'Descer pela escada', key: 'E', fn: (function (a, b) { return function () { Sv.climbLadder(p, a, b, z - 1, false); }; })(lx, ly) });
+        return;
+      }
+    }
+  };
   Sv.reset = function () { Sv.marks.length = 0; };
 
   CP.Surv = Sv;

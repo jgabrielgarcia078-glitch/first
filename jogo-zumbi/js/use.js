@@ -61,6 +61,7 @@
       if (d.flame.refill) { var gas = Inv.findTag(p, 'gas'); out.push({ label: 'Encher com gasolina', disabled: !gas || (it.burn || 0) >= d.flame.hours - 0.2, hint: 'Precisa de galão com gasolina', fn: function () { gas.item.fuel = Math.max(0, gas.item.fuel - 0.3); it.burn = d.flame.hours; msg('Lampião cheio.'); } }); }
       out.push({ label: 'Combustível: ' + Math.round((it.burn !== undefined ? it.burn : d.flame.hours) / d.flame.hours * 100) + '%', disabled: true });
     }
+    if (d.ladder && CP.Surv) { CP.Surv.ladderItemOptions(p, it, out); }
     if (d.trap && CP.Surv) { out.push({ label: 'Armar armadilha aqui', fn: function () { CP.Surv.placeTrap(p, it); } }); }
     if (d.food && CP.Surv) { CP.Surv.dishOptions(p, it, out); }
     if (D.ITEMS[it.id].note) { out.push({ label: 'Ler bilhete', fn: function () { it.seen = true; if (CP.UI) { CP.UI.showNote(it.text, 'Bilhete'); } } }); }
