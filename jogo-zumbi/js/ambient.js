@@ -52,6 +52,10 @@
       if (temp > C.SNOW.MELT_TEMP) { sn -= C.SNOW.MELT_PER_HOUR * hrs * (1 + (temp - C.SNOW.MELT_TEMP) * 0.15) * (wt.rain > 0 ? 2 : 1); }
     }
     w.snow = U.clamp(sn, 0, 1);
+    // chão molhado / poças: enchem com a chuva e secam devagar (mais rápido no calor)
+    var wet = w.groundWet || 0;
+    if (wt.rain > 0 && !wt.snow) { wet += C.PUDDLES.FILL_PER_HOUR * wt.rain * hrs; } else { wet -= C.PUDDLES.DRY_PER_HOUR * hrs * (1 + Math.max(0, T.temperature(true) - 10) * 0.05); }
+    w.groundWet = U.clamp(wet, 0, 1);
     updatePrints(gameDt, wt);
     updateDebris(dt);
     updateBirds(dt);
@@ -336,6 +340,7 @@
     if (Au.flies) { Au.flies(best && !CP.Time.isNight() ? (1 - bd / 6) : 0, best ? U.clamp(((best.x - p.x) - (best.y - p.y)) / 8, -0.9, 0.9) : 0); }
   }
 
+  A.wetness = function () { return ready() ? (ws().groundWet || 0) : 0; };
   A.reset = function () { A.prints.length = 0; A.debris.length = 0; A.flocks.length = 0; A.flying.length = 0; A.respawnT = 4; };
 
   CP.Amb = A;

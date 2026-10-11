@@ -496,5 +496,56 @@ if (car) {
   ok(zs.some(toMe), 'lanterna acesa à noite chama zumbis de longe (' + zs.filter(toMe).length + '/' + zs.length + ')');
   q.flashlightOn = false; clearZombies(); G.state.time = t1;
 }
+
+/* ---------- S2: poças, sangue na parede, rastro, decomposição ---------- */
+{
+  const q = G.player, w = G.state.world;
+  w.groundWet = 0;
+  w.weather = { type: 'rain', until: CP.Time.hours() + 50 };
+  for (let i = 0; i < 60; i++) A.update(0.5, 120);
+  const wetRain = w.groundWet;
+  ok(wetRain > 0.3, 'chuva molha o chão (' + wetRain.toFixed(2) + ')');
+  w.weather = { type: 'clear', until: CP.Time.hours() + 50 };
+  for (let i = 0; i < 60; i++) A.update(0.5, 120);
+  ok(w.groundWet < wetRain, 'sem chuva o chão seca (' + w.groundWet.toFixed(2) + ')');
+  w.groundWet = 0;
+  // sangue na parede: zumbi encostado numa parede leva um golpe na direção dela
+  let spot = null;
+  for (const k in G.activeChunks) {
+    const ch = G.activeChunks[k];
+    for (let i = 0; i < C.CHUNK * C.CHUNK && !spot; i++) {
+      const x = ch.cx * C.CHUNK + (i & (C.CHUNK - 1)), y = ch.cy * C.CHUNK + (i >> Math.log2(C.CHUNK));
+      if (W.wn(x, y, 0) === C.EDGE.WALL && W.tileWalkable(x, y, 0) && !W.obj(x, y, 0)) spot = { x, y };
+    }
+    if (spot) break;
+  }
+  ok(!!spot, 'achou tile encostado numa parede');
+  if (spot) {
+    const okW = CP.FX.wallBlood(spot.x + 0.5, spot.y + 0.3, 0, -Math.PI / 2);
+    const ch = W.chunkAt(spot.x, spot.y), k = W.edgeKey(spot.x, spot.y, 0, 0);
+    ok(okW && ch.wallBlood && ch.wallBlood[k] && ch.wallBlood[k].n === 1, 'golpe perto da parede respinga sangue nela');
+    CP.FX.wallBlood(spot.x + 0.5, spot.y + 0.3, 0, -Math.PI / 2); CP.FX.wallBlood(spot.x + 0.5, spot.y + 0.3, 0, -Math.PI / 2); CP.FX.wallBlood(spot.x + 0.5, spot.y + 0.3, 0, -Math.PI / 2);
+    ok(ch.wallBlood[k].n === 3, 'respingos acumulam até 3');
+    ok(!!CP.Save.serializeChunk(ch).wallBlood[k], 'sangue na parede vai para o save');
+    ok(!CP.FX.wallBlood(spot.x + 0.5, spot.y + 0.5, 0, Math.PI / 2) || W.wn(spot.x, spot.y + 1, 0), 'sem parede na direção do golpe, não respinga');
+  }
+  // rastejante deixa rastro
+  const open3 = findOpen(q.x, q.y, 3); q.x = open3.x; q.y = open3.y; clearZombies();
+  const chq = W.chunkAt(Math.floor(q.x), Math.floor(q.y)); const d0 = (chq.decals || []).length;
+  const zd = CP.Zombies.makeData(new U.Rng(77), q.x + 6, q.y, 0); zd.crawler = true; zd.fakeDead = false;
+  const cz = CP.Zombies.fromData(zd); cz.state = 'chase'; cz.target = { x: q.x, y: q.y, z: 0 }; cz.memT = 99; G.zombies.push(cz);
+  for (let i = 0; i < 30 * 12; i++) { G.tick(1 / 30, 1); q.body.health = 100; if (U.dist(cz.x, cz.y, q.x, q.y) < 1.5) break; }
+  const d1 = Object.values(G.activeChunks).reduce((a, ch) => a + (ch.decals || []).length, 0);
+  ok(d1 > d0, 'zumbi rastejando deixa rastro de sangue');
+  clearZombies();
+  // decomposição: idade do corpo calculada pelo tempo
+  const cch = W.chunkAt(Math.floor(q.x), Math.floor(q.y));
+  const lk = CP.Zombies.fromData(CP.Zombies.makeData(new U.Rng(5), q.x, q.y, 0)).look;
+  const corpse = { x: q.x + 1, y: q.y, z: 0, ang: 0, look: lk, items: [CP.Items.make('bandage')], t: G.state.time - 86400 * 16 };
+  cch.corpses.push(corpse);
+  const list = []; CP.Zombies.pushCorpses(list, 0);
+  ok(corpse.age > 15 && corpse.age < 17, 'idade do corpo em dias (' + (corpse.age || 0).toFixed(1) + ')');
+  cch.corpses.splice(cch.corpses.indexOf(corpse), 1);
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

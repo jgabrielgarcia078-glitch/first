@@ -270,6 +270,10 @@
         continue;
       }
       updateOne(zb, p, dt);
+      if (zb.crawler && CP.FX) { // rastejante deixa rastro de sangue
+        if (zb._tx === undefined) { zb._tx = zb.x; zb._ty = zb.y; }
+        if (U.dist2(zb.x, zb.y, zb._tx, zb._ty) > 0.8) { if (Math.random() < 0.6) { CP.FX.drip(zb.x, zb.y, zb.z, U.randRange(1.8, 2.8)); } zb._tx = zb.x; zb._ty = zb.y; }
+      }
       if (zb.attackT > 0 && U.dist2(zb.x, zb.y, p.x, p.y) < 2.2) { attackers++; }
     }
     Z.attackers = attackers;
@@ -624,7 +628,7 @@
     opts = opts || {};
     if (zb.state === 'dead') { return false; }
     zb.hp -= amount;
-    if (CP.FX) { CP.FX.blood(zb.x, zb.y, zb.z, Math.min(3, 1 + amount)); }
+    if (CP.FX) { CP.FX.blood(zb.x, zb.y, zb.z, Math.min(3, 1 + amount)); if (fromAng !== undefined && Math.random() < 0.45) { CP.FX.wallBlood(zb.x, zb.y, zb.z, fromAng); } }
     if (zb.hp <= 0) { Z.kill(zb, fromAng, opts.cause); return true; }
     // reação
     if (zb.state === 'fakedead') { zb.state = 'down'; zb.downT = 1; }
@@ -689,7 +693,7 @@
         var c = ch.corpses[i];
         var ageDays = (G.state.time - c.t) / 86400;
         if (ageDays > 25 && !c.items.length) { ch.corpses.splice(i, 1); continue; }
-        c.decay = Math.min(1, Math.max(0, (ageDays - 2) / 12));
+        c.decay = Math.min(1, Math.max(0, (ageDays - 2) / 12)); c.age = ageDays;
         if (Math.abs(c.x - p.x) > 40 || Math.abs(c.y - p.y) > 40) { continue; }
         if (W.levelOf(c.z) === W.levelOf(p.z) && !CP.Vis.isVisible(Math.floor(c.x), Math.floor(c.y), W.levelOf(c.z)) && U.dist2(c.x, c.y, p.x, p.y) > 9) { continue; }
         if (!c.draw) { c.draw = drawCorpse; }
@@ -724,12 +728,22 @@
       CP.Spr.drawHuman(g, sx, sy, this.bLook, { ang: this.ang, dead: true, phase: 0 }, Math.max(0.2, bright * 0.9));
       return;
     }
-    if (this.decay > 0.05) {
-      if (!this.dLook || this.dLookAt !== Math.round(this.decay * 10)) {
-        this.dLookAt = Math.round(this.decay * 10);
-        this.dLook = Object.assign({}, look, { skin: U.mix(look.skin, '#5a4f3a', this.decay * 0.8), shirt: U.mix(look.shirt || '#777', '#3a342a', this.decay * 0.6) });
+    var age = this.age || 0;
+    if (age > 1.5) {
+      // apodrecendo: incha e esverdeia, depois escurece e por fim só sobram ossos e trapos
+      var st = age < 6 ? 1 : (age < 14 ? 2 : 3), k = Math.round(age);
+      if (!this.dLook || this.dLookAt !== k) {
+        this.dLookAt = k;
+        var bloat = U.clamp((age - 1.5) / 4.5, 0, 1), rot = U.clamp((age - 6) / 8, 0, 1);
+        var skin = st === 3 ? '#cfc6ae' : U.mix(U.mix(look.skin, '#7d8a5c', bloat * 0.75), '#4a3e2e', rot * 0.85);
+        var dark = function (c, a) { return c ? U.mix(c, '#2e2a24', a) : c; };
+        this.dLook = Object.assign({}, look, { skin: skin, shirt: dark(look.shirt || '#777', 0.15 + rot * 0.45), jacket: dark(look.jacket, 0.15 + rot * 0.45), pants: dark(look.pants, 0.1 + rot * 0.4),
+          hairStyle: st === 3 ? 'careca' : look.hairStyle, beard: st === 3 ? false : look.beard, skeleton: st === 3, gloves: st === 3 ? null : look.gloves, blood: st >= 2 ? null : look.blood });
       }
       look = this.dLook;
+      // poça escura de decomposição embaixo do corpo
+      var pa = st === 1 ? 0.12 : (st === 2 ? 0.28 : 0.18);
+      g.fillStyle = 'rgba(30,24,16,' + (pa * Math.max(0.3, bright)).toFixed(2) + ')'; g.beginPath(); g.ellipse(sx, sy, 22, 9, 0, 0, Math.PI * 2); g.fill();
     }
     CP.Spr.drawHuman(g, sx, sy, look, { ang: this.ang, dead: true, phase: 0 }, Math.max(0.2, bright * 0.9));
     if (CP.Amb) { CP.Amb.drawFlies(g, sx, sy, this, bright); }

@@ -128,6 +128,9 @@
       arr.push(e);
     }
     var tiles = 0;
+    var wetv = CP.Amb && CP.Game && CP.Game.running ? CP.Amb.wetness() : 0;
+    var wetT = wetv > C.PUDDLES.MIN ? (wetv - C.PUDDLES.MIN) / (1 - C.PUDDLES.MIN) * C.PUDDLES.MAX_SHARE : 0;
+    var rainNow = CP.Time && CP.Game && CP.Game.running && !CP.Time.weather().snow ? CP.Time.rainIntensity() : 0, nowS = performance.now() / 1000, ripples = 0;
     var d, x, y, x0, x1, zz;
     // passo A: pisos do térreo + manchas
     for (d = dMin; d <= dMax; d++) {
@@ -149,7 +152,14 @@
         if (sst === 3) { drawSprite(g, S.snowTile(3, fvv & 3), lia, sx, sy); } else {
           var ov = outd ? erosionAt(f, x, y, ero) : -1;
           drawSprite(g, ov >= 0 || sst ? S.floorOv(f, fvv, ov, sst) : S.floor(f, fvv), lia, sx, sy);
-          if (!sst) { var lk = litterAt(f, x, y); if (lk >= 0) { drawSprite(g, S.litter(lk, (x * 7 + y * 3) & 3), lia, sx, sy); } }
+          if (!sst) {
+            var lk = litterAt(f, x, y); if (lk >= 0) { drawSprite(g, S.litter(lk, (x * 7 + y * 3) & 3), lia, sx, sy); }
+            if (outd && (R.season === 1 || (R.season === 2 && snow < 0.05)) && LEAFY[f] && hash01(x, y, 53) < (R.season === 1 ? 0.22 : 0.08) * (0.4 + hash01(x >> 2, y >> 2, 54) * 1.2)) { drawSprite(g, S.leafLitter((x * 5 + y) & 7, R.season === 2), lia, sx, sy); }
+            if (outd && wetT > 0 && PUDDLE[f] && hash01(x, y, 91) * 0.55 + hash01(x >> 2, y >> 2, 92) * 0.45 < wetT) {
+              drawSprite(g, S.puddle((x * 3 + y * 7) & 7), lia, sx, sy);
+              if (rainNow > 0 && ripples < 120) { ripples++; var rt = (nowS * 1.4 + hash01(x, y, 93) * 7) % 1; g.strokeStyle = 'rgba(200,215,230,' + ((1 - rt) * 0.35 * Math.min(1, rainNow)).toFixed(2) + ')'; g.lineWidth = 1; g.beginPath(); g.ellipse(sx + (hash01(x, y, 94) - 0.5) * 18, sy + HH + (hash01(x, y, 95) - 0.5) * 6, 1 + rt * 7, 0.5 + rt * 3.5, 0, 0, Math.PI * 2); g.stroke(); }
+            }
+          }
         }
         tiles++;
       }
@@ -343,6 +353,9 @@
   R.graffitiAt = function (x, y, z, side) { if (z !== 0) { return null; } var gf = graffAt(x, y, side); return gf ? gf.text : null; };
 
   /* variação de textura por posição nos pisos "naturais" (a cor continua vindo de fvar) */
+  var PUDDLE = [], LEAFY = [];
+  [F.ASPHALT, F.SIDEWALK, F.CONCRETE, F.DIRT, F.GRAVEL, F.FARM].forEach(function (f) { PUDDLE[f] = 1; });
+  [F.GRASS, F.DARKGRASS, F.DIRT, F.SIDEWALK, F.FIELD].forEach(function (f) { LEAFY[f] = 1; });
   var NATURAL = [];
   [F.GRASS, F.DARKGRASS, F.DIRT, F.ASPHALT, F.SIDEWALK, F.SAND, F.GRAVEL, F.CONCRETE, F.FIELD, F.WOOD, F.CARPET, F.TILE, F.LINOLEUM].forEach(function (f) { NATURAL[f] = 1; });
   function fv(f, v, x, y) {
@@ -491,6 +504,8 @@
     var spr = S.wall(type, style, side, state, bar, cut, curt, (grime >>> 7) % 3);
     drawSprite(g, spr, c, bx, by, fade);
     if (cut) { return; }
+    var wch = W.chunkAt(x, y);
+    if (wch && wch.wallBlood) { var wbv = wch.wallBlood[W.edgeKey(x, y, z, side)]; if (wbv) { for (var wbi = 0; wbi < Math.min(3, wbv.n); wbi++) { drawSprite(g, S.wallBlood(side, wbv.v + wbi * 3), c, bx, by, fade); } } }
     // janela acesa à noite: cômodo com luz e energia, sem cortina fechada nem tábuas
     if (type === E.WINDOW && R.nightPower && curt !== 1 && bar < 3 && state !== 2) {
       var inX = W.isIndoor(x, y, z) ? x : ax, inY = W.isIndoor(x, y, z) ? y : ay, rm = W.room(inX, inY, z);

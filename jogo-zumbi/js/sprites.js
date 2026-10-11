@@ -521,6 +521,59 @@
     signMap[key] = s0;
     return s0;
   };
+  /* poça d'água no chão (achatada, com reflexo claro na borda de cima) */
+  var puddleArr = [];
+  S.puddle = function (v) {
+    if (puddleArr[v]) { return puddleArr[v]; }
+    var c = mk(TW + 2, TH + 2), g = c.getContext('2d'), rng = new U.Rng(v * 61 + 9);
+    g.save();
+    g.beginPath(); g.moveTo(HW + 1, 1); g.lineTo(TW + 1, HH + 1); g.lineTo(HW + 1, TH + 1); g.lineTo(1, HH + 1); g.closePath(); g.clip();
+    var cx = HW + 1 + rng.range(-8, 8), cy = HH + 1 + rng.range(-3, 3);
+    var blobs = [];
+    for (var i = 0; i < 4; i++) { blobs.push([cx + rng.range(-12, 12), cy + rng.range(-4, 4), rng.range(7, 15), rng.range(3, 5.5)]); }
+    blobs.forEach(function (b) { ellipseAt(g, b[0], b[1] + 0.8, b[2] + 1.2, b[3] + 0.8, 'rgba(20,24,30,0.35)'); });
+    blobs.forEach(function (b) { ellipseAt(g, b[0], b[1], b[2], b[3], 'rgba(70,82,98,0.78)'); });
+    blobs.forEach(function (b) { ellipseAt(g, b[0] - b[2] * 0.2, b[1] - b[3] * 0.35, b[2] * 0.55, b[3] * 0.3, 'rgba(170,186,204,0.35)'); });
+    g.restore();
+    return (puddleArr[v] = store('pd' + v, c, HW + 1, 1));
+  };
+  /* folhas secas acumuladas no chão (outono: coloridas; inverno: marrons) */
+  var leafArr = [];
+  var LEAF_COLS = [['#b85a20', '#d8902a', '#9a2a1a', '#c0a030', '#8a4a1a'], ['#6a5a3a', '#7a6a4a', '#5a4a30', '#8a7656']];
+  S.leafLitter = function (v, winter) {
+    var k = (winter ? 8 : 0) + (v & 7);
+    if (leafArr[k]) { return leafArr[k]; }
+    var c = mk(TW + 2, TH + 2), g = c.getContext('2d'), rng = new U.Rng(v * 37 + (winter ? 500 : 3));
+    var cols = LEAF_COLS[winter ? 1 : 0], n = 10 + rng.int(0, 14);
+    for (var i = 0; i < n; i++) {
+      var t = ip(rng.range(0.08, 0.92), rng.range(0.08, 0.92), 0);
+      g.save(); g.translate(t[0] + HW + 1, t[1] + 1); g.scale(1, 0.55); g.rotate(rng.range(0, 6.28));
+      g.fillStyle = 'rgba(0,0,0,0.18)'; g.beginPath(); g.ellipse(0.6, 0.8, 2.6, 1.4, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = rng.pick(cols); g.beginPath(); g.ellipse(0, 0, 2.6, 1.4, 0, 0, Math.PI * 2); g.fill();
+      g.restore();
+    }
+    return (leafArr[k] = store('lf' + k, c, HW + 1, 1));
+  };
+  /* respingo de sangue na parede (no plano da face, com escorridos) */
+  var wbArr = [];
+  S.wallBlood = function (side, v) {
+    var k = side * 8 + (v & 7);
+    if (wbArr[k]) { return wbArr[k]; }
+    var pad = 6, c = mk(TW * 2, HH + WH + pad * 2 + 4), g = c.getContext('2d');
+    var ox = TW, oy = WH + pad, rng = new U.Rng(v * 71 + side * 13 + 1);
+    var u0 = rng.range(0.25, 0.75), h0 = rng.range(WH * 0.2, WH * 0.5);
+    for (var i = 0; i < 26; i++) {
+      var a = rng.range(0, 6.28), r = Math.pow(rng.next(), 1.5) * 0.22;
+      var q = wp(side, U.clamp(u0 + Math.cos(a) * r, 0.03, 0.97), h0 + Math.sin(a) * r * 60);
+      ellipseAt(g, q[0] + ox, q[1] + oy, rng.range(0.8, 2.6), rng.range(0.8, 2.2), 'rgba(' + rng.int(90, 130) + ',10,10,' + rng.range(0.55, 0.9).toFixed(2) + ')');
+    }
+    for (var d = 0; d < 3; d++) {
+      var du = U.clamp(u0 + rng.range(-0.12, 0.12), 0.05, 0.95), len = rng.range(8, 26);
+      var a1 = wp(side, du, h0 - 2), a2 = wp(side, du, h0 - 2 - len);
+      g.strokeStyle = 'rgba(100,10,10,0.7)'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(a1[0] + ox, a1[1] + oy); g.lineTo(a2[0] + ox, a2[1] + oy); g.stroke();
+    }
+    return (wbArr[k] = store('wb' + k, c, ox, oy));
+  };
   /* janela acesa vista de fora à noite (vidro amarelado; desenhada sem escurecer) */
   var glowArr = [];
   S.windowGlow = function (side, curt) {
@@ -2381,6 +2434,11 @@
       g.fillStyle = col('#5e0f0f');
       for (var i = 0; i < look.blood.length; i++) { var bp = Q(look.blood[i][1] * 0.35 - 0.05, look.blood[i][0] * 0.1, 3); g.beginPath(); g.ellipse(bp[0], bp[1], look.blood[i][2] * 0.8, look.blood[i][2] * 0.6, 0, 0, TAU); g.fill(); }
     }
+    if (look.skeleton) { // só ossos: costelas aparecendo pela roupa podre
+      g.strokeStyle = col('#d8d0b8'); g.lineWidth = 1.2;
+      for (var rb = 0; rb < 4; rb++) { var ra = Q(0.06 + rb * 0.06, -0.1, 3.4), rc = Q(0.06 + rb * 0.06, 0.1, 3.4), rm = Q(0.07 + rb * 0.06, 0, 4.4); g.beginPath(); g.moveTo(ra[0], ra[1]); g.quadraticCurveTo(rm[0], rm[1], rc[0], rc[1]); g.stroke(); }
+      var sp1 = Q(-0.08, 0, 3.6), sp2 = Q(0.32, 0, 3.6); g.beginPath(); g.moveTo(sp1[0], sp1[1]); g.lineTo(sp2[0], sp2[1]); g.stroke();
+    }
     // braços
     function armL(side) {
       var sh = side < 0 ? sl : sr;
@@ -2414,6 +2472,7 @@
       g.fillStyle = col(look.hair); g.beginPath(); g.ellipse(hc[0] + hf[0], hc[1] + hf[1] - 0.5, 4.4, 4.2, 0, 0, TAU); g.fill();
       g.restore();
     }
+    if (look.skeleton) { var ey1 = Q(0.5, -0.03, hh + 0.6), ey2 = Q(0.5, 0.03, hh + 0.6); g.fillStyle = 'rgba(30,24,18,0.85)'; g.fillRect(ey1[0] - 0.8, ey1[1] - 0.6, 1.6, 1.3); g.fillRect(ey2[0] - 0.8, ey2[1] - 0.6, 1.6, 1.3); }
     if (look.hat) { var hf2 = iso(fx * 0.05, fy * 0.05); blob(g, hc[0] + hf2[0], hc[1] + hf2[1] - 0.8, 4.4, 3.6, col(look.hat)); }
     if (Zb || dead) { g.fillStyle = 'rgba(30,8,8,0.7)'; var mf = iso(-fx * 0.04, -fy * 0.04); g.beginPath(); g.ellipse(hc[0] + mf[0], hc[1] + mf[1] + 1, 1.1, 0.8, 0, 0, TAU); g.fill(); }
   }

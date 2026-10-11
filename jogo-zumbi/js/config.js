@@ -328,6 +328,7 @@
 
   /* ---------- Neve acumulada (0..1) e vento ---------- */
   C.SNOW = { PER_HOUR: 0.09, MELT_PER_HOUR: 0.035, MELT_TEMP: 1, FOOTPRINT_MIN: 0.2, FOOTPRINT_LIFE_H: 10, MAX_PRINTS: 500 };
+  C.PUDDLES = { FILL_PER_HOUR: 0.35, DRY_PER_HOUR: 0.06, MIN: 0.12, MAX_SHARE: 0.32 };   // poças: fração máx. de tiles com poça
   C.WIND = { clear: 0.18, cloudy: 0.35, rain: 0.5, storm: 1, fog: 0.06, snow: 0.45 };
 
   /* ---------- Grandes hordas que atravessam a região (js/horde.js) ---------- */

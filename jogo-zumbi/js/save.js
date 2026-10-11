@@ -47,7 +47,7 @@
       levels: ch.levels, rooms: ch.rooms, buildings: ch.buildings, edges: ch.edges,
       containers: ch.containers, items: ch.items, zombies: ch.zombies,
       corpses: ch.corpses.map(function (c) { return { x: c.x, y: c.y, z: c.z, ang: c.ang, look: c.look, items: c.items, t: c.t, zombie: c.zombie, burnt: c.burnt || false, burnT: c.burnT || 0 }; }),
-      crops: ch.crops, water: ch.water, fires: ch.fires, decals: ch.decals || [], seen: ch.seen || null, foraged: ch.foraged || null,
+      crops: ch.crops, water: ch.water, fires: ch.fires, decals: ch.decals || [], wallBlood: ch.wallBlood || null, seen: ch.seen || null, foraged: ch.foraged || null,
       cars: (ch.cars || []).map(function (c) { var o = {}; for (var k in c) { if (k !== 'draw' && k !== 'kind' && k !== 'bright') { o[k] = c[k]; } } return o; }), carsConverted: !!ch.carsConverted,
       initialZ: ch.initialZ || 0, lastActive: ch.lastActive || 0
     };

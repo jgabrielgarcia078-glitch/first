@@ -22,7 +22,35 @@
     ch.dirty = true;
     CP.Game.effects.push({ type: 'spray', x: x, y: y, z: z, t: 0, life: 0.35, n: 6 + n * 2, seed: Math.random() });
   };
-  FX.drip = function (x, y, z) { FX.blood(x, y, z, 0.3); };
+  /* pingo de sangue no chão (sem respingo no ar): quem sangra deixa rastro */
+  FX.drip = function (x, y, z, s) {
+    var ch = W.chunkAt(Math.floor(x), Math.floor(y));
+    if (!ch) { return; }
+    if (!ch.decals) { ch.decals = []; }
+    ch.decals.push({ x: x + U.randRange(-0.15, 0.15), y: y + U.randRange(-0.15, 0.15), z: W.levelOf(z), s: s || U.randRange(0.9, 1.6), r: U.randRange(0, 3.14) });
+    if (ch.decals.length > 300) { ch.decals.splice(0, ch.decals.length - 300); }
+    ch.dirty = true;
+  };
+  /* respingo na parede atrás de quem levou o golpe (na direção do golpe, se houver parede a menos de ~1 tile) */
+  FX.wallBlood = function (x, y, z, ang) {
+    var lz = W.levelOf(z), tx = Math.floor(x), ty = Math.floor(y);
+    var nx = Math.floor(x + Math.cos(ang) * 0.9), ny = Math.floor(y + Math.sin(ang) * 0.9);
+    var cand = [];
+    if (nx !== tx) { cand.push({ x: Math.max(tx, nx), y: ty, side: 1 }); }
+    if (ny !== ty) { cand.push({ x: tx, y: Math.max(ty, ny), side: 0 }); }
+    for (var i = 0; i < cand.length; i++) {
+      var e = cand[i], t = W.edgeType(e.x, e.y, lz, e.side);
+      if (t !== C.EDGE.WALL && t !== C.EDGE.WINDOW && t !== C.EDGE.DOOR) { continue; }
+      var ch = W.chunkAt(e.x, e.y);
+      if (!ch) { return false; }
+      ch.wallBlood = ch.wallBlood || {};
+      var k = W.edgeKey(e.x, e.y, lz, e.side), cur = ch.wallBlood[k];
+      if (cur) { cur.n = Math.min(3, cur.n + 1); } else { ch.wallBlood[k] = { n: 1, v: (Math.random() * 3) | 0 }; }
+      ch.dirty = true;
+      return true;
+    }
+    return false;
+  };
   FX.splinter = function (x, y, z) { CP.Game.effects.push({ type: 'splinter', x: x, y: y, z: z, t: 0, life: 0.5, seed: Math.random() }); };
   FX.tracer = function (x0, y0, z, x1, y1) { CP.Game.effects.push({ type: 'tracer', x: x0, y: y0, z: z, x1: x1, y1: y1, t: 0, life: 0.08 }); };
   FX.muzzle = function (x, y, z, ang) { CP.Game.effects.push({ type: 'muzzle', x: x, y: y, z: z, ang: ang, t: 0, life: 0.06 }); FX.flash = Math.max(FX.flash, 0.15); };
