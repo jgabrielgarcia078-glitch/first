@@ -332,3 +332,30 @@ table.mech button { margin: 0 2px; }
 #p-note { width: 380px; }
 .paper { position: relative; padding: 18px 20px 20px 34px; min-height: 140px; color: #2a2a36; font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 15px; line-height: 26px; background: #ece4cc repeating-linear-gradient(transparent 0 25px, rgba(90,110,150,0.32) 25px 26px); background-position: 0 34px; box-shadow: inset 0 0 30px rgba(120,90,40,0.25); transform: rotate(-0.6deg); }
 .paper::before { content: ''; position: absolute; left: 24px; top: 0; bottom: 0; width: 1px; background: rgba(190,60,60,0.45); }
+
+/* escala da interface (Pausa → Gráficos): a propriedade scale compõe com os transform já usados */
+#ui { --s: 1; }
+#hud-right { scale: var(--s); transform-origin: top left; }
+#hud-top { scale: var(--s); transform-origin: top right; }
+#moodles { scale: var(--s); transform-origin: top right; }
+#hud-left { scale: var(--s); transform-origin: bottom left; }
+#hud-bottom, #action-label { scale: var(--s); transform-origin: bottom center; }
+#minimap { scale: var(--s); transform-origin: bottom right; }
+#toasts { scale: var(--s); transform-origin: top center; }
+.panel { scale: var(--s); transform-origin: top left; }
+#p-pause { transform-origin: center; }
+
+/* diário do sobrevivente */
+.journal { width: 440px; max-width: 80vw; font-size: 13px; }
+.journal .j-sum { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin-bottom: 6px; }
+.journal .j-sum span { color: var(--muted, #9a958a); }
+.journal .j-places { display: flex; flex-wrap: wrap; gap: 4px; }
+.journal .j-places span { background: rgba(214,191,134,0.12); border: 1px solid rgba(214,191,134,0.3); padding: 1px 7px; border-radius: 2px; }
+.journal .j-events { max-height: 200px; overflow: auto; line-height: 1.5; }
+.journal .j-events i { color: var(--accent); font-style: normal; margin-right: 4px; }
+.journal .j-surv th { font-weight: 500; }
+details.adv { margin: 6px 0; }
+details.adv summary { cursor: pointer; color: var(--accent); margin-bottom: 4px; }
+table.keys { width: 100%; }
+table.keys th { white-space: nowrap; width: 60%; }
+table.keys td button { padding: 1px 8px; }

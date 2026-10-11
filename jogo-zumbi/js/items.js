@@ -28,7 +28,7 @@
     if (d.light) { it.charge = 1; it.on = false; }
     if (d.food) {
       it.at = It.nowHours();
-      it.age = (opts && opts.age !== undefined) ? opts.age : (d.food.fresh ? rng.range(0, d.food.fresh * 24 * 0.6) : 0);
+      it.age = (opts && opts.age !== undefined) ? opts.age : (d.food.fresh ? rng.range(0, d.food.fresh * 24 * 0.6) + ((CP.Game && CP.Game.settings && CP.Game.settings.lootAgeH) || 0) : 0);
     }
     if (d.cloth) {
       var cols = d.cloth.colors;

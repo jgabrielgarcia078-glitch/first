@@ -178,11 +178,12 @@ const wb = CP.Items.make('water_bottle'); CP.Items.Inv.give(p, wb);
 CP.Use.drink(p, wb); tick(3);
 ok(p.body.stats.thirst < 0.6 && wb.uses === 3, 'beber reduz a sede e gasta um gole');
 // dormir
-p.body.stats.fatigue = 0.8;
+p.body.stats.fatigue = 0.8; p.body.stats.stress = 0; p.body.stats.panic = 0;
 const slept = CP.Body.sleep(p, 1);
 ok(slept && p.sleeping, 'consegue dormir cansado');
-let guard = 0;
-while (p.sleeping && guard++ < 20000) { G.tick(1 / 30, C.SLEEP_SPEED); }
+let guard = 0, rewakes = 0;
+// pesadelo ou barulho podem acordar no meio da noite: volta a dormir (como o jogador faria)
+while ((p.sleeping || (p.body.stats.fatigue > 0.3 && rewakes < 6)) && guard++ < 20000) { if (!p.sleeping) { rewakes++; p.body.stats.panic = 0; CP.Body.sleep(p, 1); } G.tick(1 / 30, C.SLEEP_SPEED); }
 ok(!p.sleeping && p.body.stats.fatigue < 0.2, 'acordou descansado (cansaço ' + p.body.stats.fatigue.toFixed(2) + ')');
 
 /* ---------- curativo para sangramento ---------- */

@@ -374,6 +374,20 @@
   /* zumbis espertos (zombies.js): % que abre porta destrancada, segundos de "adivinhar" para onde o jogador fugiu,
    * motor ouvido de longe (raio, chance por zumbi, a cada ENGINE_EVERY s) */
   C.ZSMART = { OPENER_PCT: 12, PREDICT_S: 2.5, PREDICT_MAX: 7, ENGINE_FAR: 45, ENGINE_CHANCE: 0.3, ENGINE_EVERY: 5 };
+  /* diário (journal.js): eventos guardados e de quantos em quantos segundos olha onde o jogador está */
+  C.JOURNAL = { MAX_EVENTS: 80, SCAN_S: 2 };
+  /* desafios (criação do mundo): inverno eterno, cidade lotada, seis meses depois, sem energia desde o início */
+  C.CHALLENGES = {
+    none: { name: 'Nenhum' },
+    winter: { name: 'Inverno eterno', desc: 'Sempre inverno: frio, neve e nevasca o ano todo.', temp: -6 },
+    crowded: { name: 'Cidade lotada', desc: 'Três vezes mais zumbis e hordas maiores.', popMult: 3 },
+    sixmonths: { name: 'Seis meses depois', desc: 'Começa seis meses após o surto: sem energia nem água, mato alto, casas reviradas.', startDays: 180, lootMult: 0.45 },
+    nopower: { name: 'Sem energia', desc: 'A luz e a água já acabaram quando você acorda.', powerDays: 0, waterDays: 0 }
+  };
+  /* opções gráficas (preferências do jogador) */
+  C.UI_SCALES = [0.85, 1, 1.15, 1.3];
+  /* teclas que dá para trocar (código padrão → nome) */
+  C.REBIND = [['KeyW', 'Andar para cima'], ['KeyA', 'Andar para a esquerda'], ['KeyS', 'Andar para baixo'], ['KeyD', 'Andar para a direita'], ['KeyE', 'Interagir'], ['KeyC', 'Agachar'], ['KeyF', 'Lanterna'], ['KeyR', 'Recarregar / girar'], ['KeyQ', 'Gritar / buzina'], ['KeyZ', 'Sentar'], ['KeyI', 'Inventário'], ['KeyH', 'Saúde'], ['KeyK', 'Personagem'], ['KeyB', 'Artesanato'], ['KeyM', 'Mapa'], ['KeyN', 'Minimapa'], ['KeyO', 'Modo de busca'], ['KeyJ', 'Diário'], ['KeyG', 'Ligar o motor'], ['KeyL', 'Sirene']];
   C.TRAPS = { BASE: 0.03, FOREST: 2.2, FIELD: 1.3, TOWN: 0.35, BAIT: 2.5, MIN_DIST: 12, ANIMALS: { box: [['dead_rabbit', 5], ['dead_squirrel', 4], ['dead_rat', 2]], snare: [['dead_rabbit', 4], ['dead_bird', 4], ['dead_squirrel', 2]] } };
   /* modo de busca (O): procura coisas no chão em volta enquanto anda devagar */
   C.SEARCH = { EVERY: 1.6, RADIUS: 3, PER_LEVEL: 0.6, SPEED: 0.6, MARK_S: 90 };

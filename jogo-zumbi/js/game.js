@@ -20,6 +20,8 @@
     viewDebug: false
   };
 
+  var DEFAULT_SETTINGS = Object.assign({}, G.settings);
+
   /* ---------- tempo de jogo ---------- */
   G.gameSecondsPerReal = function () { return 86400 / (G.settings.dayMinutes * 60); };
   G.speed = function () {
@@ -31,7 +33,11 @@
   /* ---------- nova partida ---------- */
   G.newGame = function (opts) {
     var seed = opts.seed >>> 0 || ((Math.random() * 4294967295) >>> 0);
-    G.settings = Object.assign({}, G.settings, opts.settings || {});
+    G.settings = Object.assign({}, DEFAULT_SETTINGS, opts.settings || {}); // parte do padrão: nada do jogo anterior vaza
+    var chal = C.CHALLENGES[G.settings.challenge] || C.CHALLENGES.none;
+    if (chal.popMult) { G.settings.popMult = (G.settings.popMult || 1) * chal.popMult; }
+    if (chal.lootMult) { G.settings.lootMult = (G.settings.lootMult || 1) * chal.lootMult; }
+    if (chal.startDays) { G.settings.lootAgeH = chal.startDays * 24; } // comida perecível do saque já estragou
     W.init(seed);
     G.state = {
       version: C.SCHEMA_VERSION, seed: seed,
@@ -40,14 +46,33 @@
       kills: 0, settings: G.settings,
       world: CP.Time ? CP.Time.newWorldState(seed) : {}
     };
+    G.applyChallenge(chal);
     G.zombies = []; G.effects = []; G.texts = []; G.activeChunks = {};
     if (CP.Vehicles) { CP.Vehicles.reset(); }
     var spawn = G.findSpawn(seed, opts.townIndex);
     W.ensureAround(Math.floor(spawn.x), Math.floor(spawn.y), C.LOAD_RADIUS);
     G.player = CP.Player.create(opts.character || {}, spawn.x, spawn.y, spawn.z || 0);
+    G.player.startT = G.state.time;
+    if (CP.Journal) { CP.Journal.event(chal.startDays ? 'Acordou ' + chal.startDays / 30 + ' meses depois do surto, em ' + W.macro.towns[opts.townIndex || 0].name + '.' : 'O surto começou. Acordou em ' + W.macro.towns[opts.townIndex || 0].name + '.', G.player); }
     // nenhum zumbi colado no jogador no começo
     G.clearAround(spawn.x, spawn.y, spawn.z || 0, 9);
     G.afterLoad();
+  };
+
+  /* desafio e configurações avançadas do mundo (energia/água, começar meses depois) */
+  G.applyChallenge = function (chal) {
+    var st = G.state, w = st.world, s = G.settings;
+    if (chal.startDays) {
+      st.time = chal.startDays * 86400;
+      var hrs = st.time / 3600;
+      w.heliDone = true; w.lastHourTick = Math.floor(hrs); w.lastDayTick = chal.startDays;
+      w.weather.until = hrs + 4; w.nextMeta = hrs + 6; w.announced.power = true; w.announced.water = true;
+      w.nextHorde = chal.startDays + 1 + Math.random(); // a primeira horda não chega no primeiro minuto
+      w.powerOffDay = Math.min(w.powerOffDay, 1); w.waterOffDay = Math.min(w.waterOffDay, 1);
+    }
+    var pd = chal.powerDays !== undefined ? chal.powerDays : s.powerDays, wd = chal.waterDays !== undefined ? chal.waterDays : s.waterDays;
+    if (pd !== undefined && pd !== null && pd >= 0) { w.powerOffDay = pd; w.announced.power = pd === 0; }
+    if (wd !== undefined && wd !== null && wd >= 0) { w.waterOffDay = wd; w.announced.water = wd === 0; }
   };
 
   /* novo sobrevivente no mesmo mundo (depois de morrer): o tempo, os chunks e os zumbis continuam */
@@ -56,7 +81,9 @@
     var spawn = G.findSpawn(seed, opts.townIndex, Math.floor(G.state.time / 3600));
     W.ensureAround(Math.floor(spawn.x), Math.floor(spawn.y), C.LOAD_RADIUS);
     G.player = CP.Player.create(opts.character || {}, spawn.x, spawn.y, spawn.z || 0);
+    G.player.startT = G.state.time;
     G.state.survivors = (G.state.survivors || 1) + 1;
+    if (CP.Journal) { CP.Journal.event('Outro sobrevivente acordou em ' + W.macro.towns[opts.townIndex || 0].name + '.', G.player); }
     G.effects = []; G.texts = [];
     G.clearAround(spawn.x, spawn.y, spawn.z || 0, 9);
     G.afterLoad();
@@ -68,6 +95,7 @@
     if (CP.Surv) { CP.Surv.reset(); }
     if (CP.Anim) { CP.Anim.reset(); }
     if (CP.Radio) { CP.Radio.reset(); }
+    if (CP.Journal) { CP.Journal.reset(); }
     CP.Render.camX = p.x; CP.Render.camY = p.y; CP.Render.camZ = p.z;
     G.activateChunks(true);
     G.updateFov(true);
@@ -228,6 +256,7 @@
     if (CP.Surv) { CP.Surv.update(dt, gameDt); }
     if (CP.Anim) { CP.Anim.update(dt); }
     if (CP.Radio) { CP.Radio.update(dt, gameDt); }
+    if (CP.Journal) { CP.Journal.update(dt); }
     if (p.sayT > 0) { p.sayT -= dt; }
     // efeitos
     for (var i = G.effects.length - 1; i >= 0; i--) {

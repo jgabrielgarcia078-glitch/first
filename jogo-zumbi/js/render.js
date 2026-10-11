@@ -152,7 +152,7 @@
         if (sst === 3) { drawSprite(g, S.snowTile(3, fvv & 3), lia, sx, sy); } else {
           var ov = outd ? erosionAt(f, x, y, ero) : -1;
           drawSprite(g, ov >= 0 || sst ? S.floorOv(f, fvv, ov, sst) : S.floor(f, fvv), lia, sx, sy);
-          if (!sst) {
+          if (!sst && R.detail !== false) {
             var lk = litterAt(f, x, y); if (lk >= 0) { drawSprite(g, S.litter(lk, (x * 7 + y * 3) & 3), lia, sx, sy); }
             if (outd && (R.season === 1 || (R.season === 2 && snow < 0.05)) && LEAFY[f] && hash01(x, y, 53) < (R.season === 1 ? 0.22 : 0.08) * (0.4 + hash01(x >> 2, y >> 2, 54) * 1.2)) { drawSprite(g, S.leafLitter((x * 5 + y) & 7, R.season === 2), lia, sx, sy); }
             if (outd && wetT > 0 && PUDDLE[f] && hash01(x, y, 91) * 0.55 + hash01(x >> 2, y >> 2, 92) * 0.45 < wetT) {

@@ -36,6 +36,7 @@
   };
   /* ícones da barra lateral e das abas de recipiente (traço claro) */
   var SB_SVG = {
+    journal: '<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M9 8h6M9 11h4"/>',
     inv: '<path d="M8 7V5a4 4 0 0 1 8 0v2"/><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M4 12h16M10 12v3h4v-3"/>',
     health: '<path d="M12 20s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.5-7 10-7 10z"/><path d="M12 10v5M9.5 12.5h5"/>',
     skills: '<circle cx="12" cy="7" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/>',
@@ -122,6 +123,7 @@
       CP.Audio.setVolume(UI.prefs.volume);
       if (CP.Music) { CP.Music.setVolume(UI.prefs.music); }
       CP.Render.setZoomIndex(UI.prefs.zoomIndex);
+      UI.applyPrefs();
     });
     UI.showMenu();
   };
@@ -181,6 +183,22 @@
       seed: seed, town: 0, preset: 'survivor', settings: Object.assign({}, PRESETS.survivor), dayMinutes: C.REAL_MINUTES_PER_DAY
     };
   }
+  /* configurações avançadas do mundo: [chave, rótulo, [[valor, texto]...]] ('' = padrão) */
+  var ADV = [
+    ['toughness', 'Resistência dos zumbis', [[0.7, 'Frágeis'], [1, 'Normal'], [1.4, 'Resistentes']]],
+    ['strength', 'Força dos zumbis', [[0.6, 'Fracos'], [1, 'Normal'], [1.5, 'Fortes']]],
+    ['sight', 'Visão dos zumbis', [[0.7, 'Ruim'], [1, 'Normal'], [1.3, 'Águia']]],
+    ['hearing', 'Audição dos zumbis', [[0.7, 'Ruim'], [1, 'Normal'], [1.4, 'Apurada']]],
+    ['memory', 'Memória dos zumbis', [[0.5, 'Curta'], [1, 'Normal'], [2, 'Longa']]],
+    ['powerDays', 'Energia acaba em', [['', 'Sorteado'], [0, 'Já acabou'], [7, '7 dias'], [30, '30 dias'], [365, 'Nunca (1 ano)']]],
+    ['waterDays', 'Água acaba em', [['', 'Sorteado'], [0, 'Já acabou'], [7, '7 dias'], [30, '30 dias'], [365, 'Nunca (1 ano)']]]
+  ];
+  function advRows(cr) {
+    return ADV.map(function (a) {
+      var cur = cr.settings[a[0]];
+      return '<div class="row"><label>' + a[1] + '</label><select data-a="adv" data-k="' + a[0] + '">' + a[2].map(function (o) { var none = cur === undefined || cur === null, sel = o[0] === '' ? none : (cur === o[0] || (none && o[0] === 1)); return '<option value="' + o[0] + '"' + (sel ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>';
+    }).join('');
+  }
   UI.showCreate = function (opts) {
     UI.screen = 'create';
     UI.creation = UI.creation || newCreation(opts && opts.sameWorld);
@@ -219,6 +237,9 @@
       '<div class="row"><label>População</label><input type="range" min="0.2" max="2" step="0.1" value="' + cr.settings.popMult + '" data-a="pop"><span>' + cr.settings.popMult.toFixed(1) + '×</span></div>' +
       '<div class="row"><label>Saque</label><input type="range" min="0.3" max="2.5" step="0.1" value="' + cr.settings.lootMult + '" data-a="loot"><span>' + cr.settings.lootMult.toFixed(1) + '×</span></div>' +
       '<div class="row"><label>Infecção</label><label style="min-width:auto"><input type="checkbox" data-a="infection"' + (cr.settings.infection ? ' checked' : '') + '> mordidas transformam</label></div>' +
+      '<div class="row"><label>Desafio</label><select data-a="challenge">' + Object.keys(C.CHALLENGES).map(function (k) { return '<option value="' + k + '"' + ((cr.settings.challenge || 'none') === k ? ' selected' : '') + '>' + C.CHALLENGES[k].name + '</option>'; }).join('') + '</select></div>' +
+      (C.CHALLENGES[cr.settings.challenge] && C.CHALLENGES[cr.settings.challenge].desc ? '<div class="desc">' + esc(C.CHALLENGES[cr.settings.challenge].desc) + '</div>' : '') +
+      '<details class="adv"><summary>Configurações avançadas</summary>' + advRows(cr) + '</details>' +
       '<div class="row"><label>Duração do dia</label><select data-a="daylen">' + [30, 60, 90, 120].map(function (m) { return '<option value="' + m + '"' + (m === cr.dayMinutes ? ' selected' : '') + '>' + m + ' min reais</option>'; }).join('') + '</select></div>';
     $.screens.innerHTML = '<div class="screen solid"><div class="create">' +
       '<div class="title"><h2>' + (cr.sameWorld ? 'Novo sobrevivente — mesmo mundo' : 'Novo sobrevivente') + '</h2><div><button data-a="create-back">Voltar</button> <button class="primary" data-a="create-start"' + (v.ok ? '' : ' disabled') + '>Começar ▶</button></div></div>' +
@@ -300,7 +321,7 @@
   }
   function buildHud() {
     clearHud();
-    $['hud-right'].innerHTML = '<div class="equip pe" id="equip"></div>' + [['inv', 'Inventário (I)'], ['health', 'Saúde (H)'], ['skills', 'Personagem (K)'], ['craft', 'Artesanato e construção (B)'], ['map', 'Mapa (M)'], ['help', 'Como jogar (F1)'], ['pause', 'Menu (Esc)']].map(function (b) { return '<button class="sb pe" id="sb-' + b[0] + '" data-a="toggle" data-p="' + b[0] + '" title="' + b[1] + '">' + svgIcon(SB_SVG[b[0]], 24) + '</button>'; }).join('');
+    $['hud-right'].innerHTML = '<div class="equip pe" id="equip"></div>' + [['inv', 'Inventário (I)'], ['health', 'Saúde (H)'], ['skills', 'Personagem (K)'], ['craft', 'Artesanato e construção (B)'], ['map', 'Mapa (M)'], ['journal', 'Diário (J)'], ['help', 'Como jogar (F1)'], ['pause', 'Menu (Esc)']].map(function (b) { return '<button class="sb pe" id="sb-' + b[0] + '" data-a="toggle" data-p="' + b[0] + '" title="' + b[1] + '">' + svgIcon(SB_SVG[b[0]], 24) + '</button>'; }).join('');
     $.minimap.innerHTML = '<canvas width="176" height="176" class="pe" data-a="toggle" data-p="map" title="Minimapa (N esconde · clique abre o mapa)"></canvas>';
     $.minimap.style.display = UI.prefs.minimap === false ? 'none' : '';
     UI.hudT = 0; miniT = 0;
@@ -385,8 +406,54 @@
     help: { title: 'Como jogar', render: renderHelp },
     pause: { title: 'Pausa', render: renderPause },
     mech: { title: 'Mecânica do carro', render: renderMech },
-    note: { title: 'Bilhete', render: renderNote }
+    note: { title: 'Bilhete', render: renderNote },
+    journal: { title: 'Diário do sobrevivente', render: renderJournal },
+    keys: { title: 'Teclas', render: renderKeys }
   };
+  /* dias que ESTE sobrevivente aguentou (no mesmo mundo o relógio já vinha correndo) */
+  UI.survDays = function (p) { return Math.max(0, (G().state.time - (p.startT || 0)) / 86400); };
+  /* ---------- diário: resumo, mortes por arma, lugares, linha do tempo e os sobreviventes deste mundo ---------- */
+  function renderJournal() {
+    var b = body('journal'), p = P(), J = CP.Journal;
+    if (!b || !J) { return; }
+    var j = J.of(p), days = UI.survDays(p);
+    var kills = Object.keys(j.kills).sort(function (a, c) { return j.kills[c] - j.kills[a]; });
+    var places = Object.keys(j.places).sort(function (a, c) { return j.places[a] - j.places[c]; });
+    var html = '<div class="journal"><div class="j-sum"><span>Sobrevivente</span><b>' + esc(p.name) + '</b><span>Dias vivo</span><b>' + Math.floor(days) + ' dias e ' + Math.floor((days % 1) * 24) + ' h</b><span>Zumbis mortos</span><b>' + p.kills + '</b><span>Dia no mundo</span><b>' + (Math.floor(CP.Time.daysSurvived()) + 1) + '</b></div>';
+    html += '<h3>Mortes por arma</h3>' + (kills.length ? '<table class="prot">' + kills.map(function (k) { return '<tr><th>' + esc(k) + '</th><td class="pv">' + j.kills[k] + '</td></tr>'; }).join('') + '</table>' : '<div class="muted">Nenhum zumbi morto ainda.</div>');
+    html += '<h3>Lugares visitados</h3>' + (places.length ? '<div class="j-places">' + places.map(function (k) { return '<span title="Dia ' + j.places[k] + '">' + esc(J.PLACE_NAMES[k] || k) + '</span>'; }).join('') + '</div>' : '<div class="muted">Ainda não entrou em nenhuma construção.</div>');
+    html += '<h3>Linha do tempo</h3><div class="j-events">' + (j.events.length ? j.events.slice().reverse().map(function (e) { return '<div><i>Dia ' + e.d + ', ' + U.pad2(e.h) + 'h</i> ' + esc(e.t) + '</div>'; }).join('') : '<div class="muted">Nada ainda.</div>') + '</div>';
+    var sv = J.survivors();
+    html += '<h3>Sobreviventes deste mundo</h3><table class="prot j-surv">' + sv.map(function (s) { return '<tr><th>' + esc(s.name) + ' <span class="muted">(' + esc(D.OCC[s.occ] ? D.OCC[s.occ].name : s.occ) + ')</span></th><td class="pv">' + s.days + ' dias · ' + s.kills + ' mortes · ' + (s.alive ? '<b class="good">vivo</b>' : esc(s.cause)) + '</td></tr>'; }).join('') + '</table></div>';
+    b.innerHTML = html;
+  }
+  /* ---------- teclas: trocar a tecla de cada ação ---------- */
+  UI.keyName = function (code) { return !code ? '—' : code.replace(/^Key/, '').replace(/^Digit/, '').replace('Space', 'Espaço').replace('ShiftLeft', 'Shift').replace('ControlLeft', 'Ctrl').replace(/^Arrow/, 'Seta '); };
+  function renderKeys() {
+    var b = body('keys'), binds = UI.prefs.binds || {};
+    if (!b) { return; }
+    b.innerHTML = '<div class="desc">Clique em <b>Trocar</b> e aperte a nova tecla (Esc cancela). Se a tecla já era de outra ação, as duas trocam.</div><table class="prot keys">' +
+      C.REBIND.map(function (r) { var cur = binds[r[0]] || r[0], wait = UI.keyWait === r[0]; return '<tr><th>' + esc(r[1]) + '</th><td class="pv"><b>' + (wait ? '…' : esc(UI.keyName(cur))) + '</b></td><td><button class="small" data-a="rebind" data-k="' + r[0] + '">' + (wait ? 'Aperte…' : 'Trocar') + '</button></td></tr>'; }).join('') +
+      '</table><button class="small" data-a="keys-reset" style="margin-top:8px">Voltar ao padrão</button>';
+  }
+  UI.rebind = function (def, code) {
+    var binds = Object.assign({}, UI.prefs.binds || {});
+    if (code === 'Escape' || !code) { return; }
+    var cur = binds[def] || def, other = null;
+    C.REBIND.forEach(function (r) { if (r[0] !== def && (binds[r[0]] || r[0]) === code) { other = r[0]; } });
+    binds[def] = code;
+    if (other) { binds[other] = cur; } // troca
+    UI.prefs.binds = binds; CP.Input.setBinds(binds); CP.Save.saveSettings(UI.prefs);
+  };
+  /* preferências gráficas e de controle */
+  UI.applyPrefs = function () {
+    var pr = UI.prefs, R = CP.Render;
+    R.hiDpi = !!pr.hiDpi; R.detail = pr.detail !== false; R.resize();
+    if (CP.FX) { CP.FX.weatherMult = pr.weatherFx === undefined ? 1 : pr.weatherFx; }
+    if (root) { root.style.setProperty('--s', String(pr.uiScale || 1)); }
+    CP.Input.setBinds(pr.binds || {});
+  };
+
   /* bilhete/recado aberto (papel com letra à mão) */
   UI.showNote = function (text, title) {
     UI.noteText = String(text || ''); UI.noteTitle = title || 'Bilhete';
@@ -839,7 +906,7 @@
       html += '<table class="prot info"><tr><th>Nome</th><td class="pv">' + esc(p.name) + '</td></tr><tr><th>Ocupação</th><td class="pv">' + esc(D.OCC[p.occupation].name) + '</td></tr>' +
         '<tr><th>Traços</th><td class="pv">' + (tr.length ? tr.map(esc).join(', ') : 'nenhum') + '</td></tr>' +
         '<tr><th>Peso</th><td class="pv">' + p.body.stats.weight.toFixed(1) + ' kg</td></tr>' +
-        '<tr><th>Dias sobrevividos</th><td class="pv">' + Math.floor(CP.Time.daysSurvived()) + '</td></tr><tr><th>Zumbis mortos</th><td class="pv">' + p.kills + '</td></tr>' +
+        '<tr><th>Dias sobrevividos</th><td class="pv">' + Math.floor(UI.survDays(p)) + '</td></tr><tr><th>Zumbis mortos</th><td class="pv">' + p.kills + '</td></tr>' +
         '<tr><th>Livros lidos</th><td class="pv">' + Object.keys(p.readBooks).length + '</td></tr><tr><th>Receitas conhecidas</th><td class="pv">' + p.knownRecipes.length + '</td></tr></table>';
       b.innerHTML = html;
       return;
@@ -1228,7 +1295,7 @@
       ['Clique esquerdo', 'Atacar com a arma na mão (sem arma: empurrar)'], ['Segurar botão direito', 'Mirar (armas de fogo / arremessos) — clique esquerdo dispara'],
       ['Clique direito rápido', 'Menu de contexto (portas, janelas, móveis, chão...)'], ['Espaço', 'Empurrar zumbi / pisar em zumbi caído'], ['E', 'Interagir com o que está à frente'],
       ['R', 'Recarregar arma (no modo construção: girar)'], ['F', 'Lanterna'], ['Q', 'Gritar (atrai zumbis!)'], ['Z', 'Sentar / levantar'],
-      ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa (clique anota, botão direito apaga)'], ['N', 'Mostrar/esconder o minimapa'], ['O', 'Modo de busca (procura coisas no chão em volta)'],
+      ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa (clique anota, botão direito apaga)'], ['N', 'Mostrar/esconder o minimapa'], ['O', 'Modo de busca (procura coisas no chão em volta)'], ['J', 'Diário do sobrevivente'],
       ['Arrastar itens', 'Entre as janelas e abas do inventário; solte fora para largar no chão'],
       ['Carro', 'Clique direito: entrar · G liga o motor · W/S acelera/freia · A/D vira · Espaço freio · Q buzina · R rádio · L sirene (viatura/ambulância) · E sai'],
       ['1 a 5', 'Atalhos (equipar item)'], ['[ e ]', 'Velocidade do tempo (só sem zumbis por perto)'], ['Roda do mouse / + −', 'Zoom'], ['Esc', 'Fechar janela / pausa']
@@ -1244,6 +1311,12 @@
       '<div class="row"><label>Volume</label><input type="range" min="0" max="1" step="0.05" value="' + UI.prefs.volume + '" data-a="volume"></div>' +
       '<div class="row"><label>Música</label><input type="range" min="0" max="1" step="0.05" value="' + UI.prefs.music + '" data-a="music"></div>' +
       '<div class="row"><label>Mostrar FPS</label><input type="checkbox" data-a="fps"' + (UI.prefs.showFps ? ' checked' : '') + '></div>' +
+      '<h3>Gráficos</h3>' +
+      '<div class="row"><label>Interface</label><select data-a="uiscale">' + C.UI_SCALES.map(function (s) { return '<option value="' + s + '"' + ((UI.prefs.uiScale || 1) === s ? ' selected' : '') + '>' + Math.round(s * 100) + '%</option>'; }).join('') + '</select></div>' +
+      '<div class="row"><label>Alta resolução</label><input type="checkbox" data-a="hidpi"' + (UI.prefs.hiDpi ? ' checked' : '') + '><span class="muted">telas retina (mais pesado)</span></div>' +
+      '<div class="row"><label>Detalhes no chão</label><input type="checkbox" data-a="detail"' + (UI.prefs.detail !== false ? ' checked' : '') + '><span class="muted">lixo, folhas, poças</span></div>' +
+      '<div class="row"><label>Chuva e neve</label><select data-a="weatherfx">' + [[1, 'Normal'], [0.5, 'Menos'], [0.2, 'Pouca']].map(function (o) { return '<option value="' + o[0] + '"' + ((UI.prefs.weatherFx === undefined ? 1 : UI.prefs.weatherFx) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
+      '<button style="width:100%;margin:6px 0 0" data-a="toggle" data-p="keys">Trocar teclas</button>' +
       '<button class="danger" style="width:100%;margin-top:10px" data-a="quit">Salvar e sair para o menu</button>';
   }
 
@@ -1255,7 +1328,7 @@
     closeCtx();
     var p = P();
     CP.Save.saveDead();
-    var days = CP.Time.daysSurvived();
+    var days = UI.survDays(p);
     $.screens.innerHTML = '<div class="screen"><div class="death"><h1>Assim você morreu</h1><div class="cause">' + esc(p.deathCause) + '</div>' +
       '<div class="stats"><span>Sobrevivente</span><b>' + esc(p.name) + '</b><span>Ocupação</span><b>' + esc(D.OCC[p.occupation].name) + '</b>' +
       '<span>Sobreviveu</span><b>' + plural(Math.floor(days), 'dia', 'dias') + ' e ' + plural(Math.floor((days % 1) * 24), 'hora', 'horas') + '</b><span>Zumbis mortos</span><b>' + p.kills + '</b>' +
@@ -1324,6 +1397,8 @@
       case 'toggle': UI.toggle(t.getAttribute('data-p')); break;
       case 'invtab': if (t.getAttribute('data-side') === 'p') { UI.invTab = +t.getAttribute('data-i'); } else { UI.lootTab = +t.getAttribute('data-i'); } renderInv(); break;
       case 'close': UI.toggle(t.getAttribute('data-p'), false); break;
+      case 'rebind': (function (def) { UI.keyWait = def; renderKeys(); CP.Input.capture = function (code) { UI.keyWait = null; UI.rebind(def, code); renderKeys(); }; })(t.getAttribute('data-k')); break;
+      case 'keys-reset': UI.prefs.binds = {}; CP.Input.setBinds({}); CP.Save.saveSettings(UI.prefs); renderKeys(); break;
       case 'speed': G().speedIndex = +t.getAttribute('data-i'); clampSpeed(); updateHud(); break;
       case 'hot': hotbar(+t.getAttribute('data-i')); break;
       case 'item': if (performance.now() - UI.dragEndT > 120) { itemMenu(+t.getAttribute('data-ref'), e.clientX, e.clientY); } break;
@@ -1380,6 +1455,12 @@
       case 'volume': UI.prefs.volume = +t.value; CP.Audio.setVolume(UI.prefs.volume); CP.Save.saveSettings(UI.prefs); break;
       case 'music': UI.prefs.music = +t.value; CP.Music.setVolume(UI.prefs.music); CP.Save.saveSettings(UI.prefs); break;
       case 'fps': UI.prefs.showFps = t.checked; CP.Save.saveSettings(UI.prefs); break;
+      case 'uiscale': UI.prefs.uiScale = +t.value; UI.applyPrefs(); CP.Save.saveSettings(UI.prefs); break;
+      case 'hidpi': UI.prefs.hiDpi = t.checked; UI.applyPrefs(); CP.Save.saveSettings(UI.prefs); break;
+      case 'detail': UI.prefs.detail = t.checked; UI.applyPrefs(); CP.Save.saveSettings(UI.prefs); break;
+      case 'weatherfx': UI.prefs.weatherFx = +t.value; UI.applyPrefs(); CP.Save.saveSettings(UI.prefs); break;
+      case 'challenge': cr.settings.challenge = t.value; setTimeout(renderCreate, 0); break;
+      case 'adv': cr.settings[t.getAttribute('data-k')] = t.value === '' ? undefined : +t.value; break;
     }
   }
   function refreshOpen() {
@@ -1436,6 +1517,7 @@
         case 'KeyM': UI.toggle('map'); break;
         case 'KeyN': UI.toggleMinimap(); break;
         case 'KeyO': if (CP.Surv) { CP.Surv.toggleSearch(p); } break;
+        case 'KeyJ': UI.toggle('journal'); break;
         case 'F1': UI.toggle('help'); break;
         case 'BracketRight': G().speedIndex = Math.min(C.GAME_SPEEDS.length - 1, G().speedIndex + 1); clampSpeed(); break;
         case 'BracketLeft': G().speedIndex = Math.max(0, G().speedIndex - 1); break;

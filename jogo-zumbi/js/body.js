@@ -497,6 +497,7 @@
     p.body.health = 0;
     var G = CP.Game;
     G.over = true;
+    if (CP.Journal) { CP.Journal.recordDeath(p); }
     var look = CP.Player.lookFor(p), items = B.belongings(p);
     if (/infec/.test(p.deathCause) && CP.Zombies) {
       // levanta como zumbi, com as roupas e as coisas que tinha (o próximo sobrevivente pode encontrá-lo)

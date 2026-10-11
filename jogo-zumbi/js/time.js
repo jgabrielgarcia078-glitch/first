@@ -43,6 +43,7 @@
   T.daysSurvived = function () { return G().state.time / 86400; };
   T.dayOfYear = function () { var d = T.date(); var s = Date.UTC(d.getUTCFullYear(), 0, 1); return Math.floor((d.getTime() - s) / 86400000); };
   T.season = function () {
+    if (G().settings && G().settings.challenge === 'winter') { return 'Inverno'; }
     var m = T.date().getUTCMonth();
     if (m >= 5 && m <= 7) { return 'Verão'; }
     if (m >= 8 && m <= 10) { return 'Outono'; }
@@ -79,11 +80,11 @@
   T.temperature = function (outdoor) {
     var doy = T.dayOfYear();
     // pico do verão ~ dia 200, inverno ~ dia 15
-    var k = (Math.cos((doy - 200) / 365 * Math.PI * 2) + 1) / 2;
+    var k = G().settings && G().settings.challenge === 'winter' ? 0 : (Math.cos((doy - 200) / 365 * Math.PI * 2) + 1) / 2;
     var base = U.lerp(WE.BASE_TEMP_WINTER, WE.BASE_TEMP_SUMMER, k);
     var h = T.hourOfDay();
     var swing = Math.cos((h - 15) / 24 * Math.PI * 2) * WE.DAILY_SWING;
-    var t = base + swing + T.weather().temp + (ws().weather.tempOff || 0);
+    var t = base + swing + T.weather().temp + (ws().weather.tempOff || 0) + (G().settings && G().settings.challenge === 'winter' ? C.CHALLENGES.winter.temp : 0);
     if (outdoor) { return t; }
     if (T.powerOn()) { return 21; }
     return U.lerp(t, 17, 0.45);

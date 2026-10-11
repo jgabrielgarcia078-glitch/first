@@ -10,8 +10,18 @@
     wheel: 0,
     rightDownAt: 0, rightMoved: false,
     enabled: true,
-    blockGame: false   // true quando uma janela de UI captura teclas
+    blockGame: false,  // true quando uma janela de UI captura teclas
+    remap: {},         // tecla física → código padrão do jogo ('' = desligada)
+    capture: null      // função que recebe a próxima tecla (tela de trocar teclas)
   };
+  /* binds = { códigoPadrão: teclaFísica } → tabela de tradução */
+  I.setBinds = function (binds) {
+    var r = {}, k;
+    for (k in binds) { if (binds[k] && binds[k] !== k) { r[binds[k]] = k; } }
+    for (k in binds) { if (binds[k] && binds[k] !== k && r[k] === undefined) { r[k] = ''; } } // a tecla antiga fica livre (desligada)
+    I.remap = r; I.binds = binds;
+  };
+  I.translate = function (code) { return I.remap[code] !== undefined ? I.remap[code] : code; };
 
   function isTyping(e) {
     var t = e.target;
@@ -21,13 +31,15 @@
   I.bind = function (canvas) {
     window.addEventListener('keydown', function (e) {
       if (isTyping(e)) { return; }
-      var code = e.code;
+      if (I.capture) { e.preventDefault(); var cf = I.capture; I.capture = null; cf(e.code); return; }
+      var code = I.translate(e.code);
+      if (!code) { return; }
       // evita rolagem/atalhos do navegador nas teclas do jogo
       if (['Space', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'F1', 'F2', 'F3', 'F4', 'AltLeft', 'AltRight'].indexOf(code) >= 0 || (e.ctrlKey && (code === 'KeyS'))) { e.preventDefault(); }
       if (!I.down[code]) { I.pressed.push({ code: code, shift: e.shiftKey, ctrl: e.ctrlKey || e.metaKey, alt: e.altKey }); }
       I.down[code] = true;
     });
-    window.addEventListener('keyup', function (e) { I.down[e.code] = false; });
+    window.addEventListener('keyup', function (e) { var c = I.translate(e.code); if (c) { I.down[c] = false; } });
     window.addEventListener('blur', function () { I.down = {}; I.mouse.left = I.mouse.right = false; });
     canvas.addEventListener('mousemove', function (e) {
       if (I.mouse.right && (Math.abs(e.clientX - I.mouse.x) + Math.abs(e.clientY - I.mouse.y) > 3)) { I.rightMoved = true; }

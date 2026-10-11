@@ -217,7 +217,7 @@
     var outdoor = !W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z));
 
     if (wt.rain > 0) {
-      var n = Math.round(wt.rain * (wt.blizzard ? 520 : 260) * (outdoor ? 1 : 0.35));
+      var n = Math.round(wt.rain * (wt.blizzard ? 520 : 260) * (outdoor ? 1 : 0.35) * (FX.weatherMult === undefined ? 1 : FX.weatherMult));
       while (FX.drops.length < n) { FX.drops.push({ x: Math.random() * w, y: Math.random() * h, v: 700 + Math.random() * 400 }); }
       FX.drops.length = n;
       g.strokeStyle = wt.snow ? 'rgba(240,240,255,0.8)' : 'rgba(170,190,220,0.35)';
