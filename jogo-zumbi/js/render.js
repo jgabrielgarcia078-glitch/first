@@ -293,6 +293,53 @@
   }
   R.signAt = signAt;
 
+  /* pichações nas fachadas (calculadas uma vez por chunk; só nas faces externas voltadas para a câmera) */
+  var GRAFF_P = { survivor: 0.75, party: 0.6, goodbye: 0.55 };
+  function graffEdgeOk(x, y, side, ch) {
+    if ((x >> W.chunkShift) !== ch.cx || (y >> W.chunkShift) !== ch.cy) { return false; }
+    if (side === 0) { return W.wn(x, y, 0) === E.WALL && !W.isIndoor(x, y, 0) && W.isIndoor(x, y - 1, 0); }
+    return W.ww(x, y, 0) === E.WALL && !W.isIndoor(x, y, 0) && W.isIndoor(x - 1, y, 0);
+  }
+  function computeGraffiti(ch) {
+    var m = new Map();
+    if (!CP.Notes) { return m; }
+    ch.buildings.forEach(function (b) {
+      if (b.story === 'burnt' || b.kind === 'barn') { return; }
+      var h = ((b.x * 2654435761) ^ (b.y * 40503) ^ 0x5bd1) >>> 0;
+      var isStore = !!SIGN_TEXT[b.kind] && b.kind !== 'police' && b.kind !== 'clinic';
+      var kind = GRAFF_P[b.story] ? b.story : (isStore ? 'store' : 'generic');
+      var pr = GRAFF_P[b.story] || (isStore ? 0.4 : 0.2);
+      if ((h % 1000) / 1000 >= pr) { return; }
+      var text = CP.Notes.graffiti(h >>> 10, kind);
+      var len = text.length <= 3 ? 1 : (text.length <= 9 ? 2 : 3);
+      var sides = (h >>> 4) & 1 ? [0, 1] : [1, 0];
+      for (var si = 0; si < 2; si++) {
+        var side = sides[si], n = side === 0 ? b.w : b.h, starts = [], run = 0;
+        for (var u = 0; u < n; u++) {
+          var x = side === 0 ? b.x + u : b.x + b.w, y = side === 0 ? b.y + b.h : b.y + u;
+          run = graffEdgeOk(x, y, side, ch) ? run + 1 : 0;
+          if (run >= len) { starts.push(u - len + 1); }
+        }
+        if (!starts.length) { continue; }
+        var u0 = starts[(h >>> 7) % starts.length];
+        var spr = S.graffiti(text, side, len, (h >>> 12) % S.GRAFF_COLS);
+        for (var t = 0; t < len; t++) {
+          var tx = side === 0 ? b.x + u0 + t : b.x + b.w, ty = side === 0 ? b.y + b.h : b.y + u0 + t;
+          m.set(W.idx(tx, ty) * 2 + side, { spr: spr[t], text: text });
+        }
+        return;
+      }
+    });
+    return m;
+  }
+  function graffAt(x, y, side) {
+    var ch = W.chunkAt(x, y);
+    if (!ch) { return null; }
+    if (!ch._graff) { ch._graff = computeGraffiti(ch); }
+    return ch._graff.size ? ch._graff.get(W.idx(x, y) * 2 + side) : null;
+  }
+  R.graffitiAt = function (x, y, z, side) { if (z !== 0) { return null; } var gf = graffAt(x, y, side); return gf ? gf.text : null; };
+
   /* variação de textura por posição nos pisos "naturais" (a cor continua vindo de fvar) */
   var NATURAL = [];
   [F.GRASS, F.DARKGRASS, F.DIRT, F.ASPHALT, F.SIDEWALK, F.SAND, F.GRAVEL, F.CONCRETE, F.FIELD, F.WOOD, F.CARPET, F.TILE, F.LINOLEUM].forEach(function (f) { NATURAL[f] = 1; });
@@ -441,9 +488,11 @@
     var spr = S.wall(type, style, side, state, bar, cut, st && st.curtain ? 1 : 0, (grime >>> 7) % 3);
     drawSprite(g, spr, c, bx, by, fade);
     if (cut) { return; }
-    // face externa voltada para a câmera: trepadeiras (erosão) e toldos de loja
+    if (st && st.note && type === E.DOOR && state === 0) { drawSprite(g, S.doorNote(side), c, bx, by, fade); }
+    // face externa voltada para a câmera: pichações, trepadeiras (erosão) e toldos de loja
     var outFace = !W.isIndoor(x, y, z) && W.isIndoor(ax, ay, z);
     if (!outFace) { return; }
+    if (type === E.WALL && z === 0) { var gf = graffAt(x, y, side); if (gf) { drawSprite(g, gf.spr, c, bx, by, fade); } }
     if (type === E.WALL && R.ero > 0.15) {
       var vd = (R.ero - 0.15) * 0.45, vh = hash01(x, y, 31 + side);
       if (vh < vd) { drawSprite(g, S.vines(side, 1 + Math.min(2, Math.floor((1 - vh / vd) * 3 * Math.min(1, R.ero))), (x + y) & 3), c, bx, by, fade); }
@@ -485,7 +534,7 @@
     var lean = SWAY[o] && R.wind > 0.03 && o !== O.CROP ? Math.max(-2, Math.min(2, Math.round(CP.Amb.sway(x, y, SWAY[o]) / SWAY[o] * 2))) : 0;
     if (lean) { spr = S.objLean(o, dir, (o === O.TREE || o === O.TREE_PINE) ? R.treeSeason : 0, lean, SWAY[o] * 0.5); }
     drawSprite(g, spr, li, bx, by, alpha);
-    if (o === O.CAMPFIRE) { drawFlame(g, bx, by, 0, 0); }
+    if (o === O.CAMPFIRE && !(dir & 4)) { drawFlame(g, bx, by, 0, 0); }
   }
   /* chamas: big = incêndio (várias línguas de fogo espalhadas no tile) */
   function drawFlame(g, bx, by, seed, big) {

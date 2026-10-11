@@ -367,8 +367,22 @@
     map: { title: 'Mapa', render: renderMap },
     help: { title: 'Como jogar', render: renderHelp },
     pause: { title: 'Pausa', render: renderPause },
-    mech: { title: 'Mecânica do carro', render: renderMech }
+    mech: { title: 'Mecânica do carro', render: renderMech },
+    note: { title: 'Bilhete', render: renderNote }
   };
+  /* bilhete/recado aberto (papel com letra à mão) */
+  UI.showNote = function (text, title) {
+    UI.noteText = String(text || ''); UI.noteTitle = title || 'Bilhete';
+    UI.toggle('note', false); UI.toggle('note', true);
+    if (CP.Audio && CP.Audio.click) { CP.Audio.click(); }
+  };
+  function renderNote() {
+    var b = body('note');
+    if (!b) { return; }
+    var el = document.getElementById('p-note');
+    if (el) { el.querySelector('.head b').textContent = UI.noteTitle; }
+    b.innerHTML = '<div class="paper">' + esc(UI.noteText).split('\n').join('<br>') + '</div>';
+  }
   UI.toggle = function (name, force) {
     var on = force !== undefined ? force : !UI.open[name];
     var id = 'p-' + name;
@@ -660,6 +674,7 @@
       var d = D.ITEMS[it.id];
       if (d.food && !d.food.canned && !d.food.needsCooking) { opts.push({ label: 'Comer daqui', fn: function () { r.list.splice(r.list.indexOf(it), 1); CP.Items.Inv.give(p, it); CP.Use.eat(p, it, 1); } }); }
       if (d.cloth) { opts.push({ label: 'Vestir', fn: function () { r.list.splice(r.list.indexOf(it), 1); CP.Use.wearItem(p, it); } }); }
+      if (d.note) { opts.unshift({ label: 'Ler bilhete', fn: function () { it.seen = true; UI.showNote(it.text, 'Bilhete'); } }); }
       if (d.weapon || d.gun) { opts.push({ label: 'Equipar', fn: function () { r.list.splice(r.list.indexOf(it), 1); CP.Use.equip(p, it, 'hand1'); renderInv(); } }); }
     } else {
       opts = CP.Use.itemOptions(p, it, 'player');
@@ -1036,6 +1051,7 @@
   var hoverT = 0, hoverTxt = '';
   function edgeLabel(x, y, z, side) {
     var t = W.edgeType(x, y, z, side), E = C.EDGE;
+    if (t === E.WALL) { var gt = CP.Render.graffitiAt ? CP.Render.graffitiAt(x, y, z, side) : null; return gt ? 'Pichação: "' + gt + '"' : null; }
     if (t !== E.DOOR && t !== E.WINDOW && t !== E.GARAGE) { return null; }
     var st = W.edgeState(x, y, z, side) || {}, bits = [];
     var nm = t === E.WINDOW ? 'Janela' : (t === E.GARAGE ? 'Portão da garagem' : 'Porta');
@@ -1047,7 +1063,7 @@
       var sign = b && CP.Render.signText ? CP.Render.signText(b) : null;
       if (sign) { nm += ' — ' + sign; }
     }
-    return nm + ' (' + bits.join(', ') + ')';
+    return nm + ' (' + bits.join(', ') + ')' + (st.note ? ' · tem um bilhete preso' : '');
   }
   UI.hoverText = function (mx, my) {
     var p = P(), lv = W.levelOf(p.z), V = CP.Vis, zm = CP.Render.zoom, k, g, x, y;

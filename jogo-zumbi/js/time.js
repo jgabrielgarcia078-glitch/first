@@ -117,7 +117,7 @@
           var o = W.obj(x, y, lz);
           if (!o) { continue; }
           if (o === O.LAMPPOST && T.powerAt(x, y)) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 7, i: 0.85, indoor: false, glow: 'lamp' }); }
-          if (o === O.CAMPFIRE) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 6, i: 0.85, glow: 'fire' }); }
+          if (o === O.CAMPFIRE && !(W.odir(x, y, lz) & 4)) { out.push({ x: x + 0.5, y: y + 0.5, z: lz, r: 6, i: 0.85, glow: 'fire' }); }
         }
       }
     }

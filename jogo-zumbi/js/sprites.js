@@ -521,6 +521,62 @@
     signMap[key] = s0;
     return s0;
   };
+  /* bilhete preso na porta (papel com fita, no plano da parede) */
+  var noteArr = [];
+  S.doorNote = function (side) {
+    if (noteArr[side]) { return noteArr[side]; }
+    var pad = 6, c = mk(TW * 2, HH + WH + pad * 2 + 4), g = c.getContext('2d');
+    var ox = TW, oy = WH + pad, ff = side === 0 ? 0.86 : 1;
+    wquad(g, side, 0.37, 0.63, WH * 0.5, WH * 0.71, 'rgba(0,0,0,0.25)', ox + (side === 0 ? 1 : -1), oy + 1);
+    wquad(g, side, 0.37, 0.63, WH * 0.5, WH * 0.71, U.shade('#eee6cc', ff), ox, oy);
+    for (var l = 0; l < 4; l++) { wline(g, side, 0.41, WH * (0.53 + l * 0.04), 0.41 + (l === 3 ? 0.1 : 0.17), WH * (0.53 + l * 0.04), 'rgba(40,40,70,0.55)', 1, ox, oy); }
+    wquad(g, side, 0.46, 0.54, WH * 0.69, WH * 0.73, 'rgba(220,210,160,0.8)', ox, oy);
+    return (noteArr[side] = store('dn' + side, c, ox, oy));
+  };
+  /* pichação spray sobre uma fachada de len tiles; devolve uma fatia por tile (cada uma desenhada com a sua parede) */
+  var graffMap = {};
+  var GRAFF_COLS = ['#b3221a', '#1c1c1e', '#e8e6dc', '#2a46a8', '#2f7a34', '#d07a1c'];
+  S.GRAFF_COLS = GRAFF_COLS.length;
+  S.graffiti = function (text, side, len, colI) {
+    var key = text + '|' + side + '|' + len + '|' + colI;
+    if (graffMap[key]) { return graffMap[key]; }
+    var pad = 10, w = HW * len + pad * 2, h = HH * len + WH + pad * 2;
+    var c = mk(w, h), g = c.getContext('2d');
+    var ox = side === 0 ? pad : HW * len + pad, oy = WH + pad;
+    var col = GRAFF_COLS[colI % GRAFF_COLS.length], rng = new U.Rng(text.length * 97 + colI * 13 + side * 7 + len);
+    var big = text.length <= 2, hText = big ? WH * 0.5 : WH * (0.42 + rng.range(-0.05, 0.08));
+    var start = side === 0 ? wp(0, 0, hText) : wp(1, len, hText);
+    g.save();
+    g.translate(start[0] + ox, start[1] + oy); g.transform(1, side === 0 ? 0.5 : -0.5, 0, 1, 0, 0);
+    var maxW = HW * len * 0.86, fs = big ? 40 : 17;
+    var font = function (sz) { return (big ? '' : 'bold ') + sz + 'px Impact, "Arial Black", "Arial Narrow", sans-serif'; };
+    g.font = font(fs);
+    var tw = g.measureText(text).width;
+    if (tw > maxW) { fs = Math.max(8, Math.floor(fs * maxW / tw)); g.font = font(fs); tw = g.measureText(text).width; }
+    var x0 = (HW * len - tw) / 2;
+    g.textBaseline = 'middle'; g.textAlign = 'left';
+    // névoa do spray
+    g.globalAlpha = 0.18; g.fillStyle = col;
+    for (var k = 0; k < 6; k++) { g.fillText(text, x0 + rng.range(-1.6, 1.6), rng.range(-1.6, 1.6)); }
+    g.globalAlpha = 0.85; g.fillText(text, x0, 0);
+    // escorridos de tinta
+    g.globalAlpha = 0.7; g.fillStyle = col;
+    for (var d = 0; d < 3 + text.length; d++) {
+      if (!rng.chance(0.55)) { continue; }
+      var dx = x0 + rng.next() * tw, dl = rng.range(3, big ? 16 : 10);
+      g.fillRect(dx, fs * 0.3, 1.2, dl); g.beginPath(); g.arc(dx + 0.6, fs * 0.3 + dl, 1.1, 0, Math.PI * 2); g.fill();
+    }
+    g.restore();
+    // fatias por tile (faixas verticais na tela)
+    var out = [];
+    for (var t = 0; t < len; t++) {
+      var sx = side === 0 ? ox + HW * t : ox - HW * (t + 1);
+      var sc = mk(HW, h), sg = sc.getContext('2d');
+      sg.drawImage(c, sx, 0, HW, h, 0, 0, HW, h);
+      out.push(store('gf' + key + '|' + t, sc, side === 0 ? 0 : HW, oy + HH * t));
+    }
+    return (graffMap[key] = out);
+  };
   /* toldo listrado sobre vitrine/porta de loja, saindo da face visível da parede */
   var awnArr = [];
   var AWN = [['#a8322c', '#e8e0d0'], ['#2c5a3a', '#e8e0d0'], ['#2a4a7a', '#e0dccc'], ['#c88a2a', '#3a2a1a'], ['#6a3a6a', '#e8dcc8'], ['#7a7a74', '#2e2e2e']];
@@ -938,7 +994,7 @@
       case O.BARREL: drawBarrel(g, '#8a4b2c', 30); break;
       case O.RAIN_BARREL: drawBarrel(g, '#2f5d8a', 34); break;
       case O.WORKBENCH: drawTable(g, '#7a5a3a', 28); box(g, 0.2, 0.3, 0.2, 0.15, 28, 4, '#888'); break;
-      case O.CAMPFIRE: drawCampfire(g); break;
+      case O.CAMPFIRE: drawCampfire(g, dir); break;
       case O.CROP: drawCrop(g, extra || 0, rng); break;
       case O.MED_CABINET: bw = againstWall(dir, 0.3, 0.18); box(g, bw[0], bw[1], bw[2], bw[3], 0, 44, '#f0eeea');
         var mc = ip(bw[0] + bw[2] / 2, bw[1] + bw[3], 26); g.fillStyle = '#c0392b'; g.fillRect(mc[0] - 4, mc[1] - 1, 8, 3); g.fillRect(mc[0] - 1, mc[1] - 4, 3, 8); break;
@@ -1460,9 +1516,16 @@
     ellipseAt(g, t[0], t[1] + 1, 18, 8, 'rgba(0,0,0,0.25)');
     for (var i = 0; i < 4; i++) { ellipseAt(g, t[0] + rng.range(-8, 8), t[1] - rng.range(3, 10), rng.range(8, 13), rng.range(6, 9), ['#7c7a76', '#8b8985', '#6e6c68', '#96948f'][i]); }
   }
-  function drawCampfire(g) {
+  function drawCampfire(g, dir) {
     var t = ip(0.5, 0.5, 0);
     for (var i = 0; i < 8; i++) { var a = i / 8 * Math.PI * 2; ellipseAt(g, t[0] + Math.cos(a) * 14, t[1] + Math.sin(a) * 7, 4, 3, '#77746e'); }
+    if (dir & 4) {
+      // apagada: cinza, tições pretos
+      ellipseAt(g, t[0], t[1], 11, 5.5, '#5a5854'); ellipseAt(g, t[0] - 2, t[1] - 1, 7, 3.5, '#8a8782');
+      g.strokeStyle = '#1e1a16'; g.lineWidth = 3.5;
+      g.beginPath(); g.moveTo(t[0] - 8, t[1] + 2); g.lineTo(t[0] + 6, t[1] - 2); g.moveTo(t[0] - 5, t[1] - 3); g.lineTo(t[0] + 8, t[1] + 2); g.stroke();
+      return;
+    }
     g.strokeStyle = '#4a321d'; g.lineWidth = 4;
     g.beginPath(); g.moveTo(t[0] - 9, t[1] + 3); g.lineTo(t[0] + 9, t[1] - 3); g.moveTo(t[0] - 9, t[1] - 3); g.lineTo(t[0] + 9, t[1] + 3); g.stroke();
   }

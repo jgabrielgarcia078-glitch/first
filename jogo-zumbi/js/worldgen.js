@@ -1164,6 +1164,48 @@
     return false;
   }
   function makeItem(ctx, id, opts) { return CP.Items ? CP.Items.make(id, opts, ctx.rng) : { id: id }; }
+  /* estado da porta da frente de um prédio (null se a porta cai em outro chunk) */
+  function frontDoor(ctx, b) {
+    var d = b.door;
+    if (!d) { return null; }
+    var lx = d.x - ctx.ox, ly = d.y - ctx.oy, z = d.z || 0;
+    if (!ctx.inside(lx, ly)) { return null; }
+    var key = (z * CH * CH + ctx.i(lx, ly)) * 2 + d.side;
+    var st = ctx.c.edges[key];
+    if (!st) { st = ctx.c.edges[key] = { open: false, locked: false, hp: 40, bar: 0, barHp: 0, broken: false, ext: true }; }
+    return st;
+  }
+  function noteItem(ctx, kind, town) { return makeItem(ctx, 'note', { text: CP.Notes ? CP.Notes.gen(ctx.rng, kind, town) : '' }); }
+  function townOf(m, rng) { return m.towns.length ? rng.pick(m.towns).name : null; }
+  function campScene(ctx, m, rng) {
+    var c = ctx.c;
+    for (var tries = 0; tries < 12; tries++) {
+      var x0 = rng.int(RW + 3, CH - 8), y0 = rng.int(RW + 3, CH - 8), ok = true;
+      for (var y = y0 - 1; y <= y0 + 4 && ok; y++) {
+        for (var x = x0 - 1; x <= x0 + 4 && ok; x++) {
+          var f = ctx.floor(x, y, 0);
+          if (ctx.reserved[ctx.i(x, y)] || ctx.room(x, y, 0) || (f !== F.GRASS && f !== F.DARKGRASS && f !== F.DIRT) || ctx.getEdge(x, y, 0, 0) || ctx.getEdge(x, y, 0, 1)) { ok = false; }
+        }
+      }
+      if (!ok) { continue; }
+      for (var cy = y0 - 1; cy <= y0 + 4; cy++) { for (var cx = x0 - 1; cx <= x0 + 4; cx++) { ctx.setObj(cx, cy, 0, 0, 0); if (rng.chance(0.5)) { ctx.setFloor(cx, cy, 0, F.DIRT, rng.int(0, 3)); } } }
+      ctx.setObj(x0, y0, 0, O.TENT, rng.int(0, 3));
+      ctx.setObj(x0 + 2, y0 + 2, 0, O.CAMPFIRE, 4);
+      ctx.setObj(x0 + 3, y0, 0, O.CRATE, 0);
+      ctx.setObj(x0, y0 + 3, 0, O.LOG, 1);
+      var stock = ['beans', 'tuna', 'water_bottle', 'matches', 'rope', 'knife', 'flashlight', 'battery', 'bandage', 'crackers', 'fishing_rod', 'pot'];
+      var items = [];
+      for (var n = 0; n < rng.int(2, 5); n++) { var id = rng.pick(stock); if (CP.D.ITEMS[id]) { items.push(makeItem(ctx, id, null)); } }
+      c.containers[ctx.i(x0 + 3, y0)] = { items: items, gen: true };
+      c.containers[ctx.i(x0, y0)] = { items: rng.chance(0.5) ? [makeItem(ctx, rng.pick(['sheet', 'sweater', 'hiking_bag', 'novel']), null)] : [], gen: true };
+      var k = (0 * CH * CH) + ctx.i(x0 + 1, y0 + 2);
+      c.items[k] = (c.items[k] || []).concat([noteItem(ctx, 'camp', townOf(m, rng))]);
+      if (rng.chance(0.45)) { addZombie(ctx, x0 + 1, y0 + 1, 0, null, { crawler: rng.chance(0.3) }); }
+      if (rng.chance(0.3)) { ctx.setObj(x0 + 4, y0 + 3, 0, O.GRAVE, 0); }
+      return true;
+    }
+    return false;
+  }
   function stories(ctx, m, cx, cy, type) {
     var rng = ctx.rng;
     var c = ctx.c;
@@ -1199,6 +1241,7 @@
         var stock = ['beans', 'soup', 'tuna', 'water_bottle', 'water_bottle', 'crackers', 'peanutbutter', 'bandage', 'painkillers', 'nails', 'plank', 'hammer', 'flashlight', 'battery', 'candy'];
         for (var n = 0; n < rng.int(5, 9); n++) { var id = rng.pick(stock); items.push(makeItem(ctx, id, id === 'nails' ? { n: 20 } : null)); }
         if (rng.chance(0.4)) { items.push(makeItem(ctx, rng.pick(['shotgun', 'pistol', 'axe', 'crowbar']), null)); }
+        if (placed === 0) { items.push(noteItem(ctx, 'diary', townOf(m, rng))); }
         if (rng.chance(0.3)) { items.push(makeItem(ctx, 'shells', { n: 12 })); }
         c.containers[ctx.i(lx, ly)] = { items: items, gen: true };
         placed++;
@@ -1206,6 +1249,30 @@
       for (var zn = 0; zn < rng.int(1, 3); zn++) {
         var zx = x0 + rng.int(0, b.w - 1), zy = y0 + rng.int(0, b.h - 1);
         if (ctx.inside(zx, zy) && ctx.room(zx, zy, 0) && !ctx.obj(zx, zy, 0)) { addZombie(ctx, zx, zy, 0, 'house', null); }
+      }
+      var fd = frontDoor(ctx, b);
+      if (fd && rng.chance(0.6) && CP.Notes) { fd.note = CP.Notes.gen(rng, 'warning', townOf(m, rng)); }
+    });
+    // família que foi embora: recado na porta, casa trancada e meio vazia
+    c.buildings.forEach(function (b) {
+      if (b.kind !== 'house' || b.story || !rng.chance(0.06)) { return; }
+      var fd = frontDoor(ctx, b);
+      if (!fd || !CP.Notes) { return; }
+      b.story = 'goodbye';
+      fd.note = CP.Notes.gen(rng, rng.chance(0.75) ? 'goodbye' : 'family', townOf(m, rng));
+      fd.locked = true; fd.open = false;
+      // levaram quase tudo: recipientes já "gerados" com poucas coisas
+      var x0 = b.x - ctx.ox, y0 = b.y - ctx.oy;
+      for (var y = y0; y < y0 + b.h; y++) {
+        for (var x = x0; x < x0 + b.w; x++) {
+          if (!ctx.inside(x, y)) { continue; }
+          var o = ctx.obj(x, y, 0);
+          if (!o || !C.OBJ_INFO[o].cap || !ctx.room(x, y, 0) || rng.chance(0.35)) { continue; }
+          var left = [];
+          if (rng.chance(0.25)) { left.push(makeItem(ctx, rng.pick(['sheet', 'tshirt', 'novel', 'candy', 'bottle_empty', 'photo', 'magazine']), null)); }
+          if (rng.chance(0.12)) { left.push(noteItem(ctx, rng.pick(['list', 'misc', 'family']), townOf(m, rng))); }
+          c.containers[ctx.i(x, y)] = { items: left, gen: true };
+        }
       }
     });
     // casa que pegou fogo: chão carbonizado, entulho, paredes pretas, telhado caído em partes, corpos queimados
@@ -1274,12 +1341,16 @@
           if (dz) {
             var look = CP.Zombies.fromData(dz).look;
             look.zombie = false; look.skin = rng.pick(CP.C.SKIN_TONES);
-            c.corpses.push({ x: crx, y: cry, z: 0, ang: rng.range(0, 6.28), look: look, items: [makeItem(ctx, rng.pick(['wallet', 'car_key', 'water_bottle', 'map', 'first_aid_kit', 'cigarettes']), null)], t: -86400 });
+            var citems = [makeItem(ctx, rng.pick(['wallet', 'car_key', 'water_bottle', 'map', 'first_aid_kit', 'cigarettes']), null)];
+            if (rng.chance(0.35)) { citems.push(noteItem(ctx, rng.pick(['family', 'goodbye', 'list']), townOf(m, rng))); }
+            c.corpses.push({ x: crx, y: cry, z: 0, ang: rng.range(0, 6.28), look: look, items: citems, t: -86400 });
           }
         }
         for (var zz = 0; zz < rng.int(1, 3); zz++) { addZombie(ctx, Math.min(CH - 1, ax + rng.int(-2, 3)), Math.min(CH - 1, Math.max(0, ay + rng.int(-2, 3))), 0, null, { crawler: rng.chance(0.3) }); }
       }
     }
+    // acampamento abandonado no mato: barraca, fogueira apagada, caixa com mantimentos, bilhete e às vezes o dono
+    if ((type === T.FOREST || type === T.FIELD) && rng.chance(type === T.FOREST ? 0.06 : 0.025)) { campScene(ctx, m, rng); }
     // bloqueio policial na rodovia (fora da cidade)
     if (!G.isTownType(type) && type !== T.BORDER && (rn || rw) && rng.chance(0.05)) {
       var hz = rn && (!rw || rng.chance(0.5));

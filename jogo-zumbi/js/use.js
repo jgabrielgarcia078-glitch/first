@@ -55,6 +55,7 @@
     if (It.hasTag(it, 'radio')) { out.push({ label: 'Ouvir rádio', fn: function () { A.start(p, { name: 'Ouvindo rádio', time: 4, onDone: function () { msg('Rádio: ' + CP.Time.broadcast()); p.body.stats.boredom = Math.max(0, p.body.stats.boredom - 0.05); } }); } }); }
     if (d.throwable) { out.push({ label: 'Arremessar (no mouse)', fn: function () { Use.equip(p, it, 'hand1'); msg('Mire com o botão direito e clique com o esquerdo para arremessar.'); } }); }
     if (d.seed) { out.push({ label: 'Plantar (clique direito num canteiro)', disabled: true }); }
+    if (D.ITEMS[it.id].note) { out.push({ label: 'Ler bilhete', fn: function () { it.seen = true; if (CP.UI) { CP.UI.showNote(it.text, 'Bilhete'); } } }); }
     if (it.id === 'map') { out.push({ label: 'Ler mapa (revela a região)', fn: function () { readMap(p, it); } }); }
     if (it.id === 'generator_item') { out.push({ label: 'Instalar gerador aqui', fn: function () { placeGenerator(p, it); } }); }
     if (d.bag && it.items && it.items.length && !Inv.isWorn(p, it)) { out.push({ label: 'Esvaziar no chão', fn: function () { var fl = W.floorItems(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z), true); it.items.splice(0).forEach(function (x) { fl.push(x); }); } }); }
@@ -198,7 +199,7 @@
         var x = Math.floor(p.x) + dx, y = Math.floor(p.y) + dy;
         var o = W.obj(x, y, z);
         if (o === O.STOVE && CP.Time.powerAt(x, y)) { return true; }
-        if (o === O.CAMPFIRE) { return true; }
+        if (o === O.CAMPFIRE && !(W.odir(x, y, z) & 4)) { return true; }
       }
     }
     return false;

@@ -327,3 +327,8 @@ table.mech button { margin: 0 2px; }
 
 /* rótulo ao passar o mouse */
 #hover-label { position: fixed; display: none; z-index: 5; padding: 2px 8px; font-size: 13px; color: #f2eee2; background: rgba(10,10,9,0.72); border: 1px solid rgba(160,154,136,0.3); white-space: nowrap; text-shadow: 0 1px 1px #000; }
+
+/* bilhete: papel pautado com letra à mão */
+#p-note { width: 380px; }
+.paper { position: relative; padding: 18px 20px 20px 34px; min-height: 140px; color: #2a2a36; font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', 'Chalkboard SE', cursive; font-size: 15px; line-height: 26px; background: #ece4cc repeating-linear-gradient(transparent 0 25px, rgba(90,110,150,0.32) 25px 26px); background-position: 0 34px; box-shadow: inset 0 0 30px rgba(120,90,40,0.25); transform: rotate(-0.6deg); }
+.paper::before { content: ''; position: absolute; left: 24px; top: 0; bottom: 0; width: 1px; background: rgba(190,60,60,0.45); }

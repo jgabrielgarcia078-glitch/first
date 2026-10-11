@@ -92,6 +92,10 @@
     var near = distToEdge(p, e) < 1.35;
     if (!near) { return; }
     var mid = edgeMid(e);
+    if (st && st.note) {
+      out.push({ label: 'Ler o bilhete preso na porta', fn: function () { if (CP.UI) { CP.UI.showNote(st.note, 'Recado na porta'); } } });
+      out.push({ label: 'Pegar o bilhete', fn: function () { CP.Items.Inv.give(p, CP.Items.make('note', { text: st.note, seen: true })); st.note = null; W.chunkAt(e.x, e.y).saveDirty = true; msg('Você pegou o bilhete.'); } });
+    }
     if (type === E.DOOR || type === E.GARAGE) {
       if (st.broken) { return; }
       if (st.bar > 0) {
@@ -253,6 +257,15 @@
     }
     if (info.tv) {
       out.push({ label: 'Assistir TV', disabled: !CP.Time.powerAt(x, y), hint: 'Sem energia', fn: function () { watchTv(p); } });
+    }
+    if (o === O.CAMPFIRE) {
+      var lv0 = W.lvl(x, y, z), ii0 = W.idx(x, y);
+      if (lv0.odir[ii0] & 4) {
+        var fireTool = has(p, 'lighter') || has(p, 'matches'), wood = CP.Items.Inv.findId(p, 'plank') || CP.Items.Inv.findId(p, 'log') || CP.Items.Inv.findId(p, 'newspaper');
+        out.push({ label: 'Acender fogueira', disabled: !(fireTool && wood), hint: 'Precisa de fósforo/isqueiro e tábua ou jornal', fn: function () { A.start(p, { name: 'Acendendo a fogueira', time: 4, anim: 'work', onDone: function () { CP.Items.Inv.consume(p, wood.item.id, 1); lv0.odir[ii0] &= ~4; W.chunkAt(x, y).dirty = true; msg('A fogueira pegou.'); CP.Game.updateLight(); } }); } });
+      } else {
+        out.push({ label: 'Apagar fogueira', fn: function () { lv0.odir[ii0] |= 4; W.chunkAt(x, y).dirty = true; CP.Game.updateLight(); if (CP.Audio && CP.Audio.hiss) { CP.Audio.hiss(x + 0.5, y + 0.5); } } });
+      }
     }
     if (info.stove) { out.push({ label: 'Cozinhar (artesanato)', disabled: !CP.Time.powerAt(x, y), hint: 'Sem energia', fn: function () { if (CP.UI) { CP.UI.openCrafting(); } } }); }
     if (info.tree) {

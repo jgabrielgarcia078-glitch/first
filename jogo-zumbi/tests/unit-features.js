@@ -362,5 +362,69 @@ if (car) {
   ok(car.engine, 'com bateria boa e motor bom, liga');
   car.engine = false; q.vehicle = null;
 }
+
+/* ---------- R5: bilhetes, recados nas portas, pichações e acampamentos ---------- */
+{
+  const N = CP.Notes, rng = new U.Rng(5);
+  let bad = 0;
+  for (let i = 0; i < 300; i++) { const t = N.gen(rng); if (!t || /[{}]/.test(t) || /undefined/.test(t)) bad++; }
+  ok(bad === 0, 'textos de bilhete gerados sem marcadores sobrando');
+  N.KINDS.forEach(k => ok(N.gen(new U.Rng(1), k, 'Westwood').length > 20, 'bilhete do tipo ' + k));
+  const it = CP.Items.make('note', null, new U.Rng(3));
+  ok(typeof it.text === 'string' && it.text.length > 10, 'item Bilhete nasce com texto');
+  ok(/não lido/.test(CP.Items.name(it)), 'nome do bilhete marca não lido');
+  it.seen = true; ok(/“/.test(CP.Items.name(it)), 'depois de lido mostra a 1ª linha no nome');
+  // varre chunks: histórias com recado na porta, acampamentos com barraca e bilhete
+  let goodbye = 0, notesOnDoors = 0, survivorNotes = 0, camps = 0, campNotes = 0, notesLoot = 0;
+  for (let cy = 0; cy < C.WORLD_CHUNKS; cy++) for (let cx = 0; cx < C.WORLD_CHUNKS; cx++) {
+    const ch = W.ensureChunk(cx, cy);
+    ch.buildings.forEach(b => { if (b.story === 'goodbye') goodbye++; });
+    for (const k in ch.edges) { const st = ch.edges[k]; if (st && st.note) { notesOnDoors++; } }
+    ch.buildings.forEach(b => { if (b.story === 'survivor') for (const k in ch.containers) if (ch.containers[k].items.some(i => i.id === 'note')) survivorNotes++; });
+    for (let i = 0; i < C.CHUNK * C.CHUNK; i++) if (ch.levels[0].obj[i] === O.TENT) camps++;
+    for (const k in ch.items) if (ch.items[k].some(i => i.id === 'note')) campNotes++;
+    for (const k in ch.containers) if (ch.containers[k].items.some(i => i.id === 'note')) notesLoot++;
+    if (cy > 30) break;
+  }
+  ok(goodbye > 0 && notesOnDoors >= goodbye, 'casas de quem foi embora com recado na porta (' + goodbye + ' casas, ' + notesOnDoors + ' recados)');
+  ok(camps > 0 && campNotes > 0, 'acampamentos abandonados com bilhete no chão (' + camps + ' barracas, ' + campNotes + ' bilhetes)');
+  ok(notesLoot > 0, 'bilhetes em recipientes gerados (' + notesLoot + ')');
+  // determinismo: o mesmo chunk gera o mesmo recado
+  let det = null;
+  for (let cy = 0; cy < 20 && !det; cy++) for (let cx = 0; cx < C.WORLD_CHUNKS && !det; cx++) {
+    const ch = W.ensureChunk(cx, cy);
+    for (const k in ch.edges) if (ch.edges[k] && ch.edges[k].note) { det = { cx, cy, k, t: ch.edges[k].note }; break; }
+  }
+  if (det) {
+    const ch2 = CP.Gen.genChunk(det.cx, det.cy, G.state.seed, W.macro);
+    ok(ch2.edges[det.k] && ch2.edges[det.k].note === det.t, 'recado na porta é determinístico pela semente');
+  }
+  // pegar o bilhete da porta pelo menu de contexto
+  if (det) {
+    const ch = W.chunkByIndex(det.cx, det.cy), key = +det.k, side = key % 2, kk = (key - side) / 2;
+    const ix = kk % (C.CHUNK * C.CHUNK), lx = ix & (C.CHUNK - 1), ly = ix >> Math.log2(C.CHUNK);
+    const ex = det.cx * C.CHUNK + lx, ey = det.cy * C.CHUNK + ly;
+    const q = G.player; q.x = ex + 0.5 + (side === 1 ? -0.6 : 0); q.y = ey + 0.5 + (side === 0 ? -0.6 : 0); q.z = 0;
+    if (W.isIndoor(Math.floor(q.x), Math.floor(q.y), 0)) { q.x = ex + 0.5; q.y = ey + 0.5; }
+    G.activateChunks(true); clearZombies();
+    const opts = CP.Actions.contextOptions(q, ex + 0.5 - (side === 1 ? 0.45 : 0), ey + 0.5 - (side === 0 ? 0.45 : 0));
+    const take = opts.find(o => /Pegar o bilhete/.test(o.label)), read = opts.find(o => /Ler o bilhete/.test(o.label));
+    ok(!!take && !!read, 'porta com recado oferece ler e pegar');
+    if (take) { take.fn(); ok(!ch.edges[det.k].note && CP.Items.Inv.findId(q, 'note'), 'pegar o recado vira item Bilhete'); }
+  }
+  // fogueira apagada não esquenta nem ilumina; acender exige fósforo + tábua
+  const q = G.player, fx = Math.floor(q.x) + 1, fy = Math.floor(q.y);
+  const L = W.lvl(fx, fy, 0), ii = W.idx(fx, fy);
+  L.obj[ii] = O.CAMPFIRE; L.odir[ii] = 4;
+  ok(!CP.Use.nearHeat(q), 'fogueira apagada não serve para cozinhar');
+  let o2 = CP.Actions.contextOptions(q, fx + 0.5, fy + 0.5).find(o => /Acender fogueira/.test(o.label));
+  ok(o2 && o2.disabled, 'acender sem fósforo fica desabilitado');
+  CP.Items.Inv.give(q, CP.Items.make('matches')); CP.Items.Inv.give(q, CP.Items.make('plank'));
+  o2 = CP.Actions.contextOptions(q, fx + 0.5, fy + 0.5).find(o => /Acender fogueira/.test(o.label));
+  ok(o2 && !o2.disabled, 'com fósforo e tábua dá para acender');
+  if (o2) { o2.fn(); tick(6); }
+  ok(!(L.odir[ii] & 4) && CP.Use.nearHeat(q), 'fogueira acesa esquenta');
+  L.obj[ii] = 0; L.odir[ii] = 0;
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);
