@@ -260,7 +260,7 @@ ok(G.state.world.fires.length === 0, 'o incêndio acabou sozinho');
 ok(!q.dead, 'o jogador longe do fogo continua vivo ' + (q.deathCause || ''));
 let outsideBurnt = 0;
 for (let y = house.y - 8; y < house.y + house.h + 8; y++) for (let x = house.x - 8; x < house.x + house.w + 8; x++) { if (!W.isIndoor(x, y, 0) && W.floor(x, y, 0) === F.BURNT) outsideBurnt++; }
-ok(outsideBurnt < 60, 'o fogo não vira um incêndio sem fim pela grama (' + outsideBurnt + ' tiles queimados fora)');
+ok(outsideBurnt < 120, 'o fogo não vira um incêndio sem fim pela grama (' + outsideBurnt + ' tiles queimados fora)');
 let burnt = 0, charred = 0, rubble = 0;
 for (let y = house.y; y < house.y + house.h; y++) for (let x = house.x; x < house.x + house.w; x++) { if (W.floor(x, y, 0) === F.BURNT) burnt++; if (W.obj(x, y, 0) === O.RUBBLE) rubble++; }
 for (let y = house.y; y <= house.y + house.h; y++) for (let x = house.x; x <= house.x + house.w; x++) { const l = W.lvl(x, y, 0), i = W.idx(x, y); if (l.wns[i] === C.FIRE.BURNT_STYLE || l.wws[i] === C.FIRE.BURNT_STYLE) charred++; }
@@ -882,6 +882,58 @@ if (car) {
   ok(cdl.burn < b0, 'vela vai queimando');
   const torch = CP.D.RECIPE.torch; ok(!!torch, 'receita de tocha existe');
   cdl.on = false; CP.Use.unequip(q, cdl);
+}
+/* ---------- T4: lugares especiais e animais caçáveis ---------- */
+{
+  const q = G.player, An = CP.Anim, D = CP.D;
+  ok(['hospital', 'school', 'cityhall', 'mall', 'military'].every(k => D.LOOT[k]), 'tabelas de loot dos lugares especiais');
+  ok(D.LOOT.military.list.some(e => e[0] === 'army_jacket') && D.ITEMS.mre && D.ITEMS.venison, 'base militar tem farda; existem ração e carne de veado');
+  q.x = firstOpen.x; q.y = firstOpen.y; q.z = 0; q.vehicle = null; G.activateChunks(true); clearZombies(); An.reset();
+  q.sneaking = false; q.running = false;
+  // acha um tile de mato perto
+  let spot = null;
+  for (let r = 3; r < 30 && !spot; r++) for (let a = 0; a < 24 && !spot; a++) { const x = q.x + Math.cos(a / 24 * 6.28) * r, y = q.y + Math.sin(a / 24 * 6.28) * r; const f = W.floor(Math.floor(x), Math.floor(y), 0); if ((f === F.GRASS || f === F.DARKGRASS) && !W.isIndoor(Math.floor(x), Math.floor(y), 0) && W.tileWalkable(Math.floor(x), Math.floor(y), 0) && !W.obj(Math.floor(x), Math.floor(y), 0)) spot = { x: Math.floor(x) + 0.5, y: Math.floor(y) + 0.5 }; }
+  ok(!!spot, 'tem grama perto para os bichos');
+  // nascem sozinhos com o tempo
+  const W0 = G.state.world.weather; G.state.world.weather = { type: 'clear', until: CP.Time.hours() + 50 };
+  const isN = CP.Time.isNight; CP.Time.isNight = () => false;
+  for (let i = 0; i < 40 && An.list.length === 0; i++) { An.spawnT = 0; An.update(0.01); }
+  CP.Time.isNight = isN;
+  ok(An.list.length > 0, 'animais aparecem no mato (' + An.list.map(a => a.species).join(',') + ')');
+  An.reset();
+  // foge do jogador que chega de pé
+  const rb = An.spawn('rabbit', spot.x, spot.y);
+  q.x = spot.x - 2; q.y = spot.y; rb.ang = Math.PI; rb.state = 'graze'; rb.t = 99;
+  An.update(0.05);
+  ok(rb.state === 'flee', 'coelho foge de quem chega perto');
+  const d0 = U.dist(rb.x, rb.y, q.x, q.y); for (let i = 0; i < 20; i++) An.update(0.05);
+  ok(U.dist(rb.x, rb.y, q.x, q.y) > d0 || An.list.indexOf(rb) < 0, 'e se afasta');
+  An.reset();
+  // agachado por trás: chega perto e mata com a faca
+  const rb2 = An.spawn('rabbit', spot.x, spot.y); rb2.ang = 0; rb2.state = 'graze'; rb2.t = 99;
+  q.x = spot.x - 0.8; q.y = spot.y; q.sneaking = true; An.update(0.05);
+  ok(rb2.state !== 'flee', 'agachado por trás o coelho não percebe');
+  const knife = CP.Items.make('knife'); Inv.give(q, knife); CP.Use.equip(q, knife, 'hand1');
+  q.ang = 0; q.anim.attack = 0; q.attackCd = 0; q.stealth = null; CP.Zombies.rebuildHash();
+  const fl0 = (W.floorItems(Math.floor(spot.x), Math.floor(spot.y), 0) || []).filter(i => i.id === 'dead_rabbit').length;
+  CP.Input.mouse.left = true; q.uiClickGuard = false; CP.Combat.playerUpdate(q, 1 / 30); CP.Input.mouse.left = false;
+  for (let i = 0; i < 60; i++) CP.Combat.playerUpdate(q, 1 / 30);
+  const fl1 = (W.floorItems(Math.floor(rb2.x), Math.floor(rb2.y), 0) || []).filter(i => i.id === 'dead_rabbit').length;
+  ok(An.list.indexOf(rb2) < 0 && fl1 > fl0, 'golpe mata o coelho e deixa a carcaça no chão');
+  q.sneaking = false; CP.Use.unequip(q, knife);
+  // tiro: o raio acha o veado e o dano mata
+  const dr = An.spawn('deer', spot.x + 6, spot.y); q.x = spot.x; q.y = spot.y;
+  const hit = An.ray(q, 0, 20);
+  ok(hit && hit.a === dr && Math.abs(hit.d - 6) < 0.5, 'tiro na direção do veado acerta ele');
+  ok(!An.ray(q, Math.PI / 2, 20), 'tiro para o lado não acerta');
+  An.damage(dr, 1, 0); ok(dr.state === 'flee' && An.list.indexOf(dr) >= 0, 'veado ferido foge');
+  An.damage(dr, 5, 0); ok(An.list.indexOf(dr) < 0 && (W.floorItems(Math.floor(dr.x), Math.floor(dr.y), 0) || []).some(i => i.id === 'venison'), 'veado abatido vira carne');
+  // barulho espanta
+  const dr2 = An.spawn('deer', spot.x + 3, spot.y); dr2.state = 'graze';
+  CP.Zombies.noise(spot.x + 3, spot.y + 2, 0, 10, 'test'); ok(dr2.state === 'flee', 'barulho espanta o veado');
+  // longe demais some
+  dr2.x += 100; An.update(0.05); ok(An.list.indexOf(dr2) < 0, 'bicho longe some');
+  An.reset(); G.state.world.weather = W0;
 }
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

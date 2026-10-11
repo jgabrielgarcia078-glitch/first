@@ -266,7 +266,7 @@
     grocery: ['MERCADO', 'SUPERMERCADO', 'MERCEARIA'], pharmacy: ['FARMÁCIA', 'DROGARIA'], hardware: ['FERRAGENS', 'MATERIAIS'],
     diner: ['LANCHONETE', 'DINER', 'CAFÉ & GRILL'], clothes: ['ROUPAS', 'MODAS', 'BOUTIQUE'], bar: ['BAR', 'TAVERNA', 'SALOON'],
     office: ['ESCRITÓRIO', 'CONTABILIDADE', 'IMOBILIÁRIA'], gunstore: ['ARMAS & CAÇA', 'ARMARIA'], bookstore: ['LIVRARIA', 'SEBO'],
-    electronics: ['ELETRÔNICOS', 'TV & SOM'], police: ['DELEGACIA'], clinic: ['CLÍNICA', 'POSTO DE SAÚDE'], gas: ['POSTO', 'CONVENIÊNCIA'], warehouse: ['DEPÓSITO']
+    electronics: ['ELETRÔNICOS', 'TV & SOM'], police: ['DELEGACIA'], hospital: ['HOSPITAL'], school: ['ESCOLA'], cityhall: ['PREFEITURA'], mall: ['SHOPPING'], military: ['BASE MILITAR'], clinic: ['CLÍNICA', 'POSTO DE SAÚDE'], gas: ['POSTO', 'CONVENIÊNCIA'], warehouse: ['DEPÓSITO']
   };
   var OWNERS = ['DO JOE', 'DA MARTHA', 'DO HANK', 'DA DOT', 'DO OTIS', 'DO BUD'];
   R.signText = function (b) {

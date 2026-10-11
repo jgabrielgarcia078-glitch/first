@@ -116,7 +116,23 @@
         var kc = rng.pick(cands);
         if (!m.feature[kc]) { m.feature[kc] = 5; }  // clínica
       }
+      // lugares especiais: escola e prefeitura em toda cidade; hospital e shopping nas maiores
+      var free = cands.filter(function (c2) { return !m.feature[c2]; });
+      [[7, 0], [8, 0], [6, 3], [9, 4]].forEach(function (fs) {
+        if (tw.r >= fs[1] && free.length) { var pk = free.splice(rng.int(0, free.length - 1), 1)[0]; m.feature[pk] = fs[0]; }
+      });
     });
+    // uma base militar no mato, à beira de uma estrada, longe das cidades
+    var bestK = -1, bestD = 0;
+    for (var bk = 0; bk < N * N; bk++) {
+      var bt = m.type[bk];
+      if ((bt !== T.FIELD && bt !== T.FOREST) || m.feature[bk] || !(m.roadN[bk] || m.roadW[bk])) { continue; }
+      var bx0 = bk % N, by0 = (bk / N) | 0, dmin = 1e9;
+      m.towns.forEach(function (tw2) { dmin = Math.min(dmin, U.dist(bx0, by0, tw2.x, tw2.y)); });
+      var score = dmin < 5 ? -1 : 20 - Math.abs(dmin - 8) + (U.hash2(bx0, by0, seed + 77) % 100) / 100;
+      if (score > bestD) { bestD = score; bestK = bk; }
+    }
+    if (bestK >= 0) { m.feature[bestK] = 10; m.military = { x: bestK % N, y: (bestK / N) | 0 }; }
     return m;
   };
 
@@ -191,7 +207,8 @@
     paintRoads(ctx, m, cx, cy, type);
     borderFences(ctx, m, cx, cy, type);
     var feat = m.feature[k];
-    if (type === T.TOWN && feat !== 4 && feat !== 5) { genResidentialBlock(ctx, m, cx, cy); } else if (type === T.DOWNTOWN || feat === 4 || feat === 5) { genDowntownBlock(ctx, m, cx, cy, feat); } else if (feat === 1) { genGasStation(ctx, m, cx, cy); } else if (feat === 2) { genRuralHouse(ctx, m, cx, cy); } else if (feat === 3) { genFarm(ctx, m, cx, cy); }
+    var civic = feat >= 4 && feat <= 9;
+    if (feat === 10) { genMilitaryBase(ctx, m, cx, cy); } else if (type === T.TOWN && !civic) { genResidentialBlock(ctx, m, cx, cy); } else if (type === T.DOWNTOWN || civic) { genDowntownBlock(ctx, m, cx, cy, feat); } else if (feat === 1) { genGasStation(ctx, m, cx, cy); } else if (feat === 2) { genRuralHouse(ctx, m, cx, cy); } else if (feat === 3) { genFarm(ctx, m, cx, cy); }
     nature(ctx, type);
     roadProps(ctx, m, cx, cy, type);
     spawnZombies(ctx, type, feat);
@@ -923,14 +940,17 @@
     var rng = ctx.rng;
     for (var ly = 6; ly < CH - 1; ly++) { for (var lx = 6; lx < CH - 1; lx++) { ctx.setFloor(lx, ly, 0, F.CONCRETE); } }
     var lots;
-    if (rng.chance(0.3) && !feat) {
+    var BIG = { 6: 'hospital', 7: 'school', 8: 'cityhall', 9: 'mall' };
+    if (BIG[feat]) {
+      lots = [{ x: 6, y: 6, w: 25, h: 25, front: rng.pick(['N', 'W']), kind: BIG[feat] }];
+    } else if (rng.chance(0.3) && !feat) {
       lots = [{ x: 6, y: 6, w: 25, h: 25, front: rng.pick(['N', 'W', 'S', 'E']) }];
     } else {
       lots = [{ x: 6, y: 6, w: 25, h: 12, front: 'N' }, { x: 6, y: 19, w: 25, h: 12, front: 'S' }];
     }
     lots.forEach(function (lot, li) {
       var kind;
-      if (feat === 4 && li === 0) { kind = 'police'; } else if (feat === 5 && li === 0) { kind = 'clinic'; } else { kind = rng.weighted(SHOP_TYPES); }
+      if (lot.kind) { kind = lot.kind; } else if (feat === 4 && li === 0) { kind = 'police'; } else if (feat === 5 && li === 0) { kind = 'clinic'; } else { kind = rng.weighted(SHOP_TYPES); }
       if (kind === 'parking') { parkingLot(ctx, lot); return; }
       var inset = 1;
       var r = { x: lot.x + inset, y: lot.y + inset, w: lot.w - inset * 2, h: lot.h - inset * 2 };
@@ -964,7 +984,12 @@
     warehouse: { shelf: O.CRATE, extra: [O.CRATE, O.CRATE, O.BARREL], room: 'warehouse' },
     police: { shelf: null, extra: [O.DESK, O.DESK, O.LOCKER, O.LOCKER, O.LOCKER, O.SHELF], room: 'police' },
     clinic: { shelf: null, extra: [O.BED_HEAD, O.BED_HEAD, O.MED_CABINET, O.MED_CABINET, O.DESK], room: 'clinic' },
-    gas: { shelf: O.SHOP_SHELF, extra: [O.FRIDGE, O.COUNTER], room: 'gas' }
+    gas: { shelf: O.SHOP_SHELF, extra: [O.FRIDGE, O.COUNTER], room: 'gas' },
+    hospital: { shelf: null, extra: [O.BED_HEAD, O.BED_HEAD, O.BED_HEAD, O.BED_HEAD, O.BED_HEAD, O.MED_CABINET, O.MED_CABINET, O.MED_CABINET, O.DESK, O.LOCKER, O.LOCKER], room: 'hospital' },
+    school: { shelf: null, extra: [O.DESK, O.DESK, O.DESK, O.DESK, O.DESK, O.DESK, O.DESK, O.DESK, O.SHELF, O.SHELF, O.LOCKER, O.LOCKER, O.LOCKER], room: 'school' },
+    cityhall: { shelf: null, extra: [O.DESK, O.DESK, O.DESK, O.DESK, O.SHELF, O.SHELF, O.SHELF, O.LOCKER, O.TABLE], room: 'cityhall' },
+    mall: { shelf: O.SHOP_SHELF, extra: [O.WARDROBE, O.WARDROBE, O.WARDROBE, O.TV, O.FRIDGE, O.FRIDGE, O.LOCKER], room: 'mall' },
+    military: { shelf: O.CRATE, extra: [O.LOCKER, O.LOCKER, O.LOCKER, O.CRATE, O.BED_HEAD, O.BED_HEAD], room: 'military' }
   };
   function genShop(ctx, r, front, kind) {
     var rng = ctx.rng;
@@ -1040,11 +1065,33 @@
       }
     }
     var extra = fill.extra.slice();
-    if (kind !== 'police' && kind !== 'clinic' && kind !== 'office' && kind !== 'warehouse') { extra.unshift(O.CASH); extra.unshift(O.COUNTER); }
+    if (['police', 'clinic', 'office', 'warehouse', 'hospital', 'school', 'cityhall', 'military'].indexOf(kind) < 0) { extra.unshift(O.CASH); extra.unshift(O.COUNTER); }
     placeSome(ctx, main, 0, mainId, extra);
     placeSome(ctx, store, 0, storeId, ROOM_FURNITURE.storage(rng));
     roof(ctx, r, 1, rng.int(4, 7));
     return bld;
+  }
+
+  /* base militar: pátio de concreto cercado, dois galpões, caminhões e soldados que viraram zumbis */
+  function genMilitaryBase(ctx, m, cx, cy) {
+    var rng = ctx.rng;
+    for (var y = 5; y < CH - 1; y++) { for (var x = 5; x < CH - 1; x++) { ctx.setFloor(x, y, 0, F.CONCRETE, 0); ctx.setObj(x, y, 0, 0, 0); } }
+    for (var i = 5; i < CH - 1; i++) {
+      if (i < 15 || i > 17) { ctx.edge(i, 5, 0, 0, E.FENCE_TALL || E.FENCE, 0); ctx.edge(5, i, 0, 1, E.FENCE_TALL || E.FENCE, 0); }
+      ctx.edge(i, CH - 1, 0, 0, E.FENCE_TALL || E.FENCE, 0); ctx.edge(CH - 1, i, 0, 1, E.FENCE_TALL || E.FENCE, 0);
+    }
+    genShop(ctx, { x: 8, y: 8, w: 10, h: 9 }, 'S', 'military');
+    genShop(ctx, { x: 20, y: 8, w: 9, h: 9 }, 'S', 'military');
+    genShop(ctx, { x: 8, y: 20, w: 10, h: 8 }, 'N', 'warehouse');
+    for (var n = 0; n < 3; n++) { placeCar(ctx, rng.int(20, 26), rng.int(21, 27), rng.int(0, 1)); }
+    placeIfFree(ctx, 6, 6, O.LAMPPOST, 0); placeIfFree(ctx, CH - 2, CH - 2, O.LAMPPOST, 0);
+    for (var b = 0; b < 6; b++) { placeIfFree(ctx, rng.int(19, 29), rng.int(18, 20), rng.chance(0.5) ? O.CRATE : O.BARREL, 0); }
+    for (var z = 0; z < rng.int(6, 11); z++) { addZombieMil(ctx, rng.int(7, CH - 3), rng.int(7, CH - 3)); }
+  }
+  function addZombieMil(ctx, x, y) {
+    if (!CP.Zombies || ctx.obj(x, y, 0)) { return; }
+    var d = CP.Zombies.makeData(ctx.rng, ctx.ox + x + 0.5, ctx.oy + y + 0.5, 0, 'military', null);
+    ctx.c.zombies.push(d);
   }
 
   /* ---------- Rural ---------- */

@@ -66,6 +66,7 @@
     var p = G.player;
     if (CP.Amb) { CP.Amb.reset(); }
     if (CP.Surv) { CP.Surv.reset(); }
+    if (CP.Anim) { CP.Anim.reset(); }
     CP.Render.camX = p.x; CP.Render.camY = p.y; CP.Render.camZ = p.z;
     G.activateChunks(true);
     G.updateFov(true);
@@ -224,6 +225,7 @@
     if (CP.Horde) { CP.Horde.update(dt, gameDt); }
     if (CP.Vehicles) { CP.Vehicles.update(dt); }
     if (CP.Surv) { CP.Surv.update(dt, gameDt); }
+    if (CP.Anim) { CP.Anim.update(dt); }
     if (p.sayT > 0) { p.sayT -= dt; }
     // efeitos
     for (var i = G.effects.length - 1; i >= 0; i--) {
@@ -289,6 +291,7 @@
     }
     if (CP.Zombies) { CP.Zombies.pushCorpses(drawList, viewZ); }
     if (CP.Amb) { CP.Amb.pushEnts(drawList, viewZ); }
+    if (CP.Anim) { CP.Anim.pushEnts(drawList, viewZ); }
     CP.Render.draw({
       viewZ: viewZ,
       maxZ: indoor ? (onStairs ? 1 : viewZ) : C.LEVELS - 1,

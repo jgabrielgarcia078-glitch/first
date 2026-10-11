@@ -1167,6 +1167,14 @@
         if (lb) { return lb; }
       }
     }
+    // animais vivos (perto do ponteiro)
+    if (CP.Anim && lv === 0) {
+      g = CP.Render.toWorld(mx, my + 6 * zm, 0);
+      for (var ai = 0; ai < CP.Anim.list.length; ai++) {
+        var an = CP.Anim.list[ai];
+        if (U.dist(an.x, an.y, g.x, g.y) < CP.Anim.SPECIES[an.species].r + 0.35 && vis(Math.floor(an.x), Math.floor(an.y))) { return CP.Anim.SPECIES[an.species].name + (an.state === 'flee' ? ' (fugindo)' : ''); }
+      }
+    }
     // 2) o que está no chão / móveis (de trás para a frente da tela)
     for (k = 0; k <= 40; k += 8) {
       g = CP.Render.toWorld(mx, my + k * zm, lv);

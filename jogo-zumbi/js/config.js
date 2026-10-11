@@ -349,6 +349,8 @@
   C.MAP_NOTES_MAX = 120;
   C.CURTAIN_CHANCE = 0.65;   // janelas de casa com cortina
   /* armadilhas (chance por hora de pegar um bicho; mais no mato e com isca; longe do jogador) */
+  /* animais vivos no mato (animals.js): no máximo MAX por perto, nascem entre SPAWN_MIN e SPAWN_MAX tiles do jogador, tentativa a cada SPAWN_EVERY s, somem além de DESPAWN */
+  C.ANIMALS = { MAX: 8, SPAWN_MIN: 14, SPAWN_MAX: 24, SPAWN_EVERY: 4, DESPAWN: 45, SNEAK_BEHIND: 0.25 };
   C.TRAPS = { BASE: 0.03, FOREST: 2.2, FIELD: 1.3, TOWN: 0.35, BAIT: 2.5, MIN_DIST: 12, ANIMALS: { box: [['dead_rabbit', 5], ['dead_squirrel', 4], ['dead_rat', 2]], snare: [['dead_rabbit', 4], ['dead_bird', 4], ['dead_squirrel', 2]] } };
   /* modo de busca (O): procura coisas no chão em volta enquanto anda devagar */
   C.SEARCH = { EVERY: 1.6, RADIUS: 3, PER_LEVEL: 0.6, SPEED: 0.6, MARK_S: 90 };

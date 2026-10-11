@@ -157,6 +157,7 @@
     var skill = CP.Player.skillLevel(p, w.skill);
     var str = CP.Player.skillLevel(p, 'strength');
     useEndurance(p, w.end * (1 + (wp.def.w || 1) * 0.08));
+    if (CP.Anim && W.levelOf(p.z) === 0) { CP.Anim.melee(p, w.range, w.arc, U.randRange(w.dmin, w.dmax) * (0.7 + skill * 0.06)); }
     if (!list.length) { return; }
     var hits = Math.min(list.length, w.hits);
     for (var i = 0; i < hits; i++) {
@@ -281,7 +282,13 @@
         if (perp > ZC.RADIUS + 0.12) { continue; }
         if (along < bd && W.lineOfSight(p.x, p.y, zb.x, zb.y, lv, 40)) { bd = along; best = zb; }
       }
-      var endX = p.x + Math.cos(a) * (best ? bd : g.range), endY = p.y + Math.sin(a) * (best ? bd : g.range);
+      // animal na frente do zumbi (caça)
+      var an = CP.Anim && lv === 0 ? CP.Anim.ray(p, a, best ? bd : g.range) : null;
+      if (an && W.lineOfSight(p.x, p.y, an.a.x, an.a.y, lv, 40)) {
+        best = null; bd = an.d;
+        if (Math.random() < g.acc + 0.15 + aim * 0.03 - (bd / g.range) * 0.3) { CP.Anim.damage(an.a, U.randRange(g.dmin, g.dmax), a); CP.Player.addXp(p, 'aiming', 1); }
+      }
+      var endX = p.x + Math.cos(a) * (best || an ? bd : g.range), endY = p.y + Math.sin(a) * (best || an ? bd : g.range);
       if (CP.FX) { CP.FX.tracer(p.x, p.y, p.z, endX, endY); }
       if (best) {
         var hitChance = g.acc + 0.08 + aim * 0.03 - (bd / g.range) * 0.3 - panic / 400;

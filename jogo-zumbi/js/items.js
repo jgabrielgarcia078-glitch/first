@@ -241,6 +241,7 @@
     var rt = room ? room.type : null;
     var kind = bld ? bld.kind : null;
     if (kind === 'barn') { return 'barn'; }
+    if ((rt === 'hospital' || rt === 'school' || rt === 'cityhall' || rt === 'mall' || rt === 'military') && objId !== O.FRIDGE && objId !== O.CAR && objId !== O.MAILBOX && objId !== O.DUMPSTER) { return rt; }
     switch (objId) {
       case O.FRIDGE: return 'fridge';
       case O.COUNTER: case O.SINK: case O.STOVE: return rt === 'kitchen' || rt === 'diner' ? 'kitchen' : (D.LOOT[rt] ? rt : 'kitchen');

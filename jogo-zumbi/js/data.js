@@ -260,6 +260,8 @@
   food('dogfood', 'Ração de cachorro', '🥫', 0.6, 0.2, 500, { canned: true, opens: 'dogfood_open', unhappy: 0.2, boredom: 0.1 });
   food('dogfood_open', 'Ração (aberta)', '🥫', 0.6, 0.2, 500, { fresh: 2, rot: 4, unhappy: 0.2, boredom: 0.1 });
   food('dead_rabbit', 'Coelho (abatido)', '🐇', 1.2, 0.25, 600, { fresh: 2, rot: 4, raw: true, cookable: 'rabbit_cooked' });
+  food('venison', 'Carne de veado (crua)', '🥩', 2.5, 0.6, 1400, { fresh: 2, rot: 4, raw: true, cookable: 'venison_cooked' });
+  food('venison_cooked', 'Carne de veado assada', '🍖', 2.2, 0.75, 1500, { fresh: 3, rot: 6, unhappy: -0.15 });
   food('rabbit_cooked', 'Coelho assado', '🍖', 1.0, 0.32, 650, { fresh: 2, rot: 5, unhappy: -0.12 });
   food('dead_squirrel', 'Esquilo (abatido)', '🐿️', 0.5, 0.12, 300, { fresh: 2, rot: 4, raw: true, cookable: 'squirrel_cooked' });
   food('squirrel_cooked', 'Esquilo assado', '🍖', 0.4, 0.16, 320, { fresh: 2, rot: 5 });
@@ -347,6 +349,8 @@
   def('candle', { name: 'Vela', icon: '🕯️', w: 0.1, cat: 'tool', flame: { r: 4.5, hours: 5, i: 0.7 } });
   def('torch', { name: 'Tocha', icon: '🔥', w: 0.6, cat: 'tool', flame: { r: 6.5, hours: 1.5, i: 0.85 } });
   def('oil_lamp', { name: 'Lampião', icon: '🏮', w: 1.2, cat: 'tool', flame: { r: 7.5, hours: 10, i: 0.8, refill: true } });
+  def('mre', { name: 'Ração militar', icon: '🥫', w: 0.4, cat: 'food', food: { hunger: 0.3, cal: 1200, thirst: 0.05, boredom: 0.05, unhappy: 0, fresh: 0, rot: 0 } });
+  def('textbook', { name: 'Livro escolar', icon: '📘', w: 0.6, cat: 'book', leisure: { boredom: -0.15, pages: 30 } });
   def('scissors', { name: 'Tesoura', icon: '✂️', w: 0.15, cat: 'tool', tags: ['scissors'] });
   def('razor', { name: 'Lâmina de barbear', icon: '🪒', w: 0.05, cat: 'tool', tags: ['razor'] });
   def('house_key', { name: 'Chave de casa', icon: '🗝️', w: 0.02, cat: 'misc' });
@@ -389,6 +393,9 @@
   cloth('hoodie', 'Moletom', '🧥', 0.8, 'jacket', ['torso', 'belly'].concat(ARMS), 5, 30, 0.6, ['#5a5a5a', '#2a4a6a', '#6a2a3a', '#3a5a3a']);
   cloth('police_jacket', 'Jaqueta de policial', '🧥', 1.2, 'jacket', ['torso', 'belly', 'neck'].concat(ARMS), 20, 50, 0.6, ['#1f2a44']);
   cloth('fire_jacket', 'Casaco de bombeiro', '🧥', 2.5, 'jacket', ['torso', 'belly', 'neck', 'groin'].concat(ARMS), 40, 80, 0.9, ['#c8a03a']);
+  cloth('army_jacket', 'Jaqueta militar', '🧥', 1.2, 'jacket', TORSO.concat(ARMS), 25, 55, 0.5, ['#4a5a3a']);
+  cloth('army_pants', 'Calça militar', '👖', 0.8, 'pants', ['groin', 'thighL', 'thighR', 'shinL', 'shinR'], 15, 40, 0.3, ['#4a5a3a']);
+  cloth('army_helmet', 'Capacete militar', '🪖', 1.4, 'hat', ['head'], 70, 95, 0.2, ['#4a5a3a']);
   cloth('vest', 'Colete à prova de balas', '🦺', 3.0, 'vest', TORSO, 60, 90, 0.3, ['#3a4a3a']);
   cloth('jeans', 'Calça jeans', '👖', 0.6, 'pants', LEGS, 5, 35, 0.3, ['#2f4f7f', '#3a5a8a', '#1f2f4f', '#4a4a4a']);
   cloth('pants', 'Calça social', '👖', 0.4, 'pants', LEGS, 0, 20, 0.3, ['#2b2d42', '#5a4a3a', '#3a3a3a', '#8a7a5a']);
@@ -458,6 +465,11 @@
     electronics: { n: [2, 5], list: [['radio', 4], ['flashlight', 4], ['battery', 7], ['watch', 2], ['alarm_clock', 3], ['generator_item', 0.4], ['book_electrical_1', 1]] },
     warehouse: { n: [1, 5], list: [['plank', 5], ['nails', 5], ['scrap', 4], ['metal_sheet', 2], ['rope', 2], ['gas_can', 1], ['gas_can_empty', 2], ['crowbar', 1], ['sledge', 0.6], ['beans', 2], ['water_bottle', 2], ['garbage_bag', 2], ['gloves', 2], ['boots', 0.5], ['extinguisher', 1]] },
     police: { n: [1, 4], list: [['nightstick', 4], ['pistol', 3], ['shotgun', 1.5], ['ammo9', 5], ['shells', 3], ['police_jacket', 2], ['police_pants', 2], ['vest', 1], ['flashlight', 3], ['battery', 3], ['bandage', 2], ['radio', 2], ['extinguisher', 1]] },
+    hospital: { n: [2, 6], list: [['bandage', 7], ['disinfectant', 6], ['painkillers', 5], ['antibiotics', 5], ['suture_needle', 4], ['tweezers', 3], ['splint', 4], ['alcohol_wipes', 5], ['scrubs', 3], ['first_aid_kit', 3], ['betablockers', 2], ['sleeping_pills', 2], ['book_firstAid_2', 1], ['book_firstAid_3', 1]] },
+    school: { n: [1, 4], list: [['textbook', 6], ['schoolbag', 4], ['candy', 3], ['chips', 3], ['soda', 2], ['comic', 3], ['magazine', 2], ['scissors', 2], ['water_bottle', 2], ['note', 2], ['bat', 0.6], ['first_aid_kit', 0.4]] },
+    cityhall: { n: [1, 4], list: [['map', 5], ['newspaper', 3], ['note', 3], ['radio', 2], ['battery', 3], ['flashlight', 2], ['candle', 2], ['wallet', 1], ['keyring', 2], ['extinguisher', 1], ['first_aid_kit', 1]] },
+    mall: { n: [2, 7], list: [['tshirt', 4], ['jeans', 4], ['jacket', 3], ['sneakers', 3], ['hoodie', 3], ['dress', 2], ['coat', 1.5], ['hiking_bag', 1.5], ['duffel', 1.5], ['radio', 2], ['flashlight', 2], ['battery', 3], ['watch', 2], ['candy', 3], ['chips', 3], ['soda', 3], ['novel', 2], ['candle', 1.5], ['scissors', 1]] },
+    military: { n: [2, 6], list: [['mre', 6], ['army_jacket', 3], ['army_pants', 3], ['army_helmet', 2], ['vest', 2], ['military_bag', 2], ['rifle', 1.2], ['ammo308', 4], ['shotgun', 1], ['shells', 3], ['pistol', 1], ['ammo9', 3], ['huntknife', 2], ['bandage', 3], ['first_aid_kit', 2], ['water_bottle', 3], ['radio', 1.5], ['flashlight', 2], ['battery', 2]] },
     clinic: { n: [2, 6], list: [['bandage', 6], ['disinfectant', 5], ['painkillers', 4], ['antibiotics', 4], ['suture_needle', 4], ['tweezers', 3], ['splint', 3], ['alcohol_wipes', 5], ['scrubs', 2], ['first_aid_kit', 2], ['book_firstAid_1', 1], ['book_firstAid_2', 1], ['book_firstAid_3', 0.5]] },
     gas: { n: [2, 6], list: [['chips', 6], ['candy', 6], ['soda', 6], ['water_bottle', 5], ['beer', 3], ['cigarettes', 4], ['lighter', 3], ['matches', 2], ['map', 3], ['battery', 3], ['flashlight', 1], ['gas_can_empty', 2], ['newspaper', 2], ['crackers', 3]] },
     mailbox: { n: [0, 1], list: [['newspaper', 4], ['magazine', 2], ['photo', 1], ['note', 1]] },
@@ -517,6 +529,7 @@
     ranger: [['ranger_hat', 'shirt:#a89a6a', 'jacket:#5a6a3a', 'pants:#4a5a3a', 'boots'], ['ranger_hat', 'shirt:#a89a6a', 'pants:#5a5a3a', 'boots']],
     chef: [['shirt:#f2f0ea', 'chef_pants', 'apron:#f0eee8', 'shoes'], ['tshirt:#e0e0e0', 'chef_pants', 'apron:#2a2a2a', 'sneakers']],
     fastfood: [['cap:#c83a2a', 'tshirt:#c83a2a', 'pants:#2b2d42', 'apron:#2a2a2a', 'sneakers'], ['cap:#2a5a9a', 'tshirt:#e9c46a', 'pants:#2b2d42', 'sneakers']],
+    military: [['army_helmet', 'army_jacket', 'army_pants', 'boots'], ['army_jacket', 'tshirt:#4a5a3a', 'army_pants', 'boots']],
     roadworker: [['cap:#e9c46a', 'tshirt:#8d99ae', 'hivis_vest', 'jeans', 'boots']]
   };
   D.OUTFITS.police = [['police_cap', 'police_jacket', 'shirt:#8a9aa8', 'police_pants', 'shoes'], ['police_cap', 'shirt:#3a4a6a', 'police_pants', 'shoes']];
