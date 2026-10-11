@@ -506,6 +506,7 @@
     if (cut) { return; }
     var wch = W.chunkAt(x, y);
     if (wch && wch.wallBlood) { var wbv = wch.wallBlood[W.edgeKey(x, y, z, side)]; if (wbv) { for (var wbi = 0; wbi < Math.min(3, wbv.n); wbi++) { drawSprite(g, S.wallBlood(side, wbv.v + wbi * 3), c, bx, by, fade); } } }
+    if (type === E.WINDOW && st && st.rope && z > 0) { drawSprite(g, S.sheetRope(side), c, bx, by, fade); }
     // janela acesa à noite: cômodo com luz e energia, sem cortina fechada nem tábuas
     if (type === E.WINDOW && R.nightPower && curt !== 1 && bar < 3 && state !== 2) {
       var inX = W.isIndoor(x, y, z) ? x : ax, inY = W.isIndoor(x, y, z) ? y : ay, rm = W.room(inX, inY, z);

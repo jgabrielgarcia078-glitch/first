@@ -588,6 +588,22 @@
     wline(g, side, 0.5, WH * 0.40, 0.5, WH * 0.78, 'rgba(90,60,30,0.7)', 1.5, ox, oy);
     return (glowArr[k] = store('wg' + k, c, ox, oy, false, true));
   };
+  /* corda de lençóis amarrada na janela, descendo pela parede até o chão do andar de baixo */
+  var ropeArr = [];
+  S.sheetRope = function (side) {
+    if (ropeArr[side]) { return ropeArr[side]; }
+    var pad = 6, c = mk(TW * 2, HH + WH * 2 + pad * 2 + 6), g = c.getContext('2d');
+    var ox = TW, oy = WH + pad, u = 0.5;
+    var top = WH * 0.4, bot = -WH + 4;
+    var a = wp(side, u, top), b = wp(side, u + 0.02, bot);
+    var off = side === 0 ? [2, 1] : [-2, 1];
+    g.strokeStyle = 'rgba(0,0,0,0.25)'; g.lineWidth = 4; g.beginPath(); g.moveTo(a[0] + ox + 1, a[1] + oy + 1); g.lineTo(b[0] + ox + 1, b[1] + oy + 1); g.stroke();
+    g.strokeStyle = '#d8d2c4'; g.lineWidth = 3.4; g.beginPath(); g.moveTo(a[0] + ox + off[0], a[1] + oy); g.lineTo(b[0] + ox + off[0], b[1] + oy); g.stroke();
+    g.strokeStyle = '#b4ac9a'; g.lineWidth = 1; g.beginPath(); g.moveTo(a[0] + ox + off[0] + 1, a[1] + oy); g.lineTo(b[0] + ox + off[0] + 1, b[1] + oy); g.stroke();
+    for (var h = top - 14; h > bot + 6; h -= 22) { var k = wp(side, u + 0.01, h); ellipseAt(g, k[0] + ox + off[0], k[1] + oy, 3.4, 2.6, '#c8c0ae'); ellipseAt(g, k[0] + ox + off[0] - 1, k[1] + oy - 1, 1.6, 1.2, '#e8e2d4'); }
+    var tie = wp(side, u, top + 2); ellipseAt(g, tie[0] + ox + off[0], tie[1] + oy, 4, 2.6, '#c8c0ae');
+    return (ropeArr[side] = store('rp' + side, c, ox, oy));
+  };
   /* bilhete preso na porta (papel com fita, no plano da parede) */
   var noteArr = [];
   S.doorNote = function (side) {

@@ -1058,6 +1058,7 @@
     if (st.broken) { bits.push(t === E.WINDOW ? 'quebrada' : 'arrombada'); } else { bits.push(st.open ? 'aberta' : 'fechada'); }
     if (st.bar > 0) { bits.push('barricada'); }
     if (st.curtain) { bits.push('com cortina'); }
+    if (st.rope) { bits.push('com corda de lençol'); }
     if (t === E.DOOR) {
       var b = W.building(x, y, z) || (side === 0 ? W.building(x, y - 1, z) : W.building(x - 1, y, z));
       var sign = b && CP.Render.signText ? CP.Render.signText(b) : null;

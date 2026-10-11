@@ -133,6 +133,13 @@
           out.push({ label: 'Abrir janela', key: 'E', fn: function () { A.start(p, { name: 'Abrindo janela', time: 0.9, anim: 'work', onDone: function () { st.open = true; st.locked = false; CP.Zombies.noise(mid.x, mid.y, z, 5, 'window'); if (!playerIndoorSide(p, e, z)) { breakIn(e.x, e.y, z); } } }); } });
         }
       }
+      if (z > 0 && (st.open || st.broken) && playerIndoorSide(p, e, z)) {
+        if (!st.rope && CP.Items.Inv.findId(p, 'sheet_rope')) { out.push({ label: 'Pendurar corda de lençol', fn: function () { A.start(p, { name: 'Amarrando a corda', time: 3, anim: 'work', onDone: function () { if (!CP.Items.Inv.consume(p, 'sheet_rope', 1)) { return; } st.rope = true; W.chunkAt(e.x, e.y).saveDirty = true; msg('Corda de lençol pendurada na janela.'); } }); } }); }
+        if (st.rope) {
+          out.push({ label: 'Descer pela corda', key: 'E', fn: function () { ropeClimb(p, e, z, true); } });
+          out.push({ label: 'Recolher a corda', fn: function () { st.rope = false; W.chunkAt(e.x, e.y).saveDirty = true; CP.Items.Inv.give(p, CP.Items.make('sheet_rope')); } });
+        }
+      }
       if (playerIndoorSide(p, e, z)) {
         if (st.hasCurt) { out.push({ label: st.curtain ? 'Abrir cortina' : 'Fechar cortina', fn: function () { st.curtain = !st.curtain; W.chunkAt(e.x, e.y).saveDirty = true; CP.Game.updateFov(true); if (CP.Audio) { CP.Audio.click(); } } }); } else if (has(p, 'sheet')) {
           out.push({ label: 'Pendurar lençol como cortina', fn: function () { A.start(p, { name: 'Pendurando lençol', time: 2.5, anim: 'work', onDone: function () { if (!CP.Items.Inv.consume(p, 'sheet', 1)) { return; } st.hasCurt = true; st.curtain = true; W.chunkAt(e.x, e.y).saveDirty = true; CP.Game.updateFov(true); } }); } });
@@ -508,7 +515,8 @@
     edges.push({ e: { x: x, y: y, side: 1 }, d: fx });
     edges.push({ e: { x: x + 1, y: y, side: 1 }, d: 1 - fx });
     edges.sort(function (a, b) { return a.d - b.d; });
-    for (var i = 0; i < 2; i++) { if (edges[i].d < 0.4) { edgeOptions(p, edges[i].e, out); } }
+    if (p.dragging) { out.push({ label: 'Soltar o corpo', key: 'E', fn: function () { A.dropCorpse(p); } }); }
+    for (var i = 0; i < 2; i++) { if (edges[i].d < 0.4) { edgeOptions(p, edges[i].e, out); ropeUpOptions(p, edges[i].e, out); } }
     objOptions(p, x, y, z, out);
     lightSwitch(p, x, y, z, out);
     if (CP.Fire) { CP.Fire.options(p, x, y, z, out); }
@@ -518,7 +526,10 @@
     var ch = W.chunkAt(x, y);
     if (ch) {
       var corpses = ch.corpses.filter(function (c) { return Math.floor(c.x) === x && Math.floor(c.y) === y && W.levelOf(c.z) === z; });
-      if (corpses.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) { out.push({ label: 'Revistar corpo', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } }); }
+      if (corpses.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) {
+        out.push({ label: 'Revistar corpo', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } });
+        if (!p.dragging && !p.vehicle) { out.push({ label: 'Arrastar o corpo', fn: function () { A.grabCorpse(p, corpses[0], ch); } }); }
+      }
       if (CP.Fire) { CP.Fire.corpseOptions(p, x, y, z, corpses, out); }
       var fi = W.floorItems(x, y, z);
       if (fi && fi.length && U.dist(p.x, p.y, x + 0.5, y + 0.5) < 1.8) { out.push({ label: 'Ver itens no chão (' + fi.length + ')', key: 'E', fn: function () { if (CP.UI) { CP.UI.openLoot(x, y, z); } } }); }
@@ -530,6 +541,71 @@
     if (CP.Farm) { CP.Farm.tileOptions(p, x, y, z, out); }
     if (CP.Build && CP.Build.tileOptions) { CP.Build.tileOptions(p, x, y, z, out); }
     return out;
+  };
+
+  /* corda de lençol: descer da janela do andar de cima até o chão de fora, ou subir de volta */
+  function ropeTiles(e, z) {
+    var inA = W.isIndoor(e.x, e.y, z), a = { x: e.x, y: e.y }, b = e.side === 0 ? { x: e.x, y: e.y - 1 } : { x: e.x - 1, y: e.y };
+    return { inside: inA ? a : b, outside: inA ? b : a };
+  }
+  function ropeClimb(p, e, z, down) {
+    var t = ropeTiles(e, z), dest = down ? t.outside : t.inside, dz = down ? z - 1 : z;
+    if (!W.tileWalkable(dest.x, dest.y, dz)) { msg(down ? 'Não dá para descer aqui: o chão lá embaixo está bloqueado.' : 'Tem algo bloqueando a janela.', 'warn'); return; }
+    face(p, dest.x + 0.5, dest.y + 0.5);
+    var str = CP.Player.skillLevel(p, 'strength'), fit = CP.Player.skillLevel(p, 'fitness');
+    A.start(p, { name: down ? 'Descendo pela corda' : 'Subindo pela corda', time: (down ? 3 : 4.5) * (1.2 - fit * 0.04), anim: 'climb', onDone: function () {
+      var okChance = down ? 0.97 : 0.55 + str * 0.05 + fit * 0.02 - (p.body.stats.endurance < 0.3 ? 0.25 : 0) - CP.Body.carryLevel(p) * 0.15;
+      if (!down && Math.random() > okChance) {
+        CP.Body.addWound(p, U.pick(['handL', 'handR', 'shinL', 'shinR']), 'scratch', { cause: 'Caiu da corda' });
+        msg('Você escorregou da corda e caiu.', 'warn');
+        return;
+      }
+      p.x = dest.x + 0.5; p.y = dest.y + 0.5; p.z = dz;
+      if (CP.Body) { CP.Body.addDirt(p, 0.03); p.body.stats.endurance = Math.max(0, p.body.stats.endurance - (down ? 0.05 : 0.15)); }
+      CP.Player.addXp(p, 'fitness', 0.5);
+      CP.Game.updateFov(true);
+    } });
+  }
+  A.ropeClimb = ropeClimb;
+  /* do chão: corda pendurada numa janela logo acima */
+  function ropeUpOptions(p, e, out) {
+    var lz = lvl(p), z = lz + 1;
+    if (z >= C.LEVELS || W.edgeType(e.x, e.y, z, e.side) !== E.WINDOW) { return; }
+    var st = W.edgeState(e.x, e.y, z, e.side);
+    if (!st || !st.rope) { return; }
+    var t = ropeTiles(e, z);
+    if (U.dist(p.x, p.y, t.outside.x + 0.5, t.outside.y + 0.5) > 1.3) { return; }
+    out.push({ label: 'Subir pela corda de lençol', key: 'E', fn: function () { ropeClimb(p, e, z, false); } });
+  }
+  /* arrastar um corpo (fica mais lento e sem poder atacar); soltar deixa onde estiver */
+  A.grabCorpse = function (p, c, ch) {
+    var i = ch.corpses.indexOf(c);
+    if (i < 0 || p.dragging) { return; }
+    ch.corpses.splice(i, 1); ch.dirty = true;
+    p.dragging = c; p.running = false;
+    if (p.hand1 && D.ITEMS[p.hand1.id].weapon && D.ITEMS[p.hand1.id].weapon.twoHand) { msg('Você larga a arma de duas mãos para arrastar o corpo.'); }
+    msg('Arrastando o corpo. E (ou clique direito) para soltar.');
+  };
+  A.dropCorpse = function (p) {
+    var c = p.dragging;
+    if (!c) { return; }
+    p.dragging = null;
+    var ch = W.chunkAt(Math.floor(c.x), Math.floor(c.y));
+    if (!ch) { ch = W.chunkAt(Math.floor(p.x), Math.floor(p.y)); c.x = p.x; c.y = p.y; }
+    c.z = W.levelOf(p.z);
+    ch.corpses.push(c); ch.dirty = true;
+  };
+  /* corpo vem atrás do jogador */
+  A.updateDrag = function (p, dt) {
+    var c = p.dragging;
+    if (!c) { return; }
+    var back = p.ang + Math.PI, tx = p.x + Math.cos(back) * 1.2, ty = p.y + Math.sin(back) * 1.2;
+    var k = Math.min(1, dt * 7);
+    var nx = c.x + (tx - c.x) * k, ny = c.y + (ty - c.y) * k;
+    if (!W.blockedBetween(Math.floor(c.x), Math.floor(c.y), Math.floor(nx), Math.floor(ny), W.levelOf(p.z), false)) { c.x = nx; c.y = ny; } else { c.x = p.x; c.y = p.y; }
+    c.z = p.z;
+    c.ang = Math.atan2(p.y - c.y, p.x - c.x) + Math.PI;
+    if (p.moving && CP.Amb && CP.Amb.stepPrint) { CP.Amb.stepPrint(c, 'drag', 0.5); }
   };
 
   /* interruptor: a luz do cômodo onde o jogador está (precisa de energia para acender) */

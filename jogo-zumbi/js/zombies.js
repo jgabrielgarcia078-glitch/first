@@ -182,7 +182,7 @@
       var jitter = Math.min(4, d * 0.12);
       zb.target = { x: x + U.randRange(-jitter, jitter), y: y + U.randRange(-jitter, jitter), z: z };
       zb.memT = ZC.MEMORY_SECONDS * ((G.settings && G.settings.memory) || 1);
-      if (zb.state === 'fakedead' && d < 4) { zb.state = 'down'; zb.downT = 0.8; } else if (zb.state !== 'down' && zb.state !== 'stagger' && zb.state !== 'fakedead' && zb.state !== 'bash' && zb.state !== 'climb') { zb.state = 'investigate'; zb.path = null; zb.repathT = U.randRange(0, 0.4); }
+      if (zb.state === 'fakedead' && d < 4) { zb.state = 'down'; zb.downT = 0.8; } else if (zb.state !== 'down' && zb.state !== 'stagger' && zb.state !== 'fakedead' && zb.state !== 'bash' && zb.state !== 'climb' && zb.state !== 'held') { zb.state = 'investigate'; zb.path = null; zb.repathT = U.randRange(0, 0.4); }
       if (zb.state === 'bash' && type !== 'bash') { zb.path = null; zb.state = 'investigate'; }
     }
     if (r >= 20) {
@@ -218,7 +218,7 @@
     if (W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z)) !== W.isIndoor(Math.floor(zb.x), Math.floor(zb.y), W.levelOf(zb.z))) { sight *= 0.7; }
     if (d2 > sight * sight) { return false; }
     var d = Math.sqrt(d2);
-    if (d > 1.6) {
+    if (d > 1.6 || (p.sneaking && d > 0.45)) { // agachado, dá para chegar perto pelas costas sem ser visto
       var a = Math.atan2(dy, dx);
       var cone = ZC.SIGHT_CONE_DEG * Math.PI / 360;
       if (Math.abs(U.angleDiff(zb.ang, a)) > cone) { return false; }
@@ -307,6 +307,8 @@
     switch (zb.state) {
       case 'fakedead':
         if (U.dist2(zb.x, zb.y, p.x, p.y) < 2.2 * 2.2 && Math.abs(zb.z - p.z) < 0.5 && !p.dead) { zb.state = 'down'; zb.downT = 0.5; zb.target = { x: p.x, y: p.y, z: p.z }; zb.memT = 20; if (CP.Audio) { CP.Audio.groan(zb, true); } }
+        return;
+      case 'held': // seguro pelo jogador (matar por trás): não reage
         return;
       case 'stagger':
         zb.staggerT -= dt;
@@ -687,6 +689,7 @@
     var G = CP.Game;
     var p = G.player;
     corpseEnts.length = 0;
+    if (p.dragging) { var dc = p.dragging; dc.age = (G.state.time - dc.t) / 86400; if (!dc.draw) { dc.draw = drawCorpse; } list.push(dc); }
     for (var k in G.activeChunks) {
       var ch = G.activeChunks[k];
       for (var i = ch.corpses.length - 1; i >= 0; i--) {

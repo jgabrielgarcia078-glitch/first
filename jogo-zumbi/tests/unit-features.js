@@ -602,5 +602,87 @@ if (car) {
   ok(!sawBreath, 'no calor não');
   CP.Time.temperature = tempF;
 }
+
+/* ---------- S4: matar por trás, corda de lençol, arrastar corpo ---------- */
+{
+  const q = G.player, K = CP.Combat;
+  G.activateChunks(true); clearZombies();
+  const op = findOpen(q.x, q.y, 3); q.x = op.x; q.y = op.y; q.z = 0; q.vehicle = null;
+  const knife = CP.Items.make('knife'); Inv.give(q, knife); CP.Use.equip(q, knife, 'hand1');
+  q.sneaking = true; q.ang = 0; q.anim.attack = 0; q.attackCd = 0; q.stealth = null;
+  const mk = (ang, dx) => { const zd = CP.Zombies.makeData(new U.Rng(300 + dx * 10), q.x + dx, q.y, 0); zd.crawler = false; zd.fakeDead = false; const z = CP.Zombies.fromData(zd); z.state = 'idle'; z.idleT = 999; z.ang = ang; z.seesPlayer = false; G.zombies.push(z); return z; };
+  const back = mk(0, 0.75);   // de costas para o jogador (olhando para +x)
+  CP.Zombies.rebuildHash();
+  ok(K.stealthTarget(q, K.weaponOf(q)) === back, 'zumbi de costas, agachado e com faca: dá para matar por trás');
+  const kills0 = q.kills;
+  CP.Input.mouse.left = true; q.uiClickGuard = false; tick(0.1); CP.Input.mouse.left = false;
+  ok(!!q.stealth && back.state === 'held', 'segurou o zumbi');
+  tick(1.6);
+  ok(back.state === 'dead' && q.kills === kills0 + 1 && !q.stealth, 'matou em silêncio');
+  clearZombies();
+  const front = mk(Math.PI, 0.75); // olhando para o jogador
+  CP.Zombies.rebuildHash();
+  ok(!K.stealthTarget(q, K.weaponOf(q)), 'de frente não dá');
+  front.ang = 0; q.sneaking = false;
+  ok(!K.stealthTarget(q, K.weaponOf(q)), 'de pé (sem agachar) não dá');
+  clearZombies(); q.sneaking = false; CP.Use.unequip(q, knife);
+  // arrastar corpo
+  const ch = W.chunkAt(Math.floor(q.x), Math.floor(q.y));
+  ch.corpses = ch.corpses.filter(c => !(Math.abs(c.x - q.x) < 2 && Math.abs(c.y - q.y) < 2));
+  const lk = CP.Zombies.fromData(CP.Zombies.makeData(new U.Rng(8), q.x, q.y, 0)).look;
+  const corpse = { x: q.x + 0.6, y: q.y + 0.2, z: 0, ang: 0, look: lk, items: [], t: G.state.time };
+  ch.corpses.push(corpse);
+  const og = CP.Actions.contextOptions(q, corpse.x, corpse.y).find(o => /Arrastar o corpo/.test(o.label));
+  ok(!!og, 'opção de arrastar o corpo');
+  og.fn();
+  ok(q.dragging === corpse && ch.corpses.indexOf(corpse) < 0, 'corpo saiu do chão e está sendo arrastado');
+  const sx0 = q.x;
+  for (let i = 0; i < 40; i++) { q.x += 0.05; q.ang = 0; tick(1 / 30); }
+  ok(U.dist(corpse.x, corpse.y, q.x, q.y) < 1.6 && corpse.x < q.x, 'corpo vem atrás do jogador (' + (q.x - sx0).toFixed(1) + ' tiles)');
+  const walk = () => { const x0 = q.x, y0 = q.y; CP.Input.down.KeyD = true; tick(1); CP.Input.down.KeyD = false; return U.dist(x0, y0, q.x, q.y); };
+  const dDrag = walk(); const dc = q.dragging; q.dragging = null; const dFree = walk(); q.dragging = dc;
+  ok(dDrag < dFree * 0.75, 'arrastando anda mais devagar (' + dDrag.toFixed(2) + ' vs ' + dFree.toFixed(2) + ')');
+  const od = CP.Actions.contextOptions(q, q.x, q.y).find(o => /Soltar o corpo/.test(o.label));
+  ok(!!od && od.key === 'E', 'soltar o corpo (tecla E)');
+  od.fn();
+  const ch2 = W.chunkAt(Math.floor(corpse.x), Math.floor(corpse.y));
+  ok(!q.dragging && ch2.corpses.indexOf(corpse) >= 0, 'corpo largado no novo lugar');
+  ch2.corpses.splice(ch2.corpses.indexOf(corpse), 1);
+  // corda de lençol: acha uma janela no 1º andar com chão andável do lado de fora
+  let rw = null;
+  for (let cy = 0; cy < C.WORLD_CHUNKS && !rw; cy++) for (let cx = 0; cx < C.WORLD_CHUNKS && !rw; cx++) {
+    const c2 = W.chunkByIndex(cx, cy); if (!c2) continue;
+    for (const key in c2.edges) {
+      const kk = +key, side = kk % 2, rest = (kk - side) / 2, z = Math.floor(rest / (C.CHUNK * C.CHUNK)), ix = rest % (C.CHUNK * C.CHUNK);
+      if (z !== 1) continue;
+      const ex = cx * C.CHUNK + (ix & (C.CHUNK - 1)), ey = cy * C.CHUNK + (ix >> Math.log2(C.CHUNK));
+      if (W.edgeType(ex, ey, 1, side) !== C.EDGE.WINDOW) continue;
+      const inA = W.isIndoor(ex, ey, 1), ins = inA ? { x: ex, y: ey } : (side === 0 ? { x: ex, y: ey - 1 } : { x: ex - 1, y: ey }), outs = inA ? (side === 0 ? { x: ex, y: ey - 1 } : { x: ex - 1, y: ey }) : { x: ex, y: ey };
+      if (!W.isIndoor(ins.x, ins.y, 1) || !W.tileWalkable(ins.x, ins.y, 1) || W.obj(ins.x, ins.y, 1) || !W.tileWalkable(outs.x, outs.y, 0) || W.isIndoor(outs.x, outs.y, 0)) continue;
+      rw = { ex, ey, side, ins, outs, st: c2.edges[key] }; break;
+    }
+  }
+  ok(!!rw, 'achou janela de sobrado');
+  if (rw) {
+    q.x = rw.ins.x + 0.5; q.y = rw.ins.y + 0.5; q.z = 1; G.activateChunks(true); clearZombies();
+    rw.st.open = true; rw.st.broken = false; rw.st.rope = false; rw.st.bar = 0;
+    Inv.give(q, CP.Items.make('sheet_rope'));
+    const mx = rw.side === 0 ? rw.ex + 0.5 : rw.ex + 0.06, my = rw.side === 0 ? rw.ey + 0.06 : rw.ey + 0.5;
+    let o = CP.Actions.contextOptions(q, mx, my).find(x => /Pendurar corda/.test(x.label));
+    ok(!!o, 'janela aberta do andar de cima: pendurar corda de lençol');
+    o.fn(); tick(4);
+    ok(rw.st.rope && !Inv.findId(q, 'sheet_rope'), 'corda pendurada (usa o item)');
+    o = CP.Actions.contextOptions(q, mx, my).find(x => /Descer pela corda/.test(x.label));
+    ok(!!o, 'opção de descer pela corda');
+    o.fn(); tick(5); clearZombies();
+    ok(W.levelOf(q.z) === 0 && Math.floor(q.x) === rw.outs.x && Math.floor(q.y) === rw.outs.y, 'desceu até o chão do lado de fora');
+    const up = CP.Actions.contextOptions(q, mx, my).find(x => /Subir pela corda/.test(x.label));
+    ok(!!up, 'do chão: subir pela corda');
+    const rnd = Math.random; Math.random = () => 0.01; q.body.stats.endurance = 1;
+    up.fn(); tick(6); Math.random = rnd; clearZombies();
+    ok(W.levelOf(q.z) === 1 && Math.floor(q.x) === rw.ins.x && Math.floor(q.y) === rw.ins.y, 'subiu de volta pela janela');
+    q.z = 0; q.x = op.x; q.y = op.y; G.activateChunks(true); clearZombies();
+  }
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

@@ -24,8 +24,12 @@
     var In = CP.Input;
     if (p.attackCd > 0) { p.attackCd -= dt; }
     if (p.shoveCd > 0) { p.shoveCd -= dt; }
-    // animação do golpe em andamento
-    if (p.anim.attack > 0) {
+    // matar por trás em andamento (sem barulho de golpe)
+    if (p.stealth) {
+      p.anim.attack = Math.min(0.99, 0.001 + (p.stealth.t % (CB.STEALTH_TIME * 0.5)) / (CB.STEALTH_TIME * 0.5));
+      updateStealth(p, dt);
+    } else if (p.anim.attack > 0) {
+      // animação do golpe em andamento
       var prev = p.anim.attack;
       p.anim.attack += dt / p.attackDur;
       if (prev < 0.45 && p.anim.attack >= 0.45) { resolveSwing(p); }
@@ -42,7 +46,7 @@
       if (p.reloadT <= 0) { finishReload(p); }
     }
     if (In.blockGame || p.sleeping || p.dead || p.vehicle) { return; }
-    var wantAttack = In.mouse.left && !p.uiClickGuard;
+    var wantAttack = In.mouse.left && !p.uiClickGuard && !p.dragging;
     if (wantAttack && p.anim.attack <= 0 && p.anim.shove <= 0 && p.attackCd <= 0 && !p.action) {
       var wp = weaponOf(p);
       if (wp && wp.def.gun) {
@@ -65,7 +69,50 @@
     p.body.stats.endurance = Math.max(0, p.body.stats.endurance - amt * mult);
   }
 
+  /* matar por trás (faca, agachado, zumbi sem perceber): golpe silencioso e certeiro na nuca */
+  function stealthTarget(p, wp) {
+    if (!p.sneaking || !wp || wp.w.type !== 'blade_short') { return null; }
+    var list = CP.Zombies.near(p.x, p.y, CB.STEALTH_RANGE + 0.5, near), best = null, bd = 99;
+    for (var i = 0; i < list.length; i++) {
+      var zb = list[i];
+      if (zb.state === 'dead' || zb.seesPlayer || CP.Zombies.isDown(zb) || zb.state === 'chase' || zb.state === 'attack' || zb.state === 'held' || Math.abs(zb.z - p.z) > 0.45) { continue; }
+      var d = U.dist(zb.x, zb.y, p.x, p.y), a = Math.atan2(zb.y - p.y, zb.x - p.x);
+      if (d > CB.STEALTH_RANGE || Math.abs(U.angleDiff(p.ang, a)) > 1.0) { continue; }
+      if (Math.abs(U.angleDiff(zb.ang, a)) > CB.STEALTH_BEHIND) { continue; } // precisa estar de costas para o jogador
+      if (!W.lineOfSight(p.x, p.y, zb.x, zb.y, W.levelOf(p.z), 3)) { continue; }
+      if (d < bd) { bd = d; best = zb; }
+    }
+    return best;
+  }
+  K.stealthTarget = stealthTarget;
+  function startStealth(p, wp, zb) {
+    p.ang = Math.atan2(zb.y - p.y, zb.x - p.x); p.aimLock = p.ang;
+    p.stealth = { zb: zb, t: 0, done: false, wp: wp };
+    zb.state = 'held'; zb.path = null; zb.vx = zb.vy = 0;
+    p.attackDur = CB.STEALTH_TIME; p.anim.attack = 0.001; p.attackCd = CB.STEALTH_TIME;
+    if (CP.Audio) { CP.Audio.swing('blade_short'); }
+  }
+  function updateStealth(p, dt) {
+    var s = p.stealth;
+    s.t += dt;
+    var zb = s.zb;
+    if (zb.state !== 'held' && zb.state !== 'dead') { p.stealth = null; return; }
+    // segura o zumbi encostado
+    if (zb.state === 'held') { zb.x += (p.x + Math.cos(p.ang) * 0.55 - zb.x) * Math.min(1, dt * 8); zb.y += (p.y + Math.sin(p.ang) * 0.55 - zb.y) * Math.min(1, dt * 8); zb.ang = p.ang; }
+    if (!s.done && s.t >= CB.STEALTH_TIME * 0.6) {
+      s.done = true;
+      zb.state = 'idle';
+      CP.Zombies.kill(zb, p.ang, 'stealth');
+      if (CP.Audio) { CP.Audio.hit('blade_short', true, zb.x, zb.y, zb.z); }
+      CP.Player.addXp(p, 'sneaking', 4); CP.Player.addXp(p, s.wp.w.skill, 3);
+      if (CP.Body) { CP.Body.addBloodOnClothes(p, 0.04); }
+      if (CP.FX) { CP.FX.floatText(zb.x, zb.y, zb.z, 'Silencioso', '#c8d8b0'); }
+    }
+    if (s.t >= CB.STEALTH_TIME) { p.stealth = null; p.anim.attack = 0; }
+  }
   function startSwing(p, wp) {
+    var st = stealthTarget(p, wp);
+    if (st) { startStealth(p, wp, st); return; }
     var w = wp.w;
     // assistência de mira: vira para o zumbi mais próximo dentro do alcance e mais ou menos à frente
     var cands = CP.Zombies.near(p.x, p.y, w.range + 0.6, near);

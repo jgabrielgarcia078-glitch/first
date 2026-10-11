@@ -171,7 +171,8 @@
     }
     var len = Math.sqrt(mx * mx + my * my);
     p.aiming = canControl && In.aiming();
-    p.running = canControl && len > 0 && (In.isDown('ShiftLeft') || In.isDown('ShiftRight')) && !p.aiming && (!CP.Body || CP.Body.canRun(p));
+    p.running = canControl && len > 0 && (In.isDown('ShiftLeft') || In.isDown('ShiftRight')) && !p.aiming && !p.dragging && (!CP.Body || CP.Body.canRun(p));
+    if (p.stealth) { len = 0; } // segurando o zumbi: não anda
     if (p.running && p.sneaking) { p.sneaking = false; }
     // olhar para o mouse ao mirar/atacar
     var mouseW = P.mouseWorld(p);
@@ -183,7 +184,7 @@
       if (p.action && p.action.cancelOnMove !== false && CP.Actions) { CP.Actions.cancel(p, 'moveu'); }
       if (p.sitting) { p.sitting = false; }
       mx /= len; my /= len;
-      var sp = P.speed(p) * (p.anim.attack > 0 ? 0.35 : 1);
+      var sp = P.speed(p) * (p.anim.attack > 0 ? 0.35 : 1) * (p.dragging ? C.COMBAT.DRAG_SPEED : 1);
       var dx = mx * sp * dt, dy = my * sp * dt;
       var ox = p.x, oy = p.y;
       W.moveCircle(p, dx, dy, C.PLAYER_RADIUS);
@@ -215,7 +216,7 @@
       }
     }
     if (CP.Combat) { CP.Combat.playerUpdate(p, dt); }
-    if (CP.Actions) { CP.Actions.update(p, dt, gameDt); }
+    if (CP.Actions) { CP.Actions.update(p, dt, gameDt); if (p.dragging) { CP.Actions.updateDrag(p, dt); } }
     // vapor da respiração no frio (mais rápido ofegante)
     if (!p.dead && !p.vehicle && CP.FX && CP.Time) {
       p.breathT = (p.breathT || 0) - dt;

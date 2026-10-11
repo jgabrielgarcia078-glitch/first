@@ -64,6 +64,7 @@
   };
 
   /* ---------- pegadas na neve ---------- */
+  A.stepPrint = function (e, kind, spacing) { stepPrint(e, kind, spacing); };
   function stepPrint(e, kind, spacing) {
     var lp = e._pr;
     if (!lp) { e._pr = { x: e.x, y: e.y, s: 0 }; return; }

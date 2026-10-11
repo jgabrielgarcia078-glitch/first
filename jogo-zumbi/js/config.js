@@ -385,6 +385,8 @@
     SHOVE_RANGE: 1.15, SHOVE_ARC_DEG: 110, SHOVE_COOLDOWN: 0.55, SHOVE_ENDURANCE: 0.035,
     SHOVE_KNOCKDOWN_BASE: 0.22, STOMP_RANGE: 0.9, STOMP_DMG_MIN: 0.35, STOMP_DMG_MAX: 0.8,
     STOMP_COOLDOWN: 0.7, FIST_DMG_MIN: 0.08, FIST_DMG_MAX: 0.22,
+    STEALTH_RANGE: 1.0, STEALTH_TIME: 1.3, STEALTH_BEHIND: 1.05,   // matar por trás com faca, agachado e sem ser visto
+    DRAG_SPEED: 0.55,                                             // arrastando um corpo
     CRIT_MULT: 2.5, LOW_ENDURANCE_DMG_MULT: 0.6
   };
 
