@@ -315,9 +315,10 @@
 
   /* ---------- Trilha sonora (js/music.js) ---------- */
   C.MUSIC = {
-    VOLUME: 0.6, BUS_GAIN: 1.0,                // volume padrão e quanto a música fica abaixo dos efeitos
-    BPM_CALM: 62, BPM_NIGHT: 54, BPM_TENSE: 76, BPM_CHASE: 108,
-    PIECE_BARS_MIN: 16, PIECE_BARS_MAX: 28,     // duração de uma peça calma (compassos)
+    VOLUME: 0.6, BUS_GAIN: 0.9,                // volume padrão e ganho do barramento da música
+    LOW_CUT: 85,                                // Hz: a música não tem nada abaixo disso (evita estourar alto-falantes)
+    BPM_CALM: 72, BPM_NIGHT: 62, BPM_TENSE: 70, BPM_CHASE: 104,
+    PIECE_BARS_MIN: 16, PIECE_BARS_MAX: 24,     // duração de uma peça calma (compassos, múltiplo de 4)
     REST_MIN: 25, REST_MAX: 75,                 // silêncio entre peças (s)
     RISE: 1.2, FALL: 16,                        // s para a intensidade subir / baixar
     SPOT_COOLDOWN: 35                           // s entre dois sustos de "zumbi te viu"

@@ -20,7 +20,11 @@
       Au.comp.threshold.value = -18; Au.comp.ratio.value = 4;
       Au.master = ctx.createGain();
       Au.master.gain.value = Au.volume;
-      Au.master.connect(Au.comp); Au.comp.connect(ctx.destination);
+      // saída final: corta o subgrave (alto-falantes pequenos distorcem) e limita os picos (nada passa de ~-1 dB)
+      var hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 50; hp.Q.value = 0.7;
+      Au.out = ctx.createDynamicsCompressor();
+      Au.out.threshold.value = -3; Au.out.knee.value = 0; Au.out.ratio.value = 20; Au.out.attack.value = 0.002; Au.out.release.value = 0.12;
+      Au.master.connect(Au.comp); Au.comp.connect(hp); hp.connect(Au.out); Au.out.connect(ctx.destination);
       var len = ctx.sampleRate * 2;
       Au.noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate);
       var d = Au.noiseBuf.getChannelData(0);

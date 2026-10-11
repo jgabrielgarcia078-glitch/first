@@ -39,7 +39,7 @@ Referências de visual já aplicadas: dia claro e colorido (grama verde viva, as
 | use.js | Uso de itens, artesanato, construção (`CP.Build`) e agricultura (`CP.Farm`) |
 | vehicles.js | Carros dirigíveis (os objetos CAR do mapa viram entidades ao ativar o chunk) |
 | audio.js | Sons sintetizados (WebAudio): vozes de zumbi por formantes, tudo posicional (pan + distância + abafado por parede), reverb, limite de vozes |
-| music.js | Trilha sonora **original** composta em tempo real (nunca usar a trilha do PZ): camadas calma/tensão/perseguição pela intensidade do perigo, peças com silêncio entre elas, sustos (`spotted`, `event`, `death`). Números em `C.MUSIC` |
+| music.js | Trilha sonora **original** composta em tempo real (nunca usar a trilha do PZ): violão Karplus-Strong, piano, pad, cello; camadas calma/tensão/perseguição pela intensidade do perigo, peças com intro/A/B/final e silêncio entre elas, sustos (`spotted`, `event`, `death`). Mixagem: nada abaixo de `C.MUSIC.LOW_CUT` (alto-falante de celular estoura com subgrave), compressor + limitador próprios, e tudo sai pelo limitador final `CP.Audio.out`. Conferir com `tests/scenarios/mix.js` (pico, cortes, % abaixo de 80 Hz) |
 | save.js | IndexedDB (stores `saves`, `chunks`, `settings`), versão de esquema e migrações |
 | ui.js | Menu (no estilo do original: título e opções à esquerda), criação de personagem, HUD (barra lateral de ícones com as mãos, relógio digital, moodles à direita, atalhos embaixo), painéis (inventário em duas janelas com colunas e abas de recipiente), menu de contexto, morte |
 | game.js | Estado da partida, loop de passo fixo (30/s), ativação de chunks, câmera, desenho |
@@ -69,4 +69,4 @@ Referências de visual já aplicadas: dia claro e colorido (grama verde viva, as
 - `tests/unit-sim.js`: integridade dos dados, combate, IA (ver, ouvir, perseguir, arrombar porta, subir escada), necessidades, sono, curativo, infecção, loot, serialização.
 - `tests/unit-days.js`: 30 dias acelerados (energia, água, helicóptero, clima, plantação, migração).
 - `tests/e2e.js`: Chromium via `file://` (menu → criação → jogo → painéis → salvar → recarregar → continuar).
-- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `uniforms` = uniformes em humanos e zumbis, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R).
+- Cenários visuais: `node tests/play.js tests/scenarios/<nome>.js <pasta>` tira screenshots (combate, noite, escada, interações, dirigir, desempenho, `chars` = folha de personagens, `ui` = painéis, `hitches` = tempos por quadro, `uniforms` = uniformes em humanos e zumbis, `audio` = níveis de som, `music` = camadas da trilha e eventos distantes com lado L/R, `mix` = pico/cortes/subgrave na saída final).
