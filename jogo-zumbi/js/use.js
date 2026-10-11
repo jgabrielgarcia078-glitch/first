@@ -55,6 +55,12 @@
     if (It.hasTag(it, 'radio')) { out.push({ label: 'Ouvir rádio', fn: function () { A.start(p, { name: 'Ouvindo rádio', time: 4, onDone: function () { msg('Rádio: ' + CP.Time.broadcast()); p.body.stats.boredom = Math.max(0, p.body.stats.boredom - 0.05); } }); } }); }
     if (d.throwable) { out.push({ label: 'Arremessar (no mouse)', fn: function () { Use.equip(p, it, 'hand1'); msg('Mire com o botão direito e clique com o esquerdo para arremessar.'); } }); }
     if (d.seed) { out.push({ label: 'Plantar (clique direito num canteiro)', disabled: true }); }
+    if (d.flame) {
+      var lt = Inv.findTag(p, 'lighter');
+      if (!it.on) { out.push({ label: 'Acender', disabled: !lt || (it.burn !== undefined && it.burn <= 0), hint: !lt ? 'Precisa de fósforo ou isqueiro' : 'Acabou o combustível', fn: function () { if (lt.item.uses !== undefined) { lt.item.uses--; if (lt.item.uses <= 0) { Inv.detach(p, lt.item); } } if (it.burn === undefined) { it.burn = d.flame.hours; } it.on = true; if (p.hand1 !== it && p.hand2 !== it) { Use.equip(p, it, p.hand1 ? 'hand2' : 'hand1'); } CP.Game.updateLight(); msg(d.name + ' acesa.'); } }); } else { out.push({ label: 'Apagar', fn: function () { it.on = false; CP.Game.updateLight(); } }); }
+      if (d.flame.refill) { var gas = Inv.findTag(p, 'gas'); out.push({ label: 'Encher com gasolina', disabled: !gas || (it.burn || 0) >= d.flame.hours - 0.2, hint: 'Precisa de galão com gasolina', fn: function () { gas.item.fuel = Math.max(0, gas.item.fuel - 0.3); it.burn = d.flame.hours; msg('Lampião cheio.'); } }); }
+      out.push({ label: 'Combustível: ' + Math.round((it.burn !== undefined ? it.burn : d.flame.hours) / d.flame.hours * 100) + '%', disabled: true });
+    }
     if (d.trap && CP.Surv) { out.push({ label: 'Armar armadilha aqui', fn: function () { CP.Surv.placeTrap(p, it); } }); }
     if (d.food && CP.Surv) { CP.Surv.dishOptions(p, it, out); }
     if (D.ITEMS[it.id].note) { out.push({ label: 'Ler bilhete', fn: function () { it.seen = true; if (CP.UI) { CP.UI.showNote(it.text, 'Bilhete'); } } }); }

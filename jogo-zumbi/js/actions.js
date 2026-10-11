@@ -274,6 +274,7 @@
     if (info.tv) {
       out.push({ label: 'Assistir TV', disabled: !CP.Time.powerAt(x, y), hint: 'Sem energia', fn: function () { watchTv(p); } });
     }
+    if (info.branches) { out.push({ label: 'Recolher os galhos', key: 'E', fn: function () { A.start(p, { name: 'Recolhendo galhos', time: 3, anim: 'work', onDone: function () { if (W.obj(x, y, z) !== O.BRANCHES) { return; } W.lvl(x, y, z).obj[W.idx(x, y)] = 0; W.chunkAt(x, y).saveDirty = true; var n = U.randInt(2, 4); for (var i = 0; i < n; i++) { CP.Items.Inv.give(p, CP.Items.make('branch')); } msg('Você recolheu ' + n + ' gravetos.'); } }); } }); }
     if (o === O.CAMPFIRE) {
       var lv0 = W.lvl(x, y, z), ii0 = W.idx(x, y);
       if (lv0.odir[ii0] & 4) {

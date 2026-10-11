@@ -344,6 +344,9 @@
   def('generator_item', { name: 'Gerador portátil', icon: '⚡', w: 30, cat: 'tool', tags: ['generator'] });
   def('map', { name: 'Mapa da região', icon: '🗺️', w: 0.05, cat: 'misc', tags: ['map'] });
   def('note', { name: 'Bilhete', icon: '📝', w: 0.01, cat: 'misc', note: 'any' });
+  def('candle', { name: 'Vela', icon: '🕯️', w: 0.1, cat: 'tool', flame: { r: 4.5, hours: 5, i: 0.7 } });
+  def('torch', { name: 'Tocha', icon: '🔥', w: 0.6, cat: 'tool', flame: { r: 6.5, hours: 1.5, i: 0.85 } });
+  def('oil_lamp', { name: 'Lampião', icon: '🏮', w: 1.2, cat: 'tool', flame: { r: 7.5, hours: 10, i: 0.8, refill: true } });
   def('scissors', { name: 'Tesoura', icon: '✂️', w: 0.15, cat: 'tool', tags: ['scissors'] });
   def('razor', { name: 'Lâmina de barbear', icon: '🪒', w: 0.05, cat: 'tool', tags: ['razor'] });
   def('house_key', { name: 'Chave de casa', icon: '🗝️', w: 0.02, cat: 'misc' });
@@ -437,10 +440,10 @@
   /* por tipo de recipiente (objeto) e tipo de sala: listas [id, peso]; n = [min,max] itens */
   D.LOOT = {
     fridge: { n: [1, 5], list: [['milk', 4], ['cheese', 4], ['apple', 4], ['banana', 3], ['orange', 3], ['carrot', 3], ['tomato', 3], ['lettuce', 2], ['steak', 3], ['chicken', 3], ['egg', 4], ['icecream', 2], ['pizza', 2], ['soda', 4], ['beer', 4], ['juice', 3], ['water_bottle', 3], ['cabbage', 2], ['fish', 1]] },
-    kitchen: { n: [1, 4], list: [['beans', 5], ['soup', 5], ['tuna', 4], ['corn', 4], ['chips', 4], ['candy', 3], ['crackers', 4], ['cereal', 4], ['peanutbutter', 3], ['bread', 3], ['potato', 3], ['rice', 3], ['pasta', 3], ['knife', 5], ['canopener', 4], ['pan', 3], ['pot', 3], ['matches', 3], ['lighter', 1], ['water_bottle', 3], ['bottle_empty', 2], ['whiskey', 1], ['dogfood', 1], ['mag_recipes', 1], ['garbage_bag', 2], ['soap', 1], ['note', 0.8]] },
+    kitchen: { n: [1, 4], list: [['beans', 5], ['soup', 5], ['tuna', 4], ['corn', 4], ['chips', 4], ['candy', 3], ['crackers', 4], ['cereal', 4], ['peanutbutter', 3], ['bread', 3], ['potato', 3], ['rice', 3], ['pasta', 3], ['knife', 5], ['canopener', 4], ['pan', 3], ['pot', 3], ['matches', 3], ['lighter', 1], ['water_bottle', 3], ['bottle_empty', 2], ['whiskey', 1], ['dogfood', 1], ['mag_recipes', 1], ['garbage_bag', 2], ['soap', 1], ['note', 0.8], ['candle', 2.5]] },
     bathroom: { n: [0, 3], list: [['bandage', 6], ['disinfectant', 4], ['painkillers', 5], ['antibiotics', 1], ['betablockers', 2], ['antidepressants', 2], ['sleeping_pills', 2], ['alcohol_wipes', 3], ['tweezers', 2], ['suture_needle', 1], ['rag', 2], ['magazine', 1], ['soap', 3], ['scissors', 1.5], ['razor', 2.5]] },
     bedroom: { n: [1, 4], list: [['tshirt', 6], ['shirt', 4], ['sweater', 4], ['jeans', 5], ['pants', 3], ['shorts', 3], ['skirt', 2], ['dress', 2], ['hoodie', 3], ['jacket', 2], ['sneakers', 3], ['shoes', 2], ['cap', 2], ['beanie', 2], ['scarf', 1], ['coat', 1], ['sheet', 4], ['schoolbag', 2], ['duffel', 1], ['novel', 3], ['magazine', 3], ['comic', 2], ['watch', 2], ['wallet', 2], ['photo', 2], ['toy', 1], ['cigarettes', 1], ['flashlight', 1], ['battery', 1], ['bat', 1], ['pistol', 0.3], ['ammo9', 0.5], ['revolver', 0.2], ['ammo38', 0.4], ['leather_jacket', 0.5], ['tote', 1], ['needle', 1.5], ['thread', 2], ['note', 1]] },
-    living: { n: [0, 3], list: [['novel', 4], ['magazine', 4], ['comic', 3], ['newspaper', 4], ['candy', 2], ['chips', 2], ['soda', 2], ['beer', 2], ['cigarettes', 1], ['lighter', 1], ['battery', 2], ['radio', 1], ['flashlight', 1], ['photo', 2], ['keyring', 2], ['golfclub', 0.3], ['mag_molotov', 0.3], ['needle', 0.7], ['thread', 1], ['note', 1.2]] },
+    living: { n: [0, 3], list: [['novel', 4], ['magazine', 4], ['comic', 3], ['newspaper', 4], ['candy', 2], ['chips', 2], ['soda', 2], ['beer', 2], ['cigarettes', 1], ['lighter', 1], ['battery', 2], ['radio', 1], ['flashlight', 1], ['photo', 2], ['keyring', 2], ['golfclub', 0.3], ['mag_molotov', 0.3], ['needle', 0.7], ['thread', 1], ['note', 1.2], ['candle', 1.5], ['oil_lamp', 0.4]] },
     garage: { n: [1, 4], list: [['hammer', 5], ['screwdriver', 4], ['wrench', 3], ['saw', 3], ['nails', 6], ['screws', 3], ['plank', 4], ['crowbar', 1.5], ['axe', 0.8], ['hatchet', 1], ['shovel', 2], ['trowel', 2], ['rope', 2], ['gas_can', 1], ['gas_can_empty', 2], ['toolbox', 1], ['gloves', 2], ['bucket', 2], ['seeds_carrot', 1], ['seeds_potato', 1], ['watering_can', 1], ['pipe', 1], ['sledge', 0.3], ['flashlight', 1], ['battery', 2], ['scrap', 2], ['mag_carpentry', 0.5], ['fishing_rod', 0.7], ['book_carpentry_1', 0.5], ['book_mechanics_1', 0.4], ['extinguisher', 0.6]] },
     storage: { n: [1, 4], list: [['nails', 3], ['plank', 3], ['hammer', 2], ['saw', 1], ['screwdriver', 2], ['rope', 1], ['bucket', 1], ['garbage_bag', 2], ['sheet', 2], ['beans', 2], ['water_bottle', 2], ['scrap', 2], ['battery', 1]] },
     office: { n: [0, 3], list: [['magazine', 3], ['newspaper', 3], ['candy', 2], ['soda', 2], ['battery', 2], ['watch', 1], ['wallet', 1], ['painkillers', 1], ['tote', 1], ['radio', 0.5], ['extinguisher', 0.5], ['note', 1.5]] },
@@ -461,7 +464,7 @@
     grill: { n: [0, 2], list: [['matches', 3], ['lighter', 1], ['pan', 1], ['knife', 1], ['beer', 1]] },
     clothesline: { n: [1, 3], list: [['tshirt', 5], ['shirt', 3], ['jeans', 3], ['sheet', 4], ['dress', 1], ['sweater', 1]] },
     doghouse: { n: [0, 1], list: [['dogfood', 4], ['rope', 1]] },
-    camp: { n: [2, 5], list: [['beans', 4], ['tuna', 3], ['water_bottle', 4], ['matches', 3], ['rope', 2], ['knife', 2], ['flashlight', 2], ['battery', 2], ['bandage', 2], ['map', 1], ['hiking_bag', 0.5], ['axe', 0.3], ['huntknife', 1], ['note', 1.5]] },
+    camp: { n: [2, 5], list: [['beans', 4], ['tuna', 3], ['water_bottle', 4], ['matches', 3], ['rope', 2], ['knife', 2], ['flashlight', 2], ['battery', 2], ['bandage', 2], ['map', 1], ['hiking_bag', 0.5], ['axe', 0.3], ['huntknife', 1], ['note', 1.5], ['oil_lamp', 1.2], ['candle', 1]] },
     car: { n: [0, 3], list: [['map', 3], ['water_bottle', 2], ['soda', 2], ['chips', 2], ['wrench', 2], ['flashlight', 1], ['car_key', 1], ['cigarettes', 1], ['tote', 1], ['jacket', 1], ['first_aid_kit', 0.5], ['gas_can_empty', 0.5], ['note', 0.8]] },
     dumpster: { n: [0, 4], list: [['bottle_empty', 4], ['empty_beer', 4], ['garbage_bag', 3], ['scrap', 2], ['plank', 1], ['newspaper', 2], ['rag', 2], ['dogfood', 1], ['chips', 1]] },
     crate: { n: [0, 3], list: [['plank', 3], ['nails', 3], ['scrap', 2], ['rope', 1], ['beans', 1], ['water_bottle', 1], ['sheet', 1], ['bottle_empty', 1]] },
@@ -472,6 +475,7 @@
   /* needs: [{ tag|item, n, keep }]; skill: [skillId, nível mínimo]; out: [{item, n}] */
   D.RECIPES = [
     { id: 'rip_sheet', name: 'Rasgar lençol em panos', needs: [{ item: 'sheet', n: 1 }], out: [{ item: 'rag', n: 4 }], time: 3 },
+    { id: 'torch', name: 'Tocha (graveto + pano)', needs: [{ item: 'branch', n: 1 }, { item: 'rag', n: 1 }], out: [{ item: 'torch', n: 1 }], time: 3 },
     { id: 'trap_box', name: 'Armadilha de caixa', needs: [{ item: 'plank', n: 2 }, { item: 'nails', n: 3 }, { tag: 'hammer', n: 1, keep: true }], out: [{ item: 'trap_box', n: 1 }], time: 8, xp: ['trapping', 3] },
     { id: 'trap_snare', name: 'Armadilha de laço', needs: [{ tag: 'rope', n: 1 }, { item: 'branch', n: 1 }], out: [{ item: 'trap_snare', n: 1 }], time: 5, xp: ['trapping', 2] },
     { id: 'sheet_rope', name: 'Corda de lençol', needs: [{ item: 'sheet', n: 2 }], out: [{ item: 'sheet_rope', n: 1 }], time: 4 },

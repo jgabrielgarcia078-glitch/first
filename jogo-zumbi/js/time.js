@@ -11,8 +11,9 @@
     cloudy: { name: 'Nublado', amb: 0.86, rain: 0, temp: -1 },
     rain: { name: 'Chuva', amb: 0.7, rain: 0.6, temp: -3 },
     storm: { name: 'Tempestade', amb: 0.55, rain: 1, temp: -4 },
-    fog: { name: 'Neblina', amb: 0.78, rain: 0, temp: -2, fog: true },
-    snow: { name: 'Neve', amb: 0.8, rain: 0.4, temp: -6, snow: true }
+    fog: { name: 'Neblina', amb: 0.78, rain: 0, temp: -2, fog: true, vis: 0.7 },
+    snow: { name: 'Neve', amb: 0.8, rain: 0.4, temp: -6, snow: true },
+    blizzard: { name: 'Nevasca', amb: 0.6, rain: 1, temp: -13, snow: true, blizzard: true, vis: 0.45 }
   };
   T.WEATHERS = WEATHERS;
 
@@ -89,7 +90,7 @@
   };
   function nextWeather(rng) {
     var season = T.season();
-    var opts = season === 'Inverno' ? [['clear', 3], ['cloudy', 4], ['snow', 3], ['fog', 1.5], ['rain', 1]] : (season === 'Outono' ? [['clear', 3], ['cloudy', 4], ['rain', 3], ['storm', 1], ['fog', 2]] : [['clear', 6], ['cloudy', 3], ['rain', 2], ['storm', 0.8], ['fog', 1]]);
+    var opts = season === 'Inverno' ? [['clear', 3], ['cloudy', 4], ['snow', 3], ['blizzard', 0.9], ['fog', 1.5], ['rain', 1]] : (season === 'Outono' ? [['clear', 3], ['cloudy', 4], ['rain', 3], ['storm', 1], ['fog', 2]] : [['clear', 6], ['cloudy', 3], ['rain', 2], ['storm', 0.8], ['fog', 1]]);
     return rng.weighted(opts);
   }
 
@@ -98,7 +99,8 @@
     var dl = CP.Vis.daylight(T.hourOfDay());
     return Math.max(0.2, dl * T.weather().amb);
   };
-  T.visionMult = function () { return 1; };
+  /* nevasca e neblina encurtam a visão (sua e dos zumbis) */
+  T.visionMult = function () { var p = G().player; if (!p || W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z))) { return 1; } return T.weather().vis || 1; };
   T.isNight = function () { return T.ambient() < 0.45; };
   /* janela de cômodo aceso joga um pouco de luz quente para fora */
   function windowLight(out, x, y, z) {
@@ -115,6 +117,11 @@
       out.push({ x: outX + 0.5, y: outY + 0.5, z: z, r: 2.6, i: 0.6, indoor: false });
     }
   }
+  T.handFlame = function (p) {
+    var hs = [p.hand1, p.hand2];
+    for (var i = 0; i < 2; i++) { var it = hs[i]; if (it && it.on && D.ITEMS[it.id].flame && (it.burn === undefined || it.burn > 0)) { return it; } }
+    return null;
+  };
   T.lightSources = function (p) {
     var out = [];
     var lz = W.levelOf(p.z);
@@ -123,6 +130,9 @@
       var fl = CP.Items.Inv.find(p, function (it) { return D.ITEMS[it.id].light && it.charge > 0; });
       if (fl) { out.push({ x: p.x, y: p.y, z: lz, r: 11, i: 0.95, cone: { ang: p.ang, half: 0.5 }, glow: 'flash' }); } else { p.flashlightOn = false; }
     }
+    // vela, tocha ou lampião aceso na mão
+    var fh = T.handFlame(p);
+    if (fh) { var fd = D.ITEMS[fh.id].flame; out.push({ x: p.x, y: p.y, z: lz, r: fd.r * (0.94 + Math.random() * 0.06), i: fd.i, glow: 'fire' }); }
     // luz fraca ao redor do jogador (para não ficar totalmente preto)
     out.push({ x: p.x, y: p.y, z: lz, r: 3.2, i: 0.42 });
     var V = CP.Vis;
@@ -153,12 +163,16 @@
     // clima
     if (h >= w.weather.until) {
       var type = nextWeather(rng);
+      var prevType = w.weather.type;
       w.weather = { type: type, until: h + rng.range(WE.CHANGE_HOURS_MIN, WE.CHANGE_HOURS_MAX), tempOff: rng.range(-2, 2) };
       if (type === 'storm' && CP.UI) { CP.UI.toast('Uma tempestade está chegando.'); }
+      if (type === 'blizzard' && CP.UI) { CP.UI.toast('Uma nevasca está começando. Procure abrigo.', 'warn'); }
+      if ((prevType === 'storm' || prevType === 'blizzard') && type !== prevType) { T.fallenBranches(); }
     }
-    if (T.weather().rain >= 1 && Math.random() < dt * 0.02) { // trovão
+    if (T.weather().rain >= 1 && !T.weather().snow && Math.random() < dt * 0.02) { // trovão
       if (CP.Audio) { CP.Audio.thunder(); }
       if (CP.FX) { CP.FX.lightning(); }
+      if (Math.random() < WE.LIGHTNING_TREE) { T.lightningStrike(); }
     }
     // a cada hora de jogo
     var hr = Math.floor(h);
@@ -200,6 +214,15 @@
       (ws().rainBarrels || []).forEach(function (rb) { rb.water = Math.min(C.OBJ_INFO[O.RAIN_BARREL].waterCap, (rb.water || 0) + T.rainIntensity() * 4); });
     }
     if (CP.Farm) { CP.Farm.hourly(); }
+    // vela/tocha/lampião queimam; chuva apaga a tocha ao ar livre
+    CP.Items.Inv.all(p).forEach(function (o) {
+      var it = o.item, fd = D.ITEMS[it.id].flame;
+      if (!fd || !it.on) { return; }
+      it.burn = (it.burn === undefined ? fd.hours : it.burn) - 1;
+      var outside = !W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z));
+      if (it.id === 'torch' && outside && T.rainIntensity() >= 0.6) { it.burn = Math.max(0, it.burn - 0.5); if (Math.random() < 0.5) { it.on = false; if (CP.UI) { CP.UI.toast('A chuva apagou a tocha.', 'warn'); } } }
+      if (it.burn <= 0) { it.on = false; if (fd.refill) { if (CP.UI) { CP.UI.toast('O lampião ficou sem combustível.', 'warn'); } } else { CP.Items.Inv.detach(p, it); if (CP.UI) { CP.UI.toast(D.ITEMS[it.id].name + ' acabou.', 'warn'); } } }
+    });
     if (CP.Surv) { CP.Surv.hourly(); }
   }
   function daily(day) {
@@ -258,6 +281,40 @@
     if (CP.Audio) { CP.Audio.heli(hl.x - p.x, hl.y - p.y); }
     if (hl.t > hl.life) { ws().heli = null; ws().heliDone = true; if (CP.Audio) { CP.Audio.heli(null); } if (CP.UI) { CP.UI.toast('O som do helicóptero some ao longe.'); } }
   }
+
+  /* raio numa árvore por perto: pega fogo (mesmo com chuva, por um tempo) */
+  T.lightningStrike = function () {
+    var p = G().player, trees = [];
+    for (var k in G().activeChunks) {
+      var ch = G().activeChunks[k], L = ch.levels[0];
+      for (var i = 0; i < L.obj.length; i++) {
+        if (!L.obj[i] || !C.OBJ_INFO[L.obj[i]].tree) { continue; }
+        var x = ch.cx * C.CHUNK + (i & (C.CHUNK - 1)), y = ch.cy * C.CHUNK + (i >> W.chunkShift), d = U.dist(x, y, p.x, p.y);
+        if (d > 5 && d < 36) { trees.push({ x: x, y: y }); }
+      }
+    }
+    var best = trees.length ? trees[U.randInt(0, trees.length - 1)] : null;
+    if (!best || !CP.Fire) { return null; }
+    CP.Fire.ignite(best.x, best.y, 0, true, 50);
+    CP.Zombies.noise(best.x, best.y, 0, 40, 'thunder');
+    if (CP.UI) { CP.UI.toast('Um raio caiu numa árvore aqui perto!', 'warn'); }
+    return best;
+  };
+  /* depois da tempestade: galhos quebrados pelo chão em volta das árvores */
+  T.fallenBranches = function () {
+    var n = 0;
+    for (var k in G().activeChunks) {
+      var ch = G().activeChunks[k], L = ch.levels[0];
+      for (var i = 0; i < L.obj.length; i++) {
+        if (!L.obj[i] || !C.OBJ_INFO[L.obj[i]].tree || Math.random() > WE.BRANCH_CHANCE) { continue; }
+        var x = ch.cx * C.CHUNK + (i & (C.CHUNK - 1)) + U.randInt(-1, 1), y = ch.cy * C.CHUNK + (i >> W.chunkShift) + U.randInt(-1, 1);
+        var cc = W.chunkAt(x, y);
+        if (!cc || W.obj(x, y, 0) || W.isIndoor(x, y, 0) || !W.tileWalkable(x, y, 0) || W.floor(x, y, 0) === C.FLOOR.WATER) { continue; }
+        cc.levels[0].obj[W.idx(x, y)] = C.OBJ.BRANCHES; cc.levels[0].odir[W.idx(x, y)] = U.randInt(0, 3); cc.dirty = true; cc.saveDirty = true; n++;
+      }
+    }
+    return n;
+  };
 
   /* ---------- rádio / TV ---------- */
   var BROADCASTS = [

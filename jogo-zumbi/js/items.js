@@ -73,6 +73,7 @@
     if (d.drink && it.uses !== undefined && d.drink.uses > 1) { n += ' [' + it.uses + '/' + d.drink.uses + ']'; }
     if (d.gun) { n += ' [' + (it.ammo || 0) + '/' + d.gun.mag + ']'; }
     if (d.light) { n += it.on ? ' (ligada)' : ''; }
+    if (d.flame) { n += it.on ? ' (acesa)' : (it.burn !== undefined && it.burn <= 0 ? ' (gasta)' : ''); }
     if (it.ingr && CP.Surv) { n += CP.Surv.dishName(it); }
     if (it.keyLabel) { n += ' (' + it.keyLabel + ')'; }
     if (d.note) { n += it.seen ? ': “' + (CP.Notes ? CP.Notes.title(it.text) : '') + '”' : ' (não lido)'; }

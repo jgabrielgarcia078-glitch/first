@@ -1111,6 +1111,7 @@
       case O.RUBBLE: drawRubble(g, rng); break;
       case O.TRAP_BOX: drawTrapBox(g, dir); break;
       case O.TRAP_SNARE: drawTrapSnare(g, dir); break;
+      case O.BRANCHES: drawBranches(g, rng, dir); break;
       default: box(g, 0.2, 0.2, 0.6, 0.6, 0, 20, '#f0f');
     }
     return (objArr[nk] = store(key, c, ax, ay));
@@ -1593,6 +1594,17 @@
     g.strokeStyle = '#6e5232'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(t[0] - 6, t[1] - 12); g.quadraticCurveTo(t[0] + 2, t[1] - 20, t[0] + 10, t[1] - 8); g.stroke();
     g.strokeStyle = '#9a9a96'; g.lineWidth = 1; g.beginPath(); g.ellipse(t[0] + 6, t[1] - 1, 4, 2, 0, 0, Math.PI * 2); g.stroke();
     if (caught) { ellipseAt(g, t[0] + 6, t[1] - 1, 6, 3.4, '#7a6650'); ellipseAt(g, t[0] + 10, t[1] - 2, 2.6, 2.2, '#8a7660'); ellipseAt(g, t[0] + 1, t[1] - 1, 2, 1.6, '#e8e0d0'); }
+  }
+  /* galhos quebrados no chão depois da tempestade (com folhas) */
+  function drawBranches(g, rng, dir) {
+    var t = ip(0.5, 0.5, 0);
+    for (var i = 0; i < 3 + (dir & 1); i++) {
+      var x = t[0] + rng.range(-16, 12), y = t[1] + rng.range(-5, 5), len = rng.range(14, 26), an = rng.range(-0.5, 0.5);
+      var ex = x + Math.cos(an) * len, ey = y + Math.sin(an) * len * 0.5;
+      g.strokeStyle = '#4a3624'; g.lineWidth = rng.range(1.5, 3); g.beginPath(); g.moveTo(x, y); g.lineTo(ex, ey); g.stroke();
+      g.lineWidth = 1; g.beginPath(); g.moveTo(x + (ex - x) * 0.5, y + (ey - y) * 0.5); g.lineTo(x + (ex - x) * 0.5 + rng.range(-6, 6), y + (ey - y) * 0.5 - rng.range(2, 6)); g.stroke();
+      for (var l = 0; l < 4; l++) { ellipseAt(g, x + (ex - x) * rng.next(), y + (ey - y) * rng.next() - rng.range(0, 3), rng.range(1.8, 3), rng.range(1.2, 2), rng.pick(['#3e5a2a', '#4e6a32', '#5a7436'])); }
+    }
   }
   function drawRubble(g, rng) {
     var t = ip(0.5, 0.5, 0);

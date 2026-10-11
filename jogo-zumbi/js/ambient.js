@@ -47,7 +47,7 @@
     var w = ws(), T = CP.Time;
     // neve: acumula enquanto neva, derrete acima de MELT_TEMP (mais rápido com chuva)
     var wt = T.weather(), hrs = gameDt / 3600, sn = w.snow || 0;
-    if (wt.snow) { sn += C.SNOW.PER_HOUR * hrs; } else {
+    if (wt.snow) { sn += C.SNOW.PER_HOUR * hrs * (wt.blizzard ? 2.2 : 1); } else {
       var temp = T.temperature(true);
       if (temp > C.SNOW.MELT_TEMP) { sn -= C.SNOW.MELT_PER_HOUR * hrs * (1 + (temp - C.SNOW.MELT_TEMP) * 0.15) * (wt.rain > 0 ? 2 : 1); }
     }

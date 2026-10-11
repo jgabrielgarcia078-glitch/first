@@ -850,5 +850,38 @@ if (car) {
   CP.Body.update(q, 0.1, 3600 * 6);
   ok((q.body.scars || []).indexOf('head') >= 0 && CP.Player.lookFor(q).faceScar, 'corte na cabeça deixa cicatriz no rosto');
 }
+
+/* ---------- T3: nevasca, raio, galhos caídos, velas/tochas/lampiões ---------- */
+{
+  const q = G.player, w = G.state.world, T = CP.Time;
+  q.x = firstOpen.x; q.y = firstOpen.y; q.z = 0; G.activateChunks(true); clearZombies();
+  w.weather = { type: 'clear', until: T.hours() + 50 };
+  ok(T.visionMult() === 1, 'céu limpo: visão normal');
+  w.weather = { type: 'blizzard', until: T.hours() + 50 };
+  ok(T.weather().blizzard && T.visionMult() < 0.6 && T.temperature(true) < T.temperature(false), 'nevasca: visão curta e muito frio');
+  w.snow = 0; for (let i = 0; i < 10; i++) A.update(0.5, 360); const snowB = w.snow;
+  w.weather = { type: 'snow', until: T.hours() + 50 }; w.snow = 0; for (let i = 0; i < 10; i++) A.update(0.5, 360);
+  ok(snowB > w.snow, 'nevasca acumula neve mais rápido');
+  w.weather = { type: 'clear', until: T.hours() + 50 }; w.snow = 0;
+  const hit = T.lightningStrike();
+  ok(!!hit && CP.Fire.burningAt(hit.x, hit.y, 0), 'raio põe fogo numa árvore');
+  G.state.world.fires = []; for (const k in G.activeChunks) G.activeChunks[k].fires = {};
+  const nb = T.fallenBranches();
+  ok(nb > 0, 'depois da tempestade há galhos caídos (' + nb + ')');
+  let br = null; for (const k in G.activeChunks) { const ch = G.activeChunks[k]; for (let i = 0; i < 1024 && !br; i++) if (ch.levels[0].obj[i] === O.BRANCHES) br = { x: ch.cx * 32 + (i & 31), y: ch.cy * 32 + (i >> 5) }; if (br) break; }
+  q.x = br.x - 0.5; q.y = br.y + 0.5; G.activateChunks(true); clearZombies();
+  const gb = CP.Actions.contextOptions(q, br.x + 0.5, br.y + 0.5).find(o => /Recolher os galhos/.test(o.label));
+  ok(!!gb, 'dá para recolher os galhos'); const nbr = Inv.count(q, 'branch'); gb.fn(); tick(4);
+  ok(Inv.count(q, 'branch') > nbr && W.obj(br.x, br.y, 0) !== O.BRANCHES, 'galhos viram gravetos');
+  // vela acesa ilumina e queima
+  const cdl = CP.Items.make('candle'); Inv.give(q, cdl); Inv.give(q, CP.Items.make('matches'));
+  const lo = CP.Use.itemOptions(q, cdl, 'player').find(o => o.label === 'Acender');
+  ok(lo && !lo.disabled, 'acender a vela com fósforo'); lo.fn();
+  ok(cdl.on && T.handFlame(q) === cdl && T.lightSources(q).some(sr => sr.glow === 'fire' && sr.r > 4), 'vela acesa na mão ilumina em volta');
+  const b0 = cdl.burn; G.state.world.lastHourTick = -1; T.update(0.01, 1);
+  ok(cdl.burn < b0, 'vela vai queimando');
+  const torch = CP.D.RECIPE.torch; ok(!!torch, 'receita de tocha existe');
+  cdl.on = false; CP.Use.unequip(q, cdl);
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

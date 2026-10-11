@@ -82,7 +82,7 @@
     RAIN_BARREL: 32, CAMPFIRE: 33, CROP: 34, MED_CABINET: 35, LOCKER: 36, GENERATOR: 37,
     WALL_SHELF: 38, NIGHTSTAND: 39, DRESSER: 40, TALL_GRASS: 41, FENCE_POST: 42, CORPSE_PILE: 43,
     BENCH: 44, TRASH_CAN: 45, POWER_POLE: 46, STREET_SIGN: 47, BILLBOARD: 48, GRILL: 49, SWING: 50, CLOTHESLINE: 51,
-    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58, TRAP_BOX: 59, TRAP_SNARE: 60
+    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58, TRAP_BOX: 59, TRAP_SNARE: 60, BRANCHES: 61
   };
   /* Propriedades por objeto: nome, sólido, recipiente (capacidade em kg), altura visual (0..1 de parede), bloqueia visão */
   C.OBJ_INFO = [];
@@ -154,6 +154,7 @@
     o(O.RUBBLE, 'Entulho queimado', false, 0, 0.2, false, { slow: 0.6 });
     o(O.TRAP_BOX, 'Armadilha de caixa', false, 0, 0.25, false, { trap: 'box' });
     o(O.TRAP_SNARE, 'Armadilha de laço', false, 0, 0.2, false, { trap: 'snare' });
+    o(O.BRANCHES, 'Galhos caídos', false, 0, 0.25, false, { slow: 0.7, branches: true });
   })();
 
   /* ---------- Tempo ---------- */
@@ -297,7 +298,8 @@
   /* ---------- Clima ---------- */
   C.WEATHER = {
     CHANGE_HOURS_MIN: 3, CHANGE_HOURS_MAX: 10,
-    BASE_TEMP_SUMMER: 27, BASE_TEMP_WINTER: -2, DAILY_SWING: 7
+    BASE_TEMP_SUMMER: 27, BASE_TEMP_WINTER: -2, DAILY_SWING: 7,
+    LIGHTNING_TREE: 0.22, BRANCH_CHANCE: 0.07     // raio que acerta uma árvore; galhos caídos por árvore depois da tempestade
   };
 
   /* ---------- Eventos do mundo ---------- */
@@ -332,7 +334,7 @@
   /* ---------- Neve acumulada (0..1) e vento ---------- */
   C.SNOW = { PER_HOUR: 0.09, MELT_PER_HOUR: 0.035, MELT_TEMP: 1, FOOTPRINT_MIN: 0.2, FOOTPRINT_LIFE_H: 10, MAX_PRINTS: 500 };
   C.PUDDLES = { FILL_PER_HOUR: 0.35, DRY_PER_HOUR: 0.06, MIN: 0.12, MAX_SHARE: 0.32 };   // poças: fração máx. de tiles com poça
-  C.WIND = { clear: 0.18, cloudy: 0.35, rain: 0.5, storm: 1, fog: 0.06, snow: 0.45 };
+  C.WIND = { clear: 0.18, cloudy: 0.35, rain: 0.5, storm: 1, fog: 0.06, snow: 0.45, blizzard: 1 };
 
   /* ---------- Grandes hordas que atravessam a região (js/horde.js) ---------- */
   C.HORDE = {

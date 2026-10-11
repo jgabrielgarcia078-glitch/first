@@ -212,7 +212,7 @@
     var light = CP.Vis.lightAt(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z));
     var lit = Math.max(light, p.flashlightOn ? 0.9 : 0);
     var sight = U.lerp(ZC.SIGHT_NIGHT, ZC.SIGHT_DAY, U.clamp((lit - 0.15) / 0.7, 0, 1));
-    sight *= (CP.Game.settings.sight || 1) * (p.fx.notice || 1);
+    sight *= (CP.Game.settings.sight || 1) * (p.fx.notice || 1) * (CP.Time ? CP.Time.weather().vis || 1 : 1);
     if (p.sneaking) { sight *= 0.55 - CP.Player.skillLevel(p, 'sneaking') * 0.025; }
     if (!p.moving) { sight *= 0.85; }
     if (W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z)) !== W.isIndoor(Math.floor(zb.x), Math.floor(zb.y), W.levelOf(zb.z))) { sight *= 0.7; }
@@ -231,7 +231,7 @@
   /* à noite, luz acesa chama atenção de longe: lanterna ligada ou cômodo iluminado visto pela janela (cortina fechada esconde) */
   Z.playerGlows = function (p) {
     if (!CP.Time || !CP.Time.isNight() || p.dead || p.vehicle) { return false; }
-    if (p.flashlightOn) { return true; }
+    if (p.flashlightOn || (CP.Time.handFlame && CP.Time.handFlame(p))) { return true; }
     var lz = W.levelOf(p.z), rm = W.room(Math.floor(p.x), Math.floor(p.y), lz);
     return !!(rm && rm.lit && CP.Time.powerAt(Math.floor(p.x), Math.floor(p.y)));
   };

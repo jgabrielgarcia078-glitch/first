@@ -212,7 +212,7 @@
     var outdoor = !W.isIndoor(Math.floor(p.x), Math.floor(p.y), W.levelOf(p.z));
 
     if (wt.rain > 0) {
-      var n = Math.round(wt.rain * 260 * (outdoor ? 1 : 0.35));
+      var n = Math.round(wt.rain * (wt.blizzard ? 520 : 260) * (outdoor ? 1 : 0.35));
       while (FX.drops.length < n) { FX.drops.push({ x: Math.random() * w, y: Math.random() * h, v: 700 + Math.random() * 400 }); }
       FX.drops.length = n;
       g.strokeStyle = wt.snow ? 'rgba(240,240,255,0.8)' : 'rgba(170,190,220,0.35)';
@@ -223,10 +223,15 @@
         d.y += d.v * dt * (wt.snow ? 0.12 : 1); d.x -= d.v * dt * (wt.snow ? 0.03 : 0.15);
         if (d.y > h) { d.y = -10; d.x = Math.random() * w * 1.2; }
         if (d.x < 0) { d.x += w; }
-        if (wt.snow) { g.moveTo(d.x, d.y); g.lineTo(d.x + 1, d.y + 1); } else { g.moveTo(d.x, d.y); g.lineTo(d.x - 3, d.y + 14); }
+        if (wt.blizzard) { d.x -= d.v * dt * 0.5; g.moveTo(d.x, d.y); g.lineTo(d.x - 5, d.y + 2); } else if (wt.snow) { g.moveTo(d.x, d.y); g.lineTo(d.x + 1, d.y + 1); } else { g.moveTo(d.x, d.y); g.lineTo(d.x - 3, d.y + 14); }
       }
       g.stroke();
     } else { FX.drops.length = 0; }
+    if (wt.blizzard && outdoor) { // nevasca: tudo some num branco a poucos metros
+      var bz = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.08, w / 2, h / 2, Math.max(w, h) * 0.5);
+      bz.addColorStop(0, 'rgba(225,230,238,0.05)'); bz.addColorStop(1, 'rgba(225,230,238,0.82)');
+      g.fillStyle = bz; g.fillRect(0, 0, w, h);
+    }
     if (wt.fog) {
       var grd = g.createRadialGradient(w / 2, h / 2, Math.min(w, h) * 0.15, w / 2, h / 2, Math.max(w, h) * 0.6);
       grd.addColorStop(0, 'rgba(180,185,190,0)'); grd.addColorStop(1, 'rgba(180,185,190,0.55)');

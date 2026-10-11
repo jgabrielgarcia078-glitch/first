@@ -154,7 +154,7 @@
     var p = G.player;
     var lv = W.levelOf(p.z);
     var nightMult = CP.Time ? CP.Time.visionMult() : 1;
-    CP.Vis.compute(p.x, p.y, lv, p.ang, { radius: C.VISION_RADIUS, cone: C.VISION_CONE_DEG, near: C.VISION_NEAR, nightMult: nightMult });
+    CP.Vis.compute(p.x, p.y, lv, p.ang, { radius: Math.max(6, Math.round(C.VISION_RADIUS * nightMult)), cone: C.VISION_CONE_DEG, near: C.VISION_NEAR, nightMult: nightMult });
     G.updateLight();
   };
   G.updateLight = function () {

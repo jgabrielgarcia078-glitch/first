@@ -311,6 +311,14 @@
     if (p.dragged && !p.dead) { pose.down = true; pose.crawl = true; pose.phase = (now * 2.4) % 1; } // debatendo-se no chão
     var b = Math.max(0.35, bright);
     CP.Spr.drawHuman(g, sx, sy, look, pose, b);
+    var fl = CP.Time && CP.Time.handFlame(p);
+    if (fl && !p.dead && !p.sleeping) { // chama na mão
+      var hx = sx + (p.hand1 === fl ? 7 : -7) * Math.cos(p.ang - 0.8), hy = sy - (pose.sit ? 20 : 28) + Math.sin(p.ang - 0.8) * 3, fk = 1 + Math.sin(now * 23) * 0.15 + Math.sin(now * 37) * 0.1;
+      var big = fl.id === 'torch' ? 1.8 : 1;
+      g.fillStyle = 'rgba(255,170,60,0.35)'; g.beginPath(); g.ellipse(hx, hy - 2 * big, 5 * big, 6 * big * fk, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffd27a'; g.beginPath(); g.ellipse(hx, hy - 2.5 * big, 1.6 * big, 3 * big * fk, 0, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#fff4d0'; g.beginPath(); g.ellipse(hx, hy - 1.8 * big, 0.8 * big, 1.4 * big, 0, 0, Math.PI * 2); g.fill();
+    }
     if (p.action && CP.Actions) { CP.Actions.drawProgress(g, sx, sy, p); }
   };
 
