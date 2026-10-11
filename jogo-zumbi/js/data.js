@@ -259,6 +259,24 @@
   food('stew', 'Ensopado', '🍲', 1.0, 0.45, 900, { fresh: 3, rot: 6, unhappy: -0.2, boredom: -0.15, thirst: -0.1 });
   food('dogfood', 'Ração de cachorro', '🥫', 0.6, 0.2, 500, { canned: true, opens: 'dogfood_open', unhappy: 0.2, boredom: 0.1 });
   food('dogfood_open', 'Ração (aberta)', '🥫', 0.6, 0.2, 500, { fresh: 2, rot: 4, unhappy: 0.2, boredom: 0.1 });
+  food('dead_rabbit', 'Coelho (abatido)', '🐇', 1.2, 0.25, 600, { fresh: 2, rot: 4, raw: true, cookable: 'rabbit_cooked' });
+  food('rabbit_cooked', 'Coelho assado', '🍖', 1.0, 0.32, 650, { fresh: 2, rot: 5, unhappy: -0.12 });
+  food('dead_squirrel', 'Esquilo (abatido)', '🐿️', 0.5, 0.12, 300, { fresh: 2, rot: 4, raw: true, cookable: 'squirrel_cooked' });
+  food('squirrel_cooked', 'Esquilo assado', '🍖', 0.4, 0.16, 320, { fresh: 2, rot: 5 });
+  food('dead_bird', 'Pássaro (abatido)', '🐦', 0.3, 0.08, 200, { fresh: 2, rot: 4, raw: true, cookable: 'bird_cooked' });
+  food('bird_cooked', 'Pássaro assado', '🍖', 0.25, 0.1, 210, { fresh: 2, rot: 5 });
+  food('dead_rat', 'Rato (abatido)', '🐀', 0.3, 0.06, 150, { fresh: 1, rot: 3, raw: true, cookable: 'rat_cooked', unhappy: 0.1 });
+  food('rat_cooked', 'Rato assado', '🍖', 0.25, 0.08, 160, { fresh: 2, rot: 4, unhappy: 0.05 });
+  food('worm', 'Minhoca', '🪱', 0.01, 0.01, 5, { fresh: 3, rot: 6, raw: true, unhappy: 0.15, tags: ['bait'] });
+  food('wild_garlic', 'Alho selvagem', '🧄', 0.05, 0.02, 15, { fresh: 6, rot: 12 });
+  food('stew_raw', 'Ensopado cru', '🍲', 1.4, 0.0, 0, { fresh: 3, rot: 6, raw: true, dish: 'stew', cookable: 'stew' });
+  food('salad', 'Salada', '🥗', 0.3, 0.0, 0, { fresh: 2, rot: 4, dish: 'salad' });
+  food('sandwich', 'Sanduíche', '🥪', 0.4, 0.0, 0, { fresh: 2, rot: 4, dish: 'sandwich' });
+  def('branch', { name: 'Graveto', icon: '🪵', w: 0.3, cat: 'material', tags: ['tinder'] });
+  def('stone', { name: 'Pedra', icon: '🪨', w: 0.4, cat: 'throwable', throwable: { noise: 12 } });
+  def('herbs', { name: 'Ervas medicinais', icon: '🌿', w: 0.05, cat: 'medical', med: { type: 'pain', uses: 2 } });
+  def('trap_box', { name: 'Armadilha de caixa', icon: '📦', w: 2.5, cat: 'tool', trap: 'box' });
+  def('trap_snare', { name: 'Armadilha de laço', icon: '➰', w: 0.4, cat: 'tool', trap: 'snare' });
   food('rice', 'Arroz cru', '🍚', 1.0, 0.1, 1300, { needsCooking: true });
   food('pasta', 'Macarrão cru', '🍝', 0.5, 0.1, 700, { needsCooking: true });
   /* ---- bebidas ---- (uses = goles) */
@@ -451,6 +469,8 @@
   /* needs: [{ tag|item, n, keep }]; skill: [skillId, nível mínimo]; out: [{item, n}] */
   D.RECIPES = [
     { id: 'rip_sheet', name: 'Rasgar lençol em panos', needs: [{ item: 'sheet', n: 1 }], out: [{ item: 'rag', n: 4 }], time: 3 },
+    { id: 'trap_box', name: 'Armadilha de caixa', needs: [{ item: 'plank', n: 2 }, { item: 'nails', n: 3 }, { tag: 'hammer', n: 1, keep: true }], out: [{ item: 'trap_box', n: 1 }], time: 8, xp: ['trapping', 3] },
+    { id: 'trap_snare', name: 'Armadilha de laço', needs: [{ tag: 'rope', n: 1 }, { item: 'branch', n: 1 }], out: [{ item: 'trap_snare', n: 1 }], time: 5, xp: ['trapping', 2] },
     { id: 'sheet_rope', name: 'Corda de lençol', needs: [{ item: 'sheet', n: 2 }], out: [{ item: 'sheet_rope', n: 1 }], time: 4 },
     { id: 'sterile_rag', name: 'Esterilizar pano (com desinfetante)', needs: [{ item: 'rag', n: 1 }, { item: 'disinfectant', n: 1, uses: 1 }], out: [{ item: 'rag_sterile', n: 1 }], time: 2 },
     { id: 'spear', name: 'Lança improvisada', needs: [{ item: 'plank', n: 1 }, { tag: 'knife', n: 1, keep: true }], out: [{ item: 'spear', n: 1 }], time: 6, xp: ['carpentry', 3] },

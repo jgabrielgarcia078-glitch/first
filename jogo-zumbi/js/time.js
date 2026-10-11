@@ -200,6 +200,7 @@
       (ws().rainBarrels || []).forEach(function (rb) { rb.water = Math.min(C.OBJ_INFO[O.RAIN_BARREL].waterCap, (rb.water || 0) + T.rainIntensity() * 4); });
     }
     if (CP.Farm) { CP.Farm.hourly(); }
+    if (CP.Surv) { CP.Surv.hourly(); }
   }
   function daily(day) {
     var p = G().player;

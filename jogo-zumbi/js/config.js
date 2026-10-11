@@ -82,7 +82,7 @@
     RAIN_BARREL: 32, CAMPFIRE: 33, CROP: 34, MED_CABINET: 35, LOCKER: 36, GENERATOR: 37,
     WALL_SHELF: 38, NIGHTSTAND: 39, DRESSER: 40, TALL_GRASS: 41, FENCE_POST: 42, CORPSE_PILE: 43,
     BENCH: 44, TRASH_CAN: 45, POWER_POLE: 46, STREET_SIGN: 47, BILLBOARD: 48, GRILL: 49, SWING: 50, CLOTHESLINE: 51,
-    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58
+    PATIO_SET: 52, DOGHOUSE: 53, FLOWERBED: 54, KIDDIE_POOL: 55, GRAVE: 56, TENT: 57, RUBBLE: 58, TRAP_BOX: 59, TRAP_SNARE: 60
   };
   /* Propriedades por objeto: nome, sólido, recipiente (capacidade em kg), altura visual (0..1 de parede), bloqueia visão */
   C.OBJ_INFO = [];
@@ -152,6 +152,8 @@
     o(O.GRAVE, 'Cova', false, 0, 0.15, false, { slow: 0.85 });
     o(O.TENT, 'Barraca', true, 12, 0.6, false, { bed: true });
     o(O.RUBBLE, 'Entulho queimado', false, 0, 0.2, false, { slow: 0.6 });
+    o(O.TRAP_BOX, 'Armadilha de caixa', false, 0, 0.25, false, { trap: 'box' });
+    o(O.TRAP_SNARE, 'Armadilha de laço', false, 0, 0.2, false, { trap: 'snare' });
   })();
 
   /* ---------- Tempo ---------- */
@@ -344,6 +346,12 @@
   /* ---------- Interface: anotações no mapa, rótulos ao passar o mouse ---------- */
   C.MAP_NOTES_MAX = 120;
   C.CURTAIN_CHANCE = 0.65;   // janelas de casa com cortina
+  /* armadilhas (chance por hora de pegar um bicho; mais no mato e com isca; longe do jogador) */
+  C.TRAPS = { BASE: 0.03, FOREST: 2.2, FIELD: 1.3, TOWN: 0.35, BAIT: 2.5, MIN_DIST: 12, ANIMALS: { box: [['dead_rabbit', 5], ['dead_squirrel', 4], ['dead_rat', 2]], snare: [['dead_rabbit', 4], ['dead_bird', 4], ['dead_squirrel', 2]] } };
+  /* modo de busca (O): procura coisas no chão em volta enquanto anda devagar */
+  C.SEARCH = { EVERY: 1.6, RADIUS: 3, PER_LEVEL: 0.6, SPEED: 0.6, MARK_S: 90 };
+  /* exercícios: XP, cansaço e dor muscular (0..1) por série */
+  C.EXERCISE = { TIME: 14, ENDURANCE: 0.22, STRAIN: 0.28, STRAIN_DECAY_H: 0.025, MAX_STRAIN: 0.75 };
   C.BREATH_TEMP = 4;         // °C: abaixo disso a respiração vira vapor
   C.HOVER_RANGE = 14;        // tiles: até onde o rótulo do mouse aparece (só no que está à vista)
 

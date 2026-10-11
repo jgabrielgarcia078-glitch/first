@@ -137,6 +137,7 @@
     var s;
     if (p.aiming) { s = C.SPEED_AIM + P.skillLevel(p, 'nimble') * 0.08; } else if (p.sneaking) { s = C.SPEED_SNEAK + P.skillLevel(p, 'sneaking') * 0.04; } else if (p.running) { s = C.SPEED_RUN + P.skillLevel(p, 'sprinting') * 0.09; } else { s = C.SPEED_WALK; }
     s *= p.fx.speedMult || 1;
+    if (p.searching) { s *= C.SEARCH.SPEED; }
     if (CP.Body) { s *= CP.Body.speedMult(p); }
     var st = W.stairAt(Math.floor(p.x), Math.floor(p.y));
     if (st) { s *= C.SPEED_STAIRS_FACTOR; }
@@ -264,6 +265,11 @@
       down: p.sleeping || p.dead, dead: p.dead, t: now,
       struggle: p.anim.struggle > 0 ? Math.min(1, p.anim.struggle / 0.3) : 0
     };
+    var exA = p.action && p.action.opts.exercise;
+    if (exA) { // exercício: flexão deitado, agachamento, abdominal e polichinelo
+      var ph = Math.sin(now * (exA === 'jack' ? 7 : 4));
+      if (exA === 'pushup') { pose.down = true; pose.crawl = true; pose.phase = 0; sy -= Math.max(0, ph) * 3; } else if (exA === 'situp') { pose.kneel = ph > 0 ? 1 : 0.6; } else if (exA === 'squat') { pose.crouch = ph > 0; } else { pose.moving = true; pose.phase = (now * 1.8) % 1; sy -= Math.abs(ph) * 3; }
+    }
     if (p.dragged && !p.dead) { pose.down = true; pose.crawl = true; pose.phase = (now * 2.4) % 1; } // debatendo-se no chão
     var b = Math.max(0.35, bright);
     CP.Spr.drawHuman(g, sx, sy, look, pose, b);

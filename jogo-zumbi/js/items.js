@@ -73,6 +73,7 @@
     if (d.drink && it.uses !== undefined && d.drink.uses > 1) { n += ' [' + it.uses + '/' + d.drink.uses + ']'; }
     if (d.gun) { n += ' [' + (it.ammo || 0) + '/' + d.gun.mag + ']'; }
     if (d.light) { n += it.on ? ' (ligada)' : ''; }
+    if (it.ingr && CP.Surv) { n += CP.Surv.dishName(it); }
     if (d.note) { n += it.seen ? ': “' + (CP.Notes ? CP.Notes.title(it.text) : '') + '”' : ' (não lido)'; }
     if (it.water !== undefined && d.water) { n += ' [' + Math.round(it.water) + ' L]'; }
     if (it.fuel !== undefined && d.fuel) { n += ' [' + Math.round(it.fuel) + ' L]'; }

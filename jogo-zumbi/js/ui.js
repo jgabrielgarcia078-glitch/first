@@ -1104,6 +1104,7 @@
       if (oi && !oi.tree && !oi.forage && o !== C.OBJ.CAR && o !== C.OBJ.LAMPPOST && k <= oi.h * C.WALL_H + 8) {
         if (o === C.OBJ.BILLBOARD && CP.Spr.BILLBOARD_TEXT) { var bt = CP.Spr.BILLBOARD_TEXT[W.odir(x, y, lv) % CP.Spr.BILLBOARD_TEXT.length]; return 'Outdoor: "' + bt[0] + ' — ' + bt[1] + '"'; }
         if (o === C.OBJ.STREET_SIGN) { return 'Placa: ' + UI.streetName(x >> W.chunkShift) + ' × ' + UI.streetName(1000 + (y >> W.chunkShift)); }
+        if (oi.trap && CP.Surv) { return oi.name + ' — ' + CP.Surv.trapLabel(CP.Surv.trapAt(x, y, lv)); }
         return oi.name;
       }
       if (k === 0 && ch) {
@@ -1135,7 +1136,7 @@
       ['Clique esquerdo', 'Atacar com a arma na mão (sem arma: empurrar)'], ['Segurar botão direito', 'Mirar (armas de fogo / arremessos) — clique esquerdo dispara'],
       ['Clique direito rápido', 'Menu de contexto (portas, janelas, móveis, chão...)'], ['Espaço', 'Empurrar zumbi / pisar em zumbi caído'], ['E', 'Interagir com o que está à frente'],
       ['R', 'Recarregar arma (no modo construção: girar)'], ['F', 'Lanterna'], ['Q', 'Gritar (atrai zumbis!)'], ['Z', 'Sentar / levantar'],
-      ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa (clique anota, botão direito apaga)'], ['N', 'Mostrar/esconder o minimapa'],
+      ['I ou Tab', 'Inventário e saque'], ['H', 'Saúde (curativos)'], ['K', 'Personagem e habilidades'], ['B', 'Artesanato e construção'], ['M', 'Mapa (clique anota, botão direito apaga)'], ['N', 'Mostrar/esconder o minimapa'], ['O', 'Modo de busca (procura coisas no chão em volta)'],
       ['Arrastar itens', 'Entre as janelas e abas do inventário; solte fora para largar no chão'],
       ['Carro', 'Clique direito: entrar · G liga o motor · W/S acelera/freia · A/D vira · Espaço freio · Q buzina · R rádio · L sirene (viatura/ambulância) · E sai'],
       ['1 a 5', 'Atalhos (equipar item)'], ['[ e ]', 'Velocidade do tempo (só sem zumbis por perto)'], ['Roda do mouse / + −', 'Zoom'], ['Esc', 'Fechar janela / pausa']
@@ -1339,6 +1340,7 @@
         case 'KeyB': UI.toggle('craft'); break;
         case 'KeyM': UI.toggle('map'); break;
         case 'KeyN': UI.toggleMinimap(); break;
+        case 'KeyO': if (CP.Surv) { CP.Surv.toggleSearch(p); } break;
         case 'F1': UI.toggle('help'); break;
         case 'BracketRight': G().speedIndex = Math.min(C.GAME_SPEEDS.length - 1, G().speedIndex + 1); clampSpeed(); break;
         case 'BracketLeft': G().speedIndex = Math.max(0, G().speedIndex - 1); break;

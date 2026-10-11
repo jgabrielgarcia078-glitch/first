@@ -1,47 +1,32 @@
+/* Armadilhas (vazia e com bicho), modo de busca com achados marcados, exercícios e prato montado. */
 module.exports = async (page, shot, log) => {
-  const opt = async (wx, wy, text) => {
-    const s = await page.evaluate(([x, y]) => { CP.Render.camX = CP.Game.player.x; CP.Render.camY = CP.Game.player.y; return CP.Render.toScreen(x, y, 0); }, [wx, wy]);
-    await page.mouse.click(s.x, s.y, { button: 'right' }); await page.waitForTimeout(200);
-    const all = await page.evaluate(() => [...document.querySelectorAll('.ctx div')].map(e => e.textContent));
-    const el = await page.$('.ctx div[data-a="ctx"]:has-text("' + text + '")');
-    if (!el) { log('opção não achada:', text, '| tem:', all.join(' | ')); await page.keyboard.press('Escape'); return false; }
-    await el.click(); return true;
-  };
-  const t = await page.evaluate(() => {
-    const G = CP.Game, p = G.player, W = CP.W; G.zombies.length = 0;
-    ['shovel', 'seeds_carrot', 'plank', 'plank', 'plank', 'pot', 'water_bottle', 'steak', 'generator_item', 'gas_can', 'lighter'].forEach(id => CP.Items.Inv.give(p, CP.Items.make(id, id === 'seeds_carrot' ? { n: 5 } : (id === 'gas_can' ? { fuel: 10 } : null))));
-    p.body.stats.hunger = 0.2;
-    // acha grama aberta
-    for (let r = 4; r < 40; r++) for (let a = 0; a < 32; a++) { const x = Math.floor(p.x + Math.cos(a / 32 * 6.28) * r), y = Math.floor(p.y + Math.sin(a / 32 * 6.28) * r);
-      let okk = true; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) { const f = W.floor(x + dx, y + dy, 0); if (f !== CP.C.FLOOR.GRASS && f !== CP.C.FLOOR.DARKGRASS || W.obj(x + dx, y + dy, 0) || W.isIndoor(x + dx, y + dy, 0) || W.wn(x + dx, y + dy, 0) || W.ww(x + dx, y + dy, 0)) okk = false; }
-      if (okk) { p.x = x + 0.5; p.y = y + 0.5; G.updateFov(true); return { x, y }; } }
-    return null;
+  await page.evaluate(() => {
+    const G = CP.Game, p = G.player, W = CP.W, C = CP.C, F = C.FLOOR;
+    document.getElementById('toasts').style.display = 'none';
+    G.zombies.length = 0; for (const k in G.activeChunks) G.activeChunks[k].zombies.length = 0;
+    G.state.world.weather = { type: 'clear', until: CP.Time.hours() + 50 };
+    let spot = null;
+    for (let r = 2; r < 80 && !spot; r++) for (let a = 0; a < 24 && !spot; a++) {
+      const x = Math.floor(p.x + Math.cos(a / 24 * 6.28) * r), y = Math.floor(p.y + Math.sin(a / 24 * 6.28) * r);
+      let ok = true; for (let dy = -2; dy <= 2 && ok; dy++) for (let dx = -2; dx <= 2 && ok; dx++) { const f = W.floor(x + dx, y + dy, 0); if (!(f === F.GRASS || f === F.DARKGRASS || f === F.DIRT) || W.obj(x + dx, y + dy, 0) || W.isIndoor(x + dx, y + dy, 0) || W.wn(x + dx, y + dy, 0) || W.ww(x + dx, y + dy, 0)) ok = false; }
+      if (ok) spot = { x, y };
+    }
+    p.x = spot.x + 0.5; p.y = spot.y + 0.5;
+    const ch = W.chunkAt(spot.x, spot.y); ch.traps = ch.traps || {};
+    const set = (x, y, o, caught) => { W.lvl(x, y, 0).obj[W.idx(x, y)] = o; W.lvl(x, y, 0).odir[W.idx(x, y)] = caught ? 1 : 0; ch.traps[W.key(x, y, 0)] = { kind: o === C.OBJ.TRAP_BOX ? 'box' : 'snare', bait: caught ? null : 'worm', catch: caught ? 'dead_rabbit' : null }; };
+    set(spot.x + 1, spot.y - 1, C.OBJ.TRAP_BOX, false); set(spot.x + 2, spot.y, C.OBJ.TRAP_BOX, true);
+    set(spot.x - 1, spot.y + 1, C.OBJ.TRAP_SNARE, false); set(spot.x, spot.y + 2, C.OBJ.TRAP_SNARE, true);
+    CP.Render.setZoomIndex(6); CP.Render.camX = p.x; CP.Render.camY = p.y; p.ang = 0.8; G.updateFov(true);
+    p.skills.foraging = 10; p.searching = true;
+    for (let i = 0; i < 30; i++) CP.Surv.searchStep(p);
   });
-  log('grama em', t);
-  // cava canteiro ao lado e planta
-  if (await opt(t.x + 1.5, t.y + 0.5, 'Cavar canteiro')) await page.waitForTimeout(6500);
-  if (await opt(t.x + 1.5, t.y + 0.5, 'Plantar')) await page.waitForTimeout(3500);
-  log('planta:', await page.evaluate(([x, y]) => JSON.stringify(CP.W.chunkAt(x, y).crops[CP.W.key(x, y, 0)]), [t.x + 1, t.y]));
-  // fogueira via construção
-  await page.evaluate(() => CP.Build.start(CP.D.BUILD.b_campfire));
-  const s = await page.evaluate(([x, y]) => CP.Render.toScreen(x, y, 0), [t.x - 0.5, t.y + 0.5]);
-  await page.mouse.move(s.x, s.y); await page.waitForTimeout(200);
-  await page.mouse.click(s.x, s.y); await page.waitForTimeout(8000);
-  await page.evaluate(() => CP.Build.cancel());
-  log('fogueira:', await page.evaluate(([x, y]) => CP.W.obj(x, y, 0) === CP.C.OBJ.CAMPFIRE, [t.x - 1, t.y]));
-  // cozinha o bife
-  await page.keyboard.press('KeyI'); await page.waitForTimeout(300);
-  await (await page.$('.item:has-text("Bife")')).click(); await page.waitForTimeout(150);
-  await (await page.$('.ctx div:has-text("Cozinhar")')).click(); await page.waitForTimeout(10000);
-  log('itens:', await page.evaluate(() => CP.Game.player.inv.map(i => CP.Items.name(i)).join(', ')));
-  await page.keyboard.press('KeyI');
-  // gerador
-  await page.keyboard.press('KeyI'); await page.waitForTimeout(300);
-  await (await page.$('.item:has-text("Gerador")')).click(); await page.waitForTimeout(150);
-  await (await page.$('.ctx div:has-text("Instalar")')).click(); await page.waitForTimeout(5000);
-  await page.keyboard.press('KeyI');
-  const g = await page.evaluate(() => { const p = CP.Game.player, W = CP.W; for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) if (W.obj(Math.floor(p.x) + dx, Math.floor(p.y) + dy, 0) === CP.C.OBJ.GENERATOR) return { x: Math.floor(p.x) + dx, y: Math.floor(p.y) + dy }; return null; });
-  log('gerador em', g);
-  if (g) { if (await opt(g.x + 0.5, g.y + 0.5, 'Abastecer')) await page.waitForTimeout(5000); if (await opt(g.x + 0.5, g.y + 0.5, 'Ligar gerador')) await page.waitForTimeout(500); log('gerador:', await page.evaluate(() => JSON.stringify(CP.Game.state.world.generators))); }
-  await shot('sobrevivencia');
+  await page.waitForTimeout(1000);
+  await shot('armadilhas-busca');
+  log('achados', await page.evaluate(() => CP.Surv.marks.length));
+  // exercícios
+  for (const ex of [0, 1, 3]) {
+    await page.evaluate((i) => { const p = CP.Game.player; p.searching = false; p.body.stats.endurance = 1; p.body.strain = null; CP.Actions.cancel(p); CP.Surv.exercise(p, CP.Surv.EXERCISES[i]); CP.Render.setZoomIndex(6); }, ex);
+    await page.waitForTimeout(900);
+    await shot('exercicio-' + ex);
+  }
 };

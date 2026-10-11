@@ -53,6 +53,7 @@
   G.afterLoad = function () {
     var p = G.player;
     if (CP.Amb) { CP.Amb.reset(); }
+    if (CP.Surv) { CP.Surv.reset(); }
     CP.Render.camX = p.x; CP.Render.camY = p.y; CP.Render.camZ = p.z;
     G.activateChunks(true);
     G.updateFov(true);
@@ -210,6 +211,7 @@
     if (CP.Amb) { CP.Amb.update(dt, gameDt); }
     if (CP.Horde) { CP.Horde.update(dt, gameDt); }
     if (CP.Vehicles) { CP.Vehicles.update(dt); }
+    if (CP.Surv) { CP.Surv.update(dt, gameDt); }
     if (p.sayT > 0) { p.sayT -= dt; }
     // efeitos
     for (var i = G.effects.length - 1; i >= 0; i--) {
@@ -294,6 +296,7 @@
     if (CP.FX) { CP.FX.drawGlows(g); CP.FX.drawOverlay(g); }
     if (CP.Fire) { CP.Fire.drawSmoke(g); }
     if (CP.Amb) { CP.Amb.drawOverlay(g); }
+    if (CP.Surv) { CP.Surv.drawOverlay(g); }
     var p = G.player;
     if (CP.UI && CP.UI.drawBuildGhost) { CP.UI.drawBuildGhost(g); }
     G.drawHover(g, p);

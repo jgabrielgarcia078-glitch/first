@@ -1109,6 +1109,8 @@
       case O.GRAVE: drawGrave(g, dir, rng); break;
       case O.TENT: drawTent(g, dir, rng); break;
       case O.RUBBLE: drawRubble(g, rng); break;
+      case O.TRAP_BOX: drawTrapBox(g, dir); break;
+      case O.TRAP_SNARE: drawTrapSnare(g, dir); break;
       default: box(g, 0.2, 0.2, 0.6, 0.6, 0, 20, '#f0f');
     }
     return (objArr[nk] = store(key, c, ax, ay));
@@ -1570,6 +1572,27 @@
     poly(g, [d, c2, r1, r0], U.shade(col, 1.0), 'rgba(0,0,0,0.4)', 1);
     poly(g, [b, c2, r1], U.shade(col, 0.6), 'rgba(0,0,0,0.4)', 1);
     var m0 = P(0.95, 0.45, 2), m1 = P(0.95, 0.55, 2); poly(g, [m0, m1, P(0.95, 0.5, 26)], '#1a1814');
+  }
+  /* armadilha de caixa: caixote virado, escorado num graveto (fechado quando pegou algo) */
+  function drawTrapBox(g, dir) {
+    var t = ip(0.5, 0.5, 0), caught = dir & 1;
+    ellipseAt(g, t[0], t[1] + 2, 15, 6, 'rgba(0,0,0,0.25)');
+    if (caught) { box(g, 0.28, 0.28, 0.44, 0.44, 0, 12, '#8a6a42'); return; }
+    // escorada: só a borda de trás encosta no chão
+    var a = ip(0.28, 0.28, 0), b = ip(0.72, 0.28, 0), c = ip(0.72, 0.72, 9), d = ip(0.28, 0.72, 9);
+    poly(g, [a, b, [b[0], b[1] - 11], [a[0], a[1] - 11]], '#6e5232', 'rgba(0,0,0,0.4)', 1);
+    poly(g, [[a[0], a[1] - 11], [b[0], b[1] - 11], [c[0], c[1] - 11], [d[0], d[1] - 11]], '#a07c4e', 'rgba(0,0,0,0.4)', 1);
+    poly(g, [d, c, [c[0], c[1] - 11], [d[0], d[1] - 11]], '#8a6a42', 'rgba(0,0,0,0.4)', 1);
+    var st = ip(0.6, 0.66, 0); g.strokeStyle = '#4a3420'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(st[0], st[1]); g.lineTo(st[0] - 2, st[1] - 10); g.stroke();
+  }
+  /* laço: estaca com arame e um galho vergado (com o bicho preso quando pegou) */
+  function drawTrapSnare(g, dir) {
+    var t = ip(0.5, 0.5, 0), caught = dir & 1;
+    ellipseAt(g, t[0], t[1] + 1, 10, 4, 'rgba(0,0,0,0.2)');
+    g.strokeStyle = '#5a4026'; g.lineWidth = 2; g.beginPath(); g.moveTo(t[0] - 6, t[1]); g.lineTo(t[0] - 6, t[1] - 12); g.stroke();
+    g.strokeStyle = '#6e5232'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(t[0] - 6, t[1] - 12); g.quadraticCurveTo(t[0] + 2, t[1] - 20, t[0] + 10, t[1] - 8); g.stroke();
+    g.strokeStyle = '#9a9a96'; g.lineWidth = 1; g.beginPath(); g.ellipse(t[0] + 6, t[1] - 1, 4, 2, 0, 0, Math.PI * 2); g.stroke();
+    if (caught) { ellipseAt(g, t[0] + 6, t[1] - 1, 6, 3.4, '#7a6650'); ellipseAt(g, t[0] + 10, t[1] - 2, 2.6, 2.2, '#8a7660'); ellipseAt(g, t[0] + 1, t[1] - 1, 2, 1.6, '#e8e0d0'); }
   }
   function drawRubble(g, rng) {
     var t = ip(0.5, 0.5, 0);

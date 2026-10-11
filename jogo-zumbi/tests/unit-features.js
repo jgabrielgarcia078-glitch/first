@@ -684,5 +684,87 @@ if (car) {
     q.z = 0; q.x = op.x; q.y = op.y; G.activateChunks(true); clearZombies();
   }
 }
+
+/* ---------- S5: armadilhas, modo de busca, exercícios, pratos ---------- */
+{
+  const q = G.player, Sv = CP.Surv;
+  G.activateChunks(true); clearZombies();
+  const op = findOpen(q.x, q.y, 3); q.x = op.x; q.y = op.y; q.z = 0; q.ang = 0;
+  // armadilha de caixa: receita, armar, isca, pegar bicho longe do jogador
+  ['plank', 'plank', 'hammer'].forEach(id => Inv.give(q, CP.Items.make(id)));
+  Inv.give(q, CP.Items.make('nails', { n: 5 }));
+  const rec = CP.D.RECIPE.trap_box; ok(CP.Use.recipeStatus(q, rec).ok, 'dá para fazer armadilha de caixa');
+  CP.Use.craft(q, rec); tick(10);
+  const trapIt = Inv.findId(q, 'trap_box'); ok(!!trapIt, 'fez a armadilha');
+  // acha um tile de grama/terra perto
+  let tx = null;
+  for (let r = 1; r < 30 && !tx; r++) for (let a = 0; a < 16 && !tx; a++) { const x = Math.floor(q.x + Math.cos(a / 16 * 6.28) * r), y = Math.floor(q.y + Math.sin(a / 16 * 6.28) * r); const f = W.floor(x, y, 0); if ((f === F.GRASS || f === F.DIRT || f === F.DARKGRASS) && !W.obj(x, y, 0) && W.tileWalkable(x, y, 0) && !W.isIndoor(x, y, 0)) tx = { x, y }; }
+  q.x = tx.x + 0.5; q.y = tx.y + 0.5; q.ang = 0;
+  const pl = CP.Use.itemOptions(q, trapIt.item, 'player').find(o => /Armar armadilha/.test(o.label));
+  ok(!!pl, 'opção de armar a armadilha');
+  pl.fn(); tick(6);
+  let trapPos = null;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) { const x = tx.x + dx, y = tx.y + dy; if (W.obj(x, y, 0) === O.TRAP_BOX) trapPos = { x, y }; }
+  ok(!!trapPos && !Inv.findId(q, 'trap_box'), 'armadilha no chão');
+  const tr = Sv.trapAt(trapPos.x, trapPos.y, 0);
+  Inv.give(q, CP.Items.make('worm'));
+  let to = CP.Actions.contextOptions(q, trapPos.x + 0.5, trapPos.y + 0.5).find(o => /Pôr isca/.test(o.label));
+  ok(to && !to.disabled, 'pôr isca (minhoca)'); to.fn();
+  ok(tr.bait === 'worm', 'isca colocada');
+  const ch = W.chunkAt(trapPos.x, trapPos.y);
+  ok(Sv.trapChance(ch, tr, q) > Sv.trapChance(ch, { kind: 'box' }, q), 'isca aumenta a chance');
+  q.x += 30; for (let h = 0; h < 200 && !tr.catch; h++) Sv.hourly(); q.x -= 30;
+  ok(!!tr.catch && /dead_/.test(tr.catch), 'pegou um bicho (' + tr.catch + ')');
+  q.x = trapPos.x - 0.5; q.y = trapPos.y + 0.5;
+  to = CP.Actions.contextOptions(q, trapPos.x + 0.5, trapPos.y + 0.5).find(o => /^Pegar o /.test(o.label));
+  ok(!!to, 'opção de pegar o bicho'); const caught = tr.catch; to.fn();
+  ok(Inv.findId(q, caught) && !tr.catch, 'bicho foi para o inventário');
+  ok(!!CP.D.ITEMS[caught].food.cookable, 'carne de caça precisa cozinhar');
+  to = CP.Actions.contextOptions(q, trapPos.x + 0.5, trapPos.y + 0.5).find(o => /Desarmar/.test(o.label)); to.fn(); tick(4);
+  ok(!W.obj(trapPos.x, trapPos.y, 0) && Inv.findId(q, 'trap_box'), 'recolheu a armadilha');
+  // modo de busca
+  q.x = tx.x + 0.5; q.y = tx.y + 0.5; G.updateFov(true);
+  const sp0 = CP.Player.speed(q); Sv.toggleSearch(q); const sp1 = CP.Player.speed(q);
+  ok(q.searching && sp1 < sp0, 'modo de busca anda mais devagar');
+  const before = Sv.marks.length; q.skills.foraging = 10;
+  for (let i = 0; i < 40; i++) { const t0 = G.state.time; Sv.searchStep(q); }
+  ok(Sv.marks.length > before, 'achou coisas no chão em volta (' + (Sv.marks.length - before) + ')');
+  const mk0 = Sv.marks[Sv.marks.length - 1]; const fl = W.floorItems(Math.floor(mk0.x), Math.floor(mk0.y), 0);
+  ok(fl && fl.some(i => i.id === mk0.id), 'o achado fica no chão marcado');
+  Sv.toggleSearch(q); q.skills.foraging = 0;
+  // exercícios
+  q.body.stats.endurance = 1; q.body.strain = null;
+  const xp0 = q.xp.strength || 0;
+  let ex = CP.Actions.contextOptions(q, q.x, q.y).find(o => /Flexões/.test(o.label));
+  ok(ex && !ex.disabled, 'opção de fazer flexões'); ex.fn(); tick(C.EXERCISE.TIME + 1);
+  ok((q.xp.strength || 0) > xp0 && q.body.strain.arms > 0, 'flexões dão XP de força e deixam o braço dolorido');
+  ok(CP.Body.pain(q) > 0, 'músculo dolorido dói');
+  q.body.strain.arms = 0.9;
+  ex = CP.Actions.contextOptions(q, q.x, q.y).find(o => /Flexões/.test(o.label));
+  ok(ex && ex.disabled, 'dolorido demais para repetir');
+  const st0 = q.body.strain.arms; G.state.time += 0; for (let i = 0; i < 20; i++) Sv.update(0.5, 3600); ok(q.body.strain.arms < st0, 'dor muscular passa com o tempo');
+  q.body.strain = null;
+  // ensopado
+  ['pot_water', 'carrot', 'potato', 'chicken'].forEach(id => Inv.give(q, CP.Items.make(id, { age: 0 })));
+  const addStew = id => { const it = Inv.findId(q, id).item; const o = CP.Use.itemOptions(q, it, 'player').find(x => /ensopado/.test(x.label)); o.fn(); tick(3.5); };
+  addStew('carrot'); addStew('potato'); addStew('chicken');
+  const raw = Inv.findId(q, 'stew_raw');
+  ok(raw && raw.item.ingr.length === 3 && !Inv.findId(q, 'pot_water'), 'ensopado cru com 3 ingredientes');
+  ok(/cenoura/.test(CP.Items.name(raw.item)), 'nome mostra os ingredientes (' + CP.Items.name(raw.item) + ')');
+  const L = W.lvl(Math.floor(q.x) + 1, Math.floor(q.y), 0), ii = W.idx(Math.floor(q.x) + 1, Math.floor(q.y)); const o0 = L.obj[ii];
+  L.obj[ii] = O.CAMPFIRE; L.odir[ii] = 0;
+  const ck = CP.Use.itemOptions(q, raw.item, 'player').find(x => /Cozinhar/.test(x.label)); ck.fn(); tick(12);
+  const stew = Inv.findId(q, 'stew');
+  ok(stew && stew.item.dish && stew.item.dish.cal > 650, 'ensopado cozido soma as calorias (' + (stew ? Math.round(stew.item.dish.cal) : 0) + ' kcal)');
+  q.body.stats.hunger = 0.9; const ub = q.body.stats.unhappy = 0.5;
+  CP.Use.eat(q, stew.item, 1); tick(6);
+  ok(q.body.stats.hunger < 0.6 && q.body.stats.unhappy < ub && Inv.findId(q, 'pot'), 'comer o ensopado mata a fome, anima e devolve a panela');
+  L.obj[ii] = o0;
+  // sanduíche
+  ['bread', 'cheese'].forEach(id => Inv.give(q, CP.Items.make(id, { age: 0 })));
+  const sw = CP.Use.itemOptions(q, Inv.findId(q, 'cheese').item, 'player').find(x => /sanduíche/.test(x.label)); sw.fn(); tick(3);
+  const sand = Inv.findId(q, 'sandwich');
+  ok(sand && sand.item.ingr.length === 2 && !Inv.findId(q, 'bread'), 'sanduíche de pão com queijo');
+}
 console.log(fails ? '\n' + fails + ' FALHA(S)' : '\nOK melhorias');
 process.exit(fails ? 1 : 0);

@@ -40,6 +40,7 @@
       });
     }
     if (b.infection && b.infection.p > 0.5) { total += 15; }
+    if (b.strain) { total += (b.strain.arms + b.strain.legs + b.strain.core) * 14; } // dor muscular dos exercícios
     if (b.meds.pain > 0) { total *= 0.35; }
     return Math.min(100, total);
   };

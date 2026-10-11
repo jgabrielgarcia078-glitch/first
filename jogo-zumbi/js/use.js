@@ -55,6 +55,8 @@
     if (It.hasTag(it, 'radio')) { out.push({ label: 'Ouvir rádio', fn: function () { A.start(p, { name: 'Ouvindo rádio', time: 4, onDone: function () { msg('Rádio: ' + CP.Time.broadcast()); p.body.stats.boredom = Math.max(0, p.body.stats.boredom - 0.05); } }); } }); }
     if (d.throwable) { out.push({ label: 'Arremessar (no mouse)', fn: function () { Use.equip(p, it, 'hand1'); msg('Mire com o botão direito e clique com o esquerdo para arremessar.'); } }); }
     if (d.seed) { out.push({ label: 'Plantar (clique direito num canteiro)', disabled: true }); }
+    if (d.trap && CP.Surv) { out.push({ label: 'Armar armadilha aqui', fn: function () { CP.Surv.placeTrap(p, it); } }); }
+    if (d.food && CP.Surv) { CP.Surv.dishOptions(p, it, out); }
     if (D.ITEMS[it.id].note) { out.push({ label: 'Ler bilhete', fn: function () { it.seen = true; if (CP.UI) { CP.UI.showNote(it.text, 'Bilhete'); } } }); }
     if (it.id === 'map') { out.push({ label: 'Ler mapa (revela a região)', fn: function () { readMap(p, it); } }); }
     if (it.id === 'generator_item') { out.push({ label: 'Instalar gerador aqui', fn: function () { placeGenerator(p, it); } }); }
@@ -143,7 +145,7 @@
     var d = It.def(it);
     It.touch(it, 1);
     A.start(p, { name: 'Comendo', time: 3 * portion + 1, anim: 'eat', onDone: function () {
-      var f = d.food, s = p.body.stats;
+      var f = it.dish ? Object.assign({}, d.food, it.dish) : d.food, s = p.body.stats;
       var fs = It.freshState(it);
       var q = fs === 'rotten' ? 0.5 : (fs === 'stale' ? 0.8 : 1);
       var mult = (it.portion || 1) * portion;
@@ -153,9 +155,9 @@
       s.unhappy = U.clamp(s.unhappy + (f.unhappy || 0) * mult + (fs === 'stale' ? 0.04 : 0), 0, 1);
       s.boredom = U.clamp(s.boredom + (f.boredom || 0) * mult, 0, 1);
       if (s.hunger <= 0) { s.stuffed = Math.min(1, s.stuffed + 0.3); }
-      var poison = (fs === 'rotten' ? 0.45 : 0) + (f.raw ? 0.3 : 0);
+      var poison = (fs === 'rotten' ? 0.45 : 0) + (f.raw || it.hasRaw && f.dish !== 'stew' ? 0.3 : 0);
       if (poison && Math.random() < 0.75) { s.sick = Math.min(1, s.sick + poison * (p.fx.poisonMult || 1)); msg('Seu estômago não gostou disso...', 'warn'); }
-      if (portion >= 1 || (it.portion || 1) <= 0.5) { Inv.detach(p, it); } else { it.portion = (it.portion || 1) - portion; }
+      if (portion >= 1 || (it.portion || 1) <= 0.5) { Inv.detach(p, it); if (it.potBack) { Inv.give(p, It.make('pot')); } } else { it.portion = (it.portion || 1) - portion; }
     } });
   }
   Use.eat = eat;
@@ -187,6 +189,7 @@
     if (!Use.nearHeat(p)) { msg('Precisa estar perto de um fogão com energia ou de uma fogueira.', 'warn'); return; }
     var d = It.def(it);
     A.start(p, { name: 'Cozinhando', time: 8 * (1.2 - CP.Player.skillLevel(p, 'cooking') * 0.05), anim: 'work', onDone: function () {
+      if (it.dish && CP.Surv) { var cooked = swapItem(p, it, d.food.cookable, { age: 0 }); cooked.dish = CP.Surv.cookDish(it); cooked.ingr = it.ingr; cooked.potBack = true; CP.Player.addXp(p, 'cooking', 3 + it.ingr.length); msg('Pronto: ' + CP.Items.name(cooked)); return; }
       swapItem(p, it, d.food.cookable, { age: 0 });
       CP.Player.addXp(p, 'cooking', 5);
       msg('Pronto: ' + D.ITEMS[d.food.cookable].name);

@@ -284,6 +284,7 @@
       var axe = CP.Items.Inv.findTag(p, 'chop');
       out.push({ label: 'Cortar árvore', disabled: !axe, hint: 'Precisa de machado', fn: function () { chopTree(p, x, y, z); } });
     }
+    if (info.trap && CP.Surv) { CP.Surv.trapOptions(p, x, y, z, out); }
     if (info.forage) { out.push({ label: 'Procurar algo útil (coleta)', fn: function () { forage(p, x, y, z); } }); }
     if (info.dismantle) {
       var tool = info.dismantle[0] === 'scrap' ? (has(p, 'screwdriver') || has(p, 'wrench')) : (has(p, 'hammer') || has(p, 'saw'));
@@ -537,6 +538,7 @@
     if (x === Math.floor(p.x) && y === Math.floor(p.y) && !p.vehicle) {
       out.push({ label: 'Dormir no chão', disabled: p.body.stats.fatigue < 0.3, hint: 'Sem sono', fn: function () { A.sleepAt(p, 0.5); } });
       out.push({ label: p.sitting ? 'Levantar' : 'Sentar no chão', fn: function () { p.sitting = !p.sitting; } });
+      if (CP.Surv) { CP.Surv.exerciseOptions(p, out); }
     }
     if (CP.Farm) { CP.Farm.tileOptions(p, x, y, z, out); }
     if (CP.Build && CP.Build.tileOptions) { CP.Build.tileOptions(p, x, y, z, out); }
