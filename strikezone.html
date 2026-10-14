@@ -465,6 +465,7 @@ button { font: inherit; color: inherit; }
 .ach.got { opacity: 1; background: rgba(216, 154, 60, 0.14); }
 .ach b { font-family: var(--display); font-size: 15px; }
 .ach span { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+#prof-json { width: 100%; background: rgba(0,0,0,0.35); color: var(--text); border: 1px solid var(--line); font: 12px monospace; padding: 6px; resize: vertical; }
 #tut { position: absolute; top: 18%; right: 16px; width: min(340px, 40vw); background: var(--panel-strong); border-left: 3px solid var(--accent); padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; z-index: 6; }
 #tut small { font-family: var(--display); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 #tut b { font-family: var(--display); font-size: 24px; letter-spacing: 0.04em; } #tut span { font-size: 15px; line-height: 1.4; }
@@ -845,6 +846,8 @@ button { font: inherit; color: inherit; }
         <p class="opt-note">Salve todas as suas opções (mira, sensibilidade, vídeo, áudio, teclas) num arquivo para guardar ou levar para outro computador.</p>
         <div class="panel-actions"><button id="btn-prof-export" class="btn small" type="button">Exportar opções</button><button id="btn-prof-import" class="btn small" type="button">Importar opções</button><input id="prof-file" type="file" accept=".json,application/json" hidden><button id="btn-prof-reset" class="btn small" type="button">Zerar estatísticas</button></div>
         <p class="opt-note" id="prof-msg"></p>
+        <textarea id="prof-json" rows="4" spellcheck="false" placeholder="O arquivo exportado aparece aqui também (para copiar). Para importar sem arquivo, cole o texto aqui e clique em Importar texto."></textarea>
+        <div class="panel-actions"><button id="btn-prof-paste" class="btn small" type="button">Importar texto</button></div>
       </section>
 
       <div class="panel-actions"><button id="btn-opt-back" class="btn small primary" type="button">Voltar</button></div>
@@ -991,7 +994,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.9.3';
+const GAME_VERSION = '1.10.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -23900,7 +23903,7 @@ function onKeyDown(e) {
   const code = remapKey(e.code);
   if (!code) return;
   const tag = e.target && e.target.tagName;
-  if ((tag === 'INPUT' || tag === 'SELECT') && code !== 'Escape') return;
+  if ((tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') && code !== 'Escape') return;
   if (hud.radioMenu && game.state === 'playing' && !game.paused) {
     if (code.length === 6 && code.indexOf('Digit') === 0) {
       const d = parseInt(code.charAt(5), 10), cmds = RADIO_COMMANDS[game.local.team];
@@ -23991,12 +23994,13 @@ function applyColorblind() {
 }
 function exportProfile() {
   const data = { app: 'strikezone', kind: 'profile', version: GAME_VERSION, settings: settings, stats: loadStats() };
+  document.getElementById('prof-json').value = JSON.stringify(data);
   const a = document.createElement('a');
   a.href = window.URL.createObjectURL(new window.Blob([JSON.stringify(data, null, 1)], { type: 'application/json' }));
   a.download = 'strikezone-perfil.json';
   document.body.appendChild(a); a.click(); a.remove();
   window.setTimeout(() => window.URL.revokeObjectURL(a.href), 4000);
-  document.getElementById('prof-msg').textContent = 'Arquivo strikezone-perfil.json salvo.';
+  document.getElementById('prof-msg').textContent = 'Arquivo strikezone-perfil.json salvo (se o navegador bloquear o download, copie o texto abaixo).';
 }
 function importProfileData(data) {
   if (!data || typeof data !== 'object' || data.app !== 'strikezone' || !data.settings) throw new Error('arquivo inválido');
@@ -24378,6 +24382,7 @@ function bindUi() {
   on('btn-binds-reset', 'click', () => { settings.binds = {}; rebuildKeyMap(); saveSettings(); buildBindsUi(); });
   on('btn-prof-export', 'click', exportProfile);
   on('btn-prof-reset', 'click', () => { if (window.confirm('Zerar as estatísticas e conquistas?')) resetStats(); });
+  on('btn-prof-paste', 'click', () => { const msg = document.getElementById('prof-msg'); try { importProfileData(JSON.parse(document.getElementById('prof-json').value)); msg.textContent = 'Opções importadas.'; } catch (err) { msg.textContent = 'Não foi possível importar: ' + err.message; } });
   on('btn-prof-import', 'click', () => document.getElementById('prof-file').click());
   on('prof-file', 'change', (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) importProfile(f); });
   on('xh-swatches', 'click', (e) => {
