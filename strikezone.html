@@ -937,7 +937,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.9.2';
+const GAME_VERSION = '1.9.3';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -1300,8 +1300,12 @@ const BUY_MENU = [
 const CLASS_LABEL = { pistol: 'Pistola', smg: 'SMG', shotgun: 'Escopeta', rifle: 'Rifle', sniper: 'Rifle de precisão', lmg: 'Metralhadora', launcher: 'Lança-foguetes' };
 
 // áudio: vozes simultâneas, quantas com HRTF (caro), relógio parado por quanto tempo recria o contexto, corte de agudos do ar
-const AUDIO_MAX_VOICES = 40;
-const AUDIO_MAX_HRTF = 10;
+const AUDIO_MAX_VOICES = 28;
+const AUDIO_MAX_HRTF = 6;
+const AUDIO_METER_MS = 250; // de quanto em quanto tempo o cão de guarda mede a saída
+const AUDIO_LOUD_MIN = 0.3; // soma de volume das vozes que deveria fazer barulho
+const AUDIO_QUIET_CHECKS = 4; // medições seguidas mudas com som tocando = áudio morto, recria
+const AUDIO_FAULT_LIMIT = 20; // erros de áudio seguidos antes de recriar
 const AUDIO_STALL_SEC = 1.5;
 const AUDIO_AIR_CUT = 22000;
 const SHOT_TRANSIENT_HZ = 4800; // estalo inicial do tiro
@@ -13462,6 +13466,9 @@ function initAudio() {
     const lim = ctx.createDynamicsCompressor();
     lim.threshold.value = -3; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.06;
     audio.bus.connect(audio.master); audio.master.connect(comp); comp.connect(lim); lim.connect(ctx.destination);
+    // medidor da saída: o cão de guarda vê NaN (cadeia envenenada) ou silêncio com som tocando e recria o áudio
+    audio.meter = ctx.createAnalyser(); audio.meter.fftSize = 512; lim.connect(audio.meter);
+    audio.meterBuf = new Float32Array(audio.meter.fftSize); audio.meterAt = 0; audio.quietN = 0; audio.faults = 0;
     const len = ctx.sampleRate * 2;
     const buf = ctx.createBuffer(1, len, ctx.sampleRate);
     const d = buf.getChannelData(0);
@@ -13484,6 +13491,16 @@ function audioWatchdog() {
     audio.lastClockAt = t;
     return;
   }
+  if (audio.meter && t - audio.meterAt > AUDIO_METER_MS) {
+    audio.meterAt = t;
+    audio.meter.getFloatTimeDomainData(audio.meterBuf);
+    let pk = 0, bad = false;
+    for (let i = 0; i < audio.meterBuf.length; i++) { const v = audio.meterBuf[i]; if (v !== v || v === Infinity || v === -Infinity) { bad = true; break; } if (v > pk) pk = v; else if (-v > pk) pk = -v; }
+    // som alto tocando agora (vozes com volume) mas saída muda: conta; algumas medições seguidas = cadeia morta
+    const now = ctx.currentTime, loud = audio.voices.reduce((sum, q) => sum + (q.end > now ? q.g : 0), 0);
+    if (!bad && loud > AUDIO_LOUD_MIN && pk < 1e-6) audio.quietN++; else if (pk > 1e-6) audio.quietN = 0;
+    if (bad || audio.quietN >= AUDIO_QUIET_CHECKS) { try { ctx.close(); } catch (e) { /* já fechado */ } audio.ctx = null; audio.voices = []; audio.quietN = 0; initAudio(); return; }
+  }
   if (ctx.currentTime !== audio.lastClock) { audio.lastClock = ctx.currentTime; audio.lastClockAt = t; return; }
   if (t - audio.lastClockAt > AUDIO_STALL_SEC * 1000 && !document.hidden) {
     try { ctx.close(); } catch (e) { /* já fechado */ }
@@ -13501,10 +13518,10 @@ function voiceSlot(g, dur) {
     if (v[q].g >= g) return null;
     const old = v[q];
     v.splice(q, 1);
-    try { old.out.gain.cancelScheduledValues(now); old.out.gain.setTargetAtTime(0, now, 0.008); } catch (e) { /* nó já parado */ }
+    try { old.out.gain.cancelScheduledValues(now); old.out.gain.setTargetAtTime(0, now, 0.008); for (const sn of old.src) sn.stop(now + 0.04); } catch (e) { /* nó já parado */ }
     window.setTimeout(() => { try { old.out.disconnect(); } catch (e) { /* já desligado */ } }, 80);
   }
-  const slot = { end: now + dur, g, out: null, hrtf: false };
+  const slot = { end: now + dur, g, out: null, hrtf: false, src: [] };
   v.push(slot);
   // muitos sons juntos: abaixa o ônibus um pouco (evita estourar o limitador)
   audio.bus.gain.setTargetAtTime(v.length > 14 ? Math.sqrt(14 / v.length) : 1, now, 0.05);
@@ -13513,8 +13530,13 @@ function voiceSlot(g, dur) {
 // Cadeia de um som: atenuação, direção (HRTF nos mais próximos; pan estéreo nos outros), som atrás um pouco abafado,
 // absorção do ar com a distância e oclusão gradual atrás de paredes. null = inaudível. dur: quanto tempo o som dura.
 function soundDest(pos, gain, range, dur) {
+  try { return soundDestRaw(pos, gain, range, dur); } catch (e) { audioFault(e); return null; }
+}
+function soundDestRaw(pos, gain, range, dur) {
   const ctx = audio.ctx;
   if (!ctx || !audio.noise || game.paused || ctx.state === 'closed') return null;
+  if (pos && !(isFinite(pos[0]) && isFinite(pos[1]) && isFinite(pos[2]))) return null;
+  if (pos && !(isFinite(R.camPos[0]) && isFinite(R.camPos[1]) && isFinite(R.camPos[2]) && isFinite(R.camRight[0]) && isFinite(R.camFwd[0]) && isFinite(R.camUp[1]))) pos = null;
   let g = gain, pan = 0, occl = 0, rx = 0, ry = 0, rz = 0, dirOk = false, d = 0;
   if (pos) {
     const lx = R.camPos[0], ly = R.camPos[1], lz = R.camPos[2];
@@ -13527,8 +13549,8 @@ function soundDest(pos, gain, range, dur) {
       const r = dx * R.camRight[0] + dy * R.camRight[1] + dz * R.camRight[2];
       const u = dx * R.camUp[0] + dy * R.camUp[1] + dz * R.camUp[2];
       const f = dx * R.camFwd[0] + dy * R.camFwd[1] + dz * R.camFwd[2];
-      rx = r / d; ry = u / d; rz = -f / d; dirOk = true;
-      pan = clamp(r / d, -1, 1) * 0.95;
+      rx = r / d; ry = u / d; rz = -f / d; dirOk = isFinite(rx) && isFinite(ry) && isFinite(rz) && rx * rx + ry * ry + rz * rz > 0.01;
+      pan = dirOk ? clamp(r / d, -1, 1) * 0.95 : 0;
     }
     // oclusão: parede no meio abafa; se dá para ver um pouco ao lado (quina, porta), abafa menos
     if (d > 2.5 && g > 0.01 && !losClear(lx, ly, lz, pos[0], pos[1] + 0.3, pos[2], true)) {
@@ -13538,12 +13560,16 @@ function soundDest(pos, gain, range, dur) {
       g *= side ? 0.75 : 0.55;
     }
   }
-  if (g < 0.004) return null;
+  // valor inválido nunca entra no áudio: um NaN numa conexão envenena filtros/compressor e o som morre de vez
+  if (!(g >= 0.004) || !isFinite(g) || !isFinite(d)) {
+    if (debugMode && !(g >= 0) && !audio.nanLogged) { audio.nanLogged = true; console.warn('soundDest NaN', JSON.stringify({ pos, cam: Array.from(R.camPos), right: Array.from(R.camRight), gain, range, g, d })); }
+    return null;
+  }
   const slot = voiceSlot(g, dur || 0.6);
   if (!slot) return null;
   const out = ctx.createGain();
-  out.gain.value = g;
-  slot.out = out;
+  out.gain.value = Math.min(4, g);
+  slot.out = out; out.slotRef = slot;
   let node = out;
   // timbre pela distância/oclusão: o ar e as paredes comem os agudos (som perto fica nítido)
   const cut = Math.min(20000, AUDIO_AIR_CUT / (1 + d * 0.06)) * (occl ? (occl < 1 ? 0.14 : 0.06) : 1);
@@ -13564,34 +13590,50 @@ function soundDest(pos, gain, range, dur) {
   node.connect(audio.bus);
   return out;
 }
+// número válido para o áudio (NaN/infinito em qualquer parâmetro derruba a cadeia inteira)
+function af(v, lo, hi, def) { return isFinite(v) ? Math.min(hi, Math.max(lo, v)) : def; }
 function noiseBurst(dest, t, dur, type, freq, q, gain, attack) {
-  const ctx = audio.ctx;
-  const src = ctx.createBufferSource();
-  src.buffer = audio.noise;
-  src.loop = true;
-  const f = ctx.createBiquadFilter();
-  f.type = type; f.frequency.value = freq; f.Q.value = q;
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t + (attack || 0.002));
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  src.connect(f); f.connect(g); g.connect(dest);
-  src.start(t, Math.random() * 1.5);
-  src.stop(t + dur + 0.05);
+  if (!dest || !isFinite(t) || !isFinite(dur) || dur <= 0) return;
+  try {
+    const ctx = audio.ctx;
+    const src = ctx.createBufferSource();
+    src.buffer = audio.noise;
+    src.loop = true;
+    const f = ctx.createBiquadFilter();
+    f.type = type; f.frequency.value = af(freq, 20, 20000, 1000); f.Q.value = af(q, 0.0001, 30, 1);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(af(gain, 0.0002, 4, 0.0002), t + af(attack || 0.002, 0.0005, 1, 0.002));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(dest);
+    src.start(t, Math.random() * 1.5);
+    src.stop(t + dur + 0.05);
+    if (dest.slotRef) dest.slotRef.src.push(src);
+  } catch (e) { audioFault(e); }
 }
 function tone(dest, t, freq, dur, type, gain, freqEnd, attack) {
-  const ctx = audio.ctx;
-  const o = ctx.createOscillator();
-  o.type = type;
-  o.frequency.setValueAtTime(freq, t);
-  if (freqEnd) o.frequency.exponentialRampToValueAtTime(freqEnd, t + dur);
-  const g = ctx.createGain();
-  g.gain.setValueAtTime(0.0001, t);
-  g.gain.exponentialRampToValueAtTime(Math.max(0.0002, gain), t + (attack || 0.004));
-  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g); g.connect(dest);
-  o.start(t);
-  o.stop(t + dur + 0.05);
+  if (!dest || !isFinite(t) || !isFinite(dur) || dur <= 0) return;
+  try {
+    const ctx = audio.ctx;
+    const o = ctx.createOscillator();
+    o.type = type;
+    o.frequency.setValueAtTime(af(freq, 10, 20000, 440), t);
+    if (freqEnd) o.frequency.exponentialRampToValueAtTime(af(freqEnd, 10, 20000, 440), t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(af(gain, 0.0002, 4, 0.0002), t + af(attack || 0.004, 0.0005, 1, 0.004));
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(dest);
+    o.start(t);
+    o.stop(t + dur + 0.05);
+    if (dest.slotRef) dest.slotRef.src.push(o);
+  } catch (e) { audioFault(e); }
+}
+// erro dentro do áudio: não derruba o jogo; muitos erros seguidos = recria o contexto
+function audioFault(e) {
+  audio.faults = (audio.faults || 0) + 1;
+  if (audio.faults > AUDIO_FAULT_LIMIT) { audio.failed = true; audio.faults = 0; }
+  if (debugMode) console.warn('áudio:', e && e.message);
 }
 function now0() { return audio.ctx.currentTime; }
 function sfxShot(snd, pos, isLocal) {
