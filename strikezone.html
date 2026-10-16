@@ -994,7 +994,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.10.0';
+const GAME_VERSION = '1.10.1';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -1027,6 +1027,7 @@ const TRAIN_UNDER = 0.78; // vão embaixo do vagão (entre os truques): dá para
 const STEP_SMOOTH_RATE = 14; // degraus: a câmera e o corpo alcançam a altura nova suavemente (1/s)
 const STEP_SMOOTH_MAX = 0.6;
 const STEP_SMOOTH_UP = 0.2; // descendo degrau: a câmera fica no máximo isto acima (não parece voar)
+const STEP_SMOOTH_SLOPE = 1.2; // desnível no passo acima disto × o andado (mais íngreme que ~50°) = degrau; rampa não suaviza
 // maior degrau que os bots sobem andando, medido na borda entre duas células
 const NAV_EDGE_STEP = 0.5;
 // deslocamentos de lado tentados ao bater na pontinha de uma quina (escorrega em volta dela)
@@ -1085,6 +1086,9 @@ const FIRE_RADIUS = 2.6;
 const FIRE_DURATION = 7;
 const FIRE_DPS = 40;
 const HIT_PUNCH = 0.004;
+// caixa da cabeça: centro a esta altura acima do pescoço do modelo e meias-medidas (largura, altura, profundidade) — cobre rosto e capacete
+const HEAD_BOX_Y = 0.15;
+const HEAD_BOX = [0.125, 0.15, 0.135];
 // velocidade (fração da máxima) abaixo da qual a arma volta à precisão total: base do counter-strafe
 const ACCURATE_SPEED_FRAC = 0.34;
 // Precisão das armas do CS:GO (items_game.txt da última versão do CS:GO, em milirradianos):
@@ -14835,12 +14839,17 @@ function movePlayer(p, dt) {
   }
   if (!p.onGround && wasGround && !p.jumped && p.vel[1] <= 0) {
     const y = p.pos[1];
-    if (moveAxis(p, 1, -STEP_HEIGHT)) { p.onGround = true; p.vel[1] = 0; p.viewSmoothY += y - p.pos[1]; } else p.pos[1] = y;
+    if (moveAxis(p, 1, -STEP_HEIGHT)) { p.onGround = true; p.vel[1] = 0; } else p.pos[1] = y;
   }
   if (world.hv) terrainGround(p, wasGround);
   if (!p.onGround && p.vel[1] <= 0) standOnHeads(p, wasGround);
   depenetrate(p);
-  if (p.onGround && p.pos[1] > beforeY + 0.05) p.viewSmoothY -= p.pos[1] - beforeY;
+  // degrau de verdade (subida/descida bem mais íngreme que o andar no passo): a câmera fica na altura antiga e alcança aos poucos;
+  // conta só a altura final do passo (desce/sobe dentro do mesmo passo não acumula) e rampa contínua não suaviza
+  if (wasGround && p.onGround) {
+    const dyStep = p.pos[1] - beforeY, hMove = Math.hypot(p.pos[0] - hx0, p.pos[2] - hz0);
+    if (Math.abs(dyStep) > hMove * STEP_SMOOTH_SLOPE + 0.03) p.viewSmoothY -= dyStep;
+  }
   // limite no fim do passo: a câmera nunca fica mais que STEP_SMOOTH_UP acima dos olhos de verdade (o corpo é sempre desenhado na posição real)
   p.viewSmoothY = clamp(p.viewSmoothY, -STEP_SMOOTH_MAX, STEP_SMOOTH_UP);
 }
@@ -14914,7 +14923,6 @@ function terrainGround(p, wasGround) {
     p.onGround = true; p.jumped = false;
   } else if (wasGround && !p.jumped && p.vel[1] <= 0 && p.pos[1] - tg < STEP_HEIGHT && p.pos[1] - tg > 1e-4 && hullFree(p.pos[0], tg + 0.01, p.pos[2], p.height - 0.02)) {
     // descendo a encosta: gruda no chão (só se não estiver em cima de um objeto)
-    p.viewSmoothY = (p.viewSmoothY || 0) + (p.pos[1] - tg) * 0.5;
     p.pos[1] = tg; p.onGround = true; p.vel[1] = 0;
   }
 }
@@ -15262,13 +15270,21 @@ function spawnCasing(p, def, isLocal) {
   const sp = rand(1.6, 2.6);
   spawnParticle({ x, y, z, vx: rx * sp * side + fx * rand(-0.3, 0.3) + p.vel[0], vy: rand(1.4, 2.4), vz: rz * sp * side + fz * rand(-0.3, 0.3) + p.vel[2], size: def.cls === 'sniper' ? 0.03 : 0.02, max: 2.2, cell: ATLAS.CHUNK, r: 0.85, g: 0.66, b: 0.3, a: 1, grav: 9.8, stretch: 2.2, bounce: true, rotv: rand(-12, 12) });
 }
+// caixas de acerto seguindo a mesma pose do modelo desenhado (addPlayerModel): altura do quadril pelo agachamento,
+// tronco inclinado para a frente (agachado/correndo) e cabeça girando com o olhar
 function computeHitboxes(p) {
-  const c = p.crouchAmt, drop = 0.42 * c;
+  const c = p.crouchAmt || 0, k = p.alive ? Math.min(1, Math.hypot(p.vel[0], p.vel[2]) / 4.5) : 0;
+  const a1c = 1.15 * c, a2c = -2.1 * c;
+  const hipY = 0.07 + 0.42 * Math.cos(a1c) + 0.42 * Math.cos(a1c + a2c) - k * 0.02 * (1 - Math.cos((p.walkPhase || 0) * 2));
+  const lean = c * 0.32 + k * 0.08, cl = Math.cos(lean), sl = Math.sin(lean);
+  const hr = clamp(p.pitch || 0, -0.7, 0.7) * 0.55;
   const set = (h, cx, cy, cz, hx, hy, hz) => { h.cx = cx; h.cy = cy; h.cz = cz; h.hx = hx; h.hy = hy; h.hz = hz; };
-  set(hitboxBuf[0], 0, 1.62 - drop, -0.02, 0.125, 0.14, 0.135);
-  set(hitboxBuf[1], 0, 1.25 - drop, 0, 0.25, 0.2, 0.15);
-  set(hitboxBuf[2], 0, 0.95 - drop, 0, 0.21, 0.1, 0.14);
-  const legH = (0.86 - drop) / 2;
+  // ponto do tronco a uma altura u acima do quadril (o tronco gira para a frente = -z)
+  const tY = (u) => hipY + u * cl, tZ = (u) => -u * sl;
+  set(hitboxBuf[0], 0, tY(0.6) + HEAD_BOX_Y * Math.cos(hr), tZ(0.6) + HEAD_BOX_Y * Math.sin(hr) - 0.01, HEAD_BOX[0], HEAD_BOX[1], HEAD_BOX[2]);
+  set(hitboxBuf[1], 0, tY(0.36), tZ(0.36), 0.25, 0.2 * cl + 0.02, 0.15 + 0.1 * sl);
+  set(hitboxBuf[2], 0, tY(0.05), tZ(0.05), 0.21, 0.1, 0.14);
+  const legH = hipY / 2;
   set(hitboxBuf[3], 0, legH, 0, 0.2, legH, 0.13);
   return hitboxBuf;
 }
@@ -22502,6 +22518,8 @@ function updateKillcamHud() {
   const el = ui.killcam, k = game.killcam;
   const show = !!(k && k.on);
   if (el.hidden === show) el.hidden = !show;
+  const rv = show ? 'hidden' : '';
+  if (ui.report.style.visibility !== rv) ui.report.style.visibility = rv;
   if (show) setText(ui.killcamText, 'kcText', k.text);
 }
 
@@ -24181,7 +24199,8 @@ function updateCamera(dt) {
   }
   R.fog = (M.fog || FOG_DENSITY) * fogMult();
   const l = game.local;
-  const subj = cameraSubject();
+  // no killcam o jogador aparece vivo (posições do replay): a câmera é sempre a de quem matou
+  const subj = kcKiller() ? null : cameraSubject();
   cameraSubjectCached = subj;
   let fov = settings.fov * DEG;
   if (subj) {
@@ -24512,7 +24531,7 @@ function exposeDebug() {
       out.pos = p.pos.slice();
       return out;
     },
-    raycastWorld: (a, b, c, d, e, f, t, o) => raycastWorld(a, b, c, d, e, f, t, o || {}), modeList: () => Object.keys(MODES), mapSupports, hullFree, spaceFree, audio, audioWatchdog, initAudio, navStepDbg: navStep, music, catVolume, soundCue, zipPrep, zipAt,
+    raycastWorld: (a, b, c, d, e, f, t, o) => raycastWorld(a, b, c, d, e, f, t, o || {}), modeList: () => Object.keys(MODES), mapSupports, hullFree, spaceFree, audio, audioWatchdog, initAudio, navStepDbg: navStep, music, catVolume, soundCue, raycastPlayers, pHit, computeHitboxes, kcBegin, kcEnd, kcKiller, updateCamera, renderSubject, zipPrep, zipAt,
     tacticList, applyTactic, applyCtSetup, openTacticMenu, pickTacticFromMenu, CT_SETUPS,
     useTactical, useUltimate, tryZip, startHeal, bestHeal, applyDamage, LEGENDS, placePing, smartPing,
     br: { jump: (p) => brJump(p || game.local), use: (p) => brLocalUse(p || game.local), nearestWeapon: (p) => brNearestWeapon(p || game.local), lootNear },
