@@ -469,6 +469,19 @@ button { font: inherit; color: inherit; }
 #tut { position: absolute; top: 18%; right: 16px; width: min(340px, 40vw); background: var(--panel-strong); border-left: 3px solid var(--accent); padding: 10px 14px; display: flex; flex-direction: column; gap: 4px; pointer-events: none; z-index: 6; }
 #tut small { font-family: var(--display); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
 #tut b { font-family: var(--display); font-size: 24px; letter-spacing: 0.04em; } #tut span { font-size: 15px; line-height: 1.4; }
+#radio .rd.chat span { font-style: italic; }
+table.recent { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.recent th { text-align: left; color: var(--muted); font-family: var(--display); letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; padding: 3px 6px; }
+table.recent td { padding: 3px 6px; border-top: 1px solid var(--line); }
+table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.loss td:nth-child(4) { color: var(--danger); }
+#buy-econ { display: flex; flex-direction: column; gap: 4px; padding: 6px 2px 10px; font-size: 14px; }
+#buy-econ:empty { display: none; }
+#buy-econ .ec-tip { font-family: var(--display); font-size: 18px; color: var(--accent); }
+#buy-econ .ec-next { color: var(--muted); } #buy-econ .ec-next b { color: var(--text); }
+#buy-econ .ec-team { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+#buy-econ .ec-team span.me { color: var(--text); font-weight: 700; }
+#buy-econ .ec-full { color: var(--money); } #buy-econ .ec-force { color: #e8c45a; } #buy-econ .ec-eco { color: var(--danger); }
+#drillpad { position: absolute; right: 16px; top: 50%; transform: translateY(-55%); width: 240px; height: 300px; border: 1px solid var(--line); pointer-events: none; z-index: 5; }
 #wx { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
 #killcam { white-space: nowrap; position: absolute; top: 14%; left: 50%; transform: translateX(-50%); background: rgba(150, 20, 18, 0.72); padding: 6px 16px; display: flex; gap: 12px; align-items: baseline; font-family: var(--display); letter-spacing: 0.08em; pointer-events: none; z-index: 6; }
 #killcam b { font-size: 22px; } #killcam span { font-size: 18px; } #killcam small { font-size: 13px; color: rgba(255,255,255,0.7); }
@@ -555,6 +568,7 @@ button { font: inherit; color: inherit; }
     <canvas id="wx" hidden></canvas>
     <div id="hint" hidden></div>
     <div id="tut" hidden></div>
+    <canvas id="drillpad" width="240" height="300" hidden></canvas>
     <div id="killcam" hidden><b>KILLCAM</b><span id="killcam-text"></span><small>Espaço pula</small></div>
     <div id="progress" hidden><div id="progress-label"></div><div class="bar"><div id="progress-fill"></div></div></div>
     <div id="objbar" hidden></div>
@@ -623,6 +637,7 @@ button { font: inherit; color: inherit; }
         <div id="buy-bonus"></div>
         <button id="buy-close" class="btn small" type="button">Fechar · B</button>
       </div>
+      <div id="buy-econ"></div>
       <div id="buy-grid" class="buy-grid"></div>
     </div>
   </div>
@@ -650,7 +665,8 @@ button { font: inherit; color: inherit; }
         <button id="btn-play" class="btn primary" type="button" data-tabs="cs">Desarme de bomba <small>5 contra 5</small></button>
         <button id="btn-wingman" class="btn" type="button" data-tabs="cs">Wingman <small>2 contra 2</small></button>
         <button id="btn-retake" class="btn" type="button" data-tabs="cs">Retakes</button>
-        <button id="btn-duel" class="btn" type="button" data-tabs="cs">Duelo <small>1 contra 1</small></button>
+        <button id="btn-duel" class="btn" type="button" data-tabs="cs">Duelo <small>1 contra 1 · gulag</small></button>
+        <button id="btn-duel2" class="btn" type="button" data-tabs="cs">Duelo <small>2 contra 2 · gulag</small></button>
         <button id="btn-practice" class="btn" type="button" data-tabs="cs">Treino de mira</button>
         <button id="btn-tutorial" class="btn" type="button" data-tabs="cs">Tutorial <small>primeiros passos</small></button>
         <div id="war-modes" class="war-modes" data-tabs="war"></div>
@@ -799,6 +815,8 @@ button { font: inherit; color: inherit; }
         <div class="opt-row"><label for="opt-skin">Pintura das suas armas</label><select id="opt-skin" data-setting="skin"></select><output></output></div>
         <div class="opt-row"><label for="opt-wx">Clima</label><select id="opt-wx" data-setting="weather"><option value="auto">Sorteado a cada partida</option><option value="clear">Limpo</option><option value="rain">Chuva</option><option value="fog">Neblina</option><option value="sand">Tempestade de areia</option></select><output></output></div>
         <div class="opt-row"><label for="opt-tod">Hora do dia</label><select id="opt-tod" data-setting="timeOfDay"><option value="auto">Sorteada a cada partida</option><option value="day">Dia</option><option value="dusk">Entardecer</option><option value="night">Noite</option></select><output></output></div>
+        <div class="opt-row"><label for="opt-bchat">Bots falam (frases com personalidade no rádio)</label><input id="opt-bchat" type="checkbox" data-setting="botChat"><output></output></div>
+        <div class="opt-row"><label for="opt-bvoice">Voz sintetizada nas falas dos bots (português)</label><input id="opt-bvoice" type="checkbox" data-setting="botVoice"><output></output></div>
         <div class="opt-row"><label for="opt-kcam">Killcam (replay de quem te matou)</label><input id="opt-kcam" type="checkbox" data-setting="killcam"><output></output></div>
         <div class="opt-row"><label for="opt-adapt">Dificuldade adaptativa (bots ficam mais fáceis se você estiver indo mal; nunca mais difíceis que o escolhido)</label><input id="opt-adapt" type="checkbox" data-setting="adaptive"><output></output></div>
         <div class="opt-row"><label for="opt-cblind">Modo daltônico</label><select id="opt-cblind" data-setting="colorblind"><option value="off">Desligado</option><option value="deut">Deuteranopia (verde)</option><option value="prot">Protanopia (vermelho)</option><option value="trit">Tritanopia (azul)</option></select><output></output></div>
@@ -840,6 +858,8 @@ button { font: inherit; color: inherit; }
       <section class="tab-page" data-page="profile" role="tabpanel" hidden>
         <h3 class="opt-sub">Carreira</h3>
         <div id="prof-stats"></div>
+        <h3 class="opt-sub">Partidas recentes</h3>
+        <div id="prof-recent"></div>
         <h3 class="opt-sub">Conquistas <small id="prof-ach-count"></small></h3>
         <div id="prof-ach" class="ach-grid"></div>
         <h3 class="opt-sub">Arquivo</h3>
@@ -994,7 +1014,7 @@ button { font: inherit; color: inherit; }
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.10.1';
+const GAME_VERSION = '1.11.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -1143,6 +1163,11 @@ const DM_PROTECT = 1.5;
 const FFA_TARGET = 20;
 const DUEL_ROUND_TIME = 75;
 const DUEL_HUNT_AFTER = 18;
+// modos que só existem em mapas que os listam em `modes` (o gulag) e a bandeira da prorrogação do duelo
+const ARENA_ONLY_MODES = ['duel', 'duel2'];
+const DUEL_FLAG_AT = 20;
+const DUEL_FLAG_R = 2.4;
+const DUEL_FLAG_CAP = 4;
 const DUEL_LOADOUTS = [['ak47', 'deagle'], ['m4a4', 'usp'], ['awp', 'p250'], ['ssg08', 'deagle'], ['famas', 'fiveseven'], ['galil', 'tec9'], ['mp9', 'glock'], ['ump45', 'cz75'], ['aug', 'p250'], ['sg553', 'deagle'], ['xm1014', 'usp'], ['deagle', ''], ['p90', 'fiveseven'], ['mac10', 'tec9']];
 const RECORDS_KEY = 'strikezone.records.v1';
 const MAX_DECALS = 220;
@@ -1198,6 +1223,7 @@ const ROUND_REASONS = {
   bomb: 'O alvo foi destruído',
   defuse: 'A bomba foi desarmada',
   duelTime: 'O tempo acabou: venceu quem tinha mais vida',
+  duelFlag: 'Tomou a bandeira do centro',
 };
 const TEAM_LOOK = {
   T: {
@@ -1235,7 +1261,7 @@ const DEFAULT_SETTINGS = {
   chOutline: true, chOutlineThick: 1, chDot: false, chDotSize: 2, chDynamic: false, chFollowRecoil: false,
   friendlyFire: false, nameplates: true, damageReport: true, voice: true, volume: 0.7, fullscreen: true, showFps: false,
   pingShow: true, pingBots: true, pingText: 'full', pingSize: 1, pingOpacity: 0.9, pingColorMode: 'type', pingColor: '#ffd84a', pingRadar: true, pingChat: true,
-  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none',
+  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none',
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
   cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800',
@@ -1445,6 +1471,8 @@ const DRILLS = {
   flick: { name: 'Flick', desc: 'Um alvo por vez em lugares aleatórios. Acerte antes que ele suma (1,5 s). 60 segundos.', time: 60, life: 1.5, score: 'kills' },
   head: { name: 'Só na cabeça', desc: 'Como o flick, mas só o tiro na cabeça derruba o alvo. 60 segundos.', time: 60, life: 2.2, score: 'kills' },
   track: { name: 'Tracking', desc: 'Um alvo correndo de um lado para o outro, com colete. Derrube o máximo em 45 segundos.', time: 45, score: 'kills' },
+  spray: { name: 'Spray', desc: 'Segure o tiro e puxe o mouse para baixo (e para os lados) para manter as balas juntas. 5 rajadas de 15+ tiros; nota = distância média das balas até a mira (cm a 10 m, menor é melhor). O quadro à direita mostra cada bala e o padrão da arma.', time: 0, count: 5, score: 'spray' },
+  nades: { name: 'Granadas do mapa', desc: 'Pratique as granadas fixas do mapa (as mesmas dos bots): o jogo te põe no lugar, mirando, com a granada certa e o alvo marcado. N próxima · Shift+N anterior · R repetir.', time: 0, score: '' },
   react: { name: 'Reflexo', desc: 'O alvo aparece de repente na sua frente: atire o mais rápido possível. 15 alvos; errar conta 1 s.', time: 0, count: 15, score: 'react' },
 };
 // falas do rádio entre bots nos modos com renascimento
@@ -3173,15 +3201,15 @@ const MAPS = {
     spawns: {"T":[[12,88],[11,86],[14,87],[10,89],[13,90],[9,87],[15,89],[11,91],[15,85],[10,84],[8,90],[8,85]],"CT":[[100,37],[99,35],[97,37],[103,37],[100,33],[97,34],[104,35],[103,33],[95,36],[106,37],[101,31],[95,33]]},
     spawnYaw: {"T":-1.432,"CT":2.429},
     nav: {"bombsiteB":[61.5,21.5],"ruins":[78.5,18.5],"cTSpawn":[100.5,37.5],"banana":[57.5,51.5],"arch":[95.5,64.5],"library":[112.5,60.5],"topofMid":[84.5,78.5],"bombsiteA":[101.5,85.5],"tRamp":[41.5,73.5],"tSpawn":[12.5,88.5],"middle":[62.5,81.5],"lowerMid":[29.5,90.5],"underpass":[55.5,78.5],"graveyard":[113.5,87.5],"upstairs":[37.5,90.5],"kitchen":[44.5,88.5],"secondMid":[55.5,97.5],"apartments":[74.5,101.5],"deck":[49.5,93.5],"bridge":[38.5,94.5],"quad":[84.5,96.5],"pit":[109.5,102.5],"balcony":[99.5,100.5],"backAlley":[69.5,111.5]},
-    tRoutes: {"A":[{"path":["tSpawn","lowerMid","secondMid","apartments","balcony","bombsiteA"],"stage":4,"name":"Apartamentos"},{"path":["tSpawn","lowerMid","middle","topofMid","bombsiteA"],"stage":3,"name":"Meio"}],"B":[{"path":["tSpawn","tRamp","banana","bombsiteB"],"stage":2,"name":"Banana"}]},
-    ctHolds: {"A":[{"pos":[107,85],"look":[95,103]},{"pos":[102,81],"look":[97,93]},{"pos":[106,89],"look":[81,98]},{"pos":[105,93],"look":[91,93]},{"pos":[104,78],"look":[99,90]},{"pos":[102,84],"look":[99,90]}],"B":[{"pos":[49,24],"look":[66,30]},{"pos":[67,37],"look":[62,48]},{"pos":[72,27],"look":[67,34]},{"pos":[54,32],"look":[64,30]},{"pos":[62,9],"look":[62,25]},{"pos":[69,31],"look":[64,48]}],"mid":[{"pos":[85,82],"look":[63,82]},{"pos":[85,86],"look":[63,82]},{"pos":[81,85],"look":[63,82]}]},
-    postplant: {"A":[{"pos":[109,71],"look":[96,65]},{"pos":[105,69],"look":[96,65]},{"pos":[108,67],"look":[96,65]},{"pos":[86,82],"look":[96,65]}],"B":[{"pos":[73,26],"look":[79,19]},{"pos":[50,16],"look":[79,19]},{"pos":[69,39],"look":[79,19]},{"pos":[51,23],"look":[79,19]}]},
-    plantSpots: {"A":[[104,82],[106,87],[103,86],[100,81]],"B":[[55,19],[58,19],[66,24],[61,20]]},
-    lineups: [{"team":"T","site":"A","route":"Apartamentos","kind":"smoke","when":"exec","from":[99.5,100.5],"to":[105.5,93.5,0]},{"team":"T","site":"A","route":"Apartamentos","kind":"smoke","when":"exec","from":[99.5,100.5],"to":[106.5,89.5,0]},{"team":"T","site":"A","route":"Apartamentos","kind":"flash","when":"exec","from":[99.5,100.5],"to":[101.5,85.5,2.5]},{"team":"T","site":"A","route":"Apartamentos","kind":"molotov","when":"exec","from":[99.5,100.5],"to":[105.5,93.5,0]},{"team":"T","site":"A","route":"Meio","kind":"smoke","when":"exec","from":[84.5,78.5],"to":[102.5,81.5,0]},{"team":"T","site":"A","route":"Meio","kind":"smoke","when":"exec","from":[84.5,78.5],"to":[102.5,84.5,0]},{"team":"CT","site":"A","kind":"molotov","when":"delay","from":[107.5,85.5],"to":[95.5,103.5,0]},{"team":"CT","site":"A","kind":"smoke","when":"delay","from":[107.5,85.5],"to":[95.5,103.5,0]},{"team":"CT","site":"A","kind":"molotov","when":"delay","from":[102.5,81.5],"to":[97.5,93.5,0]},{"team":"CT","site":"A","kind":"smoke","when":"delay","from":[102.5,81.5],"to":[97.5,93.5,0]},{"team":"T","site":"B","route":"Banana","kind":"smoke","when":"exec","from":[57.5,51.5],"to":[54.5,32.5,0]},{"team":"T","site":"B","route":"Banana","kind":"smoke","when":"exec","from":[66.5,42.5],"to":[67.5,37.5,0]},{"team":"T","site":"B","route":"Banana","kind":"molotov","when":"exec","from":[66.5,42.5],"to":[67.5,37.5,0]},{"team":"CT","site":"B","kind":"molotov","when":"delay","from":[49.5,24.5],"to":[66.5,30.5,0]},{"team":"CT","site":"B","kind":"smoke","when":"delay","from":[49.5,24.5],"to":[66.5,30.5,0]},{"team":"CT","site":"B","kind":"molotov","when":"delay","from":[62.5,9.5],"to":[62.5,25.5,0]},{"team":"CT","site":"B","kind":"smoke","when":"delay","from":[62.5,9.5],"to":[62.5,25.5,0]}],
+    tRoutes: {"A":[{"path":["tSpawn","lowerMid","secondMid","apartments","balcony","bombsiteA"],"stage":4,"name":"Apartamentos"},{"path":["tSpawn","lowerMid","middle","topofMid","bombsiteA"],"stage":3,"name":"Meio"},{"path":["tSpawn","lowerMid","secondMid","apartments","balcony","pit","bombsiteA"],"stage":5,"name":"Pit"}],"B":[{"path":["tSpawn","tRamp","banana","bombsiteB"],"stage":2,"name":"Banana"}]},
+    ctHolds: {"A":[{"pos":[107,85],"look":[95,103]},{"pos":[102,81],"look":[97,93]},{"pos":[106,89],"look":[81,98]},{"pos":[105,93],"look":[79,95]},{"pos":[104,78],"look":[97,93]},{"pos":[102,84],"look":[108,96]}],"B":[{"pos":[54,30],"look":[66,30]},{"pos":[49,23],"look":[66,30]},{"pos":[59,18],"look":[66,31]},{"pos":[59,12],"look":[67,35]},{"pos":[51,18],"look":[62,26]},{"pos":[62,6],"look":[62,28]}],"mid":[{"pos":[83,83],"look":[63,82]},{"pos":[86,80],"look":[63,82]}]},
+    postplant: {"A":[{"pos":[105,68],"look":[96,65]},{"pos":[108,72],"look":[96,65]},{"pos":[108,67],"look":[96,65]},{"pos":[95,85],"look":[96,65]}],"B":[{"pos":[49,17],"look":[79,19]},{"pos":[52,21],"look":[79,19]},{"pos":[52,32],"look":[79,19]},{"pos":[49,28],"look":[79,19]}]},
+    plantSpots: {"A":[[104,81],[107,84],[98,82],[105,88]],"B":[[67,23],[58,16],[59,20],[67,20]]},
+    lineups: [{"team":"T","site":"A","route":"Apartamentos","kind":"smoke","when":"exec","from":[99.5,100.5],"to":[105.5,93.5,0]},{"team":"T","site":"A","route":"Apartamentos","kind":"smoke","when":"exec","from":[99.5,100.5],"to":[106.5,89.5,0]},{"team":"T","site":"A","route":"Apartamentos","kind":"flash","when":"exec","from":[99.5,100.5],"to":[101.5,85.5,2.5]},{"team":"T","site":"A","route":"Apartamentos","kind":"molotov","when":"exec","from":[99.5,100.5],"to":[105.5,93.5,0]},{"team":"T","site":"A","route":"Meio","kind":"smoke","when":"exec","from":[84.5,78.5],"to":[102.5,81.5,0]},{"team":"T","site":"A","route":"Meio","kind":"smoke","when":"exec","from":[84.5,78.5],"to":[102.5,84.5,0]},{"team":"T","site":"A","route":"Pit","kind":"smoke","when":"exec","from":[109.5,102.5],"to":[105.5,93.5,0]},{"team":"T","site":"A","route":"Pit","kind":"smoke","when":"exec","from":[109.5,102.5],"to":[106.5,89.5,0]},{"team":"T","site":"A","route":"Pit","kind":"molotov","when":"exec","from":[109.5,102.5],"to":[105.5,93.5,0]},{"team":"T","site":"A","route":"Pit","kind":"flash","when":"exec","from":[99.5,100.5],"to":[101.5,85.5,2.5]},{"team":"CT","site":"A","kind":"molotov","when":"delay","from":[107.5,85.5],"to":[95.5,103.5,0]},{"team":"CT","site":"A","kind":"smoke","when":"delay","from":[107.5,85.5],"to":[95.5,103.5,0]},{"team":"CT","site":"A","kind":"molotov","when":"delay","from":[102.5,81.5],"to":[97.5,93.5,0]},{"team":"CT","site":"A","kind":"smoke","when":"delay","from":[102.5,81.5],"to":[97.5,93.5,0]},{"team":"T","site":"B","route":"Banana","kind":"smoke","when":"exec","from":[57.5,51.5],"to":[54.5,30.5,0]},{"team":"T","site":"B","route":"Banana","kind":"smoke","when":"exec","from":[57.5,51.5],"to":[49.5,23.5,0]},{"team":"CT","site":"B","kind":"molotov","when":"delay","from":[49.5,23.5],"to":[66.5,30.5,0]},{"team":"CT","site":"B","kind":"smoke","when":"delay","from":[49.5,23.5],"to":[66.5,30.5,0]},{"team":"CT","site":"B","kind":"molotov","when":"delay","from":[59.5,18.5],"to":[66.5,31.5,0]},{"team":"CT","site":"B","kind":"smoke","when":"delay","from":[59.5,18.5],"to":[66.5,31.5,0]}],
     rally: {"A":[[96,65],[113,61]],"B":[[79,19]]},
     decals: [{"pos":[97.03,8.6,89.5],"normal":[1,0,0],"size":1.5,"cell":4},{"pos":[101.5,8.6,79.03],"normal":[0,0,1],"size":1.5,"cell":4},{"pos":[95.03,8.6,82.5],"normal":[1,0,0],"size":1.5,"cell":4},{"pos":[62.97,8.6,20.5],"normal":[-1,0,0],"size":1.5,"cell":5},{"pos":[68.97,7.8,24.5],"normal":[-1,0,0],"size":1.5,"cell":5},{"pos":[62.5,8.6,29.97],"normal":[0,0,-1],"size":1.5,"cell":5}],
     places: [{"name":"Banana","r":[54.1,54.1,56.1,56.1]},{"name":"Quadra","r":[85.9,96,87.9,98]},{"name":"Bomb B","r":[50.9,30.6,52.3,32.6]},{"name":"Meio de baixo","r":[26.2,78.9,26.9,79.6]},{"name":"Escada dos apês","r":[37,87.8,37.7,88.5]},{"name":"Bomb B","r":[56,33.2,56.8,33.9]},{"name":"Ruínas","r":[71.3,11.6,72,12.9]},{"name":"Bomb A","r":[104.3,74.4,107.6,82.2]},{"name":"Ruínas","r":[82.7,20.5,85.3,21.2]},{"name":"Bomb A","r":[102.4,77.6,103.7,79.6]},{"name":"Spawn TR","r":[4.6,74.4,6.6,75.2]},{"name":"Segundo meio","r":[52.2,96.7,56.1,98.7]},{"name":"Banana","r":[56,54.1,56.8,55.5]},{"name":"Bomb B","r":[54.1,27.4,54.9,28.8]},{"name":"Spawn TR","r":[6.5,94.8,7.2,95.5]},{"name":"Apartamentos","r":[37.6,108.1,39.6,110.1]},{"name":"Apartamentos","r":[78.2,100.5,80.9,102.5]},{"name":"Segundo meio","r":[35.7,100.5,36.4,101.8]},{"name":"Bomb A","r":[103,89.7,103.7,91.7]},{"name":"Biblioteca","r":[111.3,61.7,112,63.1]},{"name":"Top Mid","r":[82.1,89,83.4,89.8]},{"name":"Bomb A","r":[104.9,67.5,110.1,71.4]},{"name":"Spawn TR","r":[15.4,82.1,18.7,83.4]},{"name":"Cozinha","r":[42.7,92.9,44.1,94.2]},{"name":"Bomb B","r":[59.8,21.1,61.2,22.5]},{"name":"Spawn CT","r":[92.9,33.8,94.2,35.2]},{"name":"Ruínas","r":[64.9,15.4,65.6,16.8]},{"name":"Ruínas","r":[75.1,16,75.8,16.8]},{"name":"Spawn CT","r":[103.6,27.4,105.7,28.2]},{"name":"Meio de baixo","r":[31.9,80.8,35.2,82.2]},{"name":"Ruínas","r":[87.1,19.8,89.1,21.8]},{"name":"Banana","r":[50.3,63,51,66.3]},{"name":"Bomb A","r":[101.7,86.5,103.7,87.9]},{"name":"Bomb A","r":[104.3,71.3,108.8,74.5]},{"name":"Escada dos apês","r":[34.4,85.2,35.2,86]},{"name":"Apartamentos","r":[40.8,108.1,42.2,108.8]},{"name":"Apartamentos","r":[37.6,106.2,38.3,108.2]},{"name":"Bomb B","r":[51.6,19.8,52.3,21.8]},{"name":"Spawn TR","r":[7.1,78.9,10.4,79.6]},{"name":"Ruínas","r":[64.9,12.2,67.6,15.5]},{"name":"Spawn CT","r":[99.8,47.8,101.2,51]},{"name":"Ruínas","r":[80.8,15.4,82.2,17.4]},{"name":"Biblioteca","r":[106.2,57.3,107.6,61.2]},{"name":"Meio de baixo","r":[24.9,89.7,26.3,90.4]},{"name":"Escada dos apês","r":[37.6,93.5,39.6,94.2]},{"name":"Bomb A","r":[96.7,83.3,98,84.1]},{"name":"Bomb B","r":[61.1,24.3,61.8,25]},{"name":"Spawn TR","r":[5.2,80.2,12.3,85.3]},{"name":"Segundo meio","r":[54.1,96,55.5,96.8]},{"name":"Spawn CT","r":[103,37,103.7,38.3]},{"name":"Apartamentos","r":[77.6,94.8,78.3,95.5]},{"name":"Spawn CT","r":[109.4,52.2,110.1,52.9]},{"name":"Spawn CT","r":[106.8,49,110.7,51]},{"name":"Bomb A","r":[91.6,92.2,92.3,93]},{"name":"Bomb A","r":[92.2,92.2,93,93]},{"name":"Banana","r":[55.4,56,56.1,56.8]},{"name":"Ruínas","r":[69.4,12.2,70.1,14.2]},{"name":"Top Mid","r":[83.3,86.5,86.6,89.8]},{"name":"Ruínas","r":[77.6,12.2,80.3,14.2]},{"name":"Bomb A","r":[102.4,91.6,103.1,92.3]},{"name":"Arco","r":[90.9,68.1,93,69.5]},{"name":"Spawn TR","r":[11.6,97.3,14.2,99.9]},{"name":"Spawn CT","r":[94.1,48.4,95.5,49.1]},{"name":"Spawn TR","r":[4,89.7,4.7,91.7]},{"name":"Meio de baixo","r":[34.4,82.7,35.8,84.7]},{"name":"Bomb B","r":[61.7,23.6,63.7,26.3]},{"name":"Spawn CT","r":[93.5,37,94.2,39]},{"name":"Biblioteca","r":[108.7,55.4,111.4,56.1]},{"name":"Spawn CT","r":[108.7,52.2,109.5,52.9]},{"name":"Banana","r":[46.5,59.2,49.1,61.8]},{"name":"Cozinha","r":[41.4,89,42.8,90.4]},{"name":"Segundo meio","r":[71.9,102.4,72.6,103.7]},{"name":"Arco","r":[92.9,63.6,96.1,69.5]},{"name":"Pit","r":[114.4,99.8,115.2,100.6]},{"name":"Spawn CT","r":[91.6,28.7,92.3,30.7]},{"name":"Bomb A","r":[103.6,78.9,104.4,80.9]},{"name":"Meio de baixo","r":[33.8,82.2,34.5,82.6]},{"name":"Apartamentos","r":[38.9,110,39.6,110.7]},{"name":"Segundo meio","r":[41.4,100.5,42.8,101.2]},{"name":"Spawn CT","r":[103.6,52.8,106.9,54.2]},{"name":"Spawn CT","r":[89.7,34.4,91.7,39]},{"name":"Bomb B","r":[54.8,14.7,55.5,16.1]},{"name":"Spawn CT","r":[98.6,25.5,99.3,28.8]},{"name":"Spawn TR","r":[4.6,93.5,6.6,94.2]},{"name":"Top Mid","r":[88.4,67.5,89.1,68.2]},{"name":"Spawn CT","r":[108.1,37.6,108.8,39]},{"name":"Bomb A","r":[103,85.9,103.7,86.6]},{"name":"Bomb B","r":[60.5,18.6,62.5,21.2]},{"name":"Banana","r":[56,45.2,56.8,46]},{"name":"Bomb A","r":[98.6,90.9,99.9,91.7]},{"name":"Arco","r":[92.9,58.6,96.1,62.5]},{"name":"Meio de baixo","r":[33.8,82.7,34.5,84.7]},{"name":"Segundo meio","r":[40.1,100.5,41.5,101.8]},{"name":"Top Mid","r":[80.8,63.6,82.2,65.6]},{"name":"Bomb B","r":[58.6,14.1,61.2,15.5]},{"name":"Bomb A","r":[108.7,71.3,110.1,72.6]},{"name":"Biblioteca","r":[106.2,56.7,106.9,57.4]},{"name":"Apartamentos","r":[38.2,104.3,42.2,108.2]},{"name":"Segundo meio","r":[37,101.1,38.3,102.5]},{"name":"Spawn CT","r":[95.4,29.4,96.1,30.7]},{"name":"Spawn CT","r":[106.2,39.5,108.2,42.2]},{"name":"Meio","r":[56.7,82.7,58,84.1]},{"name":"Bomb B","r":[57.9,23,58.7,23.7]},{"name":"Bomb B","r":[61.1,21.1,62.5,21.8]},{"name":"Beco de trás","r":[70,103.6,72.6,109.5]},{"name":"Segundo meio","r":[49.7,96,50.4,96.8]},{"name":"Banana","r":[73.2,47.8,73.9,48.5]},{"name":"Segundo meio","r":[66.8,101.7,68.2,102.5]},{"name":"Biblioteca","r":[111.3,63,115.2,67.6]},{"name":"Segundo meio","r":[64.3,101.7,65,102.5]},{"name":"Ruínas","r":[72.5,12.8,73.3,16.8]},{"name":"Escada dos apês","r":[33.2,85.9,35.2,91.7]},{"name":"Meio de baixo","r":[33.8,75.7,36.4,78.3]},{"name":"Meio de baixo","r":[28.1,77,28.8,79]},{"name":"Bomb B","r":[57.3,28.1,58,28.8]},{"name":"Spawn TR","r":[17.9,106.8,19.3,107.6]},{"name":"Cemitério","r":[113.8,85.2,114.5,86]},{"name":"Apartamentos","r":[73.2,97.3,76.4,101.2]},{"name":"Ponte","r":[39.5,95.4,40.2,96.1]},{"name":"Spawn CT","r":[106.8,51.6,108.8,52.3]},{"name":"Spawn CT","r":[108.7,52.8,110.1,54.2]},{"name":"Apartamentos","r":[50.3,105.6,57.4,108.2]},{"name":"Apartamentos","r":[42.7,104.9,43.4,105.7]},{"name":"Apartamentos","r":[87.8,102.4,94.9,105]},{"name":"Pit","r":[104.3,99.2,107.6,103.1]},{"name":"Meio","r":[55.4,83.3,56.1,84.1]},{"name":"Top Mid","r":[84.6,81.4,86,82.2]},{"name":"Banana","r":[52.2,71.3,52.9,72.6]},{"name":"Meio","r":[60.5,78.2,65.6,83.4]},{"name":"Meio de baixo","r":[31.3,104.9,32,106.9]},{"name":"Meio de baixo","r":[22.4,91.6,23.1,93]},{"name":"Pit","r":[108.7,101.7,110.1,102.5]},{"name":"Beco de trás","r":[68.1,114.4,70.1,115.2]},{"name":"Sacada","r":[98.9,98.3,99.5,98.7]},{"name":"Meio de baixo","r":[26.2,94.1,31.4,99.9]},{"name":"Cemitério","r":[110.6,93.5,111.4,94.2]},{"name":"Bomb B","r":[59.8,24.9,60.6,25.6]},{"name":"Bomb A","r":[103.6,80.8,104.4,82.2]},{"name":"Quadra","r":[82.1,96,83.4,98.7]},{"name":"Segundo meio","r":[43.3,100.5,44.7,102.5]},{"name":"Bomb B","r":[63,22.4,63.7,23.7]},{"name":"Spawn CT","r":[89.7,26.8,91,27.5]},{"name":"Beco de trás","r":[64.9,113.2,65.6,113.9]},{"name":"Top Mid","r":[87.8,69.4,89.1,70.1]},{"name":"Bomb A","r":[104.9,66.8,110.1,67.6]},{"name":"Bomb A","r":[86.5,92.9,87.9,94.9]},{"name":"Segundo meio","r":[57.3,102.4,58,103.1]},{"name":"Apartamentos","r":[80.2,94.1,80.9,95.5]},{"name":"Bomb A","r":[97.3,77.6,99.9,79.6]},{"name":"Bomb B","r":[54.8,24.3,56.1,26.3]},{"name":"Spawn TR","r":[17.9,97.3,18.7,99.3]},{"name":"Deck","r":[47.1,89,47.9,90.4]},{"name":"Apartamentos","r":[73.2,111.3,73.9,112.6]},{"name":"Rampa TR","r":[35.7,75.1,36.4,75.8]},{"name":"Bomb A","r":[99.8,90.9,101.2,91.7]},{"name":"Bomb A","r":[99.8,92.2,102.5,96.1]},{"name":"Spawn TR","r":[15.4,80.2,18,82.2]},{"name":"Banana","r":[49.7,68.1,50.4,70.1]},{"name":"Beco de trás","r":[70.6,114.4,71.4,115.2]},{"name":"Bomb B","r":[70,28.1,70.7,30.1]},{"name":"Bomb B","r":[48.4,21.7,52.9,26.9]},{"name":"Meio de baixo","r":[35.1,82.1,35.8,82.8]},{"name":"Arco","r":[89,64.3,93,68.2]},{"name":"Ruínas","r":[73.2,12.8,75.8,16.1]},{"name":"Meio","r":[54.8,79.5,56.8,83.4]},{"name":"Top Mid","r":[85.9,81.4,87.2,84.7]},{"name":"Banana","r":[58.6,41.4,60.6,42.8]},{"name":"Segundo meio","r":[68.1,101.7,68.8,103.1]},{"name":"Spawn CT","r":[99.2,38.2,101.2,39]},{"name":"Sacada","r":[99.2,99.2,101.2,101.8]},{"name":"Ruínas","r":[71.3,7.1,75.2,11]},{"name":"Escada dos apês","r":[39.5,93.5,40.2,94.2]},{"name":"Banana","r":[50.9,63.6,51.7,65]},{"name":"Meio de baixo","r":[27.4,84,30.7,85.3]},{"name":"Ruínas","r":[68.7,13.5,69.5,14.2]},{"name":"Top Mid","r":[81.4,85.9,82.2,87.2]},{"name":"Ruínas","r":[71.9,11.6,72.6,12.3]},{"name":"Meio de baixo","r":[24.9,99.8,28.2,101.2]},{"name":"Meio de baixo","r":[30.6,87.8,31.4,89.8]},{"name":"Top Mid","r":[83.3,81.4,84.7,82.2]},{"name":"Pit","r":[110.6,100.5,115.2,103.1]},{"name":"Segundo meio","r":[42.7,97.9,43.4,101.2]},{"name":"Apartamentos","r":[39.5,108.1,40.2,108.8]},{"name":"Spawn CT","r":[100.5,46.5,102.5,47.2]},{"name":"Bomb B","r":[54.1,25.5,54.9,26.3]},{"name":"Bomb A","r":[103,85.2,103.7,86]},{"name":"Segundo meio","r":[35.7,96,40.2,99.3]},{"name":"Cemitério","r":[110.6,89.7,111.4,90.4]},{"name":"Bomb A","r":[101.1,90.3,101.8,91.7]},{"name":"Deck","r":[45.9,90.3,46.6,91.7]},{"name":"Banana","r":[60.5,46.5,64.4,47.9]},{"name":"Segundo meio","r":[41.4,101.1,43.4,102.5]},{"name":"Sacada","r":[71.3,99.2,72.6,99.9]},{"name":"Banana","r":[53.5,54.1,54.2,54.9]},{"name":"Bomb B","r":[57.3,28.7,58,29.5]},{"name":"Spawn TR","r":[4,94.1,6.6,97.4]},{"name":"Beco de trás","r":[68.7,111.3,71.4,114.5]},{"name":"Bomb B","r":[58.6,28.7,61.2,31.4]},{"name":"Segundo meio","r":[70.6,96.7,72,99.9]},{"name":"Spawn CT","r":[103.6,34.4,107.6,38.3]},{"name":"Spawn CT","r":[96,46.5,99.9,51]},{"name":"Banana","r":[55.4,46.5,58,49.1]},{"name":"Banana","r":[57.9,50.9,58.7,52.3]},{"name":"Meio","r":[59.2,78.2,60.6,79]},{"name":"Segundo meio","r":[31.3,94.8,35.8,101.2]},{"name":"Pit","r":[103,99.2,103.7,99.9]},{"name":"Segundo meio","r":[64.9,98.6,66.3,99.3]},{"name":"Bomb A","r":[97.9,92.9,98.7,94.9]},{"name":"Banana","r":[52.2,68.7,52.9,70.1]},{"name":"Rampa TR","r":[39.5,71.9,44.1,75.8]},{"name":"Beco de trás","r":[64.9,111.3,68.8,113.3]},{"name":"Spawn CT","r":[95.4,50.3,96.1,51]},{"name":"Spawn TR","r":[8.4,94.1,9.1,94.9]},{"name":"Spawn TR","r":[12.2,87.1,12.9,88.5]},{"name":"Meio","r":[50.3,76.3,52.9,79.6]},{"name":"Bomb A","r":[92.9,96,96.8,97.4]},{"name":"Sacada","r":[97.9,99.2,98.7,101.2]},{"name":"Meio","r":[49,81.4,51,84.7]},{"name":"Spawn TR","r":[13.5,96,14.8,96.8]},{"name":"Top Mid","r":[86.5,87.1,87.2,89.1]},{"name":"Ruínas","r":[71.3,14.7,72,16.1]},{"name":"Bomb B","r":[51.6,32.5,52.3,33.9]},{"name":"Spawn TR","r":[19.2,80.8,26.9,83.4]},{"name":"Segundo meio","r":[40.1,96,41.5,98]},{"name":"Spawn CT","r":[104.9,45.2,105.7,46.6]},{"name":"Bomb B","r":[64.3,5.9,65,6.6]},{"name":"Pit","r":[105.6,104.3,112,108.2]},{"name":"Bomb B","r":[58.6,23.6,59.9,25.6]},{"name":"Bomb A","r":[97.9,91.6,98.7,93]},{"name":"Meio de baixo","r":[35.7,80.8,37.7,84.7]},{"name":"Banana","r":[51.6,63.6,52.9,66.3]},{"name":"Cemitério","r":[110.6,85.2,112,86]},{"name":"Bomb A","r":[103.6,87.1,104.4,87.9]},{"name":"Ruínas","r":[83.3,21.1,85.3,21.8]},{"name":"Spawn TR","r":[15.4,89,17.4,91.7]},{"name":"Spawn CT","r":[105.6,42.1,108.8,46]},{"name":"Spawn TR","r":[16,100.5,18.7,106.9]},{"name":"Segundo meio","r":[69.4,94.1,70.7,95.5]},{"name":"Ruínas","r":[78.9,19.8,80.9,21.2]},{"name":"Apartamentos","r":[73.2,94.8,73.9,96.1]},{"name":"Pit","r":[110.6,96,114.5,100.6]},{"name":"Meio de baixo","r":[33.8,78.2,35.2,80.3]},{"name":"Apartamentos","r":[73.8,94.1,76.4,97.4]},{"name":"Escada dos apês","r":[33.2,92.2,35.2,93.6]},{"name":"Meio de baixo","r":[27.4,75.1,28.2,76.4]},{"name":"Banana","r":[49.7,71.3,50.4,72.6]},{"name":"Ruínas","r":[71.9,17.3,72.6,18]},{"name":"Sacada","r":[98.6,101.1,99.3,101.8]},{"name":"Bomb A","r":[94.8,82.7,96.1,86]},{"name":"Bomb B","r":[70,31.9,70.7,39]},{"name":"Meio de baixo","r":[33.2,80.3,33.9,80.7]},{"name":"Spawn TR","r":[7.8,93.5,9.1,94.2]},{"name":"Meio","r":[65.5,78.9,66.9,81.5]},{"name":"Spawn TR","r":[9,79.5,10.4,80.3]},{"name":"Bomb A","r":[104.9,64.9,110.1,66.9]},{"name":"Top Mid","r":[82.1,82.1,86,86.6]},{"name":"Spawn CT","r":[107.5,29.4,110.1,35.2]},{"name":"Spawn CT","r":[99.8,52.2,102.5,53.6]},{"name":"Rampa TR","r":[44,74.4,46.6,75.8]},{"name":"Bomb B","r":[65.5,28.1,70.1,32.6]},{"name":"Bomb A","r":[96.7,79.5,100.6,83.4]},{"name":"Biblioteca","r":[115.1,63,115.8,63.7]},{"name":"Bomb B","r":[66.2,19.8,67.6,20.6]},{"name":"Ponte","r":[37.6,94.1,39.6,96.1]},{"name":"Bomb B","r":[60.5,25.5,61.2,26.3]},{"name":"Meio de baixo","r":[26.8,81.4,27.5,82.8]},{"name":"Ruínas","r":[72.5,17.3,73.3,18]},{"name":"Cozinha","r":[40.8,86.5,43.4,89.1]},{"name":"Bomb B","r":[64.3,7.1,68.8,10.4]},{"name":"Spawn CT","r":[94.1,50.3,95.5,51]},{"name":"Banana","r":[57.9,44.6,60.6,47.9]},{"name":"Apartamentos","r":[72.5,111.3,73.3,112]},{"name":"Cozinha","r":[41.4,85.9,43.4,86.6]},{"name":"Cozinha","r":[46.5,85.9,47.9,89.1]},{"name":"Apartamentos","r":[80.2,85.9,80.9,87.9]},{"name":"Bomb B","r":[64.9,30.6,65.6,32.6]},{"name":"Cemitério","r":[111.3,92.9,112,94.2]},{"name":"Banana","r":[50.3,58.6,51,59.9]},{"name":"Spawn CT","r":[95.4,35.7,96.1,38.3]},{"name":"Bomb A","r":[100.5,79.5,103.7,82.8]},{"name":"Spawn CT","r":[97.9,31.9,100.6,35.2]},{"name":"Bomb B","r":[52.2,33.2,52.9,33.9]},{"name":"Spawn CT","r":[108.7,36.3,110.1,37.1]},{"name":"Pit","r":[107.5,108.1,108.8,108.8]},{"name":"Apartamentos","r":[94.8,102.4,97.4,105]},{"name":"Bomb B","r":[65.5,24.3,68.8,28.2]},{"name":"Spawn CT","r":[108.7,37,112.6,41.5]},{"name":"Apartamentos","r":[44.6,105.6,46.6,108.2]},{"name":"Bomb B","r":[71.9,24.9,73.9,27.5]},{"name":"Bomb B","r":[65.5,4,66.9,5.3]},{"name":"Passagem","r":[53.5,77,55.5,77.7]},{"name":"Spawn CT","r":[103,35.7,103.7,37.1]},{"name":"Meio de baixo","r":[26.2,101.1,30.7,105.7]},{"name":"Pit","r":[114.4,96,115.2,98]},{"name":"Bomb B","r":[59.2,26.8,59.9,27.5]},{"name":"Rampa TR","r":[46.5,74.4,49.1,75.8]},{"name":"Spawn CT","r":[108.1,40.1,108.8,42.2]},{"name":"Meio","r":[49.7,72.5,52.3,76.4]},{"name":"Spawn TR","r":[12.2,88.4,14.2,91.7]},{"name":"Spawn TR","r":[18.6,82.1,19.3,83.4]},{"name":"Meio","r":[49,74.4,49.8,76.4]},{"name":"Pit","r":[101.1,99.8,102.5,100.6]},{"name":"Apartamentos","r":[55.4,108.1,57.4,111.4]},{"name":"Bomb B","r":[48.4,19.8,50.4,21.8]},{"name":"Spawn CT","r":[111.3,45.2,112.6,46.6]},{"name":"Beco de trás","r":[65.5,113.2,68.8,114.5]},{"name":"Spawn TR","r":[17.3,99.8,18.7,100.6]},{"name":"Segundo meio","r":[61.1,101.7,61.8,102.5]},{"name":"Meio de baixo","r":[26.8,80.2,27.5,81.5]},{"name":"Bomb A","r":[108.7,73.8,109.5,75.2]},{"name":"Spawn TR","r":[14.1,89,15.5,91.7]},{"name":"Bomb A","r":[107.5,74.4,108.8,76.4]},{"name":"Sacada","r":[98.6,99.2,99.3,101.2]},{"name":"Segundo meio","r":[52.2,100.5,53.6,101.2]},{"name":"Spawn CT","r":[89.7,42.7,91,44.7]},{"name":"Meio de baixo","r":[32.5,82.7,33.9,84.7]},{"name":"Spawn CT","r":[96,33.8,98,38.3]},{"name":"Spawn CT","r":[92.2,51.6,93.6,54.2]},{"name":"Escada dos apês","r":[39.5,87.1,40.9,88.5]},{"name":"Ruínas","r":[89,19.2,90.4,21.8]},{"name":"Bomb B","r":[59.8,27.4,61.2,28.8]},{"name":"Meio de baixo","r":[35.7,80.2,36.4,80.6]},{"name":"Segundo meio","r":[50.3,96,52.3,98.7]},{"name":"Segundo meio","r":[63.6,96,66.3,98.7]},{"name":"Biblioteca","r":[115.1,63.6,116.4,65.6]},{"name":"Segundo meio","r":[59.8,97.3,63.7,98.7]},{"name":"Spawn CT","r":[110,45.2,111.4,46]},{"name":"Segundo meio","r":[66.8,84.6,70.1,93]},{"name":"Spawn CT","r":[103.6,26.8,105,27.5]},{"name":"Spawn CT","r":[99.2,25.5,101.2,28.2]},{"name":"Apartamentos","r":[73.8,110.6,77.7,112.6]},{"name":"Segundo meio","r":[36.3,101.1,37.1,101.8]},{"name":"Top Mid","r":[81.4,87.1,83.4,89.1]},{"name":"Apartamentos","r":[42.1,107.5,43.4,108.8]},{"name":"Bomb A","r":[86.5,91.6,90.4,93]},{"name":"Meio","r":[52.8,78.2,53.6,79.6]},{"name":"Bomb A","r":[96,82.7,96.8,84.1]},{"name":"Spawn CT","r":[105.6,52.2,106.3,52.9]},{"name":"Banana","r":[49,59.8,51,61.8]},{"name":"Bomb B","r":[59.2,23,59.9,23.7]},{"name":"Ruínas","r":[71.3,10.9,72,11.7]},{"name":"Pit","r":[103.6,99.2,104.4,99.9]},{"name":"Spawn TR","r":[5.2,75.1,7.9,78.3]},{"name":"Segundo meio","r":[43.3,96,46.6,100.6]},{"name":"Bomb A","r":[94.8,85.9,99.3,88.5]},{"name":"Banana","r":[54.1,56,55.5,58]},{"name":"Meio de baixo","r":[36.3,77.6,37.1,78.3]},{"name":"Spawn CT","r":[93.5,35.7,94.2,37.1]},{"name":"Cemitério","r":[111.9,85.2,113.3,86]},{"name":"Top Mid","r":[82.1,89.7,86.6,94.9]},{"name":"Apartamentos","r":[46.5,105.6,50.4,108.2]},{"name":"Ruínas","r":[70.6,9.7,71.4,11]},{"name":"Rampa TR","r":[35.7,74.4,36.4,75.2]},{"name":"Ruínas","r":[71.9,10.9,72.6,11.7]},{"name":"Ponte","r":[37,96,40.2,102.5]},{"name":"Bomb A","r":[91.6,97.9,93,98.7]},{"name":"Cemitério","r":[111.3,89.7,112,91]},{"name":"Bomb B","r":[57.9,21.1,58.7,21.8]},{"name":"Bomb B","r":[64.9,19.8,66.3,20.6]},{"name":"Cemitério","r":[112.5,85.9,113.3,87.2]},{"name":"Meio de baixo","r":[28.1,89.7,31.4,94.2]},{"name":"Bomb B","r":[60.5,24.9,61.2,25.6]},{"name":"Banana","r":[71.9,41.4,72.6,46.6]},{"name":"Spawn TR","r":[17.9,80.8,19.3,82.2]},{"name":"Apartamentos","r":[37.6,102.4,39.6,104.4]},{"name":"Arco","r":[90.3,69.4,92.3,70.1]},{"name":"Ruínas","r":[75.7,12.8,77.7,15.5]},{"name":"Banana","r":[56.7,50.3,58,53.6]},{"name":"Ruínas","r":[69.4,14.1,70.1,16.1]},{"name":"Bomb A","r":[92.9,91.6,96.1,96.1]},{"name":"Spawn TR","r":[4,75.1,5.3,77.1]},{"name":"Apartamentos","r":[76.3,94.1,77.1,94.9]},{"name":"Meio de baixo","r":[32.5,82.2,33.3,82.6]},{"name":"Ruínas","r":[72.5,12.2,73.3,12.9]},{"name":"Top Mid","r":[86.5,67.5,88.5,69.5]},{"name":"Spawn CT","r":[93.5,47.1,96.1,48.5]},{"name":"Top Mid","r":[81.4,74.4,82.2,80.3]},{"name":"Meio de baixo","r":[26.8,86.5,28.2,88.5]},{"name":"Spawn TR","r":[4,91.6,4.7,93]},{"name":"Spawn TR","r":[14.1,96.7,14.8,98.7]},{"name":"Escada dos apês","r":[35.1,92.2,36.4,93.6]},{"name":"Segundo meio","r":[38.2,100.5,39.6,101.8]},{"name":"Segundo meio","r":[70,103,72,103.7]},{"name":"Arco","r":[94.8,69.4,96.1,70.1]},{"name":"Meio de baixo","r":[28.7,77.6,29.5,78.3]},{"name":"Spawn CT","r":[102.4,52.2,103.7,54.2]},{"name":"Top Mid","r":[82.1,64.3,83.4,65.6]},{"name":"Banana","r":[54.1,59.8,54.9,61.8]},{"name":"Bomb B","r":[54.1,24.3,54.9,25]},{"name":"Ruínas","r":[72.5,16.7,73.3,17.4]},{"name":"Pit","r":[107.5,102.4,108.2,103.1]},{"name":"Sacada","r":[101.1,99.8,101.8,100.6]},{"name":"Banana","r":[50.3,68.7,52.3,72.6]},{"name":"Spawn TR","r":[10.9,93.5,11.7,94.9]},{"name":"Spawn CT","r":[92.9,28.7,93.6,30.7]},{"name":"Banana","r":[71.9,47.8,72.6,48.5]},{"name":"Spawn CT","r":[110.6,49,111.4,49.8]},{"name":"Bomb B","r":[61.1,26.2,63.7,29.5]},{"name":"Cemitério","r":[113.2,85.9,115.2,91]},{"name":"Banana","r":[49.7,61.7,51,63.1]},{"name":"Meio de baixo","r":[30.6,104.9,31.4,105.7]},{"name":"Segundo meio","r":[59.8,98.6,60.6,99.3]},{"name":"Bomb B","r":[54.8,17.9,55.5,18.7]},{"name":"Segundo meio","r":[66.2,95.4,70.7,99.9]},{"name":"Spawn TR","r":[4,92.9,4.7,94.2]},{"name":"Meio de baixo","r":[32.5,79.5,33.9,80.3]},{"name":"Bomb A","r":[103,83.3,104.4,85.3]},{"name":"Apartamentos","r":[78.2,95.4,80.9,100.6]},{"name":"Spawn TR","r":[7.8,73.2,12.9,78.3]},{"name":"Meio de baixo","r":[26.2,75.1,27.5,79]},{"name":"Banana","r":[51.6,54.1,52.3,54.9]},{"name":"Bomb B","r":[66.2,5.2,66.9,7.2]},{"name":"Spawn CT","r":[101.1,35.7,101.8,36.4]},{"name":"Meio de baixo","r":[31.3,93.5,32,94.9]},{"name":"Ruínas","r":[83.3,21.7,91,25.6]},{"name":"Spawn TR","r":[7.8,78.2,9.8,79]},{"name":"Spawn CT","r":[99.2,28.1,100.6,29.5]},{"name":"Bomb B","r":[50.9,32.5,51.7,33.3]},{"name":"Top Mid","r":[81.4,84.6,82.2,86]},{"name":"Bomb B","r":[52.8,21.7,54.2,23.1]},{"name":"Escada dos apês","r":[37,85.9,37.7,86.6]},{"name":"Segundo meio","r":[63.6,101.7,64.4,102.5]},{"name":"Apartamentos","r":[80.8,87.1,81.5,87.9]},{"name":"Bomb A","r":[98.6,92.2,99.9,94.9]},{"name":"Bomb B","r":[54.8,26.8,55.5,27.5]},{"name":"Spawn CT","r":[107.5,36.3,108.2,38.3]},{"name":"Meio de baixo","r":[30.6,84,31.4,84.7]},{"name":"Escada dos apês","r":[33.2,85.2,33.9,86]},{"name":"Spawn CT","r":[92.9,25.5,93.6,27.5]},{"name":"Escada dos apês","r":[35.7,91.6,36.4,92.3]},{"name":"Bomb B","r":[58.6,9,59.3,10.4]},{"name":"Bomb B","r":[66.8,4,67.6,7.2]},{"name":"Bomb B","r":[61.7,14.7,62.5,16.8]},{"name":"Bomb B","r":[64.3,4.6,65,5.3]},{"name":"Bomb B","r":[59.8,26.8,60.6,27.5]},{"name":"Spawn CT","r":[103,46.5,106.9,51]},{"name":"Pit","r":[110.6,103,112,104.4]},{"name":"Banana","r":[52.8,51.6,53.6,52.9]},{"name":"Arco","r":[93.5,54.1,96.1,58.7]},{"name":"Ruínas","r":[90.3,19.8,91,21.8]},{"name":"Cemitério","r":[111.3,94.1,112,94.9]},{"name":"Bomb B","r":[55.4,26.2,56.1,26.9]},{"name":"Bomb B","r":[60.5,16,61.2,16.8]},{"name":"Spawn TR","r":[6.5,95.4,7.2,96.1]},{"name":"Segundo meio","r":[70,84.6,72.6,87.9]},{"name":"Bomb B","r":[68.7,4.6,69.5,5.3]},{"name":"Bomb A","r":[100.5,82.7,103.1,86.6]},{"name":"Biblioteca","r":[107.5,55.4,108.8,56.1]},{"name":"Bomb B","r":[56.7,21.7,57.4,22.5]},{"name":"Bomb B","r":[57.3,27.4,58,28.2]},{"name":"Segundo meio","r":[64.9,101.7,66.9,102.5]},{"name":"Spawn CT","r":[96,31.9,98,33.9]},{"name":"Apartamentos","r":[55.4,111.3,57.4,113.3]},{"name":"Bomb B","r":[56,23,56.8,24.4]},{"name":"Bomb A","r":[110,70.6,112,72.6]},{"name":"Bomb B","r":[56,21.1,56.8,21.8]},{"name":"Meio de baixo","r":[23,89.7,25,93]},{"name":"Spawn CT","r":[101.1,36.3,103.1,38.3]},{"name":"Meio de baixo","r":[31.3,89.7,32,91]},{"name":"Apartamentos","r":[56,104.3,57.4,105.7]},{"name":"Biblioteca","r":[108.1,56,111.4,59.9]},{"name":"Bomb B","r":[54.8,27.4,55.5,28.2]},{"name":"Meio","r":[52.2,74.4,52.9,76.4]},{"name":"Spawn CT","r":[93.5,30.6,96.1,33.9]},{"name":"Spawn CT","r":[102.4,46.5,103.1,47.2]},{"name":"Meio","r":[57.9,78.2,59.3,79]},{"name":"Bomb B","r":[58.6,25.5,59.3,26.9]},{"name":"Spawn TR","r":[14.7,87.8,15.5,88.5]},{"name":"Spawn TR","r":[4.6,77,5.3,83.4]},{"name":"Apartamentos","r":[79.5,110,80.9,110.7]},{"name":"Banana","r":[53.5,50.3,56.8,54.2]},{"name":"Spawn CT","r":[92.9,31.9,93.6,33.9]},{"name":"Banana","r":[59.8,48.4,60.6,49.1]},{"name":"Spawn CT","r":[105.6,45.9,106.9,46.6]},{"name":"Pit","r":[103.6,101.1,104.4,101.8]},{"name":"Escada dos apês","r":[33.2,91.6,35.2,92.3]},{"name":"Bomb B","r":[55.4,15.4,60.6,21.2]},{"name":"Spawn CT","r":[111.9,35.7,112.6,37.1]},{"name":"Bomb B","r":[64.9,5.9,65.6,6.6]},{"name":"Bomb A","r":[97.3,88.4,98.7,91.7]},{"name":"Passagem","r":[55.4,92.9,56.1,94.2]},{"name":"Ruínas","r":[71.3,16,72,18]},{"name":"Cemitério","r":[110,90.3,111.4,91.7]},{"name":"Spawn CT","r":[95.4,28.1,96.8,29.5]},{"name":"Ruínas","r":[73.2,10.9,74.5,12.9]},{"name":"Sacada","r":[102,99.7,102.1,100.5]},{"name":"Ruínas","r":[67.5,14.1,69.5,16.1]},{"name":"Segundo meio","r":[43.3,94.8,44.7,96.1]},{"name":"Spawn CT","r":[90.9,52.8,92.3,54.2]},{"name":"Quadra","r":[87.1,94.8,87.9,96.1]},{"name":"Bomb A","r":[104.9,89.7,109.5,94.9]},{"name":"Pit","r":[110,101.1,110.7,102.5]},{"name":"Segundo meio","r":[69.4,92.9,70.1,94.2]},{"name":"Bomb B","r":[56.7,22.4,58,23.7]},{"name":"Beco de trás","r":[71.9,110.6,72.6,112.6]},{"name":"Bomb B","r":[57.3,21.1,58,21.8]},{"name":"Spawn TR","r":[12.2,84.6,12.9,86]},{"name":"Segundo meio","r":[51.6,98.6,54.2,100.6]},{"name":"Bomb B","r":[52.2,17.9,52.9,18.7]},{"name":"Top Mid","r":[82.1,86.5,83.4,87.2]},{"name":"Bomb B","r":[55.4,28.1,56.1,28.8]},{"name":"Beco de trás","r":[70,114.4,70.7,115.8]},{"name":"Apartamentos","r":[75.1,101.1,75.8,101.8]},{"name":"Spawn TR","r":[7.1,94.8,7.9,95.5]},{"name":"Bomb A","r":[103,64.9,105,70.1]},{"name":"Meio de baixo","r":[28.1,99.8,31.4,101.2]},{"name":"Bomb B","r":[59.2,21.1,59.9,21.8]},{"name":"Meio de baixo","r":[31.3,92.2,32,93.6]},{"name":"Bomb B","r":[52.8,25.5,53.6,26.9]},{"name":"Apartamentos","r":[38.2,110,39,110.7]},{"name":"Segundo meio","r":[70.6,94.1,71.4,94.9]},{"name":"Spawn CT","r":[100.5,34.4,101.2,35.2]},{"name":"Spawn CT","r":[94.1,33.8,95.5,38.3]},{"name":"Spawn CT","r":[97.3,52.8,98.7,54.2]},{"name":"Spawn CT","r":[100.5,47.1,101.2,47.9]},{"name":"Segundo meio","r":[63.6,94.8,65.6,96.1]},{"name":"Pit","r":[111.9,103,113.9,108.2]},{"name":"Spawn CT","r":[107.5,35.1,110.1,36.4]},{"name":"Bomb B","r":[53.5,23.6,54.2,24.4]},{"name":"Deck","r":[46.5,90.3,48.5,92.3]},{"name":"Meio de baixo","r":[32.5,80.2,33.3,80.6]},{"name":"Pit","r":[107.5,98.6,108.8,102.5]},{"name":"Banana","r":[65.5,40.8,67.6,46.6]},{"name":"Spawn CT","r":[95.4,38.2,96.8,39]},{"name":"Bomb B","r":[66.2,32.5,70.1,40.2]},{"name":"Ruínas","r":[71.9,12.2,72.6,12.9]},{"name":"Segundo meio","r":[35.7,94.8,36.4,96.1]},{"name":"Beco de trás","r":[71.9,109.4,72.6,110.1]},{"name":"Sacada","r":[101.1,103.6,101.8,105]},{"name":"Spawn TR","r":[16,106.8,17.4,107.6]},{"name":"Segundo meio","r":[38.9,101.7,39.6,102.5]},{"name":"Cozinha","r":[47.8,85.9,49.1,89.1]},{"name":"Beco de trás","r":[59.2,111.3,65,113.9]},{"name":"Spawn CT","r":[108.7,41.4,112,45.3]},{"name":"Pit","r":[101.1,100.5,103.1,103.1]},{"name":"Cemitério","r":[110.6,92.9,111.4,93.6]},{"name":"Banana","r":[58.6,44,59.3,44.7]},{"name":"Ruínas","r":[70,14.7,70.7,16.8]},{"name":"Bomb B","r":[58.6,10.3,62.5,14.2]},{"name":"Sacada","r":[101.1,99.2,101.8,99.9]},{"name":"Spawn CT","r":[104.9,40.8,106.3,42.2]},{"name":"Spawn CT","r":[93.5,25.5,98.7,28.2]},{"name":"Spawn CT","r":[106.8,52.8,108.8,54.9]},{"name":"Bomb B","r":[56,26.2,58.7,27.5]},{"name":"Top Mid","r":[85.9,84.6,86.6,86.6]},{"name":"Apartamentos","r":[78.2,105.6,80.9,110.1]},{"name":"Quadra","r":[85.9,97.9,86.6,98.7]},{"name":"Bomb B","r":[51.6,26.8,52.3,27.5]},{"name":"Banana","r":[59.2,47.8,61.2,48.5]},{"name":"Spawn TR","r":[7.8,79.5,9.1,80.3]},{"name":"Bomb A","r":[107.5,76.3,109.5,82.2]},{"name":"Segundo meio","r":[71.9,100.5,72.6,102.5]},{"name":"Bomb B","r":[64.9,20.5,68.8,24.4]},{"name":"Banana","r":[50.9,57.3,51.7,58.7]},{"name":"Segundo meio","r":[56,96.7,56.8,97.4]},{"name":"Bomb A","r":[103.6,77.6,104.4,79]},{"name":"Bomb B","r":[56,31.3,57.4,33.3]},{"name":"Ruínas","r":[74.4,12.2,75.2,12.9]},{"name":"Meio","r":[65.5,81.4,66.9,84.1]},{"name":"Ruínas","r":[80.8,20.5,82.8,21.2]},{"name":"Bomb A","r":[103,82.7,103.7,83.4]},{"name":"Rampa TR","r":[35.1,74.4,35.8,75.8]},{"name":"Bomb B","r":[60.5,23,61.2,23.7]},{"name":"Biblioteca","r":[111.9,55.4,112.6,56.1]},{"name":"Spawn TR","r":[12.2,83.3,12.9,84.7]},{"name":"Apartamentos","r":[78.2,93.5,80.3,95.5]},{"name":"Bomb B","r":[52.8,23,53.6,24.4]},{"name":"Apartamentos","r":[37.6,110,38.3,110.7]},{"name":"Banana","r":[50.3,66.2,51.7,68.8]},{"name":"Bomb B","r":[57.9,28.1,58.7,28.8]},{"name":"Ruínas","r":[68.7,7.8,71.4,9.8]},{"name":"Bomb B","r":[53.5,25.5,54.2,26.3]},{"name":"Pit","r":[108.7,108.1,110.1,108.8]},{"name":"Beco de trás","r":[70,109.4,72,111.4]},{"name":"Banana","r":[54.1,57.9,54.9,59.3]},{"name":"Bomb A","r":[101.1,91.6,101.8,92.3]},{"name":"Segundo meio","r":[71.9,98.6,72.6,100.6]},{"name":"Bomb B","r":[48.4,15.4,52.3,19.9]},{"name":"Bomb A","r":[98.6,91.6,100.6,92.3]},{"name":"Banana","r":[56.7,53.5,57.4,54.2]},{"name":"Bomb B","r":[61.1,14.7,61.8,15.5]},{"name":"Bomb B","r":[61.1,16,61.8,16.8]},{"name":"Meio de baixo","r":[31.3,90.9,32,92.3]},{"name":"Ruínas","r":[71.3,12.8,72,14.8]},{"name":"Ruínas","r":[73.2,16,74.5,18]},{"name":"Bomb B","r":[56.7,28.7,57.4,29.5]},{"name":"Spawn CT","r":[97.3,50.9,98,51.7]},{"name":"Ruínas","r":[71.9,14.7,72.6,16.8]},{"name":"Banana","r":[57.9,41.4,58.7,42.2]},{"name":"Apartamentos","r":[78.2,102.4,80.9,105.7]},{"name":"Spawn CT","r":[96,50.9,97.4,54.2]},{"name":"Cemitério","r":[110.6,80.8,112,85.3]},{"name":"Meio de baixo","r":[35.7,78.9,36.4,79.6]},{"name":"Meio","r":[50.3,79.5,51,81.5]},{"name":"Spawn TR","r":[9.7,93.5,11,95.5]},{"name":"Ruínas","r":[77.6,14.1,80.9,17.4]},{"name":"Meio de baixo","r":[35.1,80.8,35.8,82.2]},{"name":"Bomb B","r":[54.1,24.9,54.9,25.6]},{"name":"Banana","r":[49.7,66.2,50.4,68.2]},{"name":"Top Mid","r":[86.5,71.3,87.2,73.3]},{"name":"Cemitério","r":[112.5,87.1,113.3,88.5]},{"name":"Top Mid","r":[83.3,64.3,89.1,67.6]},{"name":"Segundo meio","r":[61.1,99.2,66.3,101.8]},{"name":"Spawn TR","r":[6.5,93.5,7.9,94.9]},{"name":"Meio de baixo","r":[26.8,78.9,27.5,80.3]},{"name":"Sacada","r":[98.9,98,99.6,98.4]},{"name":"Ruínas","r":[73.8,24.9,77.1,28.2]},{"name":"Apartamentos","r":[42.1,105.6,44.7,107.6]},{"name":"Meio de baixo","r":[30.6,101.1,32,105]},{"name":"Arco","r":[93.5,62.4,96.1,63.7]},{"name":"Meio","r":[66.8,78.9,72.6,84.7]},{"name":"Meio de baixo","r":[35.1,78.2,35.8,79.6]},{"name":"Spawn CT","r":[89.7,27.4,91.7,32]},{"name":"Meio de baixo","r":[28.1,85.2,30.7,89.8]},{"name":"Spawn CT","r":[92.2,28.7,93,30.7]},{"name":"Bomb B","r":[56,28.1,56.8,28.8]},{"name":"Spawn CT","r":[89.7,38.9,91,42.8]},{"name":"Banana","r":[52.8,61.7,54.9,65]},{"name":"Bomb A","r":[98.6,88.4,99.3,89.1]},{"name":"Rampa TR","r":[33.8,73.2,35.2,75.8]},{"name":"Bomb B","r":[61.1,24.9,61.8,25.6]},{"name":"Bomb B","r":[63,29.4,63.7,30.1]},{"name":"Spawn CT","r":[104.9,43.3,105.7,44.7]},{"name":"Spawn CT","r":[106.2,52.2,106.9,52.9]},{"name":"Segundo meio","r":[56,102.4,57.4,103.1]},{"name":"Meio de baixo","r":[26.2,88.4,28.2,94.2]},{"name":"Escada dos apês","r":[40.1,88.4,40.9,90.4]},{"name":"Apartamentos","r":[77.6,110.6,80.9,112.6]},{"name":"Apartamentos","r":[94.8,100.5,97.4,102.5]},{"name":"Cemitério","r":[113.2,85.2,113.9,86]},{"name":"Spawn TR","r":[6.5,73.8,7.9,75.2]},{"name":"Passagem","r":[55.4,94.1,56.1,94.9]},{"name":"Spawn TR","r":[6.5,78.9,7.2,79.6]},{"name":"Cemitério","r":[110.6,85.9,112,89.8]},{"name":"Spawn CT","r":[93.5,28.1,95.5,30.7]},{"name":"Meio de baixo","r":[34.4,82.2,35.2,82.6]},{"name":"Spawn CT","r":[111.9,33.8,113.9,35.8]},{"name":"Meio","r":[56.7,77,58,79]},{"name":"Bomb A","r":[104.3,82.1,109.5,89.8]},{"name":"Biblioteca","r":[111.9,59.2,114.5,63.1]},{"name":"Beco de trás","r":[71.3,113.2,72.6,115.2]},{"name":"Spawn CT","r":[95.4,33.8,96.1,34.5]},{"name":"Bomb B","r":[59.2,4,64.4,10.4]},{"name":"Ruínas","r":[72.5,10.9,73.3,12.3]},{"name":"Meio","r":[56,83.3,56.8,84.1]},{"name":"Segundo meio","r":[54.1,99.8,54.9,100.6]},{"name":"Sacada","r":[71.3,97.3,73.3,99.3]},{"name":"Bomb B","r":[48.4,33.2,50.4,33.9]},{"name":"Bomb B","r":[57.3,21.7,58,22.5]},{"name":"Meio de baixo","r":[31.3,80.8,32,82.2]},{"name":"Spawn CT","r":[110,33.8,112,35.2]},{"name":"Bomb B","r":[71.9,27.4,73.3,28.8]},{"name":"Spawn CT","r":[96.7,28.1,98.7,28.8]},{"name":"Sacada","r":[101.1,101.7,101.8,103.7]},{"name":"Spawn CT","r":[89.7,31.9,91,34.5]},{"name":"Apartamentos","r":[78.2,85.9,80.3,88.5]},{"name":"Segundo meio","r":[50.3,98.6,51.7,99.3]},{"name":"Banana","r":[56.7,44,57.4,44.7]},{"name":"Meio de baixo","r":[23,96,26.3,99.9]},{"name":"Banana","r":[51.6,54.8,54.2,58.7]},{"name":"Spawn TR","r":[6.5,78.2,7.9,79]},{"name":"Spawn TR","r":[14.7,96,17.4,100.6]},{"name":"Bomb B","r":[56.7,21.1,57.4,21.8]},{"name":"Pit","r":[103,101.1,103.7,101.8]},{"name":"Bomb A","r":[104.3,90.9,105,92.3]},{"name":"Spawn TR","r":[10.3,79.5,12.3,80.3]},{"name":"Cemitério","r":[111.9,92.2,112.6,94.9]},{"name":"Apartamentos","r":[76.3,94.8,77.7,96.8]},{"name":"Bomb B","r":[61.1,21.7,63.1,23.7]},{"name":"Bomb B","r":[70,30,70.7,32]},{"name":"Apartamentos","r":[42.1,104.3,42.8,105.7]},{"name":"Meio de baixo","r":[36.3,78.2,37.1,79]},{"name":"Bomb B","r":[64.9,24.3,65.6,25.6]},{"name":"Spawn CT","r":[93.5,50.9,96.1,54.2]},{"name":"Spawn CT","r":[90.9,47.1,93.6,51.7]},{"name":"Pit","r":[105.6,103,108.2,104.4]},{"name":"Spawn CT","r":[104.9,42.1,105.7,42.8]},{"name":"Ruínas","r":[65.5,15.4,67.6,18]},{"name":"Bomb A","r":[104.3,70,105,71.4]},{"name":"Top Mid","r":[81.4,89,82.2,90.4]},{"name":"Spawn TR","r":[10.3,78.9,12.3,79.6]},{"name":"Apartamentos","r":[78.2,88.4,80.3,93.6]},{"name":"Spawn CT","r":[97.9,37,98.7,38.3]},{"name":"Rampa TR","r":[36.3,72.5,37.1,73.3]},{"name":"Bomb A","r":[101.7,90.9,103.1,91.7]},{"name":"Arco","r":[88.4,68.1,91,69.5]},{"name":"Rampa TR","r":[35.1,72.5,36.4,73.3]},{"name":"Meio de baixo","r":[32.1,82.7,32.4,84.1]},{"name":"Bomb B","r":[52.2,28.7,56.1,33.3]},{"name":"Bomb B","r":[56,29.4,58.7,31.4]},{"name":"Bomb B","r":[61.7,17.3,62.5,18]},{"name":"Bomb A","r":[108.7,72.5,109.5,73.9]},{"name":"Sacada","r":[101.1,100.5,101.8,101.8]},{"name":"Bomb B","r":[68.7,24.9,72,28.2]},{"name":"Banana","r":[71.9,46.5,73.9,47.9]},{"name":"Spawn CT","r":[98.6,35.1,101.2,38.3]},{"name":"Bomb A","r":[108.1,94.8,109.5,96.8]},{"name":"Spawn CT","r":[101.1,47.1,103.1,51]},{"name":"Spawn CT","r":[89.7,44.6,91,47.2]},{"name":"Meio de baixo","r":[30.6,86.5,31.4,87.9]},{"name":"Meio de baixo","r":[29.4,75.1,33.9,79.6]},{"name":"Bomb A","r":[92.9,97.3,93.6,98.7]},{"name":"Spawn CT","r":[93.5,48.4,94.2,49.1]},{"name":"Bomb B","r":[58.6,28.1,59.3,28.8]},{"name":"Spawn CT","r":[106.8,52.2,108.8,52.9]},{"name":"Spawn CT","r":[89.7,47.1,91,51.7]},{"name":"Meio de baixo","r":[27.4,79.5,31.4,84.1]},{"name":"Spawn CT","r":[106.8,45.9,111.4,49.1]},{"name":"Banana","r":[50.9,61.7,52.9,63.7]},{"name":"Bomb B","r":[52.2,26.8,54.2,28.8]},{"name":"Spawn CT","r":[110,35.1,112,37.1]},{"name":"Bomb B","r":[61.7,14.1,62.5,14.8]},{"name":"Apartamentos","r":[97.3,99.8,98,100.6]},{"name":"Apartamentos","r":[78.2,110,79.6,110.7]},{"name":"Spawn TR","r":[18.6,102.4,23.1,106.9]},{"name":"Rampa TR","r":[33.8,72.5,35.2,73.3]},{"name":"Spawn TR","r":[10.9,78.2,12.9,79]},{"name":"Bomb A","r":[87.8,92.9,93,98]},{"name":"Bomb B","r":[56.7,28.1,57.4,28.8]},{"name":"Bomb B","r":[56.7,27.4,57.4,28.2]},{"name":"Bomb B","r":[58.6,4.6,59.3,6]},{"name":"Meio","r":[56.7,78.9,60.6,82.8]},{"name":"Segundo meio","r":[56.7,98.6,57.4,99.3]},{"name":"Bomb B","r":[59.8,23.6,60.6,24.4]},{"name":"Spawn TR","r":[14.1,98.6,14.8,99.9]},{"name":"Pit","r":[110,108.1,111.4,108.8]},{"name":"Apartamentos","r":[73.2,101.1,75.2,102.5]},{"name":"Bomb B","r":[61.1,29.4,61.8,30.7]},{"name":"Spawn CT","r":[111.3,46.5,112,48.5]},{"name":"Meio de baixo","r":[36.3,75.7,37.7,77.7]},{"name":"Banana","r":[51.6,66.2,52.9,68.8]},{"name":"Escada dos apês","r":[33.8,84.6,34.5,86]},{"name":"Meio de baixo","r":[23,92.9,25,96.1]},{"name":"Sacada","r":[98.9,98.7,99.3,99.3]},{"name":"Pit","r":[113.8,103.6,115.8,107.6]},{"name":"Banana","r":[50.9,64.9,51.7,66.3]},{"name":"Spawn TR","r":[15.4,86.5,17.4,89.1]},{"name":"Bomb B","r":[63.6,25.5,65.6,29.5]},{"name":"Bomb B","r":[65.5,5.2,66.3,6.6]},{"name":"Bomb B","r":[64.9,29.4,65.6,30.7]},{"name":"Spawn CT","r":[108.1,36.3,108.8,37.7]},{"name":"Bomb B","r":[48.4,26.8,50.4,30.7]},{"name":"Segundo meio","r":[46.5,96,48.5,96.8]},{"name":"Bomb B","r":[59.2,25.5,59.9,26.3]},{"name":"Segundo meio","r":[54.8,99.8,55.5,100.6]},{"name":"Bomb A","r":[103.6,82.1,104.4,83.4]},{"name":"Meio de baixo","r":[27.4,77.6,28.2,78.3]},{"name":"Meio de baixo","r":[28.1,78.9,28.8,79.6]},{"name":"Bomb A","r":[90.3,92.2,91.7,93]},{"name":"Segundo meio","r":[38.2,99.2,40.2,100.6]},{"name":"Bomb B","r":[55.4,14.7,58.7,15.5]},{"name":"Spawn CT","r":[97.9,35.7,98.7,37.1]},{"name":"Segundo meio","r":[36.3,99.2,38.3,101.2]},{"name":"Pit","r":[113.8,103,115.2,103.7]},{"name":"Meio","r":[53.5,78.2,54.9,80.3]},{"name":"Meio de baixo","r":[31.3,79.5,32.6,80.3]},{"name":"Meio","r":[49,76.3,50.4,81.5]},{"name":"Spawn CT","r":[106.8,50.9,108.8,51.7]},{"name":"Pit","r":[108.1,102.4,110.7,104.4]},{"name":"Top Mid","r":[83.3,77,87.2,81.5]},{"name":"Spawn CT","r":[95.4,48.4,96.1,49.1]},{"name":"Apartamentos","r":[94.8,99.2,97.4,100.6]},{"name":"Bomb A","r":[102.4,94.8,105.7,98]},{"name":"Bomb A","r":[102.4,92.2,105,94.9]},{"name":"Pit","r":[102.4,99.2,103.1,100.6]},{"name":"Bomb B","r":[59.2,27.4,59.9,28.2]},{"name":"Quadra","r":[83.3,94.8,86,98]},{"name":"Bomb A","r":[96,92.2,98,96.1]},{"name":"Spawn CT","r":[105.6,38.2,108.2,39.6]},{"name":"Segundo meio","r":[39.5,100.5,40.2,102.5]},{"name":"Sacada","r":[98.9,96.7,99.3,98.1]},{"name":"Top Mid","r":[83.3,67.5,86.6,77.1]},{"name":"Spawn CT","r":[108.1,38.9,108.8,40.2]},{"name":"Sacada","r":[98.9,98.6,99.5,98.8]},{"name":"Escada dos apês","r":[37,93.5,37.7,94.2]},{"name":"Bomb B","r":[64.9,32.5,66.3,33.9]},{"name":"Spawn TR","r":[17.9,80.2,18.7,80.9]},{"name":"Ruínas","r":[71.9,16.7,72.6,17.4]},{"name":"Deck","r":[46.5,92.2,54.9,95.5]},{"name":"Spawn CT","r":[101.1,26.8,103.7,28.2]},{"name":"Meio","r":[54.8,83.3,55.5,84.7]},{"name":"Escada dos apês","r":[37.6,85.9,38.3,86.6]},{"name":"Ruínas","r":[77,23.6,79,28.2]},{"name":"Sacada","r":[98.6,98,99,98.4]},{"name":"Beco de trás","r":[68.1,106.8,70.1,111.4]},{"name":"Spawn TR","r":[17.3,106.8,18,107.6]},{"name":"Spawn TR","r":[6.5,79.5,7.9,80.3]},{"name":"Banana","r":[52.2,52.8,53.6,54.9]},{"name":"Ruínas","r":[74.4,16,75.2,17.4]},{"name":"Bomb B","r":[61.7,16.7,62.5,17.4]},{"name":"Spawn TR","r":[14.7,84.6,18.7,86.6]},{"name":"Apartamentos","r":[77,102.4,78.3,105]},{"name":"Segundo meio","r":[70.6,94.8,72.6,96.8]},{"name":"Apartamentos","r":[37,106.2,37.7,106.9]},{"name":"Apartamentos","r":[80.8,102.4,87.9,105]},{"name":"Top Mid","r":[86.5,85.9,87.2,87.2]},{"name":"Bomb B","r":[58.6,5.9,59.3,7.9]},{"name":"Banana","r":[67.5,40.1,72,48.5]},{"name":"Bomb B","r":[59.2,31.3,61.2,33.3]},{"name":"Ruínas","r":[78.9,21.1,83.4,25.6]},{"name":"Spawn CT","r":[99.8,30.6,100.6,32]},{"name":"Spawn TR","r":[17.9,99.2,18.7,99.9]},{"name":"Meio de baixo","r":[31.9,80.3,32.6,80.7]},{"name":"Banana","r":[56,45.9,56.8,46.6]},{"name":"Spawn CT","r":[93.5,50.3,94.2,51]},{"name":"Meio de baixo","r":[31.3,88.4,32,89.8]},{"name":"Segundo meio","r":[66.2,99.8,68.8,101.8]},{"name":"Spawn CT","r":[94.1,38.2,95.5,39]},{"name":"Meio de baixo","r":[33.2,82.4,33.9,82.7]},{"name":"Apartamentos","r":[37,109.4,37.7,110.1]},{"name":"Bomb B","r":[48.4,30.6,51,33.3]},{"name":"Cozinha","r":[49,85.9,49.8,87.2]},{"name":"Top Mid","r":[86.5,73.2,87.2,75.2]},{"name":"Sacada","r":[101.7,99.8,102.1,100.5]},{"name":"Banana","r":[54.1,49,58,50.4]},{"name":"Spawn TR","r":[7.8,94.1,8.5,94.9]},{"name":"Bomb A","r":[101.7,96,102.5,98]},{"name":"Rampa TR","r":[37,71.9,39.6,73.9]},{"name":"Deck","r":[48.4,91.6,49.1,92.3]},{"name":"Segundo meio","r":[35.7,99.2,36.4,100.6]},{"name":"Segundo meio","r":[68.7,99.8,72,103.1]},{"name":"Top Mid","r":[82.1,78.2,83.4,82.2]},{"name":"Meio de baixo","r":[36.3,78.9,37.7,80.3]},{"name":"Bomb B","r":[48.4,12.8,50.4,15.5]},{"name":"Spawn TR","r":[12.8,87.8,13.6,88.5]},{"name":"Meio de baixo","r":[31.3,80.2,32,80.9]},{"name":"Spawn CT","r":[93.5,49,94.2,50.4]},{"name":"Spawn TR","r":[4.6,85.2,12.3,93.6]},{"name":"Segundo meio","r":[33.8,101.1,35.8,101.8]},{"name":"Arco","r":[89,69.4,90.4,70.1]},{"name":"Ruínas","r":[70,12.8,70.7,14.8]},{"name":"Spawn TR","r":[9,95.4,11.7,100.6]},{"name":"Segundo meio","r":[65.5,95.4,66.3,96.1]},{"name":"Segundo meio","r":[41.4,94.8,43.4,98]},{"name":"Arco","r":[96,64.3,103.1,70.1]},{"name":"Spawn CT","r":[89.7,51.6,91,54.2]},{"name":"Spawn TR","r":[14.1,86.5,15.5,87.9]},{"name":"Spawn TR","r":[21.7,106.8,23.1,107.6]},{"name":"Spawn CT","r":[100.5,28.1,107.6,34.5]},{"name":"Segundo meio","r":[46.5,96.7,50.4,100.6]},{"name":"Segundo meio","r":[55.4,99.2,61.2,102.5]},{"name":"Bomb A","r":[105.6,94.8,108.2,98.7]},{"name":"Meio de baixo","r":[27.4,85.2,28.2,86.6]},{"name":"Bomb A","r":[99.2,86.5,101.8,87.9]},{"name":"Pit","r":[101.1,103,105.7,107.6]},{"name":"Spawn TR","r":[9,93.5,9.8,94.9]},{"name":"Bomb B","r":[54.1,21.7,54.9,22.5]},{"name":"Meio de baixo","r":[26.8,82.7,27.5,84.1]},{"name":"Ruínas","r":[70.6,12.8,71.4,16.8]},{"name":"Bomb B","r":[54.1,26.2,54.9,26.9]},{"name":"Meio de baixo","r":[31.3,87.1,32,88.5]},{"name":"Bomb A","r":[94.8,77.6,96.8,80.3]},{"name":"Cemitério","r":[112.5,90.9,115.2,94.9]},{"name":"Meio de baixo","r":[26.2,105.6,31.4,107.6]},{"name":"Bomb B","r":[60.5,17.3,61.2,18.7]},{"name":"Bomb A","r":[109.4,90.3,110.1,91.7]},{"name":"Beco de trás","r":[71.3,111.3,72,112.6]},{"name":"Bomb A","r":[96.7,78.9,97.4,79.6]},{"name":"Meio de baixo","r":[31.3,85.2,32,87.2]},{"name":"Spawn CT","r":[90.9,21.1,101.2,25.6]},{"name":"Rampa TR","r":[44,71.9,49.8,74.5]},{"name":"Cozinha","r":[41.4,90.3,44.1,93]},{"name":"Bomb B","r":[73.2,27.4,73.9,28.2]},{"name":"Bomb A","r":[104.3,89.7,105,91]},{"name":"Spawn TR","r":[9.7,78.2,11,79]},{"name":"Meio de baixo","r":[31.3,82.1,32,84.1]},{"name":"Banana","r":[60.5,41.4,65.6,46.6]},{"name":"Bomb B","r":[55.4,23.6,56.1,24.4]},{"name":"Cozinha","r":[43.3,87.1,46.6,89.1]},{"name":"Escada dos apês","r":[37.6,86.5,39.6,88.5]},{"name":"Banana","r":[56.7,44.6,58,46.6]},{"name":"Passagem","r":[55.4,77,56.1,79]},{"name":"Ruínas","r":[71.9,12.8,72.6,14.8]},{"name":"Segundo meio","r":[66.8,92.9,69.5,95.5]},{"name":"Spawn TR","r":[12.2,85.9,12.9,87.2]},{"name":"Pit","r":[106.2,108.1,107.6,108.8]},{"name":"Meio","r":[50.9,79.5,53.6,84.7]},{"name":"Spawn CT","r":[98.6,52.2,99.9,54.2]},{"name":"Biblioteca","r":[107.5,56,108.2,59.9]},{"name":"Biblioteca","r":[111.3,56,114.5,59.3]},{"name":"Bomb B","r":[64.9,4.6,65.6,5.3]},{"name":"Bomb B","r":[59.8,22.4,60.6,23.1]},{"name":"Biblioteca","r":[106.8,56,107.6,57.4]},{"name":"Rampa TR","r":[36.3,73.8,39.6,75.8]},{"name":"Escada dos apês","r":[37,86.5,37.7,87.9]},{"name":"Meio","r":[53.5,80.2,54.9,82.8]},{"name":"Segundo meio","r":[56.7,94.8,63.7,97.4]},{"name":"Meio de baixo","r":[23,99.8,25,107.6]},{"name":"Bomb B","r":[60.5,26.2,61.2,26.9]},{"name":"Segundo meio","r":[52.2,96,54.2,96.8]},{"name":"Segundo meio","r":[40.1,97.9,42.8,100.6]},{"name":"Spawn TR","r":[5.2,78.2,6.6,80.3]},{"name":"Segundo meio","r":[71.9,96.7,72.6,98.7]},{"name":"Segundo meio","r":[63,98.6,65,99.3]},{"name":"Bomb B","r":[67.5,19.2,68.8,20.6]},{"name":"Biblioteca","r":[110,66.8,111.4,67.6]},{"name":"Bomb B","r":[70.6,28.1,72,28.8]},{"name":"Banana","r":[50.9,58.6,54.2,61.8]},{"name":"Ruínas","r":[77.6,17.3,79.6,19.9]},{"name":"Top Mid","r":[82.1,74.4,83.4,78.3]},{"name":"Spawn CT","r":[108.7,45.2,110.1,46]},{"name":"Spawn TR","r":[15.4,83.3,18.7,84.7]},{"name":"Escada dos apês","r":[36.3,88.4,40.2,93.6]},{"name":"Bomb B","r":[52.2,18.6,55.5,21.8]},{"name":"Apartamentos","r":[37,104.3,38.3,106.3]},{"name":"Segundo meio","r":[55.4,94.8,56.8,96.8]},{"name":"Bomb B","r":[63,21.7,63.7,22.5]},{"name":"Ruínas","r":[77,19.8,79,23.7]},{"name":"Meio","r":[72.5,80.2,82.2,84.7]},{"name":"Cemitério","r":[111.9,80.8,113.9,85.3]}],
-    practice: {"start":[55.5,97.5],"yaw":-0.412,"spots":[[51.5,78.5],[50.5,81.5],[54.5,81.5],[69.5,80.5],[66.5,82.5],[61.5,79.5],[79.5,81.5],[76.5,83.5],[57.5,81.5],[81.5,84.5]]},
+    practice: {"start":[55.5,97.5],"yaw":-0.412,"spots":[[70.5,84.5],[62.5,80.5],[51.5,73.5],[75.5,83.5],[66.5,81.5],[53.5,79.5],[50.5,77.5],[58.5,80.5],[79.5,82.5],[51.5,82.5]]},
     dom: {"A":[101.5,85.5],"B":[62.5,81.5],"C":[61.5,21.5]},
     hpZones: [[101.5,85.5],[62.5,81.5],[61.5,21.5],[74.5,101.5],[84.5,78.5]],
     wingman: "B",
@@ -8173,8 +8201,82 @@ const MAPS = {
     ziplines: [[299.5, "g2.8", 77.5, 302, "g2.8", 140], [109, "g2.8", 59, 112, "g2.8", 100], [190, "g5.5", 190, 230, "g2.8", 224], [333, "g2.8", 247, 352, "g2.8", 300], [127.5, "g2.8", 145.5, 150, "g2.8", 176]],
     radarLabels: [],
   },
+  // dl_gulag: arena de duelo (48x36) para o Duelo 1x1 e 2x2. Gerado por gen_gulag.js (mapgen.js).
+  // Pátio da prisão à noite: chuveiros, contêineres, alcovas desencontradas e bandeira da prorrogação no centro.
+  gulag: {
+    id: "gulag", name: "dl_gulag", desc: "Arena de duelo · pátio da prisão, até a morte", w: 48, d: 36,
+    modes: ["duel", "duel2", "dm", "ffa", "gungame"],
+    fog: 0.012,
+    duelArena: true,
+    light: { sunDir: [0.25, 0.85, 0.35], sun: [1.55, 1.1, 0.68], sky: [0.22, 0.2, 0.26], ground: [0.3, 0.24, 0.18], fog: [0.14, 0.1, 0.08], zenith: [0.03, 0.03, 0.07], sunGlow: [0.9, 0.5, 0.25] },
+    terrain: { base: 2, prims: [
+
+    ] },
+    ops: [
+      ["terrain", 1, 1, 47, 35, MAT.CONCRETE], ["wall", 1, 1, 47, 3, "g8"], ["wallmat", 1, 1, 47, 3, MAT.CONCRETE],
+      ["wall", 1, 33, 47, 35, "g8"], ["wallmat", 1, 33, 47, 35, MAT.CONCRETE], ["wall", 1, 3, 3, 33, "g8"],
+      ["wallmat", 1, 3, 3, 33, MAT.CONCRETE], ["wall", 45, 3, 47, 33, "g8"], ["wallmat", 45, 3, 47, 33, MAT.CONCRETE],
+      ["wall", 9, 3, 10, 13, "g4.6"], ["wallmat", 9, 3, 10, 13, MAT.BLUEWALL], ["wall", 38, 23, 39, 33, "g4.6"],
+      ["wallmat", 38, 23, 39, 33, MAT.BLUEWALL], ["wall", 9, 23, 10, 33, "g4.6"], ["wallmat", 9, 23, 10, 33, MAT.BLUEWALL],
+      ["wall", 38, 3, 39, 13, "g4.6"], ["wallmat", 38, 3, 39, 13, MAT.BLUEWALL], ["wall", 12, 11, 13, 25, "g3.6"],
+      ["wallmat", 12, 11, 13, 25, MAT.BLUEWALL], ["wall", 35, 11, 36, 25, "g3.6"], ["wallmat", 35, 11, 36, 25, MAT.BLUEWALL],
+      ["floormat", 3, 3, 9, 33, MAT.TILE], ["floormat", 39, 3, 45, 33, MAT.TILE], ["floormat", 13, 3, 36, 7, MAT.TILE],
+      ["floormat", 12, 29, 35, 33, MAT.TILE], ["wall", 19, 17, 20, 18, "g5.2"], ["wallmat", 19, 17, 20, 18, MAT.CONCRETE],
+      ["wall", 28, 18, 29, 19, "g5.2"], ["wallmat", 28, 18, 29, 19, MAT.CONCRETE], ["wall", 14, 27, 17, 28, "g1.1"],
+      ["wallmat", 14, 27, 17, 28, MAT.CONCRETE], ["wall", 31, 8, 34, 9, "g1.1"], ["wallmat", 31, 8, 34, 9, MAT.CONCRETE],
+    ],
+    props: [
+      [14, 3, 14.2, 6.2, "g", 2.2, MAT.TILE], [33.8, 29.8, 34, 33, "g", 2.2, MAT.TILE], [18.5, 3, 18.7, 6.2, "g", 2.2, MAT.TILE],
+      [29.3, 29.8, 29.5, 33, "g", 2.2, MAT.TILE], [23, 3, 23.2, 6.2, "g", 2.2, MAT.TILE], [24.8, 29.8, 25, 33, "g", 2.2, MAT.TILE],
+      [27.5, 3, 27.7, 6.2, "g", 2.2, MAT.TILE], [20.3, 29.8, 20.5, 33, "g", 2.2, MAT.TILE], [32, 3, 32.2, 6.2, "g", 2.2, MAT.TILE],
+      [15.8, 29.8, 16, 33, "g", 2.2, MAT.TILE], [17, 11, 23, 13.6, "g", 2.6, MAT.METAL, "container"], [25, 22.4, 31, 25, "g", 2.6, MAT.METAL, "container"],
+      [15, 14.5, 16.3, 15.8, "g0", 1.1, MAT.CRATE], [16.3, 14.6, 17.6, 15.9, "g0", 1.1, MAT.CRATE], [30.4, 20.1, 31.7, 21.4, "g0", 1.1, MAT.CRATE],
+      [31.7, 20.2, 33, 21.5, "g0", 1.1, MAT.CRATE], [34.5, 7.5, 35.15, 8.15, "g", 0.95, MAT.BARREL, "cyl"], [35.2, 8.2, 35.85, 8.85, "g", 0.95, MAT.BARREL, "cyl"],
+      [12.85, 27.85, 13.5, 28.5, "g", 0.95, MAT.BARREL, "cyl"], [12.15, 27.15, 12.8, 27.8, "g", 0.95, MAT.BARREL, "cyl"],
+    ],
+    ladders: [],
+    decor: [
+      ["wire", 3, "g8.3", 3, 9, "g8.3", 3, 0.25], ["wire", 9, "g8.3", 3, 15, "g8.3", 3, 0.25], ["wire", 15, "g8.3", 3, 21, "g8.3", 3, 0.25], ["wire", 21, "g8.3", 3, 27, "g8.3", 3, 0.25],
+      ["wire", 27, "g8.3", 3, 33, "g8.3", 3, 0.25], ["wire", 33, "g8.3", 3, 39, "g8.3", 3, 0.25], ["wire", 39, "g8.3", 3, 45, "g8.3", 3, 0.25], ["wire", 3, "g8.3", 33, 9, "g8.3", 33, 0.25],
+      ["wire", 9, "g8.3", 33, 15, "g8.3", 33, 0.25], ["wire", 15, "g8.3", 33, 21, "g8.3", 33, 0.25], ["wire", 21, "g8.3", 33, 27, "g8.3", 33, 0.25], ["wire", 27, "g8.3", 33, 33, "g8.3", 33, 0.25],
+      ["wire", 33, "g8.3", 33, 39, "g8.3", 33, 0.25], ["wire", 39, "g8.3", 33, 45, "g8.3", 33, 0.25], ["wire", 3, "g8.3", 3, 3, "g8.3", 9, 0.25], ["wire", 3, "g8.3", 9, 3, "g8.3", 15, 0.25],
+      ["wire", 3, "g8.3", 15, 3, "g8.3", 21, 0.25], ["wire", 3, "g8.3", 21, 3, "g8.3", 27, 0.25], ["wire", 3, "g8.3", 27, 3, "g8.3", 33, 0.25], ["wire", 45, "g8.3", 3, 45, "g8.3", 9, 0.25],
+      ["wire", 45, "g8.3", 9, 45, "g8.3", 15, 0.25], ["wire", 45, "g8.3", 15, 45, "g8.3", 21, 0.25], ["wire", 45, "g8.3", 21, 45, "g8.3", 27, 0.25], ["wire", 45, "g8.3", 27, 45, "g8.3", 33, 0.25],
+      ["pipe", 13, "g2.7", 3.2, 35, "g2.7", 3.2, 0.06, [0.5, 0.48, 0.44]], ["pipe", 35, "g2.7", 32.8, 13, "g2.7", 32.8, 0.06, [0.5, 0.48, 0.44]], ["pipe", 16.2, "g2.7", 3.2, 16.2, "g2.4", 3.7, 0.03, [0.6, 0.58, 0.52]], ["pipe", 31.8, "g2.7", 32.8, 31.8, "g2.4", 32.3, 0.03, [0.6, 0.58, 0.52]],
+      ["pipe", 20.7, "g2.7", 3.2, 20.7, "g2.4", 3.7, 0.03, [0.6, 0.58, 0.52]], ["pipe", 27.3, "g2.7", 32.8, 27.3, "g2.4", 32.3, 0.03, [0.6, 0.58, 0.52]], ["pipe", 25.2, "g2.7", 3.2, 25.2, "g2.4", 3.7, 0.03, [0.6, 0.58, 0.52]], ["pipe", 22.8, "g2.7", 32.8, 22.8, "g2.4", 32.3, 0.03, [0.6, 0.58, 0.52]],
+      ["pipe", 29.7, "g2.7", 3.2, 29.7, "g2.4", 3.7, 0.03, [0.6, 0.58, 0.52]], ["pipe", 18.3, "g2.7", 32.8, 18.3, "g2.4", 32.3, 0.03, [0.6, 0.58, 0.52]], ["barrier", 27, 11.4, 31, 12], ["barrier", 17, 24, 21, 24.6],
+      ["tires", 24, 8, 3], ["tires", 24, 28, 3], ["bin", 30, 30, 0], ["bin", 18, 6, 0],
+      ["bin", 16, 29.5, 0], ["bin", 32, 6.5, 0], ["lamp", 5, 5, 6.5, 2], ["lamp", 43, 5, 6.5, 2],
+      ["lamp", 5, 31, 6.5, 0], ["lamp", 43, 31, 6.5, 0], ["lamp", 24, 4, 6.5, 2], ["lamp", 24, 32, 6.5, 0],
+      ["neon", 3.1, "g7.6", 18, 30, 0, [1, 0.12, 0.08]], ["neon", 44.9, "g7.6", 18, 30, 0, [1, 0.12, 0.08]], ["neon", 24, "g7.6", 3.1, 42, 1, [1, 0.45, 0.1]], ["neon", 24, "g7.6", 32.9, 42, 1, [1, 0.45, 0.1]],
+      ["neon", 9.5, "g4.65", 8, 9, 0, [0.3, 0.85, 1]], ["neon", 9.5, "g4.65", 28, 9, 0, [0.3, 0.85, 1]], ["neon", 12.5, "g3.65", 18, 13, 0, [0.3, 0.85, 1]], ["neon", 35.5, "g3.65", 18, 13, 0, [1, 0.5, 0.12]],
+      ["neon", 38.5, "g4.65", 8, 9, 0, [1, 0.5, 0.12]], ["neon", 38.5, "g4.65", 28, 9, 0, [1, 0.5, 0.12]], ["stripe", 21.5, 15.5, 26.5, 15.7, [0.85, 0.65, 0.1]], ["stripe", 21.5, 20.3, 26.5, 20.5, [0.85, 0.65, 0.1]],
+      ["stripe", 21.5, 15.7, 21.7, 20.3, [0.85, 0.65, 0.1]], ["stripe", 26.3, 15.7, 26.5, 20.3, [0.85, 0.65, 0.1]], ["sign", 24, "g5.2", 3.05, 0, 2.4, 0.9, [0.7, 0.1, 0.08]], ["sign", 24, "g5.2", 32.95, 0, 2.4, 0.9, [0.7, 0.1, 0.08]],
+      ["sign", 3.05, "g3", 18, 1, 1.6, 0.6, [0.2, 0.35, 0.6]], ["sign", 44.95, "g3", 18, 1, 1.6, 0.6, [0.75, 0.45, 0.12]],
+    ],
+    decals: [],
+    places: [
+      { name: "Alcova oeste", r: [3, 3, 10, 33] },
+      { name: "Alcova leste", r: [38, 3, 45, 33] },
+      { name: "Chuveiros norte", r: [12, 3, 36, 7] },
+      { name: "Chuveiros sul", r: [12, 29, 36, 33] },
+      { name: "Centro", r: [20, 14, 28, 22] },
+      { name: "Contêiner norte", r: [15, 8, 33, 15] },
+      { name: "Contêiner sul", r: [15, 21, 33, 28] },
+      { name: "Pátio", r: [3, 3, 45, 33] },
+    ],
+    facade: { every: 6, doors: 0 },
+    buyZones: { T: [39, 12, 45, 24], CT: [3, 12, 9, 24] },
+    spawns: { CT: [[5, 16], [5, 19], [6, 17], [6, 18]], T: [[42, 16], [42, 19], [41, 17], [41, 18]] },
+    spawnYaw: { CT: -1.571, T: 1.571 },
+    nav: { centro: [24, 18], norte: [24, 9], sul: [24, 27], oeste: [14, 18], leste: [34, 18], chuveiroN: [20, 5], chuveiroS: [28, 31], noroeste: [13, 9], sudeste: [35, 27], nordeste: [35, 9], sudoeste: [13, 27] },
+    duelFlag: [24, 18],
+    lineups: [],
+    practice: { start: [7, 18], yaw: -1.571, spots: [[24, 18], [24, 9], [24, 27], [34, 18], [35, 9], [35, 27], [30, 15], [30, 21]] },
+    radarLabels: [["CT", 6, 18, "CT"], ["TR", 42, 18, "T"]],
+  },
 };
-const MAP_ORDER = ['duna', 'miragem', 'trem', 'inferno', 'oasis', 'vale', 'cascata', 'serra'];
+const MAP_ORDER = ['duna', 'miragem', 'trem', 'inferno', 'oasis', 'vale', 'cascata', 'serra', 'gulag'];
 
 // ---------------------------------------------------------------------
 // MODOS DE JOGO
@@ -8186,7 +8288,8 @@ const MODES = {
   match: { name: 'Desarme de bomba', desc: '5 contra 5 no estilo CS: economia, rodadas e C4 em dois bombs.', rounds: true, bomb: true, allies: 4, enemies: 5 },
   wingman: { name: 'Wingman 2×2', desc: 'Dupla contra dupla, um bomb só e rodadas de 1:30.', rounds: true, bomb: true, oneSite: true, allies: 1, enemies: 2, half: 8, roundTime: 90, freeze: 10 },
   retake: { name: 'Retakes', desc: 'A C4 já começa plantada: os CTs retomam o bomb, os TRs seguram. Equipamento sorteado.', rounds: true, bomb: true, retake: true, allies: 3, enemies: 4, half: 6 },
-  duel: { name: 'Duelo 1×1', desc: 'Você contra um bot: rodadas curtas sem C4 e a mesma arma sorteada para os dois. Vence quem fizer 8 rodadas.', rounds: true, duel: true, allies: 0, enemies: 1, half: 7, roundTime: DUEL_ROUND_TIME, freeze: 3 },
+  duel: { name: 'Duelo 1×1', desc: 'Você contra um bot no pátio do gulag: rodadas curtas sem C4, a mesma arma sorteada para os dois e bandeira no centro no fim do tempo. Vence quem fizer 8 rodadas.', rounds: true, duel: true, allies: 0, enemies: 1, half: 7, roundTime: DUEL_ROUND_TIME, freeze: 3 },
+  duel2: { name: 'Duelo 2×2', desc: 'Dupla contra dupla no pátio do gulag: rodadas curtas sem C4, as mesmas armas para todos e bandeira no centro no fim do tempo.', rounds: true, duel: true, allies: 1, enemies: 2, half: 7, roundTime: DUEL_ROUND_TIME, freeze: 3 },
   dm: { name: 'Mata-mata em equipe', desc: 'Todo mundo renasce; loja grátis no começo de cada vida.', respawn: true, delay: 2, time: DM_TIME, allies: 4, enemies: 5 },
   ffa: { name: 'Todos contra todos', desc: 'Cada um por si: renasce em 2 s, loja grátis no começo de cada vida. Vence quem chegar primeiro ao alvo de abates.', respawn: true, ffa: true, delay: 2, time: DM_TIME, allies: 0, enemies: 9 },
   gungame: { name: 'Corrida armamentista', desc: 'Cada abate troca sua arma; quem fizer o último abate com a faca vence.', respawn: true, cod: true, regen: true, destroy: true, delay: 2, time: 900, allies: 4, enemies: 5 },
@@ -8201,7 +8304,7 @@ const MODES = {
   br: { name: 'Battle Royale', desc: 'Esquadrões de 3 saltam da nave, juntam equipamento e o anel fecha até sobrar um.', arenas: true, br: true, cod: true, revive: true, allies: 2, enemies: 27 },
   practice: { name: 'Treino de mira', desc: '' },
 };
-const MODE_ORDER = ['match', 'wingman', 'retake', 'duel', 'dm', 'ffa', 'gungame', 'kc', 'dom', 'hp', 'conquest', 'conquestL', 'rush'];
+const MODE_ORDER = ['match', 'wingman', 'retake', 'duel', 'duel2', 'dm', 'ffa', 'gungame', 'kc', 'dom', 'hp', 'conquest', 'conquestL', 'rush'];
 // modos de bandeira grandes (Conquista, Conquista Grande e Ruptura)
 const BIG_MODES = ['conquest', 'conquestL', 'rush'];
 // Corrida armamentista: a arma de cada nível (o último é a faca)
@@ -8227,6 +8330,13 @@ const MAP_TACTICS = {
     { id: 'tr_bfake', name: 'B pelo Túnel de cima com 1 fake no Main', kind: 'exec', site: 'B', groups: [{ n: 1, site: 'A', route: 'Main', fake: true }, { n: 9, site: 'B', route: 'Túnel de cima' }] },
     { id: 'tr_a32', name: 'A: 3 pelo Main + 2 pela Ivy', kind: 'split', site: 'A', groups: [{ n: 3, site: 'A', route: 'Main' }, { n: 9, site: 'A', route: 'Ivy' }] },
     { id: 'tr_bsplit', name: 'B: 3 pelo Túnel de cima + 2 pelo Andaime', kind: 'split', site: 'B', groups: [{ n: 3, site: 'B', route: 'Túnel de cima' }, { n: 9, site: 'B', route: 'Andaime' }] },
+  ],
+  inferno: [
+    { id: 'in_bexec', name: 'B: execução completa pela Banana', kind: 'exec', site: 'B', groups: [{ n: 9, site: 'B', route: 'Banana' }] },
+    { id: 'in_bananafake', name: 'Fake na Banana com 2 e A pelos Apartamentos', kind: 'exec', site: 'A', groups: [{ n: 2, site: 'B', route: 'Banana', fake: true }, { n: 9, site: 'A', route: 'Apartamentos' }] },
+    { id: 'in_asplit', name: 'A: 3 pelos Apartamentos + 2 pelo Meio', kind: 'split', site: 'A', groups: [{ n: 3, site: 'A', route: 'Apartamentos' }, { n: 9, site: 'A', route: 'Meio' }] },
+    { id: 'in_apit', name: 'A: 2 pelo Pit + 3 pelo Meio', kind: 'split', site: 'A', groups: [{ n: 2, site: 'A', route: 'Pit' }, { n: 9, site: 'A', route: 'Meio' }] },
+    { id: 'in_midfake', name: 'Fake no A (Meio) com 1 e B pela Banana', kind: 'exec', site: 'B', groups: [{ n: 1, site: 'A', route: 'Meio', fake: true }, { n: 9, site: 'B', route: 'Banana' }] },
   ],
 };
 // formações dos CTs (quantos em cada lugar, contando com você no time)
@@ -8660,6 +8770,7 @@ const BR_TIER_ODDS = [0.56, 0.28, 0.12, 0.04];
 // PERFIL, CONQUISTAS, KILLCAM, BOTS QUE APRENDEM, DIFICULDADE ADAPTATIVA
 // ---------------------------------------------------------------------
 const STATS_KEY = 'strikezone.stats.v1';
+const RECENT_MAX = 20;
 // conquistas locais: test(s, m) recebe o perfil já somado (s) e as estatísticas da partida (m)
 const ACHIEVEMENTS = [
   { id: 'first', icon: '✦', name: 'Primeiro sangue', desc: 'Faça seu primeiro abate.', test: (s) => s.kills >= 1 },
@@ -8745,6 +8856,39 @@ const TUTORIAL_STEPS = [
 ];
 const TUTORIAL_LOOK = 2.5;
 const TUTORIAL_MOVE = 6;
+// treino de spray: rajada conta com no mínimo SPRAY_MIN_SHOTS tiros; quadro de SPRAY_PAD_M metros (a 10 m) de cada lado
+const SPRAY_MIN_SHOTS = 15;
+const SPRAY_PAD_M = 1.6;
+// treino de granadas: acerto quando cai a menos de NADE_HIT_M do alvo; nome e botão de cada força de arremesso
+const NADE_HIT_M = 2;
+const NADE_KIND = { smoke: 'Fumaça', flash: 'Flash', molotov: 'Molotov', he: 'HE' };
+const NADE_STRENGTH = { strong: 'forte (botão esquerdo)', mid: 'médio (os dois botões)', weak: 'fraco (botão direito)' };
+// economia na loja: quanto custa a compra completa (fuzil + colete com capacete + granadas) de cada lado
+const FULL_BUY = { T: 3700 + 600, CT: 4100 + 600 };
+const FORCE_BUY = 2000;
+// personalidade dos bots: estilo de fala (voz: altura e velocidade) e frases por acontecimento
+const CHAT_STYLES = {
+  confiante: { label: 'confiante', pitch: 0.85, rate: 1.12, lines: {
+    kill: ['Um a menos.', 'Fácil demais.', 'Esse já era.', 'Pode riscar esse.'], multi: ['Mais um! Tô voando hoje.', 'Deixa comigo, time!', 'Quem é o próximo?'],
+    death: ['Ele teve sorte, {hp} de vida.', 'Pegou na sorte. {place}.', 'Tá com {hp}, finaliza!'], clutch: ['Segurei sozinho. De nada.', 'Clutch é comigo mesmo!'],
+    win: ['Rodada nossa, sem susto.', 'Bora, mais uma!'], lose: ['Próxima a gente vira.', 'Relaxa, tá controlado.'], taunt: ['Volta pro treino!', 'Muito lento.', 'Essa foi bonita, né?'] } },
+  calmo: { label: 'calmo', pitch: 1, rate: 0.95, lines: {
+    kill: ['Abati um.', 'Um derrubado em {place}.', 'Limpo aqui.'], multi: ['Mais dois fora. Sigam com calma.', 'Ganhamos vantagem, joguem juntos.'],
+    death: ['Caí em {place}. Ele está com {hp}.', 'Morri. Cuidado com {place}.', 'Ele ficou com {hp}, troquem.'], clutch: ['Consegui. Respira, time.', 'Foi no detalhe.'],
+    win: ['Boa rodada, pessoal.', 'Bem jogado.'], lose: ['Vamos ajustar e voltar.', 'Calma, ainda tem jogo.'], taunt: ['Boa tentativa.', 'Posição previsível.'] } },
+  zoeiro: { label: 'zoeiro', pitch: 1.25, rate: 1.18, lines: {
+    kill: ['Tchau, querido!', 'Sentou!', 'Foi de base!', 'Mandei pro lobby.'], multi: ['Hoje tem! Hoje tem!', 'Tô igual pipoca!', 'Chama o médico!'],
+    death: ['Ai! Fui de arrasta pra cima. {place}.', 'Me pegaram no sapatinho... {hp} de vida nele.', 'Morri bonito pelo menos.'], clutch: ['Ninguém acredita! Clutch!', 'Mãe, olha eu na TV!'],
+    win: ['É nóis!', 'Só alegria!'], lose: ['Deu ruim, mas tamo junto.', 'Perdemos, mas com estilo.'], taunt: ['Senta lá!', 'Vai pra cá, vem pra lá!', 'Fica pra próxima!'] } },
+  nervoso: { label: 'nervoso', pitch: 1.1, rate: 1.25, lines: {
+    kill: ['Peguei! Peguei um!', 'Caiu! Caiu!', 'Acertei!'], multi: ['Mais um! Não acredito!', 'Tô tremendo aqui!'],
+    death: ['Não! Ele tá em {place}!', 'Me matou! {hp} de vida!', 'Cuidado, ele tá vindo!'], clutch: ['Ganhei! Sozinho! Meu coração!', 'Ufa! Foi por pouco!'],
+    win: ['Ganhamos! Ganhamos!', 'Isso! Isso!'], lose: ['Não, não, não...', 'Perdemos de novo...'], taunt: ['Desculpa! Desculpa!', 'Foi mal, foi reflexo!'] } },
+};
+const CHAT_STYLE_ORDER = ['confiante', 'calmo', 'zoeiro', 'nervoso'];
+const CHAT_ODDS = { kill: 0.3, multi: 0.85, death: 0.45, clutch: 1, win: 0.35, lose: 0.3, taunt: 0.5 };
+const CHAT_GAP = 7;
+const CHAT_GLOBAL_GAP = 2.2;
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -12844,6 +12988,26 @@ function addModeObjects() {
     m4RotY(ITEM_MATRIX, wave);
     pushBox(ITEM_MATRIX, 0.55, h, 0, 1.0, 0.65, 0.03, MAT.CLOTH, teamRgb(f.capTeam && f.cap > 0.05 ? f.capTeam : f.owner));
   }
+  // treino de granadas: alvo marcado no chão
+  const pnd = game.mode === 'practice' && game.practice && game.practice.nade;
+  if (pnd) {
+    const pulse = 0.6 + 0.4 * Math.sin(now * 5);
+    pushRing(pnd.to[0], pnd.to[1] - (pnd.L.to[2] || 0), pnd.to[2], NADE_HIT_M, [pulse, pulse * 0.85, 0.15], 28);
+    m4Identity(ITEM_MATRIX); m4Translate(ITEM_MATRIX, pnd.to[0], pnd.to[1] - (pnd.L.to[2] || 0), pnd.to[2]);
+    pushCyl(ITEM_MATRIX, 0, 1.4, 0, 0.05, 0.05, 2.8, MAT.EMISSIVE, [1, 0.85, 0.2], HALF_PI);
+  }
+  // bandeira da prorrogação do duelo (gulag): anel que pulsa e bandeira que sobe com o progresso de quem está tomando
+  const df = game.duelFlag;
+  if (df) {
+    const x = df.pos[0] + 0.5, zz = df.pos[1] + 0.5, y = floorAt(x, zz), lead = df.prog.T > df.prog.CT ? 'T' : (df.prog.CT > 0 ? 'CT' : '');
+    const pulse = 0.6 + 0.4 * Math.sin(now * 6);
+    pushRing(x, y, zz, DUEL_FLAG_R, lead ? teamRgb(lead, pulse) : [pulse, pulse * 0.85, 0.2], 32);
+    m4Identity(ITEM_MATRIX); m4Translate(ITEM_MATRIX, x, y, zz);
+    pushCyl(ITEM_MATRIX, 0, 1.8, 0, 0.08, 0.08, 3.6, MAT.GUNMETAL, [0.55, 0.55, 0.58], HALF_PI);
+    const prog = Math.max(df.prog.T, df.prog.CT) / DUEL_FLAG_CAP;
+    m4RotY(ITEM_MATRIX, Math.sin(now * 3) * 0.15);
+    pushBox(ITEM_MATRIX, 0.5, 1.2 + prog * 2.1, 0, 0.9, 0.55, 0.03, MAT.CLOTH, lead ? teamRgb(lead) : [0.92, 0.8, 0.2]);
+  }
   const z = game.hpZone;
   if (z && z.pos) {
     const pulse = 0.65 + 0.35 * Math.sin(now * 5);
@@ -14727,7 +14891,7 @@ function maxSpeedOf(p) {
 function addMoney(p, amt, show) {
   const before = p.money;
   p.money = clamp(p.money + amt, 0, MAX_MONEY);
-  if (show && p === game.local && p.money !== before) moneyDelta(p.money - before);
+  if (show && p === game.local && p.money !== before && !modeDef().duel) moneyDelta(p.money - before);
 }
 function squadOf(side) {
   const l = game.local;
@@ -15221,7 +15385,7 @@ function fireWeapon(p, def) {
     }
     const dir = dirFromAngles(yaw + ox / Math.max(0.2, Math.cos(pitch)), pitch + oy, [0, 0, 0]);
     const end = traceBullet(p, def, eye, dir);
-    if (k === 0) tracerEnd = end;
+    if (k === 0) { tracerEnd = end; sprayShot(p, def, dir); }
   }
   const pat = RECOIL[def.id];
   if (pat) {
@@ -16407,6 +16571,7 @@ function killPlayer(victim, attacker, weaponId, flags) {
   victim.dmgFrom = {};
   addKillfeed(attacker, victim, weaponId, flags, tk);
   mstKill(victim, attacker, weaponId, flags);
+  chatOnKill(victim, attacker);
   if (victim === game.local) kcTrigger(victim, attacker, weaponId, flags);
   if (game.mode === 'practice') {
     const pr = game.practice;
@@ -16518,6 +16683,7 @@ function endRound(side, reason) {
   game.endTimer = ROUND_END_DELAY;
   game.lastWinner = side;
   mstRoundEnd(side);
+  chatOnRoundEnd(side);
   const wSquad = squadOf(side), lSquad = 1 - wSquad;
   game.score[wSquad]++;
   const winReward = reason === 'bomb' ? WIN_REWARD.bomb : (reason === 'defuse' ? WIN_REWARD.defuse : (reason === 'time' ? WIN_REWARD.time : WIN_REWARD.elim));
@@ -16573,6 +16739,28 @@ function duelLoadout() {
     p.slot = 'knife'; switchSlot(p, bestSlot(p), true);
   }
 }
+// gulag: faltando DUEL_FLAG_AT s aparece a bandeira no centro; ficar sozinho nela DUEL_FLAG_CAP s vence a rodada
+function duelFlagUpdate(dt) {
+  if (!game.duelFlag) {
+    if (game.roundTime > DUEL_FLAG_AT) return;
+    game.duelFlag = { pos: M.duelFlag, prog: { T: 0, CT: 0 }, hintAt: 0 };
+    flashHint('A bandeira apareceu no centro! Fique nela para vencer a rodada', 3);
+    sfxUi('radio');
+  }
+  const f = game.duelFlag, inside = { T: 0, CT: 0 };
+  for (const p of game.players) if (p.alive && distXZ(p.pos[0], p.pos[2], f.pos[0] + 0.5, f.pos[1] + 0.5) < DUEL_FLAG_R) inside[p.team === 'T' ? 'T' : 'CT']++;
+  for (const t of ['T', 'CT']) {
+    const other = t === 'T' ? 'CT' : 'T';
+    if (inside[t] && !inside[other]) f.prog[t] += dt; else if (!inside[t]) f.prog[t] = Math.max(0, f.prog[t] - dt * 0.5);
+    if (f.prog[t] >= DUEL_FLAG_CAP) { endRound(t, 'duelFlag'); return; }
+  }
+  const l = game.local;
+  if (l && game.time >= f.hintAt && (f.prog.T > 0 || f.prog.CT > 0)) {
+    f.hintAt = game.time + 0.4;
+    const mine = f.prog[l.team === 'T' ? 'T' : 'CT'], theirs = f.prog[l.team === 'T' ? 'CT' : 'T'];
+    flashHint(mine >= theirs ? 'Tomando a bandeira ' + Math.round(mine / DUEL_FLAG_CAP * 100) + '%' : 'O inimigo está tomando a bandeira! ' + Math.round(theirs / DUEL_FLAG_CAP * 100) + '%', 0.6);
+  }
+}
 function duelTimeWinner() {
   let t = 0, ct = 0;
   for (const p of game.players) if (p.alive) { if (p.team === 'T') t += p.hp; else ct += p.hp; }
@@ -16623,13 +16811,16 @@ function startMatch(mode, drill, custom) {
   game.spectate = null;
   game.deathCamUntil = 0;
   game.shake = 0;
-  game.practice = { drill: DRILLS[drill] ? drill : 'free', shots: 0, hits: 0, heads: 0, kills: 0, startAt: 0, reactSum: 0, reactN: 0, misses: 0, spawnAt: 0, nextAt: 0, count: 0, done: false, target: null, lastSpot: null };
+  game.practice = { drill: DRILLS[drill] ? drill : 'free', shots: 0, hits: 0, heads: 0, kills: 0, startAt: 0, reactSum: 0, reactN: 0, misses: 0, spawnAt: 0, nextAt: 0, count: 0, done: false, target: null, lastSpot: null, sprays: [], spray: null, sprayLast: null, sprayMsg: '', nade: null, nadeIdx: 0 };
   game.dm = { kills: { T: 0, CT: 0 } };
   game.dmLoadout = { primary: '', secondary: '' };
   game.lastWinner = '';
   game.radioAt = { T: -9, CT: -9 };
   hud.feed.forEach((x) => x.el.remove());
   hud.feed.length = 0;
+  // indicadores de dano/som da partida anterior (o relógio do jogo volta a zero)
+  hud.dirs.forEach((x) => x.el.remove());
+  hud.dirs.length = 0;
   hud.radio.forEach((x) => x.el.remove());
   hud.radio.length = 0;
   hud.hurt = 0;
@@ -16688,7 +16879,8 @@ function startPractice() {
     for (const p of game.players) if (p.isBot) { p.alive = false; p.hidden = true; p.respawnAt = 0; }
     pr.startAt = game.time + 3;
     pr.nextAt = pr.startAt;
-    showCenter('Treino · ' + d.name, d.desc + ' Começa em 3 s.', l.team, 3);
+    if (pr.drill === 'nades') { pr.startAt = 0; showCenter('Treino · ' + d.name, d.desc, l.team, 4); nadesGo(0); }
+    else showCenter('Treino · ' + d.name, d.desc + (pr.drill === 'spray' ? '' : ' Começa em 3 s.'), l.team, 3);
   }
   sfxRoundStart();
   cameraSubjectCached = l;
@@ -16746,6 +16938,8 @@ function practiceUpdate() {
       p.respawnAt = 0;
     }
   }
+  if (pr.drill === 'spray') { sprayTick(); return; }
+  if (pr.drill === 'nades') { nadesTick(); return; }
   if (pr.drill === 'free' || pr.done || now < pr.startAt) return;
   if (d.time && now >= pr.startAt + d.time) { finishDrill(); return; }
   const t = pr.target;
@@ -16800,6 +16994,7 @@ function spawnDrillTarget(moving, front) {
 function drillScore(pr) {
   const d = DRILLS[pr.drill];
   if (d.score === 'react') return pr.count ? Math.round((pr.reactSum + pr.misses * 1) * 1000 / pr.count) : 0;
+  if (d.score === 'spray') return pr.sprays.length ? Math.round(pr.sprays.reduce((a, b) => a + b, 0) / pr.sprays.length) : 0;
   return pr.kills;
 }
 function finishDrill() {
@@ -16810,7 +17005,7 @@ function finishDrill() {
   const score = drillScore(pr);
   const rec = loadRecords();
   const old = rec[pr.drill];
-  const better = d.score === 'react' ? (score > 0 && (!old || score < old.best)) : (score > 0 && (!old || score > old.best));
+  const better = d.score === 'react' || d.score === 'spray' ? (score > 0 && (!old || score < old.best)) : (score > 0 && (!old || score > old.best));
   if (better) { rec[pr.drill] = { best: score, date: new Date().toISOString().slice(0, 10) }; saveRecords(rec); }
   showDrillResult(pr, score, old ? old.best : null, better);
 }
@@ -16859,10 +17054,11 @@ function startRound() {
   }
   if (game.roundNum === 1 || game.roundNum === game.halfRounds + 1) assignPersonas();
   game.econ = { T: '', CT: '' }; game.teamBought = { T: false, CT: false }; game.usedLineups = new Set();
+  game.duelFlag = null;
   game.retake = null; game.tExec = null; game.flashWarn = null; game.threat = null; game.takeoverUsed = false;
   spawnChickens();
   if (modeDef().retake) setupRetake();
-  planRound();
+  if (M.tRoutes) planRound(); else game.tPlan = null;
   game.ctRead = null; game.tSeen = null; game.readAcc = 0;
   if (tacticsAvailable() && game.ctSetup && game.local && game.local.team === 'CT') applyCtSetup(game.ctSetup, null);
   announcePlans();
@@ -16872,11 +17068,12 @@ function startRound() {
   const last = game.roundNum === game.halfRounds * 2;
   let sub = pistol ? 'Rodada de pistola · ' : '';
   const one = modeDef().oneSite ? M.wingman : null;
-  if (modeDef().duel) sub = 'Elimine o adversário · arma da rodada: ' + game.duelGuns.map(weaponLabel).join(' + ');
+  if (modeDef().duel) sub = (game.players.length > 2 ? 'Elimine a dupla inimiga' : 'Elimine o adversário') + ' · arma da rodada: ' + game.duelGuns.map(weaponLabel).join(' + ') + (M.duelFlag ? ' · bandeira no centro faltando ' + DUEL_FLAG_AT + ' s' : '');
   else if (modeDef().retake) sub += l.team === 'T' ? 'A C4 está no bomb ' + game.bomb.site + ': segurem até explodir' : 'C4 plantada no bomb ' + game.bomb.site + ': retomem e desarmem';
   else if (one) sub += l.team === 'T' ? (carrier === l ? 'Você está com a C4: plante no bomb ' + one : 'Plantem a C4 no bomb ' + one) : 'Defendam o bomb ' + one;
   else sub += l.team === 'T' ? (carrier === l ? 'Você está com a C4: plante no bomb A ou B' : 'Plantem a C4 no bomb A ou B') : 'Defendam os bombs A e B';
-  showCenter(last ? 'Última rodada' : 'Rodada ' + game.roundNum, sub, l.team, 3.2);
+  const dTitle = modeDef().duel ? (last ? 'Última rodada · até a morte' : 'Duelo até a morte · rodada ' + game.roundNum) : null;
+  showCenter(dTitle || (last ? 'Última rodada' : 'Rodada ' + game.roundNum), sub, l.team, 3.2);
   sfxRoundStart();
   cameraSubjectCached = l;
 }
@@ -16919,6 +17116,7 @@ function updateRound(dt) {
     if (game.phaseTimer <= 0) game.phase = game.bomb && game.bomb.state === 'planted' ? 'planted' : 'live';
   } else if (game.phase === 'live') {
     game.roundTime -= dt;
+    if (modeDef().duel && M.duelFlag) duelFlagUpdate(dt);
     if (game.roundTime <= 0) { game.roundTime = 0; if (modeDef().duel) endRound(duelTimeWinner(), 'duelTime'); else endRound('CT', 'time'); }
   } else if (game.phase === 'over') {
     game.endTimer -= dt;
@@ -16981,6 +17179,7 @@ function teamScore(team) { return game.score[squadOf(team)]; }
 // mapas que aceitam cada modo (Conquista só no mapa grande; o mapa grande não tem C4)
 function mapSupports(m, mode) {
   if (m.modes) return m.modes.indexOf(mode) >= 0;
+  if (ARENA_ONLY_MODES.indexOf(mode) >= 0) return false;
   return BIG_MODES.indexOf(mode) < 0 && !(MODES[mode] && MODES[mode].arenas);
 }
 function freshModeState() {
@@ -19927,14 +20126,17 @@ function botThink(p) {
 // Duelo: começa como numa rodada normal (rota/posição) e depois de DUEL_HUNT_AFTER s vai atrás do adversário
 function decideDuel(p) {
   const b = p.bot, now = game.time, live = roundLen() - game.roundTime;
-  if (live < DUEL_HUNT_AFTER && !(b.lastSeenPos && now - b.lastSeenTime < 4)) { if (p.team === 'T') decideT(p); else decideCT(p); return; }
+  // bandeira da prorrogação: todo mundo corre para o centro
+  const fl = game.duelFlag;
+  if (fl && !(b.lastSeenPos && now - b.lastSeenTime < 2)) { b.lookAt = null; setGoal(b, fl.pos[0] + ((p.id * 0.7) % 1.6 - 0.8), fl.pos[1] + ((p.id * 1.3) % 1.6 - 0.8), 'dflag'); return; }
+  if (M.tRoutes && live < DUEL_HUNT_AFTER && !(b.lastSeenPos && now - b.lastSeenTime < 4)) { if (p.team === 'T') decideT(p); else decideCT(p); return; }
   if ((b.lastSeenPos && now - b.lastSeenTime < 4) || (b.heard && now - b.heardTime < 3)) { decideDM(p); return; }
   const e = game.players.find((q) => q.alive && q.team !== p.team);
   if (!e) return;
   b.lookAt = null;
   const slot = Math.floor(now / 5);
   if (b.goalKey !== 'duel' + slot) {
-    const off = Math.max(2, 9 - live / 10);
+    const off = M.tRoutes ? Math.max(2, 9 - live / 10) : Math.max(2, 6 - live / 8);
     setGoal(b, e.pos[0] + rand(-off, off), e.pos[2] + rand(-off, off), 'duel' + slot);
   }
 }
@@ -22273,7 +22475,7 @@ function brEndScreen() {
 // =====================================================================
 // ---------------- perfil (localStorage) ----------------
 function emptyStats() {
-  return { v: 1, matches: 0, wins: 0, losses: 0, draws: 0, kills: 0, deaths: 0, assists: 0, hs: 0, shots: 0, hits: 0, dmg: 0, plants: 0, defuses: 0, mvps: 0, time: 0, bestKills: 0, bestStreak: 0, aces: 0, clutches: 0, modes: {}, maps: {}, ach: {}, tutorial: false };
+  return { v: 1, matches: 0, wins: 0, losses: 0, draws: 0, kills: 0, deaths: 0, assists: 0, hs: 0, shots: 0, hits: 0, dmg: 0, plants: 0, defuses: 0, mvps: 0, time: 0, bestKills: 0, bestStreak: 0, aces: 0, clutches: 0, modes: {}, maps: {}, ach: {}, tutorial: false, recent: [] };
 }
 function sanitizeStats(o) {
   const s = emptyStats();
@@ -22286,6 +22488,9 @@ function sanitizeStats(o) {
     const src = o[key] && typeof o[key] === 'object' ? o[key] : {};
     for (const k of Object.keys(src)) if (/^[a-zA-Z0-9_]{1,24}$/.test(k) && src[k] && typeof src[k] === 'object') s[key][k] = { m: Math.max(0, Number(src[k].m) || 0), w: Math.max(0, Number(src[k].w) || 0) };
   }
+  // partidas recentes: só campos conhecidos, textos curtos
+  const txt = (v, n) => String(v === undefined || v === null ? '' : v).slice(0, n);
+  if (Array.isArray(o.recent)) s.recent = o.recent.slice(0, RECENT_MAX).filter((r) => r && typeof r === 'object').map((r) => ({ t: Number(r.t) || 0, mode: txt(r.mode, 24), map: txt(r.map, 24), result: ['win', 'loss', 'draw'].indexOf(r.result) >= 0 ? r.result : 'draw', score: txt(r.score, 24), k: Math.max(0, Number(r.k) || 0), d: Math.max(0, Number(r.d) || 0), hs: Math.max(0, Number(r.hs) || 0), hi: txt(r.hi, 80) }));
   const ach = o.ach && typeof o.ach === 'object' ? o.ach : {};
   for (const a of ACHIEVEMENTS) if (ach[a.id]) s.ach[a.id] = Number(ach[a.id]) || 1;
   return s;
@@ -22369,6 +22574,9 @@ function matchFinished(result) {
   const md = s.modes[game.mode] || (s.modes[game.mode] = { m: 0, w: 0 }); md.m++; if (result === 'win') md.w++;
   const mp = s.maps[M.id] || (s.maps[M.id] = { m: 0, w: 0 }); mp.m++; if (result === 'win') mp.w++;
   m.newAch = checkAchievements(s, m);
+  const my = game.br ? (game.br.squads[l.team] ? game.br.squads[l.team].place + 'º lugar' : '') : (game.mode === 'ffa' ? (ffaRanking().indexOf(l) + 1) + 'º lugar' : game.score[l.squad] + ' × ' + game.score[1 - l.squad]);
+  s.recent.unshift({ t: Date.now(), mode: game.mode, map: M.id, result, score: my, k: m.kills, d: m.deaths, hs: m.hs, hi: matchHighlight(m) });
+  s.recent.length = Math.min(s.recent.length, RECENT_MAX);
   saveStats(s);
 }
 function matchResultOf() {
@@ -22404,6 +22612,22 @@ function matchSummaryHtml() {
   if (m.newAch && m.newAch.length) h += '<div class="me-ach">' + m.newAch.map((a) => '<span><i>' + escapeHtml(a.icon) + '</i>Conquista: ' + escapeHtml(a.name) + '</span>').join('') + '</div>';
   return h + '</div>';
 }
+// o destaque mais forte da partida numa frase curta (para a lista de partidas recentes)
+function matchHighlight(m) {
+  if (m.bestRound >= 5) return 'ACE na rodada ' + m.bestRoundNum;
+  if (m.clutches) return m.clutches > 1 ? m.clutches + ' clutches' : 'Clutch';
+  if (m.bestRound >= 3) return m.bestRound + ' abates na rodada ' + m.bestRoundNum;
+  if (m.bestStreak >= 5) return 'Sequência de ' + m.bestStreak;
+  if (m.longest >= 40) return 'Abate a ' + Math.round(m.longest) + ' m';
+  if (m.newAch && m.newAch.length) return 'Conquista: ' + m.newAch[0].name;
+  return '';
+}
+function recentHtml(s) {
+  if (!s.recent.length) return '<p class="opt-note">Nenhuma partida terminada ainda.</p>';
+  const res = { win: 'Vitória', loss: 'Derrota', draw: 'Empate' };
+  const when = (t) => { const d = new Date(t); return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+  return '<table class="recent"><thead><tr><th>Quando</th><th>Modo</th><th>Mapa</th><th>Resultado</th><th>Placar</th><th>K/D</th><th>HS%</th><th>Destaque</th></tr></thead><tbody>' + s.recent.map((r) => '<tr class="' + r.result + '"><td>' + escapeHtml(when(r.t)) + '</td><td>' + escapeHtml((MODES[r.mode] || {}).name || r.mode) + '</td><td>' + escapeHtml((MAPS[r.map] || {}).name || r.map) + '</td><td>' + res[r.result] + '</td><td>' + escapeHtml(r.score) + '</td><td>' + r.k + ' / ' + r.d + '</td><td>' + (r.k ? Math.round(r.hs / r.k * 100) + '%' : '—') + '</td><td>' + escapeHtml(r.hi) + '</td></tr>').join('') + '</tbody></table>';
+}
 // Opções → Perfil: números da carreira e conquistas
 function buildProfileUi() {
   const box = document.getElementById('prof-stats');
@@ -22414,6 +22638,7 @@ function buildProfileUi() {
   box.innerHTML = '<div class="me-stats">' + cell(s.matches, 'Partidas') + cell(s.wins + ' / ' + s.losses, 'Vitórias / derrotas') + cell(s.kills, 'Abates') + cell((s.kills / Math.max(1, s.deaths)).toFixed(2), 'K/D') +
     cell(s.kills ? Math.round(s.hs / s.kills * 100) + '%' : '—', 'Na cabeça') + cell(s.shots ? Math.round(Math.min(1, s.hits / s.shots) * 100) + '%' : '—', 'Precisão') + cell(s.bestKills, 'Mais abates numa partida') + cell(s.bestStreak, 'Maior sequência') +
     cell(s.aces, 'Aces') + cell(s.clutches, 'Clutches') + cell(s.plants + ' / ' + s.defuses, 'C4 plantadas / desarmadas') + cell(hrs >= 1 ? hrs.toFixed(1) + ' h' : Math.round(s.time / 60) + ' min', 'Tempo jogado') + '</div>';
+  document.getElementById('prof-recent').innerHTML = recentHtml(s);
   const got = ACHIEVEMENTS.filter((a) => s.ach[a.id]).length;
   document.getElementById('prof-ach-count').textContent = got + ' de ' + ACHIEVEMENTS.length;
   document.getElementById('prof-ach').innerHTML = ACHIEVEMENTS.map((a) => '<div class="ach' + (s.ach[a.id] ? ' got' : '') + '"><i>' + escapeHtml(a.icon) + '</i><b>' + escapeHtml(a.name) + '</b><span>' + escapeHtml(a.desc) + '</span></div>').join('');
@@ -22795,6 +23020,190 @@ function endTutorial() {
   ui.tut.hidden = true;
   toMenu();
 }
+
+// =====================================================================
+// 11e. TREINOS DE SPRAY E DE GRANADAS
+// =====================================================================
+// ---------------- spray: grava o ângulo de cada bala em relação à mira do primeiro tiro da rajada ----------------
+function sprayShot(p, def, dir) {
+  const pr = game.practice;
+  if (game.mode !== 'practice' || pr.drill !== 'spray' || p !== game.local || pr.done) return;
+  if (p.ws.shotIndex === 0 || !pr.spray) { sprayClose(); pr.spray = { yaw0: p.yaw, pitch0: p.pitch, pts: [], weapon: def.id }; }
+  // munição infinita no treino: o pente nunca acaba no meio da rajada
+  const inst = currentWeapon(p);
+  if (inst && inst.clip < 3) inst.clip = weaponMag(inst);
+  const s = pr.spray;
+  if (s.pts.length && s.lastIdx === p.ws.shotIndex) return; // espingarda: só o primeiro chumbo
+  s.lastIdx = p.ws.shotIndex;
+  const yaw = Math.atan2(-dir[0], -dir[2]), pitch = Math.asin(clamp(dir[1], -1, 1));
+  s.pts.push([wrapAngle(yaw - s.yaw0) * 10, (pitch - s.pitch0) * 10]);
+}
+// fecha a rajada anterior: conta se teve tiros suficientes
+function sprayClose() {
+  const pr = game.practice, s = pr.spray;
+  if (!s) return;
+  pr.spray = null;
+  if (s.pts.length < SPRAY_MIN_SHOTS) { pr.sprayLast = s; pr.sprayMsg = 'Rajada curta (' + s.pts.length + ' tiros) — segure pelo menos ' + SPRAY_MIN_SHOTS; return; }
+  const cm = Math.round(s.pts.reduce((a, q) => a + Math.hypot(q[0], q[1]), 0) / s.pts.length * 100);
+  pr.sprays.push(cm); pr.sprayLast = s; pr.sprayMsg = 'Rajada ' + pr.sprays.length + ': ' + cm + ' cm';
+  if (pr.sprays.length >= DRILLS.spray.count) finishDrill();
+}
+// rajada termina quando solta o gatilho (ou acaba a munição)
+function sprayTick() {
+  const pr = game.practice, l = game.local;
+  if (pr.drill !== 'spray' || !pr.spray || !l) return;
+  if (!l.input.fire && game.time - l.ws.lastShot > 0.25) sprayClose();
+}
+// padrão sem compensar: soma dos coices da arma (onde as balas iriam sem puxar o mouse)
+function sprayPattern(id, n) {
+  const pat = RECOIL[id], out = [];
+  if (!pat) return out;
+  let py = 0, yy = 0;
+  for (let k = 0; k < n; k++) { out.push([-yy * 10, py * 10]); const st = pat[Math.min(k, pat.length - 1)]; py += st[0]; yy += st[1]; }
+  return out;
+}
+function drawSprayPad() {
+  const cv = ui.drillpad, pr = game.practice, on = game.state === 'playing' && game.mode === 'practice' && pr && pr.drill === 'spray';
+  if (cv.hidden === on) cv.hidden = !on;
+  if (!on) return;
+  const g = cv.getContext('2d'), W = cv.width, H = cv.height, S = W / (SPRAY_PAD_M * 2), cx = W / 2, cy = H * 0.82;
+  g.clearRect(0, 0, W, H);
+  g.fillStyle = 'rgba(8,10,14,0.72)'; g.fillRect(0, 0, W, H);
+  g.strokeStyle = 'rgba(255,255,255,0.08)'; g.lineWidth = 1;
+  for (let m = -1.5; m <= 1.5; m += 0.5) { g.beginPath(); g.moveTo(cx + m * S, 0); g.lineTo(cx + m * S, H); g.stroke(); }
+  for (let m = 0; m <= 3; m += 0.5) { g.beginPath(); g.moveTo(0, cy - m * S); g.lineTo(W, cy - m * S); g.stroke(); }
+  g.strokeStyle = 'rgba(120,255,140,0.8)'; g.beginPath(); g.arc(cx, cy, 0.2 * S, 0, Math.PI * 2); g.stroke();
+  const s = pr.spray || pr.sprayLast, l = game.local, wid = s ? s.weapon : (currentDef(l) && currentDef(l).id);
+  // padrão da arma (cinza): onde as balas iriam sem compensar
+  g.fillStyle = 'rgba(200,200,200,0.35)';
+  for (const q of sprayPattern(wid, 30)) { g.beginPath(); g.arc(cx + q[0] * S, cy - q[1] * S, 2.2, 0, Math.PI * 2); g.fill(); }
+  if (s) s.pts.forEach((q, i) => { const t = i / Math.max(1, s.pts.length - 1); g.fillStyle = 'rgb(255,' + Math.round(220 - t * 170) + ',' + Math.round(80 - t * 60) + ')'; g.beginPath(); g.arc(cx + q[0] * S, cy - q[1] * S, 3, 0, Math.PI * 2); g.fill(); });
+  g.fillStyle = '#ece6d8'; g.font = '12px sans-serif';
+  g.fillText('Spray · ' + (wid ? weaponLabel(wid) : ''), 8, 16);
+  g.fillText(pr.sprayMsg || 'Segure o tiro na parede', 8, 32);
+  g.fillStyle = 'rgba(200,200,200,0.7)'; g.fillText('cinza = sem compensar', 8, H - 8);
+}
+
+// ---------------- granadas: coloca o jogador no lugar de cada granada fixa do mapa ----------------
+function nadeTypeOf(L, team) { return L.kind === 'molotov' && team !== 'T' ? 'incgrenade' : L.kind; }
+function nadesGo(delta) {
+  const pr = game.practice, l = game.local, list = M.lineups || [];
+  if (!list.length) { flashHint('Este mapa não tem granadas marcadas', 3); return; }
+  pr.nadeIdx = ((pr.nadeIdx || 0) + delta + list.length * 4) % list.length;
+  const L = list[pr.nadeIdx];
+  spawnPlayer(l, L.from[0], L.from[1]);
+  l.pos[0] = L.from[0]; l.pos[2] = L.from[1]; l.pos[1] = floorAt(L.from[0], L.from[1]) + 0.01;
+  const eye = [l.pos[0], l.pos[1] + STAND_EYE, l.pos[2]], ty = floorAt(L.to[0], L.to[1]) + (L.to[2] || 0);
+  if (!L.sol) L.sol = solveThrow(eye, L.to[0], ty, L.to[1], L.kind) || { yaw: 0, pitch: 0, strength: 'strong', err: 99 };
+  l.yaw = L.sol.yaw; l.pitch = L.sol.pitch;
+  const type = nadeTypeOf(L, l.team);
+  l.inv.grenades = [type]; l.nadeIdx = 0; l.slot = 'knife'; switchSlot(l, 'grenade', true);
+  pr.nade = { L, to: [L.to[0], ty, L.to[1]], thrown: null, result: '' };
+  pr.nadeMsg = 'Granada ' + (pr.nadeIdx + 1) + ' de ' + list.length + ' · ' + (L.team === 'T' ? 'TR' : 'CT') + ' · ' + (NADE_KIND[L.kind] || L.kind) + ' no bomb ' + L.site + (L.route ? ' (' + L.route + ')' : '') + ' · arremesso ' + (NADE_STRENGTH[L.sol.strength] || L.sol.strength);
+  flashHint(pr.nadeMsg, 5);
+}
+// acompanha a granada jogada e mede a distância até o alvo quando ela para (ou estoura)
+function nadesTick() {
+  const pr = game.practice, l = game.local, nd = pr && pr.nade;
+  if (!nd) return;
+  const n = game.nades.find((q) => q.owner === l);
+  if (n) { nd.thrown = n; nd.last = n.pos.slice(); if (!n.rest) return; }
+  if (!nd.thrown) return;
+  const p = nd.last, d = Math.hypot(p[0] - nd.to[0], p[2] - nd.to[2]);
+  nd.thrown = null;
+  nd.result = (d <= NADE_HIT_M ? 'Na mosca! ' : 'Errou por ') + d.toFixed(1).replace('.', ',') + ' m';
+  nd.short = (d <= NADE_HIT_M ? '✓ ' : '✗ ') + d.toFixed(1).replace('.', ',') + ' m';
+  flashHint(nd.result + ' · R repete · N próxima', 3.5);
+  sfxUi(d <= NADE_HIT_M ? 'buy' : 'deny');
+  if (!l.inv.grenades.length) l.inv.grenades = [nadeTypeOf(nd.L, l.team)];
+}
+// tecla do treino de granadas (N próxima, Shift+N anterior, R repete); devolve true se usou a tecla
+function nadesKey(code, shift) {
+  const pr = game.practice;
+  if (game.mode !== 'practice' || !pr || pr.drill !== 'nades') return false;
+  if (code === 'KeyN') { nadesGo(shift ? -1 : 1); return true; }
+  if (code === 'KeyR') { nadesGo(0); return true; }
+  return false;
+}
+
+// ---------------- economia legível (loja) ----------------
+// projeção da próxima rodada (sem contar abates) e o que o time consegue comprar; recomendação para o jogador
+function econPanelHtml(p) {
+  if (game.mode === 'practice' || !modeDef().rounds || modeDef().duel || modeDef().retake) return '';
+  const side = p.team === 'T' ? 'T' : 'CT', sq = squadOf(p.team), full = FULL_BUY[side];
+  const loss = LOSS_BONUS[Math.min(game.lossStreak[sq], LOSS_BONUS.length - 1)] + (side === 'T' && game.bomb && game.bomb.plantedThisRound ? PLANTED_LOSS_BONUS : 0);
+  const team = game.players.filter((q) => q.team === p.team);
+  const can = (m) => (m >= full ? 'full' : (m >= FORCE_BUY ? 'force' : 'eco'));
+  const avg = Math.round(team.reduce((a, q) => a + q.money, 0) / Math.max(1, team.length));
+  const avgLoss = Math.round(team.reduce((a, q) => a + Math.min(MAX_MONEY, q.money + loss), 0) / Math.max(1, team.length));
+  const pistol = game.roundNum === 1 || game.roundNum === game.halfRounds + 1;
+  const last = game.roundNum === game.halfRounds || game.roundNum === game.halfRounds * 2;
+  let tip;
+  if (pistol) tip = 'Rodada de pistola: colete ou uma pistola melhor + 1 granada.';
+  else if (last) tip = 'Última rodada da metade: o dinheiro não passa adiante — gaste tudo.';
+  else if (avg >= full) tip = 'Compra completa: fuzil, colete com capacete e granadas.';
+  else if (avgLoss >= full) tip = 'Economize (eco): se perder, o time terá em média $' + avgLoss + ' na próxima — dá para comprar completo.';
+  else if (avg >= FORCE_BUY) tip = 'Compra forçada: SMG ou pistola forte + colete. Sem dinheiro para fuzil no time todo.';
+  else tip = 'Eco total: guarde o dinheiro; compre no máximo uma pistola barata.';
+  const icon = { full: '<b class="ec-full">fuzil</b>', force: '<b class="ec-force">forçar</b>', eco: '<b class="ec-eco">eco</b>' };
+  const rows = team.slice().sort((a, b) => b.money - a.money).map((q) => '<span' + (q === p ? ' class="me"' : '') + '>' + escapeHtml(q.name) + ' $' + q.money + ' ' + icon[can(q.money)] + '</span>').join('');
+  return '<div class="ec-tip">' + escapeHtml(tip) + '</div><div class="ec-next">Na próxima rodada (sem contar abates): ganhando <b>$' + Math.min(MAX_MONEY, p.money + WIN_REWARD.elim) + '</b> · perdendo <b>$' + Math.min(MAX_MONEY, p.money + loss) + '</b> (bônus de derrota $' + loss + ')</div><div class="ec-team">' + rows + '</div>';
+}
+
+// ---------------- personalidade dos bots: frases (e voz) ----------------
+function chatStyle(p) {
+  if (!p.chat) { let h = 0; for (let i = 0; i < p.name.length; i++) h = (h * 31 + p.name.charCodeAt(i)) >>> 0; p.chat = CHAT_STYLE_ORDER[h % CHAT_STYLE_ORDER.length]; }
+  return CHAT_STYLES[p.chat];
+}
+function botChat(p, ev, vars) {
+  const l = game.local, now = game.time;
+  if (!p || !p.isBot || !l || !settings.botChat || game.mode === 'practice' || game.state !== 'playing') return;
+  const ally = p.team === l.team;
+  if (!ally && ev !== 'taunt') return;
+  if (Math.random() > (CHAT_ODDS[ev] || 0.3)) return;
+  if (now - (p.chatAt || -99) < CHAT_GAP || now - (game.chatAt || -99) < CHAT_GLOBAL_GAP) return;
+  const st = chatStyle(p), lines = st.lines[ev];
+  if (!lines) return;
+  p.chatAt = now; game.chatAt = now;
+  const text = pick(lines).replace(/\{(\w+)\}/g, (m, k) => (vars && vars[k] !== undefined ? String(vars[k]) : ''));
+  const el = document.createElement('div');
+  el.className = 'rd ' + (ally ? TEAM_INFO[p.team].cls : 'enemy') + ' chat';
+  el.innerHTML = '<b>' + escapeHtml(p.name) + (ally ? '' : ' (inimigo)') + '</b><span>“' + escapeHtml(text) + '”</span>';
+  ui.radio.appendChild(el);
+  hud.radio.push({ el, until: now + 6 });
+  while (hud.radio.length > 4) hud.radio.shift().el.remove();
+  botSpeak(text, st);
+}
+// voz sintetizada em português (cada estilo com altura/velocidade própria); não corta o locutor da rodada
+function botSpeak(text, st) {
+  if (!settings.voice || !settings.botVoice || !window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') return;
+  try {
+    if (window.speechSynthesis.speaking) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'pt-BR'; u.rate = st.rate; u.pitch = st.pitch; u.volume = clamp(settings.volume * catVolume('voice'), 0, 1);
+    window.speechSynthesis.speak(u);
+  } catch (e) { /* voz indisponível */ }
+}
+// acontecimentos que viram fala: abate, abates seguidos, morte e provocação (inimigo que mata o jogador)
+function chatOnKill(victim, attacker) {
+  if (!attacker || attacker === victim || attacker.team === victim.team) return;
+  const place = placeAt(victim.pos[0], victim.pos[2]) || 'campo aberto';
+  if (attacker.isBot) {
+    if (victim === game.local) botChat(attacker, 'taunt', {});
+    else if ((attacker.roundKills || 0) >= 3 && modeDef().rounds) botChat(attacker, 'multi', {});
+    else botChat(attacker, 'kill', { place });
+  }
+  if (victim.isBot) botChat(victim, 'death', { place: placeAt(attacker.pos[0], attacker.pos[2]) || place, hp: Math.max(1, attacker.hp) });
+}
+// fim de rodada: clutch (bot sozinho vivo que matou 2+), vitória ou derrota do time do jogador
+function chatOnRoundEnd(side) {
+  const l = game.local;
+  if (!l) return;
+  const winners = game.players.filter((q) => q.team === side && q.alive);
+  if (winners.length === 1 && winners[0].isBot && (winners[0].roundKills || 0) >= 2) { winners[0].chatAt = -99; game.chatAt = -99; botChat(winners[0], 'clutch', {}); return; }
+  const mates = game.players.filter((q) => q.isBot && q.team === l.team);
+  if (mates.length) botChat(pick(mates), side === l.team ? 'win' : 'lose', {});
+}
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
 // =====================================================================
@@ -22803,7 +23212,7 @@ function cacheUi() {
   Object.assign(ui, {
     app: $('app'), canvas: $('gl'), hud: $('hud'), radar: $('radar'), bigmap: $('bigmap'), boardTitle: $('board-title'), money: $('money'), moneyDelta: $('money-delta'), buyHint: $('buy-hint'), fps: $('fps'), speedo: $('speedo'),
     scoreL: $('tb-score-l'), scoreR: $('tb-score-r'), pipsL: $('tb-pips-l'), pipsR: $('tb-pips-r'), timer: $('tb-timer'), round: $('tb-round'),
-    killfeed: $('killfeed'), killcam: $('killcam'), wx: $('wx'), tut: $('tut'), killcamText: $('killcam-text'), xhair: $('xhair'), targetName: $('target-name'), topbar: $('topbar'), place: $('place'), radio: $('radio'), plates: $('plates'), report: $('report'),
+    killfeed: $('killfeed'), killcam: $('killcam'), wx: $('wx'), tut: $('tut'), drillpad: $('drillpad'), killcamText: $('killcam-text'), xhair: $('xhair'), targetName: $('target-name'), topbar: $('topbar'), place: $('place'), radio: $('radio'), plates: $('plates'), report: $('report'),
     practice: $('practice'), psV: [$('ps-v1'), $('ps-v2'), $('ps-v3'), $('ps-v4')], psL: [$('ps-l1'), $('ps-l2'), $('ps-l3'), $('ps-l4')], drills: $('drills'), custom: $('custom'), modesScr: $('modes'), arenasScr: $('arenas'), arLegends: $('ar-legends'), arSize: $('ar-size'), arMaps: $('ar-maps'), arDetail: $('ar-detail'), ashop: $('ashop'), ahud: $('ahud'), ahBadge: $('ah-badge'), ahName: $('ah-name'), ahNums: $('ah-nums'), ahShield: $('ah-shield'), ahHp: $('ah-hp'), ahHeals: $('ah-heals'), ahTac: $('ah-tac'), ahUlt: $('ah-ult'), ahInfo: $('ah-info'), ahProg: $('ah-prog'), ahProgL: $('ah-prog-l'), ahProgF: $('ah-prog-f'), ahFx: $('ahfx'), pingwheel: $('pingwheel'), dmgnums: $('dmgnums'), vitals: $('vitals'), classesScr: $('classes'), modeCards: $('mode-cards'), clForm: $('cl-form'), objbar: $('objbar'), modeinfo: $('modeinfo'), markers: $('markers'), adsdot: $('adsdot'), streaks: $('streaks'), deploy: $('deploy'), dpTitle: $('dp-title'), dpSub: $('dp-sub'), dpRoles: $('dp-roles'), dpSpawns: $('dp-spawns'), dpGo: $('dp-go'), drillList: $('drill-list'), moneyRow: $('money-row'), flashImg: $('flash-img'), hitmark: $('hitmark'), radioMenu: $('radio-menu'), buyBonus: $('buy-bonus'), xhPreview: $('xh-preview'),
     centerMsg: $('center-msg'), cmBig: $('cm-big'), cmSmall: $('cm-small'), hint: $('hint'), progress: $('progress'), progressLabel: $('progress-label'), progressFill: $('progress-fill'),
     hp: $('hp'), hpWrap: $('hp-wrap'), armor: $('armor'), helmet: $('helmet-icon'), bombIcon: $('bomb-icon'), kitIcon: $('kit-icon'),
@@ -23282,7 +23691,7 @@ function renderBoard() {
 }
 // linha do tempo das rodadas (quem venceu e como) e dinheiro do seu time
 function renderHistoryHtml() {
-  const icon = { elimT: '✕', elimCT: '✕', bomb: 'C4', defuse: 'KIT', time: '⏱', duelTime: '⏱' };
+  const icon = { elimT: '✕', elimCT: '✕', bomb: 'C4', defuse: 'KIT', time: '⏱', duelTime: '⏱', duelFlag: '⚑' };
   const cells = [];
   for (let i = 0; i < game.halfRounds * 2; i++) {
     const h = game.history[i];
@@ -23536,6 +23945,8 @@ function refreshBuyMenu() {
   setText(ui.buyTime, 'buyTime', practice ? 'Treino: dinheiro infinito' : (canBuy(p) ? 'Tempo para comprar: ' + Math.ceil(game.buyTime) + ' s' : 'Compra encerrada'));
   const plan = game.econ && game.econ[p.team];
   setText(ui.buyBonus, 'buyBonus', practice ? '' : 'Bônus de derrota do time: $' + LOSS_BONUS[Math.min(game.lossStreak[squadOf(p.team)], LOSS_BONUS.length - 1)] + (plan ? ' · Plano dos bots: ' + ECON_LABEL[plan] : ''));
+  const ecoH = econPanelHtml(p);
+  if (hud.econKey !== ecoH) { hud.econKey = ecoH; document.getElementById('buy-econ').innerHTML = ecoH; }
   const buyable = canBuy(p);
   const counters = [];
   for (const btn of ui.buyGrid.querySelectorAll('.buy-item')) {
@@ -23583,6 +23994,7 @@ function closeBuyMenu(relock) {
 }
 function updateHud(dt) {
   updateWeatherFx(dt);
+  drawSprayPad();
   if (game.state !== 'playing') { if (!ui.killcam.hidden) ui.killcam.hidden = true; return; }
   updateKillcamHud();
   const l = game.local, now = game.time;
@@ -23613,7 +24025,7 @@ function updateHud(dt) {
     ui.pipsL.innerHTML = mk('CT');
     ui.pipsR.innerHTML = mk('T');
   }
-  if (!game.arena) setText(ui.money, 'money', '$' + l.money);
+  if (!game.arena) setText(ui.money, 'money', modeDef().duel ? '' : '$' + l.money);
   if (hud.deltaTimer > 0) { hud.deltaTimer -= dt; if (hud.deltaTimer <= 0) ui.moneyDelta.classList.remove('show'); }
   const buyable = canBuy(l);
   setHidden(ui.buyHint, 'buyHint', !buyable);
@@ -23717,6 +24129,8 @@ function updatePracticeHud() {
   const react = pr.reactN ? Math.round(pr.reactSum / pr.reactN * 1000) + ' ms' : '—';
   let cells;
   if (pr.drill === 'free') cells = [['Abates', String(pr.kills)], ['Precisão', acc], ['Na cabeça', (pr.hits ? Math.round(pr.heads / pr.hits * 100) : 0) + '%'], ['Tiros', String(pr.shots)]];
+  else if (pr.drill === 'spray') cells = [['Rajadas', pr.sprays.length + '/' + d.count], ['Última', pr.sprays.length ? pr.sprays[pr.sprays.length - 1] + ' cm' : '—'], ['Média', pr.sprays.length ? Math.round(pr.sprays.reduce((a, b) => a + b, 0) / pr.sprays.length) + ' cm' : '—'], ['Tiros', String(pr.shots)]];
+  else if (pr.drill === 'nades') cells = [['Granada', (pr.nadeIdx + 1) + '/' + ((M.lineups || []).length)], ['Bomb', pr.nade ? pr.nade.L.site : '—'], ['Lado', pr.nade ? (pr.nade.L.team === 'T' ? 'TR' : 'CT') : '—'], ['Último', pr.nade && pr.nade.short ? pr.nade.short : '—']];
   else if (pr.drill === 'react') cells = [['Alvos', pr.count + '/' + d.count], ['Reação média', react], ['Erros', String(pr.misses)], ['Precisão', acc]];
   else {
     const left = now < pr.startAt ? d.time : Math.max(0, pr.startAt + d.time - now);
@@ -23728,7 +24142,8 @@ function openDrills() {
   const rec = loadRecords();
   ui.drillList.innerHTML = Object.keys(DRILLS).map((k) => {
     const d = DRILLS[k], r = rec[k];
-    const recText = !d.score ? '' : (r ? 'Recorde: ' + (d.score === 'react' ? r.best + ' ms' : r.best + ' abates') : 'Sem recorde');
+    const unit = { react: ' ms', spray: ' cm' }[d.score] || ' abates';
+    const recText = !d.score ? '' : (r ? 'Recorde: ' + r.best + unit : 'Sem recorde');
     return '<button type="button" data-drill="' + k + '"><span class="dl-name">' + escapeHtml(d.name) + '</span><span class="dl-rec">' + escapeHtml(recText) + '</span><span class="dl-desc">' + escapeHtml(d.desc) + '</span></button>';
   }).join('');
   ui.drills.hidden = false;
@@ -23741,10 +24156,10 @@ function showDrillResult(pr, score, oldBest, better) {
   ui.hud.hidden = true;
   const acc = pr.shots ? Math.round(Math.min(1, pr.hits / pr.shots) * 100) : 0;
   const react = pr.reactN ? Math.round(pr.reactSum / pr.reactN * 1000) + ' ms' : '—';
-  const scoreText = d.score === 'react' ? score + ' ms de média' : score + ' abates';
+  const scoreText = d.score === 'react' ? score + ' ms de média' : (d.score === 'spray' ? score + ' cm de média (' + pr.sprays.join(' · ') + ')' : score + ' abates');
   ui.meResult.textContent = better ? 'Novo recorde!' : 'Treino concluído';
   ui.meResult.style.color = better ? 'var(--money)' : 'var(--text)';
-  ui.meScore.textContent = d.name + ' · ' + scoreText + (oldBest !== null && !better ? ' · recorde: ' + oldBest + (d.score === 'react' ? ' ms' : '') : '');
+  ui.meScore.textContent = d.name + ' · ' + scoreText + (oldBest !== null && !better ? ' · recorde: ' + oldBest + ({ react: ' ms', spray: ' cm' }[d.score] || '') : '');
   const cell = (v, l) => '<div><b>' + escapeHtml(String(v)) + '</b><span>' + l + '</span></div>';
   ui.meTable.innerHTML = '<div class="me-stats">' + cell(pr.kills, 'Abates') + cell(acc + '%', 'Precisão') + cell(pr.hits ? Math.round(pr.heads / pr.hits * 100) + '%' : '0%', 'Na cabeça') + cell(react, 'Reação média') + cell(pr.misses, 'Alvos perdidos') + cell(pr.shots, 'Tiros') + '</div>';
   ui.matchend.hidden = false;
@@ -23943,6 +24358,7 @@ function onKeyDown(e) {
   if (game.state === 'playing' && !game.paused && (code === 'Tab' || code === 'Space' || code === 'Enter' || code === 'Slash' || code === 'Quote')) e.preventDefault();
   if (!e.repeat) input.pressed.add(code);
   input.keys.add(code);
+  if (game.state === 'playing' && !e.repeat && !game.paused && nadesKey(code, e.shiftKey)) { e.preventDefault(); return; }
   if (game.state === 'playing') {
     if (code === 'Space' && game.killcam && game.killcam.on && !e.repeat) { kcSkip(); return; }
     if (code === 'Escape') {
@@ -24344,6 +24760,7 @@ function bindUi() {
   on('btn-wingman', 'click', () => startMode('wingman'));
   on('btn-retake', 'click', () => startMode('retake'));
   on('btn-duel', 'click', () => startMode('duel'));
+  on('btn-duel2', 'click', () => startMode('duel2'));
   on('btn-tutorial', 'click', startTutorial);
   on('btn-br', 'click', openBr);
   document.getElementById('menu-tabs').addEventListener('click', (e) => { const b = e.target.closest('button[data-tab]'); if (b) { settings.menuTab = b.dataset.tab; saveSettings(); setMenuTab(); } });
@@ -24367,7 +24784,13 @@ function bindUi() {
   ui.deploy.addEventListener('click', onDeployClick);
   on('btn-practice', 'click', openDrills);
   on('btn-drill-back', 'click', () => { ui.drills.hidden = true; });
-  ui.drillList.addEventListener('click', (e) => { const b = e.target.closest('button[data-drill]'); if (b) onPlay('practice', b.dataset.drill); });
+  ui.drillList.addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-drill]');
+    if (!b) return;
+    // granadas: precisa de um mapa com granadas fixas (os do CS)
+    if (b.dataset.drill === 'nades' && !(M.lineups && M.lineups.length)) loadMap(MAP_ORDER.find((k) => MAPS[k].lineups && MAPS[k].lineups.length));
+    onPlay('practice', b.dataset.drill);
+  });
   on('btn-options', 'click', () => openPanel('options'));
   on('btn-controls', 'click', () => openPanel('controls'));
   on('btn-resume', 'click', resumeGame);
