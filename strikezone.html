@@ -485,6 +485,13 @@ button { font: inherit; color: inherit; }
 .drill-list .dl-rec { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--money); align-self: center; }
 .drill-list .dl-desc { grid-column: 1 / -1; font-size: 13px; color: var(--muted); }
 .me-sum { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
+.me-charts { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-start; }
+.me-charts figure { margin: 0; }
+.me-charts img { display: block; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08); max-width: 100%; }
+.me-charts figcaption { font-size: 12px; color: var(--muted, #9aa7b6); margin-top: 4px; max-width: 420px; }
+.me-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin: 0 4px 0 2px; vertical-align: middle; }
+.me-dot.k { background: rgb(90,220,120); }
+.me-dot.d { background: rgb(235,80,70); }
 .me-hi { margin: 0; padding-left: 18px; color: var(--text); font-size: 15px; line-height: 1.5; }
 .me-ach { display: flex; flex-wrap: wrap; gap: 8px; }
 .me-ach span { background: rgba(216, 154, 60, 0.18); border: 1px solid var(--accent); padding: 4px 10px; font-family: var(--display); font-size: 15px; letter-spacing: 0.05em; }
@@ -9863,6 +9870,11 @@ const LOADING_TIPS = [
   'ouça os passos: o som vem da direção certa com fones',
   'M abre o mapa grande; Tab mostra placar, dinheiro e histórico das rodadas'
 ];
+// gráficos do resumo da partida: tamanho do gráfico de dinheiro, lado do mapa de calor e teto de pontos
+const MST_CHART_W = 420;
+const MST_CHART_H = 150;
+const MST_HEAT_SIZE = 260;
+const MST_SPOTS_MAX = 300;
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -18164,6 +18176,7 @@ function startRound() {
   game.dropAsk = null;
   game.buyLog = [];
   if (cgMod('money')) for (const p of game.players) p.money = MAX_MONEY;
+  for (const p of game.players) p.roundMoney = p.money;
   game.phase = 'freeze';
   game.freezeLen = freezeLen();
   game.phaseTimer = modeDef().retake ? RETAKE_FREEZE : game.freezeLen;
@@ -23732,7 +23745,7 @@ function checkAchievements(s, m) {
 
 // ---------------- estatísticas da partida ----------------
 function mstReset() {
-  game.mst = { shots: 0, hits: 0, heads: 0, dmg: 0, kills: 0, deaths: 0, hs: 0, streak: 0, bestStreak: 0, bestRound: 0, bestRoundNum: 0, longest: 0, longestW: '', wall: 0, noscope: 0, knife: 0, firstKills: 0, plants: 0, defuses: 0, clutches: 0, weapons: {}, lastHitShot: -1, start: game.time, recorded: false, newAch: [] };
+  game.mst = { shots: 0, hits: 0, heads: 0, dmg: 0, kills: 0, deaths: 0, hs: 0, streak: 0, bestStreak: 0, bestRound: 0, bestRoundNum: 0, longest: 0, longestW: '', wall: 0, noscope: 0, knife: 0, firstKills: 0, plants: 0, defuses: 0, clutches: 0, weapons: {}, lastHitShot: -1, start: game.time, recorded: false, newAch: [], rounds: [], spots: [] };
   game.firstKill = false;
 }
 function mstOn() { return !!(game.mst && game.mode !== 'practice'); }
@@ -23762,12 +23775,19 @@ function mstKill(victim, attacker, weaponId, flags) {
     adaptNote(1);
   }
   if (victim === l) { m.deaths++; m.streak = 0; if (attacker && attacker !== l) adaptNote(-1); }
+  // mapa de calor do resumo: onde você matou (posição da vítima) e onde morreu
+  if (m.spots.length < MST_SPOTS_MAX && ((attacker === l && enemy) || victim === l)) m.spots.push([victim.pos[0], victim.pos[2], victim === l ? 0 : 1, victim.pos[1]]);
 }
 function mstPlant(p) { if (p === game.local && mstOn()) game.mst.plants++; }
 function mstDefuse(p) { if (p === game.local && mstOn()) game.mst.defuses++; }
 // clutch: o time do jogador venceu com só ele vivo e ele matou 2+ na rodada
 function mstRoundEnd(side) {
   const l = game.local;
+  // gráfico do resumo: dinheiro com que você começou a rodada e se o seu time venceu
+  if (mstOn() && l && modeDef().rounds && !modeDef().arenas) {
+    const mates = game.players.filter((p) => p.team === l.team);
+    game.mst.rounds.push({ win: side === l.team, money: l.roundMoney === undefined ? l.money : l.roundMoney, team: Math.round(mates.reduce((s, p) => s + (p.roundMoney === undefined ? p.money : p.roundMoney), 0) / Math.max(1, mates.length)), kills: l.roundKills || 0 });
+  }
   if (!mstOn() || !l || l.team !== side || !l.alive || l.roundKills < 2) return;
   if (game.players.some((p) => p !== l && p.alive && p.team === l.team)) return;
   game.mst.clutches++;
@@ -23825,6 +23845,7 @@ function matchSummaryHtml() {
   const top = game.players.filter((p) => p !== l).sort((a, b) => b.kills - a.kills)[0];
   if (top && top.kills > m.kills) hi.push('Destaque dos bots: ' + top.name + ' (' + top.kills + ' abates)');
   if (settings.adaptive && game.adapt > 0.05) hi.push('Dificuldade adaptativa: bots ' + Math.round(game.adapt * 100) + '% mais fáceis no fim');
+  h += matchChartsHtml();
   if (hi.length) h += '<ul class="me-hi">' + hi.slice(0, 6).map((t) => '<li>' + escapeHtml(t) + '</li>').join('') + '</ul>';
   if (m.rank) h += rankSummaryHtml(m.rank);
   if ((m.newAch && m.newAch.length) || (m.newSkins && m.newSkins.length)) h += '<div class="me-ach">' + (m.newAch || []).map((a) => '<span><i>' + escapeHtml(a.icon) + '</i>Conquista: ' + escapeHtml(a.name) + '</span>').join('') + (m.newSkins || []).map((k) => '<span><i>🎨</i>Pintura liberada: ' + escapeHtml(WEAPON_SKINS[k].name) + '</span>').join('') + '</div>';
@@ -24716,6 +24737,67 @@ function loadMapUi(id, then) {
     setTimeout(() => { el.hidden = true; hud.loading = false; if (then) then(); }, LOAD_HOLD_MS);
   };
   step();
+}
+
+// ---------- gráficos do resumo da partida ----------
+// desenhados num canvas fora da tela e colocados como imagem (o resumo é montado por innerHTML)
+function matchChartsHtml() {
+  const m = game.mst;
+  if (!m) return '';
+  let h = '';
+  if (m.rounds && m.rounds.length >= 2) h += '<figure><img alt="Dinheiro e resultado por rodada" src="' + moneyChartUrl(m.rounds) + '"><figcaption>Dinheiro no início de cada rodada (linha: você · tracejada: média do time) · barra verde = vitória</figcaption></figure>';
+  if (m.spots && m.spots.length && hud.radarImg) h += '<figure><img alt="Mapa de abates e mortes" src="' + heatChartUrl(m.spots) + '"><figcaption><span class="me-dot k"></span>onde você matou · <span class="me-dot d"></span>onde morreu</figcaption></figure>';
+  return h ? '<div class="me-charts">' + h + '</div>' : '';
+}
+function moneyChartUrl(rounds) {
+  const W = MST_CHART_W, H = MST_CHART_H, pad = 22, n = rounds.length;
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d');
+  g.fillStyle = 'rgba(10,14,20,0.85)'; g.fillRect(0, 0, W, H);
+  const top = Math.max(MAX_MONEY / 2, ...rounds.map((r) => Math.max(r.money, r.team)));
+  const bw = (W - pad * 2) / n;
+  const yOf = (v) => H - pad - (H - pad * 2) * Math.min(1, v / top);
+  g.strokeStyle = 'rgba(255,255,255,0.08)'; g.lineWidth = 1;
+  g.font = '10px sans-serif'; g.fillStyle = 'rgba(255,255,255,0.45)';
+  for (let k = 0; k <= 4; k++) { const v = top * k / 4, y = yOf(v); g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke(); if (k) g.fillText('$' + Math.round(v / 1000) + 'k', 2, y + 3); }
+  for (let i = 0; i < n; i++) {
+    const r = rounds[i], x = pad + i * bw;
+    g.fillStyle = r.win ? 'rgba(90,200,120,0.55)' : 'rgba(220,80,70,0.45)';
+    g.fillRect(x + 1, H - pad + 3, bw - 2, 6);
+    if (r.kills) { g.fillStyle = 'rgba(255,220,120,0.9)'; g.fillText(String(r.kills), x + bw / 2 - 3, H - 3); }
+  }
+  const line = (key, color, dash) => {
+    g.strokeStyle = color; g.lineWidth = 2; g.setLineDash(dash); g.beginPath();
+    rounds.forEach((r, i) => { const x = pad + (i + 0.5) * bw, y = yOf(r[key]); if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+    g.stroke(); g.setLineDash([]);
+  };
+  line('team', 'rgba(140,180,255,0.8)', [4, 3]);
+  line('money', '#f4c56a', []);
+  return c.toDataURL('image/png');
+}
+function heatChartUrl(spots) {
+  const S = MST_HEAT_SIZE, sc = S / Math.max(world.w, world.d);
+  const c = document.createElement('canvas'); c.width = Math.round(world.w * sc); c.height = Math.round(world.d * sc);
+  const g = c.getContext('2d');
+  g.fillStyle = '#0a0e14'; g.fillRect(0, 0, c.width, c.height);
+  g.globalAlpha = 0.85;
+  g.drawImage(hud.radarImg, 0, 0, c.width, c.height);
+  g.globalAlpha = 1;
+  // brilho suave somado embaixo e o ponto por cima
+  for (const pass of [0, 1]) {
+    for (const s of spots) {
+      const x = s[0] * sc, y = s[1] * sc, col = s[2] ? '90,220,120' : '235,80,70';
+      if (pass === 0) {
+        const gr = g.createRadialGradient(x, y, 0, x, y, 14);
+        gr.addColorStop(0, 'rgba(' + col + ',0.45)'); gr.addColorStop(1, 'rgba(' + col + ',0)');
+        g.fillStyle = gr; g.fillRect(x - 14, y - 14, 28, 28);
+      } else {
+        g.fillStyle = 'rgb(' + col + ')'; g.beginPath(); g.arc(x, y, 3, 0, Math.PI * 2); g.fill();
+        g.strokeStyle = 'rgba(0,0,0,0.7)'; g.lineWidth = 1; g.stroke();
+      }
+    }
+  }
+  return c.toDataURL('image/png');
 }
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
