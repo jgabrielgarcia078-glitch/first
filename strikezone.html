@@ -89,7 +89,7 @@ button { font: inherit; color: inherit; }
 .menu-tabs button[data-tab="war"].on { background: rgba(110, 160, 90, 0.18); border-bottom-color: #8fcf6a; }
 .menu-tabs button[data-tab="apex"].on { background: rgba(255, 110, 60, 0.16); border-bottom-color: #ff7a45; }
 .war-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
-.war-modes .btn { font-size: 18px; padding: 6px 10px; }
+.war-modes .btn { font-size: 16px; padding: 5px 10px; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .war-modes .btn small { display: block; margin: 0; font-size: 10px; }
 .apex-btn { color: #ff8a55 !important; }
 .btn.primary.apex-btn { color: #1c0e06 !important; background: linear-gradient(180deg, #ff9a5e, #e0632c); border-color: #ff9a5e; }
@@ -357,7 +357,7 @@ button { font: inherit; color: inherit; }
 .btn:disabled { opacity: 0.4; cursor: default; }
 
 #menu { background: linear-gradient(90deg, rgba(7, 8, 10, 0.94) 0%, rgba(7, 8, 10, 0.78) 34%, rgba(7, 8, 10, 0.1) 68%, rgba(7, 8, 10, 0) 100%); }
-.menu-col { width: min(470px, 100%); padding: 44px 36px 32px; display: flex; flex-direction: column; gap: 28px; }
+.menu-col { width: min(500px, 100%); max-height: 100%; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(236, 230, 216, 0.25) transparent; padding: 44px 36px 32px; display: flex; flex-direction: column; gap: 28px; }
 .logo { font-family: var(--display); font-weight: 800; font-size: 76px; line-height: 0.88; letter-spacing: 0.01em; text-transform: uppercase; }
 .logo span { color: var(--accent); }
 .map-tag { margin-top: 10px; font-family: var(--display); font-size: 15px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); }
@@ -380,6 +380,22 @@ button { font: inherit; color: inherit; }
   .setup { gap: 8px; }
   .seg button { padding: 5px 10px; font-size: 14px; }
   .menu-foot { font-size: 12px; line-height: 1.4; }
+}
+/* telas baixas (720p): tudo mais compacto para o menu inteiro caber sem rolar */
+@media (max-height: 760px) {
+  .menu-col { padding: 14px 32px 10px; gap: 10px; }
+  .logo { font-size: 44px; }
+  .map-tag { font-size: 12px; letter-spacing: 0.16em; }
+  .menu-tabs button { font-size: 16px; padding: 5px 6px 4px; }
+  .menu-tabs button small { font-size: 10px; }
+  .menu-nav { gap: 2px; }
+  .menu-nav .btn { font-size: 17px; padding: 3px 14px; }
+  .war-modes .btn { font-size: 15px; padding: 3px 10px; }
+  .menu-sep { margin: 3px 0; }
+  .setup { gap: 6px; }
+  .label { font-size: 11px; }
+  .seg button { padding: 3px 8px; font-size: 13px; }
+  .menu-foot { display: none; }
 }
 
 .panel { background: var(--panel-strong); border: 1px solid var(--line); border-radius: 4px; padding: 22px 24px; width: min(560px, 100%); max-height: calc(100% - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
@@ -474,6 +490,12 @@ table.recent { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.recent th { text-align: left; color: var(--muted); font-family: var(--display); letter-spacing: 0.08em; text-transform: uppercase; font-size: 11px; padding: 3px 6px; }
 table.recent td { padding: 3px 6px; border-top: 1px solid var(--line); }
 table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.loss td:nth-child(4) { color: var(--danger); }
+.rank-badge { display: inline-block; font-family: var(--display); font-weight: 800; font-size: 15px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rk); border: 1px solid var(--rk); background: rgba(0, 0, 0, 0.35); padding: 2px 10px; clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%); }
+#menu-rank { margin-top: 8px; }
+.me-rank { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.me-rank .rk-delta { font-family: var(--display); font-size: 18px; } .me-rank .rk-delta.up { color: var(--money); } .me-rank .rk-delta.down { color: var(--danger); }
+.me-rank .rk-bar { width: 160px; height: 6px; background: rgba(255, 255, 255, 0.1); } .me-rank .rk-bar i { display: block; height: 100%; background: var(--accent); }
+.me-rank .rk-txt { color: var(--muted); font-size: 13px; }
 #buy-econ { display: flex; flex-direction: column; gap: 4px; padding: 6px 2px 10px; font-size: 14px; }
 #buy-econ:empty { display: none; }
 #buy-econ .ec-tip { font-family: var(--display); font-size: 18px; color: var(--accent); }
@@ -654,6 +676,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
       <div>
         <div class="logo">Strike<span>Zone</span></div>
         <div class="map-tag" id="map-tag">de_duna · 5 contra 5 · C4</div>
+        <div id="menu-rank"></div>
       </div>
       <p class="mobile-note">StrikeZone é um jogo de tiro para computador: precisa de teclado e mouse.</p>
       <div class="menu-tabs" id="menu-tabs" role="tablist">
@@ -815,6 +838,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <div class="opt-row"><label for="opt-skin">Pintura das suas armas</label><select id="opt-skin" data-setting="skin"></select><output></output></div>
         <div class="opt-row"><label for="opt-wx">Clima</label><select id="opt-wx" data-setting="weather"><option value="auto">Sorteado a cada partida</option><option value="clear">Limpo</option><option value="rain">Chuva</option><option value="fog">Neblina</option><option value="sand">Tempestade de areia</option></select><output></output></div>
         <div class="opt-row"><label for="opt-tod">Hora do dia</label><select id="opt-tod" data-setting="timeOfDay"><option value="auto">Sorteada a cada partida</option><option value="day">Dia</option><option value="dusk">Entardecer</option><option value="night">Noite</option></select><output></output></div>
+        <div class="opt-row"><label for="opt-ot">Prorrogação no desarme de bomba (empate: 6 rodadas com $10.000)</label><input id="opt-ot" type="checkbox" data-setting="overtime"><output></output></div>
         <div class="opt-row"><label for="opt-bchat">Bots falam (frases com personalidade no rádio)</label><input id="opt-bchat" type="checkbox" data-setting="botChat"><output></output></div>
         <div class="opt-row"><label for="opt-bvoice">Voz sintetizada nas falas dos bots (português)</label><input id="opt-bvoice" type="checkbox" data-setting="botVoice"><output></output></div>
         <div class="opt-row"><label for="opt-kcam">Killcam (replay de quem te matou)</label><input id="opt-kcam" type="checkbox" data-setting="killcam"><output></output></div>
@@ -856,6 +880,8 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
       </section>
 
       <section class="tab-page" data-page="profile" role="tabpanel" hidden>
+        <h3 class="opt-sub">Patente</h3>
+        <div id="prof-rank"></div>
         <h3 class="opt-sub">Carreira</h3>
         <div id="prof-stats"></div>
         <h3 class="opt-sub">Partidas recentes</h3>
@@ -996,7 +1022,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
       <div id="me-result"></div>
       <div id="me-score"></div>
       <div id="me-table"></div>
-      <div class="me-actions"><button id="btn-again" class="btn primary" type="button">Jogar de novo</button><button id="btn-menu" class="btn" type="button">Menu principal</button></div>
+      <div class="me-actions"><button id="btn-again" class="btn primary" type="button">Jogar de novo</button><button id="btn-nextmap" class="btn" type="button" hidden>Próximo mapa</button><button id="btn-menu" class="btn" type="button">Menu principal</button></div>
     </div>
   </div>
 
@@ -1014,7 +1040,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.11.0';
+const GAME_VERSION = '1.12.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -1161,6 +1187,10 @@ const DM_BUY_WINDOW = 10;
 const DM_PROTECT = 1.5;
 // Todos contra todos: alvo de abates; Duelo 1×1: tempo da rodada e armas sorteadas (as duas iguais para os dois)
 const FFA_TARGET = 20;
+const BOT_SKIP_CHECK = 0.15; // bots: intervalo da conferência "dá para ir reto até o ponto seguinte" (s)
+// prorrogação do desarme de bomba (MR3 como no CS:GO): 3 rodadas por lado e $10.000 para todos
+const OT_HALF = 3;
+const OT_MONEY = 10000;
 const DUEL_ROUND_TIME = 75;
 const DUEL_HUNT_AFTER = 18;
 // modos que só existem em mapas que os listam em `modes` (o gulag) e a bandeira da prorrogação do duelo
@@ -1261,7 +1291,7 @@ const DEFAULT_SETTINGS = {
   chOutline: true, chOutlineThick: 1, chDot: false, chDotSize: 2, chDynamic: false, chFollowRecoil: false,
   friendlyFire: false, nameplates: true, damageReport: true, voice: true, volume: 0.7, fullscreen: true, showFps: false,
   pingShow: true, pingBots: true, pingText: 'full', pingSize: 1, pingOpacity: 0.9, pingColorMode: 'type', pingColor: '#ffd84a', pingRadar: true, pingChat: true,
-  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none',
+  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp',
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
   cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800',
@@ -8889,6 +8919,42 @@ const CHAT_STYLE_ORDER = ['confiante', 'calmo', 'zoeiro', 'nervoso'];
 const CHAT_ODDS = { kill: 0.3, multi: 0.85, death: 0.45, clutch: 1, win: 0.35, lose: 0.3, taunt: 0.5 };
 const CHAT_GAP = 7;
 const CHAT_GLOBAL_GAP = 2.2;
+// nomes curtos dos botões da aba Guerra (o nome completo fica na dica)
+// luz mínima do modelo da arma na mão (céu/ambiente e sol) — à noite a arma não fica preta
+const VM_MIN_SKY = [0.42, 0.42, 0.44];
+const VM_MIN_SUN = [1.6, 1.5, 1.35];
+const VM_SKY = [0, 0, 0];
+const VM_SUN = [0, 0, 0];
+const WAR_SHORT = { dm: 'Mata-mata', ffa: 'Todos x todos', gungame: 'Armamentista' };
+// patentes (estilo CS:GO): RANK_STEP pontos por patente; ganha/perde por partida conforme a dificuldade dos bots;
+// cada dificuldade tem um teto (para subir até Global Elite precisa jogar contra bots mais fortes)
+const RANKS = ['Prata I', 'Prata II', 'Prata III', 'Prata IV', 'Prata Elite', 'Prata Elite Mestre', 'Ouro Nova I', 'Ouro Nova II', 'Ouro Nova III', 'Ouro Nova Mestre', 'Guardião Mestre I', 'Guardião Mestre II', 'Guardião Mestre Elite', 'Xerife Mestre', 'Águia Lendária', 'Águia Lendária Mestre', 'Mestre Supremo', 'Global Elite'];
+const RANK_COLORS = ['#9aa3ad', '#9aa3ad', '#9aa3ad', '#9aa3ad', '#b8c2cc', '#c9d3dc', '#e0b04a', '#e0b04a', '#e0b04a', '#f0c24f', '#5fb0ff', '#5fb0ff', '#7cc4ff', '#9b7bff', '#ff8a4c', '#ff7a3c', '#ff5a5a', '#ffd84a'];
+const RANK_STEP = 100;
+const RANK_WIN = { easy: 9, normal: 15, hard: 21, expert: 27 };
+const RANK_LOSS = { easy: 15, normal: 11, hard: 8, expert: 6 };
+const RANK_CAP = { easy: 6, normal: 11, hard: 15, expert: 17 };
+// modos que contam para a patente (e o peso de cada um)
+const RANK_MODES = { match: 1, wingman: 0.8, retake: 0.6, duel: 0.6, duel2: 0.6, dm: 0.5, ffa: 0.5, gungame: 0.5, kc: 0.6, dom: 0.6, hp: 0.6, conquest: 0.7, conquestL: 0.7, rush: 0.7, arenas2: 0.7, arenas3: 0.7, br: 0.8 };
+// pinturas de arma liberadas pelo perfil (as que não estão aqui ficam sempre liberadas)
+const SKIN_UNLOCK = {
+  desert: { text: 'complete o tutorial', test: (s) => !!s.tutorial },
+  carbon: { text: '100 abates', test: (s) => s.kills >= 100 },
+  tiger: { text: 'patente Prata Elite', test: (s) => rankIndex(s.rp) >= 4 },
+  hex: { text: 'patente Ouro Nova I', test: (s) => rankIndex(s.rp) >= 6 },
+  asiimov: { text: 'conquista Ace', test: (s) => !!s.ach.ace },
+  dragon: { text: 'patente Guardião Mestre I', test: (s) => rankIndex(s.rp) >= 10 },
+  gold: { text: 'patente Global Elite', test: (s) => rankIndex(s.rp) >= 17 },
+};
+// espectador: câmera em 1ª pessoa, 3ª pessoa (atrás do alvo, encosta na parede) e de cima; V ou Espaço alterna
+const SPEC_MODES = ['fp', 'tp', 'top'];
+const SPEC_LABELS = { fp: '1ª pessoa', tp: '3ª pessoa', top: 'Visão de cima' };
+const SPEC_TP_DIST = 3.2;
+const SPEC_TP_UP = 0.55;
+const SPEC_TP_PITCH = -0.22;
+const SPEC_TOP_H = 13;
+const SPEC_TOP_MIN = 3;
+const SPEC_SMOOTH = 8;
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -13596,6 +13662,10 @@ function renderFrame() {
     gl.clear(gl.DEPTH_BUFFER_BIT);
     uploadBatch(R.batchVm);
     setMainUniforms(R.progInst, R.vmViewProj, dynOn);
+    // arma na mão com luz mínima própria: à noite/entardecer/neblina ela não some no escuro
+    const L = R.light, u = R.progInst.u;
+    for (let i = 0; i < 3; i++) { VM_SKY[i] = Math.max(L.sky[i], VM_MIN_SKY[i]); VM_SUN[i] = Math.max(L.sun[i], VM_MIN_SUN[i]); }
+    gl.uniform3fv(u.uSkyColor, VM_SKY); gl.uniform3fv(u.uSunColor, VM_SUN);
     if (R.vmMirror) gl.frontFace(gl.CW);
     drawBatch(R.batchVm);
     gl.frontFace(gl.CCW);
@@ -16717,7 +16787,20 @@ function endRound(side, reason) {
 }
 function nextRound() {
   const need = game.halfRounds + 1;
-  if (game.score[0] >= need || game.score[1] >= need || game.roundNum >= game.halfRounds * 2) { endMatch(); return; }
+  // prorrogação (MR3 como no CS): quem fizer OT_HALF + 1 rodadas dela vence; empatou de novo, outra prorrogação
+  if (game.ot) {
+    const o = game.ot, a = game.score[0] - o.base[0], b = game.score[1] - o.base[1], played = game.roundNum - o.start;
+    if (a > OT_HALF || b > OT_HALF) { endMatch(); return; }
+    if (played >= OT_HALF * 2) { startOvertime(); return; }
+    if (played === OT_HALF) { swapSides(OT_MONEY); startRound(); showCenter('Troca de lados na prorrogação', 'Agora você joga como ' + TEAM_INFO[game.local.team].name + ' · $' + OT_MONEY + ' para todos', game.local.team, 4.5); return; }
+    startRound();
+    return;
+  }
+  if (game.score[0] >= need || game.score[1] >= need) { endMatch(); return; }
+  if (game.roundNum >= game.halfRounds * 2) {
+    if (game.score[0] === game.score[1] && overtimeAllowed()) startOvertime(); else endMatch();
+    return;
+  }
   let halftime = false;
   if (game.roundNum === game.halfRounds) {
     halftime = true;
@@ -16726,6 +16809,19 @@ function nextRound() {
   }
   startRound();
   if (halftime) showCenter('Troca de lados', 'Agora você joga como ' + TEAM_INFO[game.local.team].name + ' · dinheiro volta para $' + game.startMoney, game.local.team, 4.5);
+}
+function overtimeAllowed() { return settings.overtime && modeDef().bomb && !modeDef().retake && !modeDef().duel; }
+function swapSides(money) {
+  for (const p of game.players) { p.team = p.team === 'T' ? 'CT' : 'T'; p.money = money; p.resetLoadout = true; p.inv.bomb = false; }
+  game.lossStreak = [START_LOSSES, START_LOSSES];
+}
+function startOvertime() {
+  game.ot = { n: (game.ot ? game.ot.n : 0) + 1, start: game.roundNum, base: game.score.slice() };
+  for (const p of game.players) { p.money = OT_MONEY; p.resetLoadout = true; p.inv.bomb = false; }
+  game.lossStreak = [START_LOSSES, START_LOSSES];
+  startRound();
+  showCenter(game.ot.n > 1 ? 'Prorrogação ' + game.ot.n : 'Prorrogação!', 'Empate em ' + game.score[0] + ' × ' + game.score[1] + ' · ' + OT_HALF * 2 + ' rodadas, vence quem fizer ' + (OT_HALF + 1) + ' · $' + OT_MONEY + ' para todos', game.local.team, 5);
+  sfxUi('radio');
 }
 // Duelo 1×1: os dois recebem as mesmas armas sorteadas, colete e capacete; no fim do tempo vence quem tem mais vida
 function duelLoadout() {
@@ -16797,6 +16893,7 @@ function startMatch(mode, drill, custom) {
   game.lossStreak = [START_LOSSES, START_LOSSES];
   game.roundNum = 0;
   game.history = [];
+  game.ot = null;
   freshModeState();
   game.danger = null;
   game.arena = null;
@@ -17224,6 +17321,8 @@ function startRespawnMode() {
     // Ruptura: a defesa já começa nas bandeiras do primeiro setor
     p.spawnChoice = game.rush && p.team === game.rush.def ? pick(game.rush.sectors[0]) : 'hq';
     respawnPlayer(p);
+    // começo da partida: o primeiro caminho de cada bot sai espalhado (60 cálculos de A* no mesmo segundo travavam)
+    if (p.isBot) p.bot.pathStartAt = game.time + (game.players.length > 20 ? Math.random() * 1.5 : 0);
   }
   const l = game.local;
   let sub = md.desc;
@@ -20724,7 +20823,7 @@ function botNavigate(p, dt) {
   if (b.detour) {
     mvx = b.detour[0] - p.pos[0]; mvz = b.detour[1] - p.pos[2]; moving = true;
   } else if (b.goal && !b.wantUse) {
-    if ((!b.path || now >= b.repathAt) && game.pathBudget > 0) {
+    if ((!b.path || now >= b.repathAt) && game.pathBudget > 0 && now >= (b.pathStartAt || 0)) {
       b.pathAt = now;
       // orçamento de A* por quadro (60 bots num mapa grande) e custo extra de perigo/flanco nos modos com renascimento
       game.pathBudget--;
@@ -20747,9 +20846,10 @@ function botNavigate(p, dt) {
         else break;
       }
       // se já dá para ir reto até o ponto seguinte, pula o atual (não volta para trás quando empurrado)
-      if (b.pathIdx < path.length - 1) {
+      // (no máximo a cada BOT_SKIP_CHECK s por bot: a linha pode ter dezenas de metros e com 60 bots pesa)
+      if (b.pathIdx < path.length - 1 && now >= (b.skipAt || 0)) {
         const nx = path[b.pathIdx + 1];
-        if (walkLineClear(p.pos[0], p.pos[2], nx[0], nx[1])) b.pathIdx++;
+        if (walkLineClear(p.pos[0], p.pos[2], nx[0], nx[1])) { b.pathIdx++; b.skipAt = now + BOT_SKIP_CHECK * 0.5; } else b.skipAt = now + BOT_SKIP_CHECK * (1.5 + Math.random());
       }
       if (b.pathIdx < path.length) {
         const wp = path[b.pathIdx];
@@ -21817,7 +21917,7 @@ function modeRoundText() {
     case 'conquest': return 'Conquista · tíquetes';
     case 'conquestL': return 'C. Grande · tíquetes';
     case 'rush': return game.rush ? 'Ruptura · setor ' + Math.min(game.rush.sector + 1, game.rush.sectors.length) + ' de ' + game.rush.sectors.length : 'Ruptura';
-    default: return game.phase === 'freeze' ? 'Compra · rodada ' + game.roundNum : 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2;
+    default: if (game.ot) return 'Prorrogação' + (game.ot.n > 1 ? ' ' + game.ot.n : '') + ' · rodada ' + (game.roundNum - game.ot.start) + ' de ' + OT_HALF * 2; return game.phase === 'freeze' ? 'Compra · rodada ' + game.roundNum : 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2;
   }
 }
 function modeResultText(my, their) {
@@ -21833,7 +21933,7 @@ function modeResultText(my, their) {
   if (game.mode === 'duel') return my + ' × ' + their + ' rodadas · duelo 1×1';
   if (game.mode === 'kc') return my + ' × ' + their + ' abates confirmados';
   if (game.mode === 'dom' || game.mode === 'hp') return my + ' × ' + their + ' pontos · ' + modeDef().name.toLowerCase();
-  return my + ' × ' + their + ' · ' + game.roundNum + ' rodadas jogadas';
+  return my + ' × ' + their + ' · ' + game.roundNum + ' rodadas jogadas' + (game.ot ? ' (com ' + (game.ot.n > 1 ? game.ot.n + ' prorrogações' : 'prorrogação') + ')' : '');
 }
 
 // ---------------- HUD dos objetivos, sequências e painel de renascer ----------------
@@ -22026,7 +22126,7 @@ function buildModesUi() {
 // menu em abas: cada estilo de jogo (CS, CoD/Battlefield, Apex) com os seus modos
 const WAR_MODES = ['dm', 'ffa', 'gungame', 'kc', 'dom', 'hp', 'conquest', 'conquestL', 'rush'];
 function buildWarModes() {
-  document.getElementById('war-modes').innerHTML = WAR_MODES.map((k) => '<button type="button" class="btn" data-mode="' + k + '">' + escapeHtml(MODES[k].name) + '<small class="wm-map"></small></button>').join('');
+  document.getElementById('war-modes').innerHTML = WAR_MODES.map((k) => '<button type="button" class="btn" data-mode="' + k + '" title="' + escapeHtml(MODES[k].name) + '">' + escapeHtml(WAR_SHORT[k] || MODES[k].name) + '<small class="wm-map"></small></button>').join('');
 }
 function setMenuTab() {
   const tab = settings.menuTab || 'cs';
@@ -22467,6 +22567,7 @@ function brEndScreen() {
   ui.board.hidden = true;
   ui.hud.hidden = true;
   ui.matchend.hidden = false;
+  updateNextMapBtn();
   if (document.pointerLockElement) document.exitPointerLock();
 }
 
@@ -22475,7 +22576,7 @@ function brEndScreen() {
 // =====================================================================
 // ---------------- perfil (localStorage) ----------------
 function emptyStats() {
-  return { v: 1, matches: 0, wins: 0, losses: 0, draws: 0, kills: 0, deaths: 0, assists: 0, hs: 0, shots: 0, hits: 0, dmg: 0, plants: 0, defuses: 0, mvps: 0, time: 0, bestKills: 0, bestStreak: 0, aces: 0, clutches: 0, modes: {}, maps: {}, ach: {}, tutorial: false, recent: [] };
+  return { v: 1, matches: 0, wins: 0, losses: 0, draws: 0, kills: 0, deaths: 0, assists: 0, hs: 0, shots: 0, hits: 0, dmg: 0, plants: 0, defuses: 0, mvps: 0, time: 0, bestKills: 0, bestStreak: 0, aces: 0, clutches: 0, modes: {}, maps: {}, ach: {}, tutorial: false, recent: [], rp: 0 };
 }
 function sanitizeStats(o) {
   const s = emptyStats();
@@ -22563,7 +22664,7 @@ function matchFinished(result) {
   if (!mstOn() || m.recorded || !game.local) return;
   m.recorded = true;
   m.result = result; m.mode = game.mode; m.difficulty = settings.difficulty;
-  const s = loadStats(), l = game.local;
+  const s = loadStats(), l = game.local, prev = JSON.parse(JSON.stringify(s));
   s.matches++;
   if (result === 'win') s.wins++; else if (result === 'loss') s.losses++; else s.draws++;
   s.kills += m.kills; s.deaths += m.deaths; s.assists += l.assists || 0; s.hs += m.hs; s.shots += m.shots; s.hits += m.hits; s.dmg += m.dmg;
@@ -22573,7 +22674,9 @@ function matchFinished(result) {
   s.clutches += m.clutches;
   const md = s.modes[game.mode] || (s.modes[game.mode] = { m: 0, w: 0 }); md.m++; if (result === 'win') md.w++;
   const mp = s.maps[M.id] || (s.maps[M.id] = { m: 0, w: 0 }); mp.m++; if (result === 'win') mp.w++;
+  rankUpdate(s, m, result);
   m.newAch = checkAchievements(s, m);
+  m.newSkins = newlyUnlockedSkins(prev, s);
   const my = game.br ? (game.br.squads[l.team] ? game.br.squads[l.team].place + 'º lugar' : '') : (game.mode === 'ffa' ? (ffaRanking().indexOf(l) + 1) + 'º lugar' : game.score[l.squad] + ' × ' + game.score[1 - l.squad]);
   s.recent.unshift({ t: Date.now(), mode: game.mode, map: M.id, result, score: my, k: m.kills, d: m.deaths, hs: m.hs, hi: matchHighlight(m) });
   s.recent.length = Math.min(s.recent.length, RECENT_MAX);
@@ -22609,7 +22712,8 @@ function matchSummaryHtml() {
   if (top && top.kills > m.kills) hi.push('Destaque dos bots: ' + top.name + ' (' + top.kills + ' abates)');
   if (settings.adaptive && game.adapt > 0.05) hi.push('Dificuldade adaptativa: bots ' + Math.round(game.adapt * 100) + '% mais fáceis no fim');
   if (hi.length) h += '<ul class="me-hi">' + hi.slice(0, 6).map((t) => '<li>' + escapeHtml(t) + '</li>').join('') + '</ul>';
-  if (m.newAch && m.newAch.length) h += '<div class="me-ach">' + m.newAch.map((a) => '<span><i>' + escapeHtml(a.icon) + '</i>Conquista: ' + escapeHtml(a.name) + '</span>').join('') + '</div>';
+  if (m.rank) h += rankSummaryHtml(m.rank);
+  if ((m.newAch && m.newAch.length) || (m.newSkins && m.newSkins.length)) h += '<div class="me-ach">' + (m.newAch || []).map((a) => '<span><i>' + escapeHtml(a.icon) + '</i>Conquista: ' + escapeHtml(a.name) + '</span>').join('') + (m.newSkins || []).map((k) => '<span><i>🎨</i>Pintura liberada: ' + escapeHtml(WEAPON_SKINS[k].name) + '</span>').join('') + '</div>';
   return h + '</div>';
 }
 // o destaque mais forte da partida numa frase curta (para a lista de partidas recentes)
@@ -22639,6 +22743,7 @@ function buildProfileUi() {
     cell(s.kills ? Math.round(s.hs / s.kills * 100) + '%' : '—', 'Na cabeça') + cell(s.shots ? Math.round(Math.min(1, s.hits / s.shots) * 100) + '%' : '—', 'Precisão') + cell(s.bestKills, 'Mais abates numa partida') + cell(s.bestStreak, 'Maior sequência') +
     cell(s.aces, 'Aces') + cell(s.clutches, 'Clutches') + cell(s.plants + ' / ' + s.defuses, 'C4 plantadas / desarmadas') + cell(hrs >= 1 ? hrs.toFixed(1) + ' h' : Math.round(s.time / 60) + ' min', 'Tempo jogado') + '</div>';
   document.getElementById('prof-recent').innerHTML = recentHtml(s);
+  document.getElementById('prof-rank').innerHTML = rankCardHtml(s.rp);
   const got = ACHIEVEMENTS.filter((a) => s.ach[a.id]).length;
   document.getElementById('prof-ach-count').textContent = got + ' de ' + ACHIEVEMENTS.length;
   document.getElementById('prof-ach').innerHTML = ACHIEVEMENTS.map((a) => '<div class="ach' + (s.ach[a.id] ? ' got' : '') + '"><i>' + escapeHtml(a.icon) + '</i><b>' + escapeHtml(a.name) + '</b><span>' + escapeHtml(a.desc) + '</span></div>').join('');
@@ -22738,7 +22843,7 @@ function kcEnd() {
   k.save = null;
 }
 // quem a câmera e o modelo de arma seguem no desenho (o assassino durante o killcam)
-function renderSubject() { return kcKiller() || cameraSubject(); }
+function renderSubject() { return kcKiller() || (specView() === 'fp' ? cameraSubject() : null); }
 function updateKillcamHud() {
   const el = ui.killcam, k = game.killcam;
   const show = !!(k && k.on);
@@ -23203,6 +23308,120 @@ function chatOnRoundEnd(side) {
   if (winners.length === 1 && winners[0].isBot && (winners[0].roundKills || 0) >= 2) { winners[0].chatAt = -99; game.chatAt = -99; botChat(winners[0], 'clutch', {}); return; }
   const mates = game.players.filter((q) => q.isBot && q.team === l.team);
   if (mates.length) botChat(pick(mates), side === l.team ? 'win' : 'lose', {});
+}
+
+// ---------------- patentes ----------------
+function rankIndex(rp) { return clamp(Math.floor((rp || 0) / RANK_STEP), 0, RANKS.length - 1); }
+function rankBadge(i) { return '<span class="rank-badge" style="--rk:' + RANK_COLORS[i] + '">' + escapeHtml(RANKS[i]) + '</span>'; }
+// pontos da partida: vitória/derrota pela dificuldade, bônus de desempenho, peso do modo e teto da dificuldade
+function rankUpdate(s, m, result) {
+  const w = RANK_MODES[game.mode];
+  if (!w) return;
+  const diff = DIFFICULTIES[settings.difficulty] ? settings.difficulty : 'normal';
+  let d = result === 'win' ? RANK_WIN[diff] : (result === 'loss' ? -RANK_LOSS[diff] : 2);
+  if (m.kills >= 5 && m.kills >= m.deaths * 1.5) d += 3;
+  if (m.clutches) d += 2;
+  if (m.bestRound >= 5) d += 3;
+  d = Math.round(d * w);
+  const before = s.rp || 0, i0 = rankIndex(before), cap = (RANK_CAP[diff] + 1) * RANK_STEP - 1;
+  let after = Math.max(0, before + d);
+  // o teto da dificuldade só segura a subida (quem já está acima não cai por jogar no fácil, só não sobe)
+  if (d > 0 && after > cap) after = Math.max(before, cap);
+  s.rp = after;
+  m.rank = { before, after, delta: after - before, i0, i1: rankIndex(after), capped: d > 0 && after < before + d, diff };
+}
+function rankSummaryHtml(r) {
+  const into = r.after % RANK_STEP, up = r.i1 > r.i0, down = r.i1 < r.i0;
+  return '<div class="me-rank">' + rankBadge(r.i1) + '<span class="rk-delta ' + (r.delta >= 0 ? 'up' : 'down') + '">' + (r.delta >= 0 ? '+' : '') + r.delta + ' pontos</span><span class="rk-bar"><i style="width:' + Math.round(into / RANK_STEP * 100) + '%"></i></span><span class="rk-txt">' +
+    (up ? 'Subiu de patente!' : (down ? 'Caiu de patente' : into + ' / ' + RANK_STEP)) + (r.capped ? ' · teto do ' + DIFFICULTIES[r.diff].label + ': jogue numa dificuldade maior para subir mais' : '') + '</span></div>';
+}
+function rankCardHtml(rp) {
+  const i = rankIndex(rp), into = (rp || 0) % RANK_STEP, top = i >= RANKS.length - 1;
+  return '<div class="me-rank">' + rankBadge(i) + '<span class="rk-bar"><i style="width:' + (top ? 100 : Math.round(into / RANK_STEP * 100)) + '%"></i></span><span class="rk-txt">' + (top ? 'Patente máxima' : into + ' / ' + RANK_STEP + ' para ' + RANKS[i + 1]) + ' · tetos: Fácil até ' + RANKS[RANK_CAP.easy] + ', Normal até ' + RANKS[RANK_CAP.normal] + ', Difícil até ' + RANKS[RANK_CAP.hard] + '</span></div>';
+}
+function updateMenuRank() {
+  const el = document.getElementById('menu-rank');
+  if (el) el.innerHTML = rankBadge(rankIndex(loadStats().rp));
+}
+
+// ---------------- pinturas desbloqueáveis ----------------
+function skinUnlocked(id, s) { const u = SKIN_UNLOCK[id]; return !u || u.test(s || loadStats()); }
+function refreshSkinOptions() {
+  const s = loadStats(), sel = document.getElementById('opt-skin');
+  if (!sel) return;
+  sel.innerHTML = Object.keys(WEAPON_SKINS).map((k) => { const ok = skinUnlocked(k, s); return '<option value="' + k + '"' + (ok ? '' : ' disabled') + '>' + escapeHtml(WEAPON_SKINS[k].name + (ok ? '' : ' — bloqueada: ' + SKIN_UNLOCK[k].text)) + '</option>'; }).join('');
+  if (!skinUnlocked(settings.skin, s)) { settings.skin = 'none'; saveSettings(); }
+  sel.value = settings.skin;
+}
+// pinturas liberadas nesta partida (aparecem no resumo)
+function newlyUnlockedSkins(before, after) { return Object.keys(SKIN_UNLOCK).filter((k) => !SKIN_UNLOCK[k].test(before) && SKIN_UNLOCK[k].test(after)); }
+
+// ---------------- próximo mapa ----------------
+// o mapa seguinte do MAP_ORDER que aceita o modo (null no treino ou quando só um mapa aceita o modo)
+function nextMapFor(mode) {
+  if (mode === 'practice') return null;
+  const i = MAP_ORDER.indexOf(M.id);
+  for (let k = 1; k < MAP_ORDER.length; k++) {
+    const id = MAP_ORDER[(i + k) % MAP_ORDER.length];
+    if (id !== M.id && mapSupports(MAPS[id], mode)) return id;
+  }
+  return null;
+}
+function updateNextMapBtn() {
+  const b = document.getElementById('btn-nextmap'), id = nextMapFor(game.mode);
+  if (!b) return;
+  b.hidden = !id;
+  if (id) { b.textContent = 'Próximo mapa: ' + MAPS[id].name; b.title = MAPS[id].desc || ''; }
+}
+function playNextMap() {
+  const id = nextMapFor(game.mode);
+  if (!id) return;
+  loadMap(id);
+  onPlay(game.mode, null, game.custom);
+}
+
+// ---------------- espectador ----------------
+// modo da câmera de quem está morto observando alguém (vivo, no killcam ou sem alvo é sempre 1ª pessoa)
+function specView() {
+  const l = game.local;
+  if (!l || l.alive || game.state !== 'playing' || kcKiller()) return 'fp';
+  const s = cameraSubject();
+  return s && s !== l && SPEC_MODES.indexOf(settings.specMode) >= 0 ? settings.specMode : 'fp';
+}
+function specCycle() {
+  const l = game.local;
+  if (!l || l.alive || kcBlocking() || !cameraSubject()) return false;
+  const i = SPEC_MODES.indexOf(settings.specMode || 'fp');
+  settings.specMode = SPEC_MODES[(i + 1) % SPEC_MODES.length];
+  saveSettings();
+  hud.specCam = null;
+  sfxUi('click');
+  return true;
+}
+const specDir = [0, 0, 0];
+// 3ª pessoa: atrás e acima do alvo, olhando para onde ele olha (encosta antes da parede); de cima: na vertical, travada embaixo do teto
+function specCamera(subj, dt) {
+  const mode = specView(), hx = subj.pos[0], hy = subj.pos[1] + subj.eyeH, hz = subj.pos[2];
+  let tx, ty, tz, yaw, pitch;
+  if (mode === 'tp') {
+    yaw = subj.yaw; pitch = clamp(subj.pitch * 0.5 + SPEC_TP_PITCH, -1.1, 0.6);
+    dirFromAngles(yaw, pitch, specDir);
+    const oy = hy + SPEC_TP_UP;
+    const t = raycastWorld(hx, oy, hz, -specDir[0], -specDir[1], -specDir[2], SPEC_TP_DIST, rayOut2);
+    const d = Math.max(0.3, Math.min(SPEC_TP_DIST, t) - 0.25);
+    tx = hx - specDir[0] * d; ty = oy - specDir[1] * d; tz = hz - specDir[2] * d;
+  } else {
+    const t = raycastWorld(hx, hy, hz, 0, 1, 0, SPEC_TOP_H, rayOut2);
+    yaw = subj.yaw; pitch = -89 * DEG;
+    tx = hx; tz = hz; ty = hy + Math.max(SPEC_TOP_MIN, Math.min(SPEC_TOP_H, t) - 0.3);
+    if (t < SPEC_TOP_MIN) ty = hy + Math.max(0.2, t - 0.3);
+  }
+  // suaviza a posição (troca de alvo ou de modo corta direto)
+  const c = hud.specCam;
+  if (!c || c.subj !== subj || c.mode !== mode) hud.specCam = { subj, mode, x: tx, y: ty, z: tz };
+  else { const k = 1 - Math.exp(-dt * SPEC_SMOOTH); c.x += (tx - c.x) * k; c.y += (ty - c.y) * k; c.z += (tz - c.z) * k; }
+  R.camPos[0] = hud.specCam.x; R.camPos[1] = hud.specCam.y; R.camPos[2] = hud.specCam.z;
+  R.camYaw = yaw; R.camPitch = pitch;
 }
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
@@ -23687,15 +23906,15 @@ function renderBoardHtml() {
 function renderBoard() {
   ui.boardBody.innerHTML = renderBoardHtml() + (modeDef().rounds ? renderHistoryHtml() : '');
   ui.boardTitle.textContent = M.name + ' · ' + modeDef().name.toLowerCase();
-  ui.boardRound.textContent = modeDef().rounds ? 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2 + ' · vence quem fizer ' + (game.halfRounds + 1) : modeRoundText();
+  ui.boardRound.textContent = game.ot ? modeRoundText() + ' · vence quem fizer ' + (OT_HALF + 1) + ' na prorrogação' : modeDef().rounds ? 'Rodada ' + game.roundNum + ' de ' + game.halfRounds * 2 + ' · vence quem fizer ' + (game.halfRounds + 1) : modeRoundText();
 }
 // linha do tempo das rodadas (quem venceu e como) e dinheiro do seu time
 function renderHistoryHtml() {
   const icon = { elimT: '✕', elimCT: '✕', bomb: 'C4', defuse: 'KIT', time: '⏱', duelTime: '⏱', duelFlag: '⚑' };
   const cells = [];
-  for (let i = 0; i < game.halfRounds * 2; i++) {
+  for (let i = 0; i < Math.max(game.halfRounds * 2, game.history.length); i++) {
     const h = game.history[i];
-    if (i === game.halfRounds) cells.push('<span class="rh-sep"></span>');
+    if (i === game.halfRounds || (i >= game.halfRounds * 2 && (i - game.halfRounds * 2) % OT_HALF === 0)) cells.push('<span class="rh-sep"></span>');
     cells.push(h ? '<span class="rh ' + TEAM_INFO[h.side].cls + '" title="Rodada ' + h.round + ': ' + escapeHtml(TEAM_INFO[h.side].win + ' · ' + (ROUND_REASONS[h.reason] || '')) + '">' + (icon[h.reason] || '•') + '</span>' : '<span class="rh"></span>');
   }
   const l = game.local;
@@ -24054,8 +24273,9 @@ function updateHud(dt) {
   const def = subj.alive ? currentDef(subj) : null;
   const scoped = !!(def && def.zoom && subj.ws.zoom > 0);
   setHidden(ui.scope, 'scope', true);
-  updateSight(subj);
-  updateCrosshair(subj, !(scoped || !subj.alive || (!l.alive && !cameraSubject()) || (subj.adsAmt || 0) > 0.5 || subj.sprinting));
+  const fpView = specView() === 'fp';
+  updateSight(fpView ? subj : null);
+  updateCrosshair(subj, fpView && !(scoped || !subj.alive || (!l.alive && !cameraSubject()) || (subj.adsAmt || 0) > 0.5 || subj.sprinting));
   const flashLeft = subj.alive ? subj.flashUntil - now : 0;
   setOpacity(ui.flash, 'flash', clamp(flashLeft / 1.3, 0, 1));
   setOpacity(ui.flashImg, 'flashImg', subj === l ? clamp(flashLeft / 2.4, 0, 0.8) : 0);
@@ -24090,7 +24310,8 @@ function updateHud(dt) {
   setHidden(ui.spectate, 'spec', !spectating);
   if (spectating) {
     setText(ui.spName, 'spName', 'Observando ' + spectating.name + ' · ' + Math.ceil(spectating.hp) + ' HP');
-    setText(ui.spHelp, 'spHelp', canTakeOver() ? 'Clique para trocar de jogador · E para assumir o controle de ' + spectating.name : (game.takeoverUsed && game.mode === 'match' ? 'Clique para trocar de jogador · você já assumiu um bot nesta rodada' : 'Clique para trocar de jogador'));
+    const camTxt = ' · ' + (modeDef().roles ? 'V' : 'Espaço') + ': câmera (' + SPEC_LABELS[specView()] + ')';
+    setText(ui.spHelp, 'spHelp', (canTakeOver() ? 'Clique para trocar de jogador · E para assumir o controle de ' + spectating.name : (game.takeoverUsed && game.mode === 'match' ? 'Clique para trocar de jogador · você já assumiu um bot nesta rodada' : 'Clique para trocar de jogador')) + camTxt);
   }
   if (!ui.centerMsg.hidden && now > hud.msgUntil) ui.centerMsg.hidden = true;
   while (hud.feed.length && hud.feed[0].until < now) hud.feed.shift().el.remove();
@@ -24163,6 +24384,7 @@ function showDrillResult(pr, score, oldBest, better) {
   const cell = (v, l) => '<div><b>' + escapeHtml(String(v)) + '</b><span>' + l + '</span></div>';
   ui.meTable.innerHTML = '<div class="me-stats">' + cell(pr.kills, 'Abates') + cell(acc + '%', 'Precisão') + cell(pr.hits ? Math.round(pr.heads / pr.hits * 100) + '%' : '0%', 'Na cabeça') + cell(react, 'Reação média') + cell(pr.misses, 'Alvos perdidos') + cell(pr.shots, 'Tiros') + '</div>';
   ui.matchend.hidden = false;
+  updateNextMapBtn();
   if (document.pointerLockElement) document.exitPointerLock();
   sfxRoundEnd(better);
 }
@@ -24180,6 +24402,7 @@ function endMatch() {
   ui.board.hidden = true;
   ui.hud.hidden = true;
   ui.matchend.hidden = false;
+  updateNextMapBtn();
   if (document.pointerLockElement) document.exitPointerLock();
   radio(my > their ? 'Mission accomplished' : 'Mission failed');
 }
@@ -24282,6 +24505,7 @@ function toMenu() {
   closeRadioMenu();
   ui.hud.hidden = true; ui.pause.hidden = true; ui.matchend.hidden = true; ui.board.hidden = true; ui.bigmap.hidden = true; ui.options.hidden = true; ui.controls.hidden = true;
   ui.menu.hidden = false;
+  updateMenuRank();
   ui.drills.hidden = true;
   if (document.pointerLockElement) document.exitPointerLock();
   exitFullscreen();
@@ -24306,6 +24530,7 @@ function showOptTab(tab) {
   for (const s of ui.options.querySelectorAll('section[data-page]')) s.hidden = s.dataset.page !== tab;
   if (tab === 'xhair') drawCrosshairPreview();
   if (tab === 'profile') buildProfileUi();
+  if (tab === 'game') refreshSkinOptions();
 }
 function closePanel(which) {
   (which === 'options' ? ui.options : ui.controls).hidden = true;
@@ -24361,6 +24586,7 @@ function onKeyDown(e) {
   if (game.state === 'playing' && !e.repeat && !game.paused && nadesKey(code, e.shiftKey)) { e.preventDefault(); return; }
   if (game.state === 'playing') {
     if (code === 'Space' && game.killcam && game.killcam.on && !e.repeat) { kcSkip(); return; }
+    if ((code === 'KeyV' || (code === 'Space' && !modeDef().roles)) && !e.repeat && !game.paused && specCycle()) return;
     if (code === 'Escape') {
       if (hud.buyOpen) closeBuyMenu(true);
       else if (!ui.options.hidden) closePanel('options');
@@ -24630,6 +24856,7 @@ function updateCamera(dt) {
     else if (subj.adsAmt) fov = 2 * Math.atan(Math.tan(fov / 2) / adsZoom(subj));
     updateVmAnim(subj, dt);
     R.drawViewmodel = !(subj.onShip || (subj.glide && subj.glide.dive));
+    if (specView() !== 'fp') { specCamera(subj, dt); fov = settings.fov * DEG; R.drawViewmodel = false; }
   } else if (kcKiller()) {
     // killcam: pelos olhos de quem matou (posições do replay já trocadas por kcBegin)
     const k = kcKiller();
@@ -24738,7 +24965,7 @@ function settingChanged(key) {
 }
 function buildOptionsUi() {
   buildBindsUi();
-  document.getElementById('opt-skin').innerHTML = Object.keys(WEAPON_SKINS).map((k) => '<option value="' + k + '">' + escapeHtml(WEAPON_SKINS[k].name) + '</option>').join('');
+  refreshSkinOptions();
   const sel = document.getElementById('opt-chstyle');
   sel.innerHTML = Object.keys(CROSSHAIR_STYLES).map((k) => '<option value="' + k + '">' + escapeHtml(CROSSHAIR_STYLES[k]) + '</option>').join('');
   const sw = document.getElementById('xh-swatches');
@@ -24800,6 +25027,7 @@ function bindUi() {
   on('btn-opt-back', 'click', () => closePanel('options'));
   on('btn-ctrl-back', 'click', () => closePanel('controls'));
   on('btn-again', 'click', () => onPlay(game.mode, game.practice && game.practice.drill, game.custom));
+  on('btn-nextmap', 'click', playNextMap);
   on('btn-menu', 'click', toMenu);
   ui.buyClose.addEventListener('click', () => closeBuyMenu(true));
   for (const [segId, key] of SEG_SETTINGS) {
@@ -24966,6 +25194,7 @@ function init() {
   cacheUi();
   settings = loadSettings();
   applyColorblind();
+  updateMenuRank();
   prepareWeaponData();
   M = MAPS[settings.map] || MAPS[MAP_ORDER[0]];
   settings.map = M.id;
