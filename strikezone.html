@@ -9723,6 +9723,8 @@ const SPEC_SMOOTH = 8;
 // cerca baixa também; o bot pula a BOT_JUMP_AHEAD m do obstáculo e agacha no ar (como no CS)
 const NAV_JUMP_UP = 1.15;
 const BOT_JUMP_AHEAD = 0.8;
+// spawn de frente para a parede: se a vista na direção do time bate em algo antes de SPAWN_VIEW_MIN m, gira para o lado aberto mais perto
+const SPAWN_VIEW_MIN = 6;
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -12183,7 +12185,28 @@ function buildNav() {
   for (let i = world.n; i < world.n + nav.U; i++) nav.cost[i] = 0;
   buildNavMoves(0, 0, world.w - 1, world.d - 1);
   buildNavComps();
+  buildNavUComps();
   buildPtY();
+}
+// pedaços da navegação sem direção (união dos passos possíveis): destino em outro pedaço = sem caminho, sem rodar o A*
+function buildNavUComps() {
+  const W = world.w, N = world.n;
+  if (!nav.ucomp || nav.ucomp.length !== N) nav.ucomp = new Int32Array(N);
+  const u = nav.ucomp;
+  for (let i = 0; i < N; i++) u[i] = i;
+  const find = (a) => { while (u[a] !== a) { u[a] = u[u[a]]; a = u[a]; } return a; };
+  for (let i = 0; i < N; i++) {
+    const m = nav.mv[i];
+    if (!m) continue;
+    const x = i % W, z = Math.floor(i / W);
+    for (let k = 0; k < 8; k++) {
+      if (!(m & (1 << k))) continue;
+      const nb = NAV_NEIGHBORS[k], j = (z + nb[1]) * W + x + nb[0], a = find(i), b = find(j);
+      if (a !== b) u[a] = b;
+    }
+  }
+  for (let i = 0; i < N; i++) u[i] = find(i);
+  nav.failMemo = new Map();
 }
 // mapas com andares sobrepostos (Nuke): pontos do mapa com altura (3º valor) dizem em que andar fica cada destino
 function buildPtY() {
@@ -12343,6 +12366,7 @@ function refreshNavArea(x0, z0, x1, z1) {
   for (let z = Math.max(0, c - 1); z <= Math.min(world.d - 1, d + 1); z++) for (let x = Math.max(0, a - 1); x <= Math.min(world.w - 1, b + 1); x++) navCost(z * world.w + x);
   buildNavEdges();
   buildNavMoves(a - 2, c - 2, b + 2, d + 2);
+  buildNavUComps();
   game.dmCells = null;
 }
 function nearestWalkable(x, z) {
@@ -12531,6 +12555,10 @@ function findPath(sx, sz, tx, tz, sy, ty) {
   const s = navNodeAt(sx, sz, sy), g0 = nearestWalkable(tx, tz), g = ty === undefined || g0 < 0 ? g0 : navNodeAt(tx, tz, ty);
   const exact = ty !== undefined && g >= 0 && (g >= world.n || nav.upOf[g] > 0);
   if (s < 0 || g < 0) return null;
+  // sem andares: pedaços diferentes não se ligam (rejeita na hora); e não repete por 1,5 s uma busca que acabou de falhar
+  if (!nav.U && nav.ucomp && nav.ucomp[s] !== nav.ucomp[g]) { nav.fastFails = (nav.fastFails || 0) + 1; return null; }
+  const memoKey = s * 7919 + g, memo = nav.failMemo && nav.failMemo.get(memoKey);
+  if (memo !== undefined && game.time - memo < 1.5 && game.time >= memo) { nav.fastFails = (nav.fastFails || 0) + 1; return null; }
   const S = ++nav.search, hw = M.big ? NAV_HEUR_BIG : 1;
   nav.heapSize = 0;
   const W = world.w, D = world.d, N = world.n, two = nav.U > 0;
@@ -12566,7 +12594,7 @@ function findPath(sx, sz, tx, tz, sy, ty) {
     }
   }
   nav.calls = (nav.calls || 0) + 1; nav.iters = (nav.iters || 0) + iter;
-  if (!found) { nav.fails = (nav.fails || 0) + 1; nav.lastFail = [sx, sz, tx, tz]; return null; }
+  if (!found) { nav.fails = (nav.fails || 0) + 1; nav.lastFail = [sx, sz, tx, tz]; if (nav.failMemo) { if (nav.failMemo.size > 512) nav.failMemo.clear(); nav.failMemo.set(memoKey, game.time); } return null; }
   const pts = [];
   let c = end, guard = 0;
   while (c >= 0 && guard++ < N + nav.U) { const ci = navCellOf(c); pts.push([(ci % W) + 0.5, Math.floor(ci / W) + 0.5]); c = nav.parent[c]; }
@@ -17713,6 +17741,19 @@ function duelTimeWinner() {
   return t > ct ? 'T' : 'CT';
 }
 // alvo de abates do mata-mata proporcional ao número de jogadores (40 para 5 contra 5)
+// direção do olhar no spawn: a do time, ou o ângulo aberto mais perto dela (sem parede a menos de SPAWN_VIEW_MIN m); guardado por célula
+const spawnYawCache = new Map();
+function spawnYawAt(team, x, z, base) {
+  const key = M.id + ':' + Math.floor(x) + ',' + Math.floor(z) + ':' + base.toFixed(3);
+  if (spawnYawCache.has(key)) return spawnYawCache.get(key);
+  const ey = floorAt(x, z) + STAND_EYE, view = (a) => { let d = 0; for (let t = 1; t <= SPAWN_VIEW_MIN * 2; t += 1) { if (!losClear(x, ey, z, x - Math.sin(a) * t, ey, z - Math.cos(a) * t, true)) break; d = t; } return d; };
+  let best = base, bd = view(base);
+  if (bd < SPAWN_VIEW_MIN) {
+    for (let k = 1; k <= 12; k++) for (const sg of [1, -1]) { const a = base + sg * k * Math.PI / 12, d = view(a); if (d >= SPAWN_VIEW_MIN && bd < SPAWN_VIEW_MIN) { best = a; bd = d; } else if (bd < SPAWN_VIEW_MIN && d > bd) { best = a; bd = d; } }
+  }
+  spawnYawCache.set(key, best);
+  return best;
+}
 function dmTarget(n) { return Math.max(10, Math.round(n * 4 / 5) * 5); }
 function startMatch(mode, drill, custom) {
   const s = settings;
@@ -18042,7 +18083,7 @@ function spawnPlayer(p, x, z) {
   p.hp = 100;
   p.pos[0] = x; p.pos[1] = floorAt(x, z) + 0.01; p.pos[2] = z;
   p.vel[0] = p.vel[1] = p.vel[2] = 0;
-  p.yaw = (M.spawnYaw[p.team] === undefined ? p.yaw || 0 : M.spawnYaw[p.team]) + rand(-0.12, 0.12);
+  p.yaw = spawnYawAt(p.team, x, z, M.spawnYaw[p.team] === undefined ? p.yaw || 0 : M.spawnYaw[p.team]) + rand(-0.12, 0.12);
   p.pitch = 0;
   p.onGround = true; p.crouching = false; p.height = STAND_H; p.eyeH = STAND_EYE; p.crouchAmt = 0; p.jumped = false;
   p.punchP = 0; p.punchY = 0;
@@ -22921,7 +22962,9 @@ function onDeployClick(e) {
 function updateMarkers(l, subj) {
   const m = R.viewProj, W = window.innerWidth, H = window.innerHeight, now = game.time;
   let used = 0;
-  const put = (x, y, z, cls, text, sub, clampEdge) => {
+  const list = hud.mkList || (hud.mkList = []);
+  list.length = 0;
+  const put = (x, y, z, cls, text, sub, clampEdge, prio) => {
     const cw = m[3] * x + m[7] * y + m[11] * z + m[15];
     let sx, sy;
     if (cw < 0.2) { if (!clampEdge) return; sx = m[0] * x + m[4] * y + m[8] * z + m[12] > 0 ? 1 : -1; sy = -1; } else { sx = (m[0] * x + m[4] * y + m[8] * z + m[12]) / cw; sy = (m[1] * x + m[5] * y + m[9] * z + m[13]) / cw; }
@@ -22932,12 +22975,13 @@ function updateMarkers(l, subj) {
     const key = cls + '|' + text + '|' + sub;
     if (e.key !== key) { e.key = key; e.el.className = 'mk ' + cls; e.el.innerHTML = escapeHtml(text) + (sub ? '<small>' + escapeHtml(sub) + '</small>' : ''); }
     if (!e.shown) { e.shown = true; e.el.hidden = false; }
-    e.el.style.transform = 'translate(' + ((sx * 0.5 + 0.5) * W).toFixed(1) + 'px,' + ((0.5 - sy * 0.5) * H).toFixed(1) + 'px) translate(-50%,-50%)' + (cls.indexOf('enemy') >= 0 ? ' rotate(45deg)' : '');
+    // posição na tela; o desenho espera o desembaraço (marcadores um em cima do outro sobem)
+    list.push({ e, px: (sx * 0.5 + 0.5) * W, py: (0.5 - sy * 0.5) * H, w: 30 + (sub ? Math.min(220, sub.length * 6.4) : 0), h: sub ? 42 : 28, rot: cls.indexOf('enemy') >= 0, prio: prio || 0 });
     used++;
   };
   if (subj && game.state === 'playing') {
     const sx = subj.pos[0], sz = subj.pos[2];
-    for (const f of game.objectives) if (!f.locked) put(f.pos[0], f.pos[1] + 3.2, f.pos[2], 'flag' + (f.owner ? ' ' + TEAM_INFO[f.owner].cls : ''), f.key, Math.round(distXZ(sx, sz, f.pos[0], f.pos[2])) + ' m', true);
+    for (const f of game.objectives) if (!f.locked) put(f.pos[0], f.pos[1] + 3.2, f.pos[2], 'flag' + (f.owner ? ' ' + TEAM_INFO[f.owner].cls : ''), f.key, Math.round(distXZ(sx, sz, f.pos[0], f.pos[2])) + ' m', true, 1);
     const z = game.hpZone;
     if (z && z.pos && z.active) put(z.pos[0], z.pos[1] + 2.8, z.pos[2], 'zone' + (z.holder ? ' ' + TEAM_INFO[z.holder].cls : ''), '◆', Math.round(distXZ(sx, sz, z.pos[0], z.pos[2])) + ' m', true);
     for (const e of game.players) if (e.alive && e.team !== l.team && e.markedUntil > now && e.markedBy === l.team) put(e.pos[0], e.pos[1] + e.height + 0.45, e.pos[2], 'enemy', '', '', false);
@@ -22953,11 +22997,26 @@ function updateMarkers(l, subj) {
       if (pg.team !== l.team || !pingVisible(pg)) continue;
       const T = PING_TYPES[pg.type], dist = Math.round(distXZ(sx, sz, pg.x, pg.z)) + ' m';
       const sub = settings.pingText === 'none' ? '' : (settings.pingText === 'short' ? dist : (pg.by && pg.by !== l ? pg.by.name + ' · ' : '') + pingLabel(pg) + ' · ' + dist);
-      put(pg.x, pg.y + (pg.target ? pg.target.height + 0.9 : 1.2), pg.z, 'ping p-' + pg.type, T.icon, sub, true);
+      put(pg.x, pg.y + (pg.target ? pg.target.height + 0.9 : 1.2), pg.z, 'ping p-' + pg.type, T.icon, sub, true, 3);
     }
     if (modeDef().revive) for (const q of game.players) if (!q.alive && q.team === l.team && q.downUntil > now && q.rag && q !== l) put(q.rag.pos[0], q.rag.pos[1] + 0.9, q.rag.pos[2], 'revive', '✚', l.role === 'medic' ? q.name : '', false);
   }
+  declutterMarkers(list);
   for (let i = used; i < hud.markers.length; i++) if (hud.markers[i].shown) { hud.markers[i].shown = false; hud.markers[i].el.hidden = true; }
+}
+// marcadores sobrepostos: o mais importante fica, os outros sobem em pilha (até 3 andares) ou ficam translúcidos
+function declutterMarkers(list) {
+  list.sort((a, b) => b.prio - a.prio);
+  const placed = [];
+  const hit = (q, y) => placed.some((r) => Math.abs(r.px - q.px) * 2 < r.w + q.w && Math.abs(r.y - y) * 2 < r.h + q.h);
+  for (const q of list) {
+    let y = q.py, k = 0;
+    while (k < 3 && hit(q, y)) { y -= q.h * 0.8 + 4; k++; }
+    const op = hit(q, y) ? 0.45 : 1;
+    placed.push({ px: q.px, y, w: q.w, h: q.h });
+    if (q.e.op !== op) { q.e.op = op; q.e.el.style.opacity = op === 1 ? '' : String(op); }
+    q.e.el.style.transform = 'translate(' + q.px.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-50%)' + (q.rot ? ' rotate(45deg)' : '');
+  }
 }
 // radar: bandeiras, zona, plaquetas, minas e sensores do time, helicópteros e inimigos marcados
 function drawModeRadar(g, l, s) {
@@ -24274,9 +24333,11 @@ const specDir = [0, 0, 0];
 // 3ª pessoa: atrás e acima do alvo, olhando para onde ele olha (encosta antes da parede); de cima: na vertical, travada embaixo do teto
 function specCamera(subj, dt) {
   const mode = specView(), hx = subj.pos[0], hy = subj.pos[1] + subj.eyeH, hz = subj.pos[2];
+  const o = hud.specOrbit || (hud.specOrbit = { yaw: 0, pitch: 0 });
+  if (hud.specCam && hud.specCam.subj !== subj) { o.yaw = 0; o.pitch = 0; }
   let tx, ty, tz, yaw, pitch;
   if (mode === 'tp') {
-    yaw = subj.yaw; pitch = clamp(subj.pitch * 0.5 + SPEC_TP_PITCH, -1.1, 0.6);
+    yaw = subj.yaw + o.yaw; pitch = clamp(subj.pitch * 0.5 + SPEC_TP_PITCH + o.pitch, -1.2, 0.8);
     dirFromAngles(yaw, pitch, specDir);
     const oy = hy + SPEC_TP_UP;
     const t = raycastWorld(hx, oy, hz, -specDir[0], -specDir[1], -specDir[2], SPEC_TP_DIST, rayOut2);
@@ -24284,7 +24345,7 @@ function specCamera(subj, dt) {
     tx = hx - specDir[0] * d; ty = oy - specDir[1] * d; tz = hz - specDir[2] * d;
   } else {
     const t = raycastWorld(hx, hy, hz, 0, 1, 0, SPEC_TOP_H, rayOut2);
-    yaw = subj.yaw; pitch = -89 * DEG;
+    yaw = subj.yaw + o.yaw; pitch = -89 * DEG;
     tx = hx; tz = hz; ty = hy + Math.max(SPEC_TOP_MIN, Math.min(SPEC_TOP_H, t) - 0.3);
     if (t < SPEC_TOP_MIN) ty = hy + Math.max(0.2, t - 0.3);
   }
@@ -24667,6 +24728,8 @@ function drawCrosshairPreview() {
 function updatePlates(l, subj) {
   const m = R.viewProj, W = window.innerWidth, H = window.innerHeight;
   let used = 0;
+  const list = hud.plateList || (hud.plateList = []);
+  list.length = 0;
   if (settings.nameplates) {
     for (const p of game.players) {
       if (!p.alive || p === subj || p.team !== l.team) continue;
@@ -24685,11 +24748,20 @@ function updatePlates(l, subj) {
       const cls = 'plate ' + TEAM_INFO[p.team].cls + (sq ? ' sq' : '');
       if (e.cls !== cls) { e.cls = cls; e.el.className = cls; }
       if (!e.shown) { e.shown = true; e.el.hidden = false; }
-      const op = Math.round(clamp(1.3 - cw / 55, 0.45, 1) * 20) / 20;
-      if (e.op !== op) { e.op = op; e.el.style.opacity = String(op); }
-      e.el.style.transform = 'translate(' + ((sx * 0.5 + 0.5) * W).toFixed(1) + 'px,' + ((0.5 - sy * 0.5) * H).toFixed(1) + 'px) translate(-50%,-100%)';
+      list.push({ e, px: (sx * 0.5 + 0.5) * W, py: (0.5 - sy * 0.5) * H, w: 10 + txt.length * 7, d: cw, op: Math.round(clamp(1.3 - cw / 55, 0.45, 1) * 20) / 20 });
       used++;
     }
+  }
+  // nomes um em cima do outro: o mais perto fica no lugar, o de trás sobe uma linha ou some
+  list.sort((a, b) => a.d - b.d);
+  const placed = [];
+  for (const q of list) {
+    let y = q.py, op = q.op;
+    const hit = (yy) => placed.some((r) => Math.abs(r.px - q.px) * 2 < r.w + q.w && Math.abs(r.y - yy) < 15);
+    if (hit(y)) { y -= 16; if (hit(y)) op = 0; }
+    placed.push({ px: q.px, y, w: q.w });
+    if (q.e.op !== op) { q.e.op = op; q.e.el.style.opacity = String(op); }
+    q.e.el.style.transform = 'translate(' + q.px.toFixed(1) + 'px,' + y.toFixed(1) + 'px) translate(-50%,-100%)';
   }
   for (let i = used; i < hud.plates.length; i++) if (hud.plates[i].shown) { hud.plates[i].shown = false; hud.plates[i].el.hidden = true; }
 }
@@ -25195,7 +25267,7 @@ function updateHud(dt) {
   setHidden(ui.spectate, 'spec', !spectating);
   if (spectating) {
     setText(ui.spName, 'spName', 'Observando ' + spectating.name + ' · ' + Math.ceil(spectating.hp) + ' HP');
-    const camTxt = ' · ' + (modeDef().roles ? 'V' : 'Espaço') + ': câmera (' + SPEC_LABELS[specView()] + ')';
+    const camTxt = ' · ' + (modeDef().roles ? 'V' : 'Espaço') + ': câmera (' + SPEC_LABELS[specView()] + ')' + (specView() === 'fp' ? '' : ' · mouse gira');
     setText(ui.spHelp, 'spHelp', (canTakeOver() ? 'Clique para trocar de jogador · E para assumir o controle de ' + spectating.name : (game.takeoverUsed && game.mode === 'match' ? 'Clique para trocar de jogador · você já assumiu um bot nesta rodada' : 'Clique para trocar de jogador')) + camTxt);
   }
   if (!ui.centerMsg.hidden && now > hud.msgUntil) ui.centerMsg.hidden = true;
@@ -25668,6 +25740,8 @@ function applyMouseLook(p) {
   input.dx = 0; input.dy = 0;
   if (hud.pingWheel) { hud.pingWheel.vx += dx; hud.pingWheel.vy += dy; dx = 0; dy = 0; }
   hud.mouseDX = dx; hud.mouseDY = dy;
+  // espectador em 3ª pessoa / de cima: o mouse gira a câmera em volta do jogador observado
+  if (p && !p.alive && specView() !== 'fp') { const o = hud.specOrbit || (hud.specOrbit = { yaw: 0, pitch: 0 }), k = settings.sensitivity * 0.022 * DEG; o.yaw = wrapAngle(o.yaw - dx * k); o.pitch = clamp(o.pitch - dy * k * (settings.invertY ? -1 : 1), -0.9, 0.9); return; }
   if (!p || !p.alive) return;
   const def = currentDef(p);
   const zm = def && def.zoom && p.ws.zoom > 0 ? zoomFactor(def, p.ws.zoom) * settings.zoomSens : (p.adsAmt ? settings.zoomSens / adsZoom(p) : 1);
@@ -26030,7 +26104,7 @@ function exposeDebug() {
     set(key, value) { settings[key] = value; settingChanged(key); },
     crosshairKey: () => hud.chKey,
     vmPose: VM_POSE,
-    issueRadioCommand, solveThrow, simulateThrow, floorAt, siteAt, placeAt, goalLevelHint, navNodeAt, loadMap, map: () => M, killPlayer, takeOverBot, canTakeOver, throwPath, particles,
+    issueRadioCommand, solveThrow, simulateThrow, floorAt, siteAt, placeAt, goalLevelHint, navNodeAt, spawnYawAt, loadMap, map: () => M, killPlayer, takeOverBot, canTakeOver, throwPath, particles,
     simulate(seconds, step) {
       const h = step || 1 / 60;
       let t = 0;
