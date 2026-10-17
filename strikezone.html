@@ -455,6 +455,11 @@ button { font: inherit; color: inherit; }
 .skin-view-bar { display: flex; align-items: center; gap: 10px; font-size: 13px; }
 .skin-view-bar .btn { width: auto; padding: 2px 10px; }
 #skin-gun { min-width: 90px; text-align: center; }
+#veh-hud { position: absolute; left: 50%; bottom: 150px; transform: translateX(-50%); z-index: 6; background: rgba(8,12,18,0.72); color: #e8edf2; padding: 6px 14px; border-radius: 6px; font-size: 14px; pointer-events: none; display: flex; align-items: center; gap: 10px; }
+#veh-hud[hidden] { display: none; }
+#veh-hud kbd { background: rgba(255,255,255,0.15); border-radius: 3px; padding: 0 5px; }
+.vh-bar { width: 90px; height: 6px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden; display: inline-block; }
+.vh-bar i { display: block; height: 100%; background: #6fd08c; }
 .cg-mods { display: flex; gap: 6px 16px; flex-wrap: wrap; }
 .cg-mods label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .me-actions { display: flex; gap: 8px; }
@@ -706,6 +711,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
       <div class="load-tip" id="load-tip"></div>
     </div>
   </div>
+  <div id="veh-hud" hidden></div>
   <div id="menu" class="screen">
     <div class="menu-col">
       <div>
@@ -879,6 +885,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <div class="opt-row"><label for="opt-ot">Prorrogação no desarme de bomba (empate: 6 rodadas com $10.000)</label><input id="opt-ot" type="checkbox" data-setting="overtime"><output></output></div>
         <div class="opt-row"><label for="opt-tick">Tick do movimento no ar (air strafe): 64 como o matchmaking, 128 como servidores de campeonato</label><select id="opt-tick" data-setting="tickRate"><option value="64">64 tick</option><option value="128">128 tick</option></select><output></output></div>
         <div class="opt-row"><label for="opt-bhopauto">Pulo automático no circuito de bunny hop (segurar o espaço)</label><input id="opt-bhopauto" type="checkbox" data-setting="bhopAuto"><output></output></div>
+        <div class="opt-row"><label for="opt-veh">Veículos na Conquista (jipe e blindado leve no QG; E entra e sai)</label><input id="opt-veh" type="checkbox" data-setting="vehicles"><output></output></div>
         <div class="opt-row"><label for="opt-gulag">Gulag no Battle Royale (morreu de vez nos primeiros anéis: duelo 1×1 para voltar)</label><input id="opt-gulag" type="checkbox" data-setting="brGulag"><output></output></div>
         <div class="opt-row"><label for="opt-bchat">Bots falam (frases com personalidade no rádio)</label><input id="opt-bchat" type="checkbox" data-setting="botChat"><output></output></div>
         <div class="opt-row"><label for="opt-bvoice">Voz sintetizada nas falas dos bots (português)</label><input id="opt-bvoice" type="checkbox" data-setting="botVoice"><output></output></div>
@@ -1343,7 +1350,7 @@ const DEFAULT_SETTINGS = {
   hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp', tickRate: '128', bhopAuto: false, vmPos: 'classic', buyKit: [],
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
-  cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800', brGulag: true, cgHs: false, cgPistols: false, cgLowGrav: false, cgInfMoney: false,
+  cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800', brGulag: true, vehicles: true, cgHs: false, cgPistols: false, cgLowGrav: false, cgInfMoney: false,
 };
 // ações com tecla configurável (Opções → Teclas): o jogo trabalha com a tecla padrão (def); a tecla escolhida pelo
 // jogador é traduzida para ela na entrada (remapKey)
@@ -9915,6 +9922,40 @@ const BR_PACKS = [
   { name: 'Mochila rara', extra: { cell: 4, syringe: 4, battery: 1, medkit: 1 }, rgb: [0.3, 0.6, 1] },
   { name: 'Mochila épica', extra: { cell: 6, syringe: 6, battery: 2, medkit: 2 }, rgb: [0.7, 0.35, 1] }
 ];
+// veículos da Conquista: lugares (x à direita, y, z para trás; driver dirige, shoot pode atirar, hidden fica protegido)
+const VEHICLES = {
+  jeep: { name: 'Jipe', hp: 500, len: 4.2, wid: 1.9, hgt: 1.75, boxH: 1.15, camDist: 6.5, maxSpeed: 20, rev: 7, accel: 8, brake: 16, turn: 1.7, bulletMult: 0.4, blastMult: 1.2,
+    seats: [{ x: -0.42, y: 0.55, z: -0.15, driver: true }, { x: 0.42, y: 0.55, z: -0.15, shoot: true }, { x: 0, y: 0.75, z: 1.2, shoot: true }] },
+  apc: { name: 'Blindado leve', hp: 1500, len: 5.6, wid: 2.5, hgt: 2.45, boxH: 2.4, camDist: 9, maxSpeed: 12, rev: 5, accel: 4.5, brake: 11, turn: 1.0, bulletMult: 0.04, blastMult: 0.7,
+    cannon: { y: 2.55, rpm: 40, dmg: 110, radius: 3.4, speed: 90 },
+    seats: [{ x: 0, y: 0.9, z: -1.2, driver: true, hidden: true }, { x: -0.6, y: 0.9, z: 1.2, hidden: true }, { x: 0.6, y: 0.9, z: 1.2, hidden: true }] }
+};
+const VEH_LINEUP = ['jeep', 'apc', 'jeep'];
+const VEH_GAP = 7;
+const VEH_AHEAD = 12;
+const VEH_RESPAWN = 35;
+const VEH_STEP = 0.75;
+const VEH_ROLL_DRAG = 3;
+const VEH_CRASH_SPEED = 9;
+const VEH_CRASH_DMG = 8;
+const VEH_RUNOVER_SPEED = 4;
+const VEH_RUNOVER_DMG = 9;
+const VEH_ENTER_R = 2.2;
+const VEH_BLAST_R = 6;
+const VEH_BLAST_DMG = 130;
+const VEH_RPG_HIT = 420;
+const VEH_CANNON_HIT = 160;
+const VEH_BOT_GRAB = 10;
+const VEH_BOT_JOIN = 7;
+const VEH_BOT_MIN_TRIP = 60;
+const VEH_BOT_ARRIVE = 22;
+const VEH_BOT_BAIL = 0.25;
+const VEH_STUCK_TIME = 3;
+const VEH_LOOKAHEAD = 6;
+const VEH_ABANDON = 45;
+const vehTmp2 = [0, 0];
+const vehTmp3 = [0, 0, 0];
+const vehHit = { t: 0 };
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -14175,6 +14216,7 @@ function addModeObjects() {
     pushGunModel(ITEM_MATRIX, 'rocket', 1, null);
   }
   for (const h of game.helis) addHeliModel(h);
+  addVehicles();
   for (const j of game.jets) {
     const t = (now - j.t0) / 2;
     if (t < 0 || t > 1) continue;
@@ -14225,7 +14267,7 @@ function addWorldObjects() {
   for (const p of game.players) {
     if (p === firstPersonOf && p.alive) continue;
     if (!p.alive && (game.time - p.deathTime > corpseTime() || !p.rag)) continue;
-    if (p.hidden || beyondView(p.pos[0], p.pos[2])) continue;
+    if (p.hidden || p.vehHidden || beyondView(p.pos[0], p.pos[2])) continue;
     if (arena && p.phaseUntil > now) R.forceCol = PHASE_COL;
     addPlayerModel(p);
     R.forceCol = null;
@@ -16334,6 +16376,7 @@ function surfaceAt(p) {
 }
 function playerTick(p, dt) {
   if (p.onShip) { brShipFollow(p); return; }
+  if (p.veh) { vehRiderTick(p, dt); return; }
   const inp = p.input;
   const frozen = game.phase === 'freeze' || p.plantT > 0 || p.defuseT > 0;
   if (frozen) { inp.fwd = 0; inp.side = 0; inp.jump = false; }
@@ -16609,7 +16652,7 @@ function computeHitboxes(p) {
 function raycastPlayers(ox, oy, oz, dx, dy, dz, maxT, ignore, ignoreTeam) {
   let best = maxT, hitP = null, zone = '';
   for (const p of game.players) {
-    if (!p.alive || p === ignore || (ignoreTeam && p.team === ignoreTeam)) continue;
+    if (!p.alive || p === ignore || p.vehHidden || (ignoreTeam && p.team === ignoreTeam)) continue;
     const cx = p.pos[0] - ox, cy = p.pos[1] + 0.9 - oy, cz = p.pos[2] - oz;
     const tc = cx * dx + cy * dy + cz * dz;
     if (tc < -1.2 || tc > best + 1.2) continue;
@@ -16645,9 +16688,18 @@ function traceBullet(shooter, def, eye, dir) {
     let tw = raycastWorld(ox, oy, oz, dx, dy, dz, lim, rayOut);
     const dmT = game.arena && arenasMode() ? domeBlockT(ox, oy, oz, dx, dy, dz, Math.min(tw, lim)) : Infinity;
     if (dmT < Infinity) tw = dmT;
+    const vh = game.vehicles && game.vehicles.length ? hitVehicle(ox, oy, oz, dx, dy, dz, Math.min(tw, lim), shooter.veh) : null;
+    if (vh) tw = vehHit.t;
     const victim = raycastPlayers(ox, oy, oz, dx, dy, dz, Math.min(tw, lim), shooter, ignoreTeam);
     if (game.chickens.length) { const ch = hitChicken(ox, oy, oz, dx, dy, dz, victim ? pHit.t : Math.min(tw, lim)); if (ch) killChicken(ch); }
     if (game.helis.length) { const hh = hitHeli(ox, oy, oz, dx, dy, dz, victim ? pHit.t : Math.min(tw, lim), shooter.team); if (hh) damageHeli(hh, dmg, shooter); }
+    if (vh && !victim) {
+      // bala no casco do veículo: faísca e dano reduzido pela blindagem
+      end[0] = ox + dx * tw; end[1] = oy + dy * tw; end[2] = oz + dz * tw;
+      vehDamage(vh, dmg * vh.def.bulletMult, shooter, def.id);
+      for (let k = 0; k < 3; k++) spawnParticle({ x: end[0], y: end[1], z: end[2], vx: gauss() * 2 - dx * 2, vy: gauss() * 2 + 1, vz: gauss() * 2 - dz * 2, size: 0.04, max: 0.3, cell: ATLAS.SPARK, add: true, r: 1, g: 0.8, b: 0.45, a: 1 });
+      break;
+    }
     if (dmT < Infinity && !victim) {
       // bala parou no domo: faísca azul
       end[0] = ox + dx * tw; end[1] = oy + dy * tw; end[2] = oz + dz * tw;
@@ -17968,6 +18020,7 @@ function startMatch(mode, drill, custom) {
   game.mode = MODES[mode] ? mode : 'match';
   game.lastBuy = null; game.buyLog = [];
   game.custom = game.mode === 'practice' ? null : (custom || null);
+  game.vehicles = [];
   const cg = game.custom, md = modeDef();
   game.halfRounds = cg ? cg.rounds - 1 : (md.half || MATCH_LENGTHS[s.matchLength].half);
   game.startMoney = cg ? cg.money : START_MONEY;
@@ -18392,7 +18445,7 @@ function mapSupports(m, mode) {
   return BIG_MODES.indexOf(mode) < 0 && !(MODES[mode] && MODES[mode].arenas);
 }
 function freshModeState() {
-  game.tags = []; game.mines = []; game.sensors = []; game.rockets = []; game.helis = []; game.strikes = []; game.jets = [];
+  game.tags = []; game.mines = []; game.sensors = []; game.rockets = []; game.helis = []; game.strikes = []; game.jets = []; game.vehicles = [];
   game.uav = { T: 0, CT: 0 }; game.objectives = []; game.hpZone = null; game.tickets = null; game.rush = null; game.bleedAcc = 0; game.tickAcc = 0; game.ggWinner = null;
 }
 
@@ -18417,6 +18470,7 @@ function startRespawnMode() {
   if (md.flags === 'dom') game.objectives = ['A', 'B', 'C'].map((k) => makeFlag(k, M.dom[k], 'Bandeira ' + k, DOM_RADIUS));
   if (md.flags === 'conquest' || md.flags === 'rush') {
     game.objectives = Object.keys(M.conquest.flags).map((k) => makeFlag(k, M.conquest.flags[k].pos, M.conquest.flags[k].name, CQ_RADIUS, M.conquest.flags[k].perk));
+    vehInit();
     const per = Math.max(game.players.filter((p) => p.team === 'T').length, game.players.filter((p) => p.team === 'CT').length);
     game.tickets = { T: Math.max(60, per * 15), CT: Math.max(60, per * 15) };
     game.ticketsMax = game.tickets.T;
@@ -18457,6 +18511,7 @@ function modeUpdate(dt) {
     respawnPlayer(p);
   }
   if (md.regen) updateRegen(dt);
+  vehUpdate(dt);
   if (game.objectives.length) updateFlags(dt);
   if (bigMode() && game.state === 'playing') updateFlagPerks();
   if (game.hpZone) updateHardpoint(dt);
@@ -19209,14 +19264,17 @@ function updateRockets(dt) {
     const tw = raycastWorld(r.pos[0], r.pos[1], r.pos[2], dx, dy, dz, step, rayOut2);
     const hp = raycastPlayers(r.pos[0], r.pos[1], r.pos[2], dx, dy, dz, Math.min(tw, step), r.owner, null);
     const hh = hitHeli(r.pos[0], r.pos[1], r.pos[2], dx, dy, dz, step, r.team);
+    const hv = game.vehicles && game.vehicles.length ? hitVehicle(r.pos[0], r.pos[1], r.pos[2], dx, dy, dz, Math.min(tw, step), r.fromVeh || (r.owner && r.owner.veh)) : null;
     let t = Infinity;
     if (tw < step) t = tw;
     if (hp && pHit.t < t) t = pHit.t;
     if (hh) { damageHeli(hh, 450, r.owner); t = Math.min(t, step * 0.5); }
+    // impacto direto no veículo: dano cheio de antiveículo (além da explosão)
+    if (hv && vehHit.t < t) { t = vehHit.t; vehDamage(hv, (r.wid === 'veh_cannon' ? VEH_CANNON_HIT : VEH_RPG_HIT), r.owner, r.wid || 'rpg'); }
     if (t < Infinity || r.t > 5) {
       const tt = t < Infinity ? Math.max(0, t - 0.1) : 0;
       game.rockets.splice(i, 1);
-      explodeAt(r.pos[0] + dx * tt, r.pos[1] + dy * tt, r.pos[2] + dz * tt, ROCKET_RADIUS, ROCKET_DAMAGE, r.owner, 'rpg', true);
+      explodeAt(r.pos[0] + dx * tt, r.pos[1] + dy * tt, r.pos[2] + dz * tt, r.radius || ROCKET_RADIUS, r.dmg || ROCKET_DAMAGE, r.owner, r.wid || 'rpg', true);
       continue;
     }
     r.pos[0] += r.vel[0] * dt; r.pos[1] += r.vel[1] * dt; r.pos[2] += r.vel[2] * dt;
@@ -19234,8 +19292,9 @@ function explodeAt(x, y, z, radius, damage, owner, weaponId, big) {
   addNoise(x, y, z, 45, owner ? owner.team : '', 'shot');
   shakeFrom(x, y, z, big ? 0.9 : 0.6, big ? 22 : 14);
   for (const c of game.chickens) if (c.alive && Math.hypot(c.pos[0] - x, c.pos[1] - y, c.pos[2] - z) < radius * 0.8) killChicken(c);
+  vehBlast(x, y, z, radius, damage, owner);
   for (const p of game.players) {
-    if (!p.alive) continue;
+    if (!p.alive || p.vehHidden) continue;
     const cx = p.pos[0], cy = p.pos[1] + 1.0, cz = p.pos[2];
     const d = Math.hypot(cx - x, cy - y, cz - z);
     if (d > radius) continue;
@@ -21983,6 +22042,7 @@ function botUpdate(p, dt) {
     if (!game.teamBought[p.team] && !modeDef().retake && (game.freezeLen || FREEZE_TIME) - game.phaseTimer >= 0.8) { game.teamBought[p.team] = true; teamBuy(p.team); }
     return;
   }
+  if (p.veh) { vehBotUpdate(p, dt); return; }
   if (now >= b.thinkAt) { b.thinkAt = now + 0.09 + Math.random() * 0.05; botThink(p); }
   if (p.streaksReady && p.streaksReady.length && now >= (b.streakAt || 0)) { b.streakAt = now + rand(3, 6); useStreak(p); }
   if (now < p.flashUntil) {
@@ -23409,6 +23469,7 @@ function drawModeRadar(g, l, s) {
   for (const t of game.tags) { g.fillStyle = TEAM_INFO[t.team].color; g.fillRect(t.pos[0] - 0.5 * s, t.pos[2] - 0.5 * s, s, s); }
   for (const m of game.mines) if (m.team === l.team) { g.fillStyle = '#e8504f'; g.fillRect(m.pos[0] - 0.4 * s, m.pos[2] - 0.4 * s, 0.8 * s, 0.8 * s); }
   for (const q of game.sensors) if (q.team === l.team) { g.strokeStyle = 'rgba(90,200,255,0.5)'; g.lineWidth = 0.3 * s; g.beginPath(); g.arc(q.pos[0], q.pos[2], SENSOR_RADIUS, 0, Math.PI * 2); g.stroke(); }
+  drawVehRadar(g, s, l);
   for (const h of game.helis) { g.fillStyle = h.team === l.team ? TEAM_INFO[h.team].color : enemyCol(); g.beginPath(); g.arc(h.pos[0], h.pos[2], 1.8 * s, 0, Math.PI * 2); g.fill(); }
   for (const e of game.players) {
     if (!e.alive || e.team === l.team || !(e.markedUntil > now && e.markedBy === l.team)) continue;
@@ -25047,6 +25108,462 @@ function bindSkinView() {
   c.addEventListener('pointerup', up);
   c.addEventListener('pointercancel', up);
 }
+
+// =====================================================================
+// 8f. VEÍCULOS DA CONQUISTA: jipe (motorista + 2 atiradores expostos) e blindado leve (canhão do motorista,
+//     passageiros protegidos). Nascem no QG de cada time e voltam depois de destruídos. Bots motoristas
+//     seguem o caminho até o objetivo e descem perto dele (ou se travarem / o veículo estiver quase destruído).
+// =====================================================================
+function vehiclesOn() { return !!(settings.vehicles && modeDef().flags === 'conquest' && M.conquest && M.conquest.hq); }
+function vehFwd(v, out) { out[0] = -Math.sin(v.yaw); out[1] = -Math.cos(v.yaw); return out; }
+// ponto local (x à direita, z para trás) → mundo (só o giro em y)
+function vehLocal(v, lx, ly, lz, out) {
+  const c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+  out[0] = v.pos[0] + lx * c + lz * s; out[1] = v.pos[1] + ly; out[2] = v.pos[2] - lx * s + lz * c;
+  return out;
+}
+// mundo → local (para colisão de jogadores com a caixa do veículo)
+function vehToLocal(v, x, z, out) {
+  const c = Math.cos(v.yaw), s = Math.sin(v.yaw), dx = x - v.pos[0], dz = z - v.pos[2];
+  out[0] = dx * c - dz * s; out[1] = dx * s + dz * c;
+  return out;
+}
+// ---------------- início ----------------
+function vehInit() {
+  game.vehicles = [];
+  if (!vehiclesOn()) return;
+  const hq = M.conquest.hq, cx = world.w / 2, cz = world.d / 2;
+  for (const team of ['T', 'CT']) {
+    const pts = hq[team];
+    if (!pts || !pts.length) continue;
+    const hx = pts.reduce((s, q) => s + q[0], 0) / pts.length, hz = pts.reduce((s, q) => s + q[1], 0) / pts.length;
+    const toC = Math.atan2(-(cx - hx), -(cz - hz));
+    VEH_LINEUP.forEach((type, i) => {
+      const side = (i - (VEH_LINEUP.length - 1) / 2) * VEH_GAP;
+      let x = hx + Math.cos(toC) * side - Math.sin(toC) * VEH_AHEAD, z = hz - Math.sin(toC) * side - Math.cos(toC) * VEH_AHEAD;
+      const ci = nearestWalkable(x, z);
+      if (ci >= 0) { x = (ci % world.w) + 0.5; z = Math.floor(ci / world.w) + 0.5; }
+      game.vehicles.push(vehMake(type, team, x, z, toC));
+    });
+  }
+}
+function vehMake(type, team, x, z, yaw) {
+  const d = VEHICLES[type];
+  return { type, def: d, team, home: [x, z, yaw], pos: [x, floorAt(x, z), z], yaw, speed: 0, hp: d.hp, seats: d.seats.map(() => null), pitch: 0, roll: 0, wheel: 0, dead: false, deadAt: 0, fireAt: 0, lastHit: null, path: null, pathAt: 0, stuckT: 0, stuckRef: [x, z], botAt: 0 };
+}
+// ---------------- por quadro ----------------
+function vehUpdate(dt) {
+  if (!game.vehicles || !game.vehicles.length) return;
+  const now = game.time;
+  for (let i = game.vehicles.length - 1; i >= 0; i--) {
+    const v = game.vehicles[i];
+    if (v.dead) {
+      // casco queimando; depois some e um novo nasce no QG
+      if (Math.random() < dt * 6) spawnParticle({ x: v.pos[0] + rand(-1, 1), y: v.pos[1] + v.def.hgt, z: v.pos[2] + rand(-1, 1), vx: rand(-0.3, 0.3), vy: rand(1, 2), vz: rand(-0.3, 0.3), size: 0.6, grow: 2.2, max: rand(2, 3.5), cell: ATLAS.SMOKE, r: 0.12, g: 0.11, b: 0.1, a: 0.55, drag: 0.6 });
+      if (now - v.deadAt > VEH_RESPAWN) game.vehicles[i] = vehMake(v.type, v.team, v.home[0], v.home[1], v.home[2]);
+      continue;
+    }
+    // assentos: quem morreu ou saiu libera o lugar
+    for (let k = 0; k < v.seats.length; k++) { const r = v.seats[k]; if (r && (!r.alive || r.veh !== v)) { if (r.veh === v) vehClearRider(r); v.seats[k] = null; } }
+    // abandonado longe do QG: volta para lá (como no BF) se não houver ninguém perto
+    if (v.seats.some((q) => q)) v.emptySince = now;
+    else if (now - (v.emptySince || now) > VEH_ABANDON && distXZ(v.pos[0], v.pos[2], v.home[0], v.home[1]) > 30 && !game.players.some((p) => p.alive && distXZ(p.pos[0], p.pos[2], v.pos[0], v.pos[2]) < 25)) { game.vehicles[i] = vehMake(v.type, v.team, v.home[0], v.home[1], v.home[2]); continue; }
+    vehDrive(v, dt);
+    vehWeapon(v);
+    vehSeatRiders(v);
+  }
+  vehPushPlayers();
+  if (now >= (game.vehBotAt || 0)) { game.vehBotAt = now + 0.5; vehBotBoard(); }
+  vehHud();
+}
+function vehDrive(v, dt) {
+  const d = v.def, drv = v.seats[0], inp = drv ? drv.input : null;
+  const thr = inp ? clamp(inp.fwd, -1, 1) : 0, steer = inp ? clamp(inp.side, -1, 1) : 0, brake = inp ? inp.jump : true;
+  // água funda e subida pesam
+  const ci = cellIdx(Math.floor(v.pos[0]), Math.floor(v.pos[2]));
+  const wade = ci >= 0 && world.water[ci] > NO_WATER ? clamp(world.water[ci] - v.pos[1], 0, 2) : 0;
+  const top = d.maxSpeed * (wade > 0.5 ? 0.45 : 1);
+  if (brake) v.speed -= Math.sign(v.speed) * Math.min(Math.abs(v.speed), d.brake * 1.4 * dt);
+  else if (thr !== 0 && Math.sign(thr) !== Math.sign(v.speed) && Math.abs(v.speed) > 0.5) v.speed += thr * d.brake * dt;
+  else if (thr !== 0) v.speed += thr * d.accel * dt;
+  else v.speed -= Math.sign(v.speed) * Math.min(Math.abs(v.speed), VEH_ROLL_DRAG * dt);
+  v.speed = clamp(v.speed, -d.rev, top);
+  // vira mais devagar parado e na ré inverte (como carro)
+  const k = clamp(v.speed / 6, -1, 1);
+  v.yaw = wrapAngle(v.yaw - steer * d.turn * k * dt);
+  if (Math.abs(v.speed) < 0.01) { v.speed = 0; return vehGround(v, dt); }
+  const f = vehFwd(v, vehTmp2), step = v.speed * dt;
+  const nx = v.pos[0] + f[0] * step, nz = v.pos[2] + f[1] * step;
+  if (vehBlocked(v, nx, nz)) {
+    // tenta deslizar por um eixo antes de parar
+    if (!vehBlocked(v, nx, v.pos[2])) v.pos[0] = nx;
+    else if (!vehBlocked(v, v.pos[0], nz)) v.pos[2] = nz;
+    else {
+      if (Math.abs(v.speed) > VEH_CRASH_SPEED) vehDamage(v, (Math.abs(v.speed) - VEH_CRASH_SPEED) * VEH_CRASH_DMG, null, 'world');
+      v.speed = -v.speed * 0.25;
+    }
+    v.speed *= 0.8;
+  } else { v.pos[0] = nx; v.pos[2] = nz; }
+  v.wheel += step / 0.4;
+  // outros veículos: empurra para longe
+  for (const o of game.vehicles) {
+    if (o === v || o.dead) continue;
+    const dx = v.pos[0] - o.pos[0], dz = v.pos[2] - o.pos[2], dd = Math.hypot(dx, dz), min = (v.def.len + o.def.len) * 0.42;
+    if (dd < min && dd > 0.01) { const push = (min - dd) / dd * 0.5; v.pos[0] += dx * push; v.pos[2] += dz * push; v.speed *= 0.6; }
+  }
+  vehGround(v, dt);
+}
+// chão sob as rodas: altura, inclinação para frente e para o lado
+function vehGround(v, dt) {
+  const d = v.def, hl = d.len * 0.4, hw = d.wid * 0.42;
+  const fl = vehLocal(v, -hw, 0, -hl, vehTmp3), hFL = floorAt(fl[0], fl[2]);
+  const fr = vehLocal(v, hw, 0, -hl, vehTmp3), hFR = floorAt(fr[0], fr[2]);
+  const bl = vehLocal(v, -hw, 0, hl, vehTmp3), hBL = floorAt(bl[0], bl[2]);
+  const br = vehLocal(v, hw, 0, hl, vehTmp3), hBR = floorAt(br[0], br[2]);
+  const g = (hFL + hFR + hBL + hBR) / 4;
+  // cai com gravidade; sobe na hora (rampa)
+  v.vy = v.vy || 0;
+  if (v.pos[1] > g + 0.05) { v.vy -= GRAVITY * dt; v.pos[1] = Math.max(g, v.pos[1] + v.vy * dt); } else { v.pos[1] = g; v.vy = 0; }
+  const kp = 1 - Math.exp(-dt * 10);
+  v.pitch += (Math.atan2((hFL + hFR) - (hBL + hBR), 2 * d.len * 0.8) - v.pitch) * kp;
+  v.roll += (Math.atan2((hFR + hBR) - (hFL + hBL), 2 * d.wid * 0.84) - v.roll) * kp;
+}
+// bate em parede, degrau alto ou na borda do mapa (testa os cantos da frente ou de trás e o meio)
+function vehBlocked(v, x, z) {
+  const d = v.def, sgn = v.speed >= 0 ? -1 : 1, c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+  const y0 = v.pos[1];
+  for (const lx of [-d.wid * 0.48, 0, d.wid * 0.48]) {
+    for (const lz of [sgn * d.len * 0.5, 0]) {
+      const px = x + lx * c + lz * s, pz = z - lx * s + lz * c;
+      if (px < 1 || pz < 1 || px > world.w - 1 || pz > world.d - 1) return true;
+      const ci = cellIdx(Math.floor(px), Math.floor(pz));
+      if (ci < 0 || world.wall[ci]) return true;
+      if (floorAt(px, pz) - y0 > VEH_STEP) return true;
+      if (world.ceil[ci] < NO_CEIL && world.ceil[ci] - floorAt(px, pz) < d.hgt) return true;
+    }
+  }
+  return false;
+}
+// jogadores: o veículo empurra quem está na frente e atropela inimigos com velocidade
+function vehPushPlayers() {
+  const loc = vehTmp2;
+  for (const v of game.vehicles) {
+    if (v.dead) continue;
+    const d = v.def, hw = d.wid / 2 + 0.35, hl = d.len / 2 + 0.35, drv = v.seats[0];
+    for (const p of game.players) {
+      if (!p.alive || p.veh || p.onShip || Math.abs(p.pos[1] - v.pos[1]) > d.hgt + 0.5) continue;
+      vehToLocal(v, p.pos[0], p.pos[2], loc);
+      if (Math.abs(loc[0]) > hw || Math.abs(loc[1]) > hl) continue;
+      const sp = Math.abs(v.speed);
+      if (sp > VEH_RUNOVER_SPEED && (p.team !== v.team || settings.friendlyFire) && drv && drv.team !== p.team) {
+        const f = vehFwd(v, vehTmp3);
+        applyDamage(p, drv, sp * VEH_RUNOVER_DMG, 'chest', 1, 'veh_' + v.type, [f[0], 0, f[1]], {});
+        v.speed *= 0.85;
+        if (!p.alive) continue;
+      }
+      // empurra para o lado mais perto da caixa
+      const ox = hw - Math.abs(loc[0]), oz = hl - Math.abs(loc[1]);
+      if (ox < oz) loc[0] = Math.sign(loc[0] || 1) * hw; else loc[1] = Math.sign(loc[1] || 1) * hl;
+      const c = Math.cos(v.yaw), s = Math.sin(v.yaw), nx = v.pos[0] + loc[0] * c + loc[1] * s, nz = v.pos[2] - loc[0] * s + loc[1] * c;
+      const ci = cellIdx(Math.floor(nx), Math.floor(nz));
+      if (ci >= 0 && !world.wall[ci]) { p.pos[0] = nx; p.pos[2] = nz; }
+    }
+  }
+}
+// ---------------- assentos ----------------
+function vehSeatRiders(v) {
+  for (let k = 0; k < v.seats.length; k++) {
+    const r = v.seats[k];
+    if (!r) continue;
+    const s = v.def.seats[k], q = vehLocal(v, s.x, s.y, s.z, vehTmp3);
+    r.pos[0] = q[0]; r.pos[1] = q[1]; r.pos[2] = q[2];
+    const f = vehFwd(v, vehTmp2);
+    r.vel[0] = f[0] * v.speed; r.vel[1] = 0; r.vel[2] = f[1] * v.speed;
+    r.onGround = true;
+  }
+}
+function vehEnter(p, v, seat) {
+  if (seat < 0 || v.seats[seat] || v.dead || p.veh) return false;
+  v.seats[seat] = p; p.veh = v; p.vehSeat = seat;
+  const s = v.def.seats[seat];
+  p.vehHidden = !!s.hidden;
+  p.sprinting = false; p.sliding = false; p.mantle = null; p.adsAmt = 0;
+  if (s.driver || !s.shoot) { p.ws.reloading = false; }
+  if (p === game.local) flashHint(v.def.name + ' · ' + (s.driver ? 'W/S acelera, A/D vira, Espaço freia' + (v.def.cannon ? ', clique atira o canhão' : '') : (s.shoot ? 'atirador' : 'passageiro')) + ' · E sai', 3);
+  vehSeatRiders(v);
+  return true;
+}
+function vehClearRider(p) {
+  p.veh = null; p.vehSeat = -1; p.vehHidden = false; p.input.crouch = false;
+}
+function vehExit(p) {
+  const v = p.veh;
+  if (!v) return false;
+  const seat = p.vehSeat;
+  if (v.seats[seat] === p) v.seats[seat] = null;
+  vehClearRider(p);
+  // desce do lado do assento (ou do outro, ou atrás) num lugar livre
+  const side = (v.def.seats[seat] && v.def.seats[seat].x) < 0 ? -1 : 1;
+  for (const [lx, lz] of [[side * (v.def.wid / 2 + 0.8), 0], [-side * (v.def.wid / 2 + 0.8), 0], [0, v.def.len / 2 + 1], [0, -(v.def.len / 2 + 1)]]) {
+    const q = vehLocal(v, lx, 0, lz, vehTmp3), ci = cellIdx(Math.floor(q[0]), Math.floor(q[2]));
+    if (ci < 0 || world.wall[ci] || Math.abs(floorAt(q[0], q[2]) - v.pos[1]) > 1.2) continue;
+    p.pos[0] = q[0]; p.pos[2] = q[2]; p.pos[1] = floorAt(q[0], q[2]) + 0.05;
+    break;
+  }
+  const f = vehFwd(v, vehTmp2);
+  p.vel[0] = f[0] * v.speed * 0.3; p.vel[2] = f[1] * v.speed * 0.3; p.vel[1] = 0;
+  return true;
+}
+// E: entra no veículo mais perto (primeiro lugar livre, motorista primeiro) ou sai
+function vehLocalUse(p) {
+  if (!game.vehicles || !game.vehicles.length || !p || !p.alive) return false;
+  if (p.veh) return vehExit(p);
+  const v = vehNear(p, VEH_ENTER_R);
+  if (!v) return false;
+  return vehEnter(p, v, v.seats.indexOf(null));
+}
+function vehNear(p, r) {
+  let best = null, bd = r;
+  for (const v of game.vehicles) {
+    if (v.dead || v.seats.indexOf(null) < 0 || (v.team !== p.team && v.seats.some((q) => q))) continue;
+    vehToLocal(v, p.pos[0], p.pos[2], vehTmp2);
+    const dd = Math.max(0, Math.abs(vehTmp2[0]) - v.def.wid / 2) + Math.max(0, Math.abs(vehTmp2[1]) - v.def.len / 2);
+    if (dd < bd && Math.abs(p.pos[1] - v.pos[1]) < 2) { bd = dd; best = v; }
+  }
+  return best;
+}
+// quem está num veículo: posição presa ao assento, agachado; o atirador usa a própria arma
+function vehRiderTick(p, dt) {
+  const v = p.veh, s = v.def.seats[p.vehSeat];
+  p.input.crouch = true;
+  p.input.jump = p.input.jump && !!s.driver;
+  updateCrouch(p, dt);
+  vehSeatRiders(v);
+  updateWeapon(p, dt, !s.shoot || game.phase === 'freeze');
+  updateObjectives(p, dt);
+}
+// ---------------- canhão do blindado (motorista) ----------------
+function vehWeapon(v) {
+  const c = v.def.cannon, drv = v.seats[0];
+  if (!c || !drv || !drv.input.fire || game.time < v.fireAt) return;
+  v.fireAt = game.time + 60 / c.rpm;
+  const o = vehLocal(v, 0, c.y, 0, vehTmp3), dir = dirFromAngles(drv.yaw, drv.pitch, [0, 0, 0]);
+  game.rockets.push({ owner: drv, team: drv.team, pos: [o[0] + dir[0] * 2, o[1] + dir[1] * 2, o[2] + dir[2] * 2], vel: [dir[0] * c.speed, dir[1] * c.speed, dir[2] * c.speed], t: 0, dmg: c.dmg, radius: c.radius, wid: 'veh_cannon', fromVeh: v });
+  sfxRocket(o, drv === game.local);
+  addNoise(o[0], o[1], o[2], 60, drv.team, 'shot');
+  if (drv === game.local) shakeFrom(o[0], o[1], o[2], 0.4, 10);
+}
+// ---------------- dano ----------------
+// raio contra as caixas dos veículos (giro em y); devolve o veículo e guarda a distância em vehHit.t
+function hitVehicle(ox, oy, oz, dx, dy, dz, maxT, ignore) {
+  let best = maxT, hit = null;
+  for (const v of game.vehicles) {
+    if (v === ignore || (v.dead && game.time - v.deadAt > 1)) continue;
+    const d = v.def, cx = v.pos[0] - ox, cz = v.pos[2] - oz;
+    if (cx * cx + cz * cz > (best + d.len) * (best + d.len)) continue;
+    const c = Math.cos(v.yaw), s = Math.sin(v.yaw);
+    const lx = (-cx) * c - (-cz) * s, lz = (-cx) * s + (-cz) * c, ly = oy - (v.pos[1] + d.boxH / 2);
+    const ldx = dx * c - dz * s, ldz = dx * s + dz * c;
+    let t0 = 0, t1 = best;
+    const slab = (o, dd, h) => {
+      if (Math.abs(dd) < 1e-6) return Math.abs(o) <= h;
+      let a = (-h - o) / dd, b = (h - o) / dd;
+      if (a > b) { const t = a; a = b; b = t; }
+      t0 = Math.max(t0, a); t1 = Math.min(t1, b);
+      return t0 <= t1;
+    };
+    if (!slab(lx, ldx, d.wid / 2) || !slab(ly, dy, d.boxH / 2) || !slab(lz, ldz, d.len / 2)) continue;
+    if (t0 < best) { best = t0; hit = v; }
+  }
+  vehHit.t = best;
+  return hit;
+}
+function vehDamage(v, dmg, attacker, wid) {
+  if (v.dead || dmg <= 0) return;
+  if (attacker && attacker.team === v.team && v.seats.some((q) => q) && !settings.friendlyFire) return;
+  v.hp -= dmg;
+  if (attacker) v.lastHit = attacker;
+  if (attacker === game.local) onLocalHit(false, true, false, v.hp <= 0);
+  if (v.hp > 0) return;
+  v.hp = 0; v.dead = true; v.deadAt = game.time; v.speed = 0;
+  const killer = v.lastHit, c = vehLocal(v, 0, v.def.hgt / 2, 0, vehTmp3);
+  for (let k = 0; k < v.seats.length; k++) {
+    const r = v.seats[k];
+    if (!r) continue;
+    v.seats[k] = null; vehClearRider(r);
+    if (r.alive) applyDamage(r, killer && killer !== r ? killer : null, 999, 'chest', 1, 'veh_' + v.type, [0, 1, 0], {});
+  }
+  explodeAt(c[0], c[1], c[2], VEH_BLAST_R, VEH_BLAST_DMG, killer, 'veh_' + v.type, true);
+  if (game.local && killer === game.local) flashHint(v.def.name + ' inimigo destruído', 2);
+}
+// explosão perto: dano pela distância até a caixa
+function vehBlast(x, y, z, radius, damage, owner) {
+  if (!game.vehicles) return;
+  for (const v of game.vehicles) {
+    if (v.dead) continue;
+    vehToLocal(v, x, z, vehTmp2);
+    const ex = Math.max(0, Math.abs(vehTmp2[0]) - v.def.wid / 2), ez = Math.max(0, Math.abs(vehTmp2[1]) - v.def.len / 2), ey = Math.max(0, Math.abs(y - (v.pos[1] + v.def.boxH / 2)) - v.def.boxH / 2);
+    const d = Math.hypot(ex, ey, ez);
+    if (d < radius) vehDamage(v, damage * (1 - d / radius) * v.def.blastMult, owner, 'blast');
+  }
+}
+// ---------------- bots ----------------
+// bots perto de um veículo parado no QG embarcam quando o objetivo está longe
+function vehBotBoard() {
+  const now = game.time;
+  for (const v of game.vehicles) {
+    if (v.dead) continue;
+    const drv = v.seats[0];
+    if (!drv) {
+      if (now < v.botAt) continue;
+      let best = null, bd = VEH_BOT_GRAB;
+      for (const p of game.players) {
+        if (!p.isBot || !p.alive || p.veh || p.team !== v.team || !p.bot.goal) continue;
+        const d = distXZ(p.pos[0], p.pos[2], v.pos[0], v.pos[2]);
+        if (d < bd && distXZ(p.pos[0], p.pos[2], p.bot.goal[0], p.bot.goal[1]) > VEH_BOT_MIN_TRIP) { bd = d; best = p; }
+      }
+      if (best) { vehEnter(best, v, 0); v.path = null; v.stuckT = 0; v.stuckRef = [v.pos[0], v.pos[2]]; v.boardUntil = now + 2.5; }
+      continue;
+    }
+    // colegas por perto pegam os outros lugares logo que o motorista entra
+    if (drv.isBot && now < (v.boardUntil || 0)) {
+      for (const p of game.players) {
+        if (!p.isBot || !p.alive || p.veh || p.team !== v.team) continue;
+        const seat = v.seats.indexOf(null);
+        if (seat < 0) break;
+        if (distXZ(p.pos[0], p.pos[2], v.pos[0], v.pos[2]) < VEH_BOT_JOIN) vehEnter(p, v, seat);
+      }
+    }
+  }
+}
+// bot dentro do veículo: motorista dirige pelo caminho; atirador combate; todos descem juntos
+function vehBotUpdate(p, dt) {
+  const b = p.bot, v = p.veh, now = game.time, s = v.def.seats[p.vehSeat];
+  if (now >= b.thinkAt) { b.thinkAt = now + 0.12 + Math.random() * 0.05; botThink(p); }
+  if (s.driver) { vehBotDrive(p, dt); return; }
+  // motorista saiu (ou é o jogador e parou longe): desce
+  const drv = v.seats[0];
+  if (!drv || (drv.isBot && !drv.alive)) { vehExit(p); return; }
+  if (s.shoot && b.target && b.target.alive) botCombat(p, dt);
+}
+function vehBotDrive(p, dt) {
+  const b = p.bot, v = p.veh, inp = p.input, now = game.time, g = b.goal;
+  const leave = () => { for (const r of v.seats.slice()) if (r && r.isBot) vehExit(r); v.botAt = now + 6; };
+  if (!g || distXZ(v.pos[0], v.pos[2], g[0], g[1]) < VEH_BOT_ARRIVE || v.hp < v.def.hp * VEH_BOT_BAIL) { leave(); return; }
+  // travou: parado com o pé no acelerador por alguns segundos
+  if (now - (v.stuckAt || 0) > VEH_STUCK_TIME) {
+    if (v.path && distXZ(v.pos[0], v.pos[2], v.stuckRef[0], v.stuckRef[1]) < 2) { v.stuckN = (v.stuckN || 0) + 1; if (v.stuckN >= 2) { v.stuckN = 0; leave(); return; } v.path = null; }
+    v.stuckAt = now; v.stuckRef = [v.pos[0], v.pos[2]];
+  }
+  if (!v.path || now > v.pathAt) {
+    if (game.pathBudget > 0) { game.pathBudget--; v.path = findPath(v.pos[0], v.pos[2], g[0], g[1], v.pos[1]); v.pathIdx = 1; v.pathAt = now + 4; }
+    if (!v.path) { if (now > v.pathAt) { leave(); } return; }
+  }
+  const path = v.path;
+  while (v.pathIdx < path.length - 1 && distXZ(path[v.pathIdx][0], path[v.pathIdx][1], v.pos[0], v.pos[2]) < VEH_LOOKAHEAD) v.pathIdx++;
+  const wp = path[Math.min(v.pathIdx, path.length - 1)];
+  const want = Math.atan2(-(wp[0] - v.pos[0]), -(wp[1] - v.pos[2])), diff = wrapAngle(want - v.yaw);
+  inp.side = clamp(-diff * 2.2, -1, 1);
+  inp.fwd = Math.abs(diff) > 2.3 ? -0.6 : (Math.abs(diff) > 1.1 ? 0.35 : 1);
+  inp.jump = false;
+  // blindado: atira o canhão no inimigo à vista
+  if (v.def.cannon && b.target && b.target.alive && now - b.lastSeenTime < 0.5) {
+    const o = vehLocal(v, 0, v.def.cannon.y, 0, vehTmp3), e = b.target;
+    const a = anglesTo(o[0], o[1], o[2], e.pos[0], e.pos[1] + 0.9, e.pos[2]);
+    turnToward(p, a.yaw, a.pitch, dt, diffCfg().turn * 0.6);
+    inp.fire = Math.abs(wrapAngle(a.yaw - p.yaw)) < 0.06 && Math.abs(a.pitch - p.pitch) < 0.06;
+  } else turnToward(p, v.yaw, 0, dt, 3);
+}
+// ---------------- câmera, HUD e desenho ----------------
+// motorista e passageiro protegido: câmera em 3ª pessoa girando com o mouse; atirador exposto: 1ª pessoa normal
+function vehCameraOn(subj) { return !!(subj && subj.veh && (subj.vehSeat === 0 || subj.vehHidden)); }
+function vehCamera(subj) {
+  const v = subj.veh, d = v.def;
+  const hx = v.pos[0], hy = v.pos[1] + d.hgt + 0.8, hz = v.pos[2];
+  dirFromAngles(subj.yaw, clamp(subj.pitch, -1.1, 0.6) - 0.12, vehTmp3);
+  const t = raycastWorld(hx, hy, hz, -vehTmp3[0], -vehTmp3[1], -vehTmp3[2], d.camDist, rayOut2);
+  const dd = Math.max(0.5, Math.min(d.camDist, t) - 0.3);
+  R.camPos[0] = hx - vehTmp3[0] * dd; R.camPos[1] = hy - vehTmp3[1] * dd; R.camPos[2] = hz - vehTmp3[2] * dd;
+  R.camYaw = subj.yaw; R.camPitch = clamp(subj.pitch, -1.1, 0.6) - 0.12;
+  R.drawViewmodel = false;
+}
+function vehHud() {
+  const el = document.getElementById('veh-hud'), l = game.local;
+  if (!el) return;
+  let t = '';
+  if (l && l.alive && l.veh) {
+    const v = l.veh, s = v.def.seats[l.vehSeat];
+    t = '<b>' + escapeHtml(v.def.name) + '</b><span class="vh-bar"><i style="width:' + (v.hp / v.def.hp * 100).toFixed(0) + '%"></i></span>' + Math.ceil(v.hp) + ' · ' + Math.round(Math.abs(v.speed) * 3.6) + ' km/h · ' + (s.driver ? 'motorista' : (s.shoot ? 'atirador' : 'passageiro')) + ' · <kbd>E</kbd> sai';
+  } else if (l && l.alive) {
+    const v = vehNear(l, VEH_ENTER_R);
+    if (v) t = '<kbd>E</kbd> entrar no ' + escapeHtml(v.def.name) + (v.team !== l.team ? ' (inimigo)' : '');
+  }
+  if (hud.cache.vehHud !== t) { hud.cache.vehHud = t; el.innerHTML = t; el.hidden = !t; }
+}
+function addVehicles() {
+  if (!game.vehicles || !game.vehicles.length) return;
+  const T = ITEM_MATRIX, cam = R.camPos;
+  for (const v of game.vehicles) {
+    if (Math.hypot(v.pos[0] - cam[0], v.pos[2] - cam[2]) > 220) continue;
+    m4Identity(T); m4Translate(T, v.pos[0], v.pos[1], v.pos[2]); m4RotY(T, v.yaw); m4RotX(T, -v.pitch); m4RotZ(T, -v.roll);
+    const burnt = v.dead, body = burnt ? [0.08, 0.08, 0.08] : teamRgb(v.team, 0.42), dark = burnt ? [0.05, 0.05, 0.05] : [0.12, 0.12, 0.13];
+    if (v.type === 'jeep') addJeepModel(T, v, body, dark);
+    else addApcModel(T, v, body, dark);
+  }
+}
+function vehWheels(T, v, xs, zs, r, w, dark) {
+  for (const x of xs) for (const z of zs) {
+    pushCyl(T, x, r, z, r * 2, r * 2, w, MAT.GUNMETAL, dark, v.wheel, HALF_PI, 0);
+    pushCyl(T, x * 1.02, r, z, r * 1.1, r * 1.1, w * 1.04, MAT.GUNMETAL, [0.32, 0.32, 0.34], v.wheel, HALF_PI, 0);
+  }
+}
+function addJeepModel(T, v, body, dark) {
+  vehWheels(T, v, [-0.92, 0.92], [-1.35, 1.35], 0.4, 0.3, dark);
+  pushBox(T, 0, 0.62, 0, 1.75, 0.42, 4.0, MAT.METAL, body);
+  pushBox(T, 0, 0.98, -1.25, 1.7, 0.32, 1.5, MAT.METAL, body);
+  pushBox(T, 0, 0.82, 0.55, 1.75, 0.42, 1.9, MAT.METAL, body);
+  for (const x of [-0.82, 0.82]) pushBox(T, x, 1.1, 0.4, 0.08, 0.2, 2.2, MAT.METAL, body);
+  pushBox(T, 0, 1.38, -0.45, 1.6, 0.5, 0.05, MAT.METAL, [0.16, 0.2, 0.24], -0.25, 0, 0);
+  for (const x of [-0.78, 0.78]) pushBox(T, x, 1.4, -0.43, 0.05, 0.55, 0.05, MAT.GUNMETAL, dark);
+  pushBox(T, 0, 1.75, 0.2, 1.7, 0.05, 0.05, MAT.GUNMETAL, dark);
+  for (const x of [-0.82, 0.82]) pushBox(T, x, 1.45, 0.2, 0.05, 0.6, 0.05, MAT.GUNMETAL, dark);
+  pushBox(T, 0, 0.8, -2.02, 1.4, 0.3, 0.08, MAT.GUNMETAL, dark);
+  for (const x of [-0.6, 0.6]) pushBox(T, x, 0.88, -2.04, 0.22, 0.12, 0.04, MAT.EMISSIVE, v.dead ? dark : [1, 0.95, 0.8]);
+  pushBox(T, 0, 0.92, 1.95, 0.6, 0.6, 0.18, MAT.GUNMETAL, dark);
+  pushBox(T, 0.42, 0.95, -0.15, 0.4, 0.12, 0.4, MAT.CLOTH, dark);
+  pushBox(T, -0.42, 0.95, -0.15, 0.4, 0.12, 0.4, MAT.CLOTH, dark);
+  pushCyl(T, -0.42, 1.22, -0.72, 0.36, 0.36, 0.04, MAT.GUNMETAL, dark, -0.9, 0, 0);
+}
+function addApcModel(T, v, body, dark) {
+  vehWheels(T, v, [-1.2, 1.2], [-1.9, -0.6, 0.7, 2.0], 0.5, 0.42, dark);
+  pushBox(T, 0, 1.15, 0, 2.4, 1.2, 5.4, MAT.METAL, body);
+  pushBox(T, 0, 1.55, -2.85, 2.2, 0.7, 0.6, MAT.METAL, body, 0.55, 0, 0);
+  pushBox(T, 0, 1.85, 0.2, 2.3, 0.2, 4.8, MAT.METAL, body);
+  for (const x of [-1.22, 1.22]) pushBox(T, x, 0.95, 0.1, 0.06, 0.5, 4.9, MAT.GUNMETAL, dark);
+  // torre com canhão apontando para onde o motorista olha
+  const drv = v.seats[0], ty = drv ? drv.yaw - v.yaw : 0, tp = drv ? clamp(drv.pitch, -0.25, 0.5) : 0;
+  const S = new Float32Array(T);
+  m4Translate(S, 0, 2.15, 0.3); m4RotY(S, ty);
+  pushCyl(S, 0, 0.15, 0, 1.5, 1.5, 0.4, MAT.METAL, body, HALF_PI, 0, 0);
+  pushBox(S, 0, 0.38, 0.1, 1.1, 0.35, 1.3, MAT.METAL, body);
+  m4Translate(S, 0, 0.38, -0.5); m4RotX(S, tp);
+  pushCyl(S, 0, 0, -1.0, 0.16, 0.16, 2.0, MAT.GUNMETAL, dark);
+  pushCyl(S, 0, 0, -2.05, 0.22, 0.22, 0.2, MAT.GUNMETAL, dark);
+  for (const x of [-0.7, 0.7]) pushBox(T, x, 1.95, -2.4, 0.3, 0.12, 0.06, MAT.EMISSIVE, v.dead ? dark : [1, 0.9, 0.7]);
+  pushBox(T, 0, 1.4, 2.72, 1.2, 1.0, 0.06, MAT.GUNMETAL, dark);
+}
+function drawVehRadar(g, s, l) {
+  if (!game.vehicles) return;
+  for (const v of game.vehicles) {
+    if (v.dead) continue;
+    const mine = v.team === l.team, seen = mine || v.seats.some((q) => q && q.spotted && q.spotted > game.time);
+    if (!mine && !seen) continue;
+    g.save(); g.translate(v.pos[0], v.pos[2]); g.rotate(-v.yaw);
+    g.fillStyle = mine ? TEAM_INFO[v.team].color : enemyCol();
+    g.fillRect(-v.def.wid / 2 - 0.3 * s, -v.def.len / 2, v.def.wid + 0.6 * s, v.def.len);
+    g.restore();
+  }
+}
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
 // =====================================================================
@@ -25107,6 +25624,8 @@ function weaponLabel(id) {
   if (id === 'world') return 'Queda';
   if (id === 'air') return 'Ataque aéreo';
   if (id === 'heli') return 'Helicóptero';
+  if (id === 'veh_cannon') return 'Canhão do blindado';
+  if (typeof id === 'string' && id.indexOf('veh_') === 0 && VEHICLES[id.slice(4)]) return VEHICLES[id.slice(4)].name;
   if (id === 'barrel') return 'Barril';
   if (id === 'ring') return 'Anel';
   if (id === 'hole') return 'Buraco negro';
@@ -26242,6 +26761,7 @@ function onKeyDown(e) {
   if (game.state === 'playing' && !e.repeat && !game.paused && nadesKey(code, e.shiftKey)) { e.preventDefault(); return; }
   if (game.state === 'playing' && !e.repeat && !game.paused && bhopKey(code)) { e.preventDefault(); return; }
   if (game.state === 'playing' && !e.repeat && !game.paused && quickBuyKey(code, e.shiftKey)) { e.preventDefault(); return; }
+  if (game.state === 'playing' && !e.repeat && !game.paused && code === 'KeyE' && game.local && game.vehicles && game.vehicles.length && vehLocalUse(game.local)) { e.preventDefault(); return; }
   if (game.state === 'playing' && !e.repeat && !game.paused && code === 'KeyG' && game.dropAsk && answerDropAsk(game.local)) { e.preventDefault(); return; }
   if (game.state === 'playing') {
     if (code === 'Space' && game.killcam && game.killcam.on && !e.repeat) { kcSkip(); return; }
@@ -26518,6 +27038,7 @@ function updateCamera(dt) {
     updateVmAnim(subj, dt);
     R.drawViewmodel = !(subj.onShip || (subj.glide && subj.glide.dive));
     if (specView() !== 'fp') { specCamera(subj, dt); fov = settings.fov * DEG; R.drawViewmodel = false; }
+    else if (vehCameraOn(subj)) { vehCamera(subj); fov = settings.fov * DEG; }
   } else if (kcKiller()) {
     // killcam: pelos olhos de quem matou (posições do replay já trocadas por kcBegin)
     const k = kcKiller();
