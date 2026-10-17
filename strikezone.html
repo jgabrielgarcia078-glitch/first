@@ -879,6 +879,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <div class="opt-row"><label for="opt-ot">Prorrogação no desarme de bomba (empate: 6 rodadas com $10.000)</label><input id="opt-ot" type="checkbox" data-setting="overtime"><output></output></div>
         <div class="opt-row"><label for="opt-tick">Tick do movimento no ar (air strafe): 64 como o matchmaking, 128 como servidores de campeonato</label><select id="opt-tick" data-setting="tickRate"><option value="64">64 tick</option><option value="128">128 tick</option></select><output></output></div>
         <div class="opt-row"><label for="opt-bhopauto">Pulo automático no circuito de bunny hop (segurar o espaço)</label><input id="opt-bhopauto" type="checkbox" data-setting="bhopAuto"><output></output></div>
+        <div class="opt-row"><label for="opt-gulag">Gulag no Battle Royale (morreu de vez nos primeiros anéis: duelo 1×1 para voltar)</label><input id="opt-gulag" type="checkbox" data-setting="brGulag"><output></output></div>
         <div class="opt-row"><label for="opt-bchat">Bots falam (frases com personalidade no rádio)</label><input id="opt-bchat" type="checkbox" data-setting="botChat"><output></output></div>
         <div class="opt-row"><label for="opt-bvoice">Voz sintetizada nas falas dos bots (português)</label><input id="opt-bvoice" type="checkbox" data-setting="botVoice"><output></output></div>
         <div class="opt-row"><label for="opt-kcam">Killcam (replay de quem te matou)</label><input id="opt-kcam" type="checkbox" data-setting="killcam"><output></output></div>
@@ -1342,7 +1343,7 @@ const DEFAULT_SETTINGS = {
   hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp', tickRate: '128', bhopAuto: false, vmPos: 'classic', buyKit: [],
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
-  cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800', cgHs: false, cgPistols: false, cgLowGrav: false, cgInfMoney: false,
+  cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800', brGulag: true, cgHs: false, cgPistols: false, cgLowGrav: false, cgInfMoney: false,
 };
 // ações com tecla configurável (Opções → Teclas): o jogo trabalha com a tecla padrão (def); a tecla escolhida pelo
 // jogador é traduzida para ela na entrada (remapKey)
@@ -6961,9 +6962,9 @@ const MAPS = {
       ["flat", 288, 66, 312, 90, 42.075, 10], ["flat", 100, 52, 118, 66, 29.919, 10], ["flat", 144, 115, 156, 125, 3.843, 3],
       ["flat", 244, 95, 256, 105, 3.318, 3], ["flat", 74, 295, 86, 305, 5.749, 3], ["flat", 334, 185, 346, 195, 5.002, 3],
       ["flat", 154, 265, 166, 275, 4.549, 3], ["flat", 224, 155, 236, 165, 3.903, 3], ["flat", 284, 281, 296, 291, 5.237, 3],
-      ["flat", 344, 105, 356, 115, 3.269, 3], ["flat", 94, 191, 106, 201, 3.825, 3], ["channel", [[386, 140], [340, 150], [300, 166], [268, 196], [246, 236], [236, 258]], 6, 0.6, 6],
-      ["channel", [[214, 286], [172, 300], [124, 310], [82, 330], [40, 358], [-2, 382]], 6, 0.6, 6], ["flat", 296, 152, 306, 182, 5.2, 3], ["flat", 118, 296, 128, 324, null, 6],
-      ["flat", 262, 186, 272, 206, 1.25, 8],
+      ["flat", 344, 105, 356, 115, 3.269, 3], ["flat", 94, 191, 106, 201, 3.825, 3], ["flat", 10, 10, 40, 32, 1.951, 4],
+      ["channel", [[386, 140], [340, 150], [300, 166], [268, 196], [246, 236], [236, 258]], 6, 0.6, 6], ["channel", [[214, 286], [172, 300], [124, 310], [82, 330], [40, 358], [-2, 382]], 6, 0.6, 6], ["flat", 296, 152, 306, 182, 5.2, 3],
+      ["flat", 118, 296, 128, 324, null, 6], ["flat", 262, 186, 272, 206, 1.25, 8],
     ] },
     ops: [
       ["terrain", 2, 2, 382, 382, MAT.GRASS], ["water", 198, 236, 272, 308, 2.2], ["water", 244, 136, 382, 250, 1.7],
@@ -8636,7 +8637,12 @@ const MAPS = {
       ["wallmat", 95, 192, 96, 194, MAT.SANDSTONE], ["wall", 95, 194, 96, 195, "g1.2"], ["wallmat", 95, 194, 96, 195, MAT.SANDSTONE],
       ["wall", 95, 197, 96, 199, "g1.144"], ["wallmat", 95, 197, 96, 199, MAT.SANDSTONE], ["wall", 104, 192, 105, 194, "g0.648"],
       ["wallmat", 104, 192, 105, 194, MAT.SANDSTONE], ["wall", 104, 194, 105, 195, "g3.069"], ["wallmat", 104, 194, 105, 195, MAT.SANDSTONE],
-      ["wall", 104, 197, 105, 198, "g0.675"], ["wallmat", 104, 197, 105, 198, MAT.SANDSTONE],
+      ["wall", 104, 197, 105, 198, "g0.675"], ["wallmat", 104, 197, 105, 198, MAT.SANDSTONE], ["open", 12, 12, 38, 30, 1.951, MAT.CONCRETE],
+      ["wall", 10, 10, 40, 12, 10.951], ["wallmat", 10, 10, 40, 12, MAT.CONCRETE], ["wall", 10, 30, 40, 32, 10.951],
+      ["wallmat", 10, 30, 40, 32, MAT.CONCRETE], ["wall", 10, 12, 12, 30, 10.951], ["wallmat", 10, 12, 12, 30, MAT.CONCRETE],
+      ["wall", 38, 12, 40, 30, 10.951], ["wallmat", 38, 12, 40, 30, MAT.CONCRETE], ["wall", 22, 21, 23, 24, 4.151],
+      ["wallmat", 22, 21, 23, 24, MAT.CONCRETE], ["wall", 27, 18, 28, 21, 4.151], ["wallmat", 27, 18, 28, 21, MAT.CONCRETE],
+      ["floormat", 12, 12, 16, 30, MAT.TILE], ["floormat", 34, 12, 38, 30, MAT.TILE],
     ],
     props: [
       [74, 126, 75.3, 127.3, "g0", 1.1, MAT.CRATE], [75.3, 126.1, 76.6, 127.4, "g0", 1.1, MAT.CRATE], [128, 128, 128.65, 128.65, "g", 0.95, MAT.BARREL, "cyl"],
@@ -8653,6 +8659,9 @@ const MAPS = {
       [321.3, 352.1, 322.6, 353.4, "g0", 1.1, MAT.CRATE], [188, 334, 200, 334.8, "g", 1.1, MAT.SANDBAG], [214, 334, 226, 334.8, "g", 1.1, MAT.SANDBAG],
       [188.2, 338, 189, 352, "g", 1.1, MAT.SANDBAG], [222, 366, 223.3, 367.3, "g0", 1.1, MAT.CRATE], [223.3, 366.1, 224.6, 367.4, "g0", 1.1, MAT.CRATE],
       [222.6, 366.2, 223.9, 367.5, "g1.1", 1.1, MAT.CRATE], [188, 362, 194, 364.5, "g", 2.6, MAT.METAL, "container"], [206, 262, 210, 266, "g", 0.25, MAT.BEAM],
+      [17, 14, 23, 16.5, 1.951, 2.6, MAT.METAL, "container"], [27, 25.5, 33, 28, 1.951, 2.6, MAT.METAL, "container"], [15, 22.5, 18, 23.3, 1.951, 1.1, MAT.CONCRETE],
+      [32, 18.7, 35, 19.5, 1.951, 1.1, MAT.CONCRETE], [29, 17.5, 30.2, 18.7, 1.951, 1.2, "WOOD"], [19.8, 23.3, 21, 24.5, 1.951, 1.2, "WOOD"],
+      [24.4, 20.4, 25.6, 21.6, 1.951, 1.2, "WOOD"],
     ],
     ladders: [],
     decor: [
@@ -9006,10 +9015,12 @@ const MAPS = {
       ["rubblepile", 228.5, 163.5, 1.3], ["rubblepile", 232.825, 160.741, 1.169], ["rubblepile", 230.715, 161.7, 1.16], ["rubblepile", 287.5, 289.5, 1.3],
       ["rubblepile", 294.5, 282.5, 1.3], ["rubblepile", 290.783, 287.259, 1.035], ["rubblepile", 292.33, 285.291, 1.42], ["rubblepile", 352.5, 113.5, 1.3],
       ["rubblepile", 347.095, 111.633, 1.246], ["rubblepile", 350.892, 109.463, 1.462], ["rubblepile", 104.5, 199.5, 1.3], ["rubblepile", 95.5, 199.5, 1.3],
-      ["rubblepile", 104.5, 199, 1.6], ["rubblepile", 100.186, 195.827, 1.127], ["rubblepile", 101.312, 196.507, 1.391],
+      ["rubblepile", 104.5, 199, 1.6], ["rubblepile", 100.186, 195.827, 1.127], ["rubblepile", 101.312, 196.507, 1.391], ["lamp", 13, 13, 6, 1],
+      ["lamp", 37, 29, 6, 3], ["lamp", 13, 29, 6, 1], ["lamp", 37, 13, 6, 3],
     ],
     decals: [],
     places: [
+      { name: "Gulag", r: [12, 12, 38, 30] },
       { name: "Vila da Serra", r: [64, 102, 138, 164] },
       { name: "Mina", r: [162, 40, 224, 88] },
       { name: "Mirante", r: [280, 58, 320, 96] },
@@ -9037,8 +9048,9 @@ const MAPS = {
     loot: [[102.6, 158, 1.1], [107, 143.7, 1.1], [85.9, 126.1, 1.1], [121.9, 135.6, 1.1], [104.6, 134.2, 1.1], [121.5, 127.5, 1.1], [78.7, 159.7, 1.1], [94.3, 137.9, 1.1], [99.4, 133.9, 1.1], [80.9, 127.4, 1.1], [131.8, 128.8, 1.1], [69.2, 122.2, 1.1], [127.2, 132.9, 1.1], [81.8, 143.5, 1.1], [85.9, 119.4, 1.1], [132.9, 132.7, 1.1], [129.5, 121.7, 1.1], [109.6, 141.6, 1.1], [115.1, 137.4, 1.1], [99.2, 119.6, 1.1], [66.4, 116.1, 1.1], [88.2, 131.3, 1.1], [67.9, 155.5, 1.1], [116.3, 144.1, 1.1], [121.1, 143.4, 1.1], [78.4, 124.8, 1.1], [92.1, 121.4, 1.1], [83.9, 139, 1.1], [105.4, 136.3, 1.1], [83.7, 122.8, 1.1], [107.5, 160, 1.1], [67, 132.9, 1.1], [122.9, 122.5, 1.1], [90, 104.1, 1.1], [106.9, 122.8, 1.1], [101.7, 161.2, 1.1], [87.1, 142, 1.1], [85.5, 106.1, 1.1], [97.7, 135.8, 1.1], [84.2, 150.5, 1.1], [75.6, 130.5, 1.1], [83.7, 117.5, 1.1], [180.4, 76.5, 1.1], [219.5, 83.9, 1.1], [188.6, 50.2, 1.1], [210.9, 77.8, 1.1], [192, 83.4, 1.1], [213.7, 72.5, 1.1], [193.5, 70.3, 1.1], [202.1, 85.1, 1.1], [220.6, 79.9, 1.1], [194, 67.5, 1.1], [208.2, 65.9, 1.1], [193.6, 44.8, 1.1], [201.5, 60.7, 1.1], [186.2, 49.9, 1.1], [168.7, 85.3, 1.1], [165.7, 79.2, 1.1], [185.6, 79.9, 1.1], [188, 67.6, 1.1], [211.6, 84.3, 1.1], [193.4, 74.7, 1.1], [173.1, 84, 1.1], [175.9, 73.1, 1.1], [216, 85.3, 1.1], [184.1, 71.8, 1.1], [172.8, 61.8, 1.1], [171.7, 65, 1.1], [179.8, 72.8, 1.1], [183.4, 79.6, 1.1], [193, 53.2, 1.1], [211.3, 81.1, 1.1], [286.3, 88.5, 1.4], [285.6, 74.2, 1.4], [287.5, 71.6, 1.4], [303.1, 65.4, 1.4], [291, 76.3, 1.4], [309.6, 69.5, 1.4], [293.6, 70, 1.4], [308.3, 79.7, 1.4], [306.6, 73.7, 1.4], [311, 82.6, 1.4], [301.1, 67.9, 1.4], [288.3, 78.7, 1.4], [312, 85.9, 1.4], [286.4, 85.1, 1.4], [178.4, 188.6, 1.3], [197.5, 179.4, 1.3], [184.2, 170.5, 1.3], [187.8, 175.9, 1.3], [205.3, 184.8, 1.3], [183.8, 175.8, 1.3], [189.7, 201.5, 1.3], [175.5, 175.2, 1.3], [198.9, 184, 1.3], [176.8, 182.6, 1.3], [181.4, 196.3, 1.3], [209.6, 201.7, 1.3], [171.2, 208.8, 1.3], [212.1, 173.6, 1.3], [170.3, 201.5, 1.3], [165.2, 183.2, 1.3], [194.7, 202.2, 1.3], [185.2, 208.8, 1.3], [179.1, 198.8, 1.3], [204.9, 210.1, 1.3], [167.8, 189, 1.3], [193.3, 174.3, 1.3], [188.8, 172, 1.3], [204, 213.8, 1.3], [212.8, 201.7, 1.3], [197.4, 209.6, 1.3], [191.7, 177.8, 1.3], [187.5, 210.8, 1.3], [202.7, 197.4, 1.3], [209.5, 197.4, 1.3], [166, 194, 1.3], [200, 181, 1.3], [207.3, 174.1, 1.3], [202.8, 171.4, 1.3], [355.5, 236.5, 1.3], [317.9, 263.1, 1.3], [339.8, 234.2, 1.3], [337.7, 253.5, 1.3], [333.8, 239.9, 1.3], [304.4, 239.1, 1.3], [296.6, 234.5, 1.3], [324.1, 242.3, 1.3], [346.8, 243.3, 1.3], [318.1, 220, 1.3], [297.1, 237.2, 1.3], [292.2, 241.4, 1.3], [315.3, 237.5, 1.3], [299.1, 213.4, 1.3], [334.6, 262.2, 1.3], [348.7, 259.6, 1.3], [320.9, 236.3, 1.3], [354.9, 248.2, 1.3], [288.4, 219.4, 1.3], [326.5, 233.8, 1.3], [335.9, 255.2, 1.3], [306.6, 240.5, 1.3], [316.1, 230.8, 1.3], [303.6, 241.3, 1.3], [319, 259.4, 1.3], [288, 240.2, 1.3], [292.4, 262.3, 1.3], [352.7, 236.7, 1.3], [315.6, 215.6, 1.3], [310, 258.8, 1.3], [352.6, 260, 1.3], [306.3, 263, 1.3], [352.5, 242.3, 1.3], [352.1, 263.5, 1.3], [337.4, 214.5, 1.3], [307.7, 253, 1.3], [305.5, 234.5, 1.3], [327.5, 240.1, 1.3], [339.8, 241.9, 1.3], [330.9, 256.4, 1.3], [333, 351, 1.2], [332.6, 315.1, 1.2], [311.1, 348.8, 1.2], [316, 354.9, 1.2], [254.5, 342.4, 1.2], [298.5, 340.4, 1.2], [314.9, 343.8, 1.2], [293.5, 308.5, 1.2], [311.1, 328.1, 1.2], [323.4, 327.6, 1.2], [334.8, 308.4, 1.2], [269.8, 344.1, 1.2], [252.8, 308.6, 1.2], [323.1, 339.5, 1.2], [320.5, 332.6, 1.2], [288.6, 337.9, 1.2], [269.9, 354.8, 1.2], [309.8, 306.2, 1.2], [297.2, 343.4, 1.2], [304.3, 329.3, 1.2], [267.6, 337.4, 1.2], [331.1, 326.4, 1.2], [251.4, 324.5, 1.2], [299.6, 347.8, 1.2], [310.4, 311.2, 1.2], [291.3, 340.1, 1.2], [313.8, 354.4, 1.2], [254, 335.4, 1.2], [309.4, 346, 1.2], [278.8, 334.7, 1.2], [320.2, 339.5, 1.2], [334.5, 347.2, 1.2], [283.5, 306.8, 1.2], [288.4, 312.1, 1.2], [329.6, 316.1, 1.2], [329.3, 343.5, 1.2], [310, 341.4, 1.2], [292.4, 347.4, 1.2], [250.7, 327.5, 1.2], [333.2, 321, 1.2], [120.3, 255.8, 1], [136.2, 243.7, 1], [132.7, 227.4, 1], [102.5, 252.9, 1], [136.5, 273.3, 1], [126.3, 241.1, 1], [128, 255.1, 1], [113.4, 250.6, 1], [140.8, 256.8, 1], [111.5, 253.7, 1], [159.8, 253.3, 1], [146.3, 272.2, 1], [149.5, 253.3, 1], [101.7, 228.5, 1], [153.7, 248.8, 1], [135.6, 268.9, 1], [155.5, 261.5, 1], [155.9, 277.6, 1], [143.8, 261.7, 1], [114.2, 258.2, 1], [131.2, 225.3, 1], [101.6, 238.8, 1], [104.7, 247.1, 1], [142.6, 253.6, 1], [135.4, 251.2, 1], [135.9, 281.7, 1], [143, 274.3, 1], [102.9, 280.6, 1], [151.7, 254, 1], [127.5, 230.8, 1], [227, 354.5, 1], [232.2, 356.6, 1], [219.5, 361.7, 1], [227.3, 334.3, 1], [241.3, 362.4, 1], [205.7, 345.4, 1], [221.3, 343.7, 1], [214.7, 335.6, 1], [211.6, 370.3, 1], [198.1, 346.5, 1], [195.6, 353.6, 1], [238.9, 357.9, 1], [186.6, 335, 1], [222.7, 347.2, 1], [231.2, 370.5, 1], [201.5, 371.6, 1], [206.8, 369.5, 1], [221, 349.2, 1], [207.1, 358.6, 1], [228, 370.8, 1], [207.6, 350.1, 1], [206.5, 366, 1], [199.9, 355.6, 1], [209, 354.3, 1], [232.3, 332.1, 1], [204.3, 364.2, 1], [205.7, 241.7, 0.9], [219.4, 241.4, 0.9], [215, 256.6, 0.9], [224.8, 250, 0.9], [214.9, 263.9, 0.9], [262.2, 291.8, 0.9], [247.4, 295.7, 0.9], [208.4, 257.7, 0.9], [265.9, 277.2, 0.9], [211.1, 241.4, 0.9], [265.1, 293.5, 0.9], [220.6, 251.1, 0.9], [287.6, 24.7, 0.7], [103.9, 249.5, 0.7], [118.3, 174.5, 0.7], [188.9, 139.8, 0.7], [101.9, 289.9, 0.7], [265.4, 302.6, 0.7], [141.1, 332, 0.7], [222, 148.8, 0.7], [349.2, 103.2, 0.7], [329.7, 334.2, 0.7], [64.1, 230.4, 0.7], [184.2, 347.5, 0.7], [100.5, 236.6, 0.7], [112.5, 211.5, 0.7], [356.8, 35, 0.7], [335.1, 39.4, 0.7], [291.1, 72.5, 0.7], [224.7, 253.5, 0.7], [226.1, 326.1, 0.7], [296.2, 142.6, 0.7], [167.7, 330, 0.7], [223.8, 206.3, 0.7], [353.9, 41.1, 0.7], [83.7, 144.2, 0.7], [98.1, 340.4, 0.7], [250.5, 155.4, 0.7], [128.3, 199.7, 0.7], [242.4, 193.3, 0.7], [295.6, 186.1, 0.7], [332.4, 356.3, 0.7], [150.9, 182.7, 0.7], [354.4, 273.3, 0.7], [96.6, 288.3, 0.7], [110.1, 292.1, 0.7], [298.4, 234.1, 0.7], [353.2, 95.3, 0.7], [123.6, 132.5, 0.7], [351.7, 337.5, 0.7], [283.7, 220.9, 0.7], [262.6, 180.6, 0.7], [225.3, 51.7, 0.7], [102.3, 146, 0.7], [202.5, 248, 0.7], [66.9, 229, 0.7], [287.8, 253.5, 0.7], [297.9, 128.3, 0.7], [224, 127, 0.7], [201.6, 112.7, 0.7], [164.7, 252.6, 0.7], [81.5, 350.1, 0.7], [127.1, 337.3, 0.7], [37.6, 42.2, 0.7], [245.2, 112.9, 0.7], [122.5, 258.6, 0.7], [66.9, 359.9, 0.7], [197.7, 112.5, 0.7], [230.4, 87.7, 0.7], [342.9, 30.4, 0.7], [352.8, 122.2, 0.7], [62, 187.7, 0.7], [195.4, 36.2, 0.7], [308.4, 176.8, 0.7], [293.7, 296.5, 0.7], [132.5, 338.6, 0.7], [182.9, 240.3, 0.7], [284.5, 159.7, 0.7], [221.4, 355.4, 0.7], [180.2, 132.5, 0.7], [243.3, 299.7, 0.7], [136.5, 281.7, 0.7]],
     beacons: [[150, 176], [246, 154], [124, 196], [262, 296], [176, 300], [334, 150], [84, 86], [222, 112], [60, 250], [350, 300]],
     jumpPads: [[300, 140, 22, 0], [118, 92, 18, 0], [168, 120, 16, 0], [330, 270, 14, 0], [60, 200, 16, 3], [234, 196, 14, 2]],
-    ziplines: [[299.5, "g2.8", 77.5, 302, "g2.8", 140], [109, "g2.8", 59, 112, "g2.8", 100], [190, "g5.5", 190, 230, "g2.8", 224], [333, "g2.8", 247, 352, "g2.8", 300], [127.5, "g2.8", 145.5, 150, "g2.8", 176]],
+    ziplines: [[299.5, "g10.5", 77.5, 302, "g2.8", 140], [109, "g2.8", 59, 112, "g2.8", 100], [190, "g9", 190, 230, "g2.8", 224], [333, "g12.5", 247, 352, "g2.8", 300], [127.5, "g13.5", 145.5, 150, "g2.8", 176]],
     radarLabels: [],
+    gulag: { a: [14.5, 21], b: [35.5, 21], rect: [12, 12, 38, 30], yawA: -1.571, yawB: 1.571 },
   },
   // dl_gulag: arena de duelo (48x36) para o Duelo 1x1 e 2x2. Gerado por gen_gulag.js (mapgen.js).
   // Pátio da prisão à noite: chuveiros, contêineres, alcovas desencontradas e bandeira da prorrogação no centro.
@@ -9890,6 +9902,10 @@ const SKIN_VIEW_SKY = [0.55, 0.56, 0.6];
 const SKIN_VIEW_SUN = [1.9, 1.8, 1.65];
 // estado da prévia (arma escolhida, giro, arrasto e caixas dos modelos)
 const skinView = { idx: 0, yaw: 0, drag: false, lastX: 0, lastT: 0, held: 0, mat: new Float32Array(16), vp: new Float32Array(16), proj: new Float32Array(16), box: {} };
+// Gulag do Battle Royale: até qual anel vale, duração do duelo (s) e armas sorteadas (as mesmas para os dois)
+const GULAG_LAST_STAGE = 3;
+const GULAG_TIME = 45;
+const GULAG_LOADOUTS = ['pulga', 'sopro', 'ferrao', 'vespa', 'rajada'];
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -20543,7 +20559,7 @@ function startBR() {
     if (p !== l) { const free = LEGEND_ORDER.filter((k) => taken[p.team].indexOf(k) < 0 && !(p.team === l.team && k === l.legend)); p.legend = pick(free.length ? free : LEGEND_ORDER); }
     taken[p.team].push(p.legend);
   }
-  const br = game.br = { phase: 'ship', squads, ids, loot: [], grid: new Map(), stage: -1, stageT0: 0, stageT1: 0, beacons: (M.beacons || []).map((b) => ({ x: b[0], z: b[1], y: floorAt(b[0], b[1]), used: false })), banners: [], elim: [], start: game.time, endAt: 0, ringDmg: 0, jumped: false };
+  const br = game.br = { gulag: { queue: [], fight: null }, phase: 'ship', squads, ids, loot: [], grid: new Map(), stage: -1, stageT0: 0, stageT1: 0, beacons: (M.beacons || []).map((b) => ({ x: b[0], z: b[1], y: floorAt(b[0], b[1]), used: false })), banners: [], elim: [], start: game.time, endAt: 0, ringDmg: 0, jumped: false };
   // nave: atravessa o mapa numa reta sorteada
   const W = world.w, D = world.d, a = rand(0, Math.PI * 2), off = rand(-0.18, 0.18) * W;
   const cx = W / 2 - Math.sin(a) * off, cz = D / 2 + Math.cos(a) * off, half = Math.hypot(W, D) * 0.55;
@@ -20553,7 +20569,7 @@ function startBR() {
     p.inv.primary = null; p.inv.secondary = null; p.inv.grenades = []; p.inv.zeus = null; p.inv.bomb = false;
     p.slot = 'knife'; p.mats = 0; p.shieldTier = 0; p.armor = 0; p.helmet = false; p.hp = 100; p.ultCharge = 0.1; p.evoDmg = 0;
     p.heals = { cell: 0, battery: 0, syringe: 0, medkit: 0 }; p.banners = []; p.brFinal = false; p.perks = []; p.resetLoadout = false;
-    p.downUntil = 0; p.downInv = null; p.brKills = 0;
+    p.downUntil = 0; p.downInv = null; p.brKills = 0; p.inGulag = false; p.gulagUsed = false;
     legendPlayerReset(p);
     p.onShip = true; p.hidden = true;
     if (p.isBot) { resetBotRound(p); p.bot.persona = p.bot.persona || pick(BOT_PERSONAS.T.concat(BOT_PERSONAS.CT)); }
@@ -20783,7 +20799,7 @@ function brRingUpdate(dt) {
   const tick = r.acc; r.acc = 0;
   const dmg = br.ringDmg * tick;
   for (const p of game.players) {
-    if (!p.alive || p.onShip || distXZ(p.pos[0], p.pos[2], r.cx, r.cz) <= r.r) continue;
+    if (!p.alive || p.onShip || p.inGulag || distXZ(p.pos[0], p.pos[2], r.cx, r.cz) <= r.r) continue;
     p.hp -= dmg; p.lastHurt = now;
     if (p === game.local) hud.hurt = Math.min(1, hud.hurt + 0.1);
     if (p.hp <= 0) { p.hp = 0; killPlayer(p, null, 'ring', {}); }
@@ -20804,7 +20820,8 @@ function brUpdate(dt) {
   // abatidos: o tempo acaba (ou o esquadrão inteiro caiu) e vira morte de vez
   for (const p of game.players) {
     if (p.alive || p.brFinal || p.onShip) continue;
-    const squadUp = game.players.some((q) => q.alive && q.team === p.team);
+    if (p.brFinal || p.inGulag) continue;
+    const squadUp = game.players.some((q) => q.alive && !q.inGulag && q.team === p.team);
     if (!squadUp || now >= (p.downUntil || 0)) brFinalDeath(p);
   }
   // coleta automática (a cada ~0,2 s por jogador)
@@ -20821,13 +20838,15 @@ function brUpdate(dt) {
     for (const it of br.loot) if (it.kind === 'banner' && !it.taken && now > it.until) takeLoot(it);
   }
   updateBeacons(dt);
+  gulagUpdate();
   if (br.phase !== 'over') brCheckEnd();
   else if (now >= br.endAt) endMatch();
   if (now - (A.lastScanClean || 0) > 1) { A.lastScanClean = now; A.scans = A.scans.filter((s) => now - s.t < 1.2); }
 }
 function onBrKill(victim, attacker) {
   const now = game.time, br = game.br;
-  const mate = game.players.some((q) => q.alive && q.team === victim.team);
+  if (victim.inGulag) { gulagDeath(victim); return; }
+  const mate = game.players.some((q) => q.alive && !q.inGulag && q.team === victim.team);
   victim.downUntil = mate ? now + BR_KNOCK_TIME : now;
   victim.healing = null; victim.zip = null; victim.grapple = null; victim.glide = null;
   if (attacker && attacker !== victim && attacker.team !== victim.team) {
@@ -20850,8 +20869,9 @@ function brFinalDeath(p) {
   for (const id of HEAL_ORDER) if (p.heals[id] > 0) { const q = at(k++); addLoot({ kind: 'heal', id, n: p.heals[id], x: q[0], z: q[1], y }); }
   if ((p.shieldTier || 0) > 0) { const q = at(k++); addLoot({ kind: 'shield', tier: Math.min(SHIELD_TIERS.length - 1, p.shieldTier), x: q[0], z: q[1], y }); }
   const q = at(k++); addLoot({ kind: 'ammo', n: 1, x: q[0], z: q[1], y });
-  if (game.players.some((m) => m.alive && m.team === p.team)) addLoot({ kind: 'banner', victim: p, x, z, y, until: game.time + BR_BANNER_TIME });
+  if (game.players.some((m) => m.alive && !m.inGulag && m.team === p.team)) addLoot({ kind: 'banner', victim: p, x, z, y, until: game.time + BR_BANNER_TIME });
   p.heals = { cell: 0, battery: 0, syringe: 0, medkit: 0 };
+  gulagEnqueue(p);
 }
 // balizas de renascimento: quem carrega faixas segura E perto de uma baliza livre
 function updateBeacons(dt) {
@@ -20873,17 +20893,18 @@ function brRespawnAt(v, bc) {
   v.brFinal = false; v.downUntil = 0; v.downInv = null;
   spawnPlayer(v, bc.x + rand(-2, 2), bc.z + rand(-2, 2));
   v.pos[1] = bc.y + 45; v.vel[1] = 0; v.onGround = false;
-  v.glide = { start: game.time, dive: false };
   v.inv.primary = null; v.inv.secondary = makeWeapon('pulga', v.skin); v.inv.secondary.tier = 0; v.inv.grenades = []; v.inv.zeus = null;
   v.slot = 'secondary'; v.shieldTier = 0; v.armor = 0; v.hp = 100; v.evoDmg = 0;
   legendPlayerReset(v);
   if (v.isBot) resetBotRound(v);
+  // depois do reset da lenda (que limpa o planador)
+  v.glide = { start: game.time, dive: false };
   if (game.local && v.team === game.local.team) flashHint(v === game.local ? 'Você voltou! Plane até o chão' : v.name + ' voltou pela baliza', 2);
 }
 // ---------------- fim ----------------
 function brCheckEnd() {
   const br = game.br;
-  const alive = br.ids.filter((id) => game.players.some((p) => p.team === id && (p.alive || p.onShip || (!p.brFinal && p.downUntil > game.time))));
+  const alive = br.ids.filter((id) => game.players.some((p) => p.team === id && !p.inGulag && (p.alive || p.onShip || (!p.brFinal && p.downUntil > game.time))));
   for (const id of br.ids) {
     if (alive.indexOf(id) >= 0 || br.squads[id].place) continue;
     br.squads[id].place = alive.length + 1;
@@ -20909,6 +20930,7 @@ function brBotNeeds(p) {
 function decideBR(p) {
   const b = p.bot, now = game.time, r = game.arena.ring;
   b.lookAt = null;
+  if (p.inGulag) { decideGulag(p); return; }
   if (b.coverPos && now < b.coverUntil) { setGoal(b, b.coverPos[0], b.coverPos[1], 'cover' + Math.round(b.coverPos[0]) + ',' + Math.round(b.coverPos[1])); return; }
   if (b.dodge && now < b.dodgeUntil) { setGoal(b, b.dodge[0], b.dodge[1], 'dodge' + Math.round(b.dodge[0])); return; }
   if (botArenaHeal(p)) return;
@@ -20980,6 +21002,92 @@ function decideBR(p) {
     const pt = pois.length && Math.random() < 0.6 ? pick(pois) : [r ? r.nx + rand(-1, 1) * r.r1 * 0.5 : world.w / 2, r ? r.nz + rand(-1, 1) * r.r1 * 0.5 : world.d / 2];
     setGoal(b, pt[0] + rand(-6, 6), pt[1] + rand(-6, 6), 'roam' + Math.floor(now / 7));
   }
+}
+// ---------------- Gulag: quem morre de vez (até o anel GULAG_LAST_STAGE) duela 1×1 e o vencedor volta de paraquedas ----------------
+function gulagEnqueue(p) {
+  const br = game.br, gq = br.gulag;
+  if (!settings.brGulag || !M.gulag || p.gulagUsed || br.stage >= GULAG_LAST_STAGE || br.phase === 'over') return;
+  if (!game.players.some((q) => q !== p && q.alive && !q.inGulag && q.team === p.team)) return;
+  p.gulagUsed = true;
+  gq.queue.push(p);
+  if (p === game.local) showCenter('Gulag', 'Vença o duelo 1×1 para voltar ao jogo', p.team, 3);
+  else if (game.local && p.team === game.local.team) radioSay(game.local, 'comm', { text: p.name + ' foi para o Gulag' });
+}
+// tira da fila quem voltou pela baliza ou cujo esquadrão acabou
+function gulagValid(p) { return !p.alive && p.brFinal && game.players.some((q) => q.team === p.team && q.alive && !q.inGulag); }
+function gulagUpdate() {
+  const br = game.br, gq = br.gulag, now = game.time;
+  gq.queue = gq.queue.filter(gulagValid);
+  const f = gq.fight;
+  if (f) {
+    if (now >= f.end) {
+      // tempo esgotado: vence quem tem mais vida; empate, os dois ficam fora
+      const a = f.a, b = f.b;
+      if (a.alive && b.alive && Math.abs(a.hp - b.hp) > 0.5) gulagFinish(a.hp > b.hp ? a : b, a.hp > b.hp ? b : a);
+      else gulagFinish(null, null);
+    }
+    return;
+  }
+  if (gq.queue.length < 2 || br.phase === 'over') return;
+  // par de esquadrões diferentes (quem espera há mais tempo primeiro)
+  const a = gq.queue[0], b = gq.queue.find((q) => q.team !== a.team);
+  if (!b) return;
+  gq.queue = gq.queue.filter((q) => q !== a && q !== b);
+  const wid = pick(GULAG_LOADOUTS), G = M.gulag;
+  gq.fight = { a, b, start: now, end: now + GULAG_TIME, weapon: wid };
+  [[a, G.a, G.yawA], [b, G.b, G.yawB]].forEach(([p, at, yaw]) => {
+    spawnPlayer(p, at[0], at[1]);
+    p.inGulag = true; p.brFinal = false; p.downUntil = 0; p.downInv = null; p.glide = null; p.zip = null; p.grapple = null;
+    p.inv.primary = null; p.inv.secondary = null; p.inv.grenades = []; p.inv.zeus = null; p.heals = { cell: 0, battery: 0, syringe: 0, medkit: 0 };
+    const w = makeWeapon(wid, p.skin); w.tier = 1;
+    p.inv[WEAPONS[wid].slot] = w; p.slot = 'knife'; switchSlot(p, WEAPONS[wid].slot, true);
+    p.hp = 100; p.armor = 0; p.shieldTier = 0; p.yaw = yaw; p.pitch = 0;
+    legendPlayerReset(p);
+    p.tacReady = now + GULAG_TIME; p.ultCharge = 0;
+    if (p.isBot) resetBotRound(p);
+  });
+  const l = game.local;
+  if (l === a || l === b) showCenter('Gulag', 'Duelo contra ' + (l === a ? b : a).name + ' · ' + WEAPONS[wid].name + ' · ' + GULAG_TIME + ' s', l.team, 2.5);
+  else if (l && (a.team === l.team || b.team === l.team)) radioSay(l, 'comm', { text: (a.team === l.team ? a : b).name + ' está duelando no Gulag' });
+}
+function gulagDeath(victim) {
+  const f = game.br.gulag.fight;
+  victim.inGulag = false; victim.brFinal = true; victim.downUntil = 0;
+  if (!f) return;
+  const other = f.a === victim ? f.b : f.a;
+  gulagFinish(other.alive ? other : null, victim);
+}
+function gulagFinish(win, lose) {
+  const gq = game.br.gulag, f = gq.fight, l = game.local;
+  gq.fight = null;
+  for (const p of f ? [f.a, f.b] : []) {
+    if (p === win) continue;
+    p.inGulag = false; p.brFinal = true; p.downUntil = 0;
+    if (p.alive) { p.alive = false; p.hidden = true; }
+  }
+  if (lose && lose === l) showCenter('Gulag', 'Você perdeu o duelo', l.team, 2.5);
+  if (!win) return;
+  win.inGulag = false;
+  // de volta: plana sobre um ponto dentro do anel atual
+  const r = game.arena.ring;
+  let x = r.cx, z = r.cz;
+  for (let k = 0; k < 30; k++) {
+    const a = rand(0, Math.PI * 2), d = Math.sqrt(Math.random()) * r.r * 0.7;
+    const tx = clamp(r.cx + Math.cos(a) * d, 12, world.w - 12), tz = clamp(r.cz + Math.sin(a) * d, 12, world.d - 12), ci = cellIdx(Math.floor(tx), Math.floor(tz));
+    if (ci >= 0 && nav.walk[ci] && world.water[ci] <= world.top[ci]) { x = tx; z = tz; break; }
+  }
+  brRespawnAt(win, { x, z, y: floorAt(x, z) });
+  if (win === l) showCenter('Gulag vencido!', 'De volta ao jogo · plane até o chão', l.team, 2.5);
+  else if (l && win.team === l.team) radioSay(l, 'comm', { text: win.name + ' venceu o Gulag e está voltando' });
+}
+// bot no Gulag: caça o adversário (o combate em si é o de sempre)
+function decideGulag(p) {
+  const f = game.br.gulag.fight, b = p.bot;
+  if (!f) return;
+  const o = f.a === p ? f.b : f.a;
+  if (!o || !o.alive) return;
+  if (b.coverPos && game.time < b.coverUntil) { setGoal(b, b.coverPos[0], b.coverPos[1], 'cover' + Math.round(b.coverPos[0]) + ',' + Math.round(b.coverPos[1])); return; }
+  setGoal(b, o.pos[0], o.pos[2], 'gulag' + Math.round(o.pos[0] / 2) + ',' + Math.round(o.pos[2] / 2));
 }
 // =====================================================================
 // 9. BOTS
