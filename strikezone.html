@@ -450,6 +450,11 @@ button { font: inherit; color: inherit; }
 .load-bar { height: 100%; width: 0; background: linear-gradient(90deg, #e2a03f, #f4c56a); transition: width 0.15s ease-out; }
 .load-step { margin-top: 10px; color: #cfd6df; font-size: 13px; }
 .load-tip { margin-top: 26px; color: #8793a1; font-size: 13px; font-style: italic; }
+.skin-view { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 4px 0 10px; }
+#skin-canvas { width: 400px; max-width: 100%; height: 180px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); background: #0f141b; cursor: grab; }
+.skin-view-bar { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.skin-view-bar .btn { width: auto; padding: 2px 10px; }
+#skin-gun { min-width: 90px; text-align: center; }
 .cg-mods { display: flex; gap: 6px 16px; flex-wrap: wrap; }
 .cg-mods label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .me-actions { display: flex; gap: 8px; }
@@ -867,6 +872,8 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <div class="opt-row"><label for="opt-report">Relatório de dano ao morrer</label><input id="opt-report" type="checkbox" data-setting="damageReport"><output></output></div>
         <div class="opt-row"><label for="opt-hitmark">Marcador de acerto na mira</label><input id="opt-hitmark" type="checkbox" data-setting="hitmarker"><output></output></div>
         <div class="opt-row"><label for="opt-skin">Pintura das suas armas</label><select id="opt-skin" data-setting="skin"></select><output></output></div>
+        <div class="skin-view"><canvas id="skin-canvas" width="400" height="180" aria-label="Prévia 3D da pintura (arraste para girar)"></canvas>
+          <div class="skin-view-bar"><button type="button" class="btn" id="skin-prev" aria-label="Arma anterior">◀</button><span id="skin-gun"></span><button type="button" class="btn" id="skin-next" aria-label="Próxima arma">▶</button></div></div>
         <div class="opt-row"><label for="opt-wx">Clima</label><select id="opt-wx" data-setting="weather"><option value="auto">Sorteado a cada partida</option><option value="clear">Limpo</option><option value="rain">Chuva</option><option value="fog">Neblina</option><option value="sand">Tempestade de areia</option></select><output></output></div>
         <div class="opt-row"><label for="opt-tod">Hora do dia</label><select id="opt-tod" data-setting="timeOfDay"><option value="auto">Sorteada a cada partida</option><option value="day">Dia</option><option value="dusk">Entardecer</option><option value="night">Noite</option></select><output></output></div>
         <div class="opt-row"><label for="opt-ot">Prorrogação no desarme de bomba (empate: 6 rodadas com $10.000)</label><input id="opt-ot" type="checkbox" data-setting="overtime"><output></output></div>
@@ -9875,6 +9882,14 @@ const MST_CHART_W = 420;
 const MST_CHART_H = 150;
 const MST_HEAT_SIZE = 260;
 const MST_SPOTS_MAX = 300;
+// prévia 3D da pintura nas opções: armas da lista, giro automático (rad/s) e campo de visão
+const SKIN_VIEW_GUNS = ['ak47', 'm4a4', 'awp', 'deagle', 'usp', 'mp9', 'p90', 'xm1014', 'glock'];
+const SKIN_VIEW_SPIN = 0.7;
+const SKIN_VIEW_FOV = 32;
+const SKIN_VIEW_SKY = [0.55, 0.56, 0.6];
+const SKIN_VIEW_SUN = [1.9, 1.8, 1.65];
+// estado da prévia (arma escolhida, giro, arrasto e caixas dos modelos)
+const skinView = { idx: 0, yaw: 0, drag: false, lastX: 0, lastT: 0, held: 0, mat: new Float32Array(16), vp: new Float32Array(16), proj: new Float32Array(16), box: {} };
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -14613,6 +14628,7 @@ function renderFrame() {
   R.camFwd[0] = -R.view[2]; R.camFwd[1] = -R.view[6]; R.camFwd[2] = -R.view[10];
   m4Perspective(R.vmProj, clamp(settings.vmFov, 45, 80) * DEG, aspect, 0.01, 20);
   m4Mul(R.vmViewProj, R.vmProj, R.view);
+  if (skinViewActive()) renderSkinView();
   R.curBatch = R.batchWorld;
   batchReset(R.batchWorld);
   addWorldObjects();
@@ -24799,6 +24815,82 @@ function heatChartUrl(spots) {
   }
   return c.toDataURL('image/png');
 }
+
+// ---------- prévia 3D da pintura (Opções → Jogo) ----------
+// desenhada no começo do quadro num canto do canvas do jogo, copiada para o canvas da prévia e depois coberta pelo quadro normal
+function skinViewActive() {
+  const c = document.getElementById('skin-canvas');
+  return !!(c && c.offsetParent && R.ok && R.width >= c.width && R.height >= c.height);
+}
+// caixa da arma (para centralizar e enquadrar), calculada uma vez por modelo
+function gunBox(id) {
+  if (skinView.box[id]) return skinView.box[id];
+  const m = GUN_MODELS[id];
+  let z0 = 1e9, z1 = -1e9, y0 = 1e9, y1 = -1e9;
+  for (const pt of m.parts) { z0 = Math.min(z0, pt[3] - pt[6] / 2); z1 = Math.max(z1, pt[3] + pt[6] / 2); y0 = Math.min(y0, pt[2] - pt[5] / 2); y1 = Math.max(y1, pt[2] + pt[5] / 2); }
+  return (skinView.box[id] = { cz: (z0 + z1) / 2, cy: (y0 + y1) / 2, len: Math.max(0.2, z1 - z0, (y1 - y0) * 2.2) });
+}
+function renderSkinView() {
+  const gl = R.gl, c = document.getElementById('skin-canvas'), W = c.width, H = c.height;
+  const id = SKIN_VIEW_GUNS[skinView.idx % SKIN_VIEW_GUNS.length];
+  if (!GUN_MODELS[id]) return;
+  const now = performance.now() / 1000, dt = skinView.lastT ? Math.min(0.1, now - skinView.lastT) : 0;
+  skinView.lastT = now;
+  if (!skinView.drag && now - skinView.held > 1.2) skinView.yaw += SKIN_VIEW_SPIN * dt;
+  const b = gunBox(id), fov = SKIN_VIEW_FOV * DEG;
+  const dist = (b.len / 2) / Math.tan(fov * W / H / 2) * 1.25 + 0.1;
+  m4Perspective(skinView.proj, fov, W / H, 0.02, 10);
+  m4Mul(skinView.vp, skinView.proj, R.view);
+  const m = skinView.mat;
+  m.set(R.camWorld);
+  m4Translate(m, 0, 0, -dist);
+  m4RotX(m, 0.18);
+  m4RotY(m, skinView.yaw);
+  m4Translate(m, 0, -b.cy, -b.cz);
+  R.curBatch = R.batchVm;
+  batchReset(R.batchVm);
+  VM_ANIM.magY = 0; VM_ANIM.magZ = 0; VM_ANIM.slide = 0; VM_ANIM.bolt = 0; VM_ANIM.pump = 0; VM_ANIM.magHide = false;
+  pushGunModel(m, id, 1, VM_ANIM, settings.skin);
+  uploadBatch(R.batchVm);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, W, H);
+  gl.enable(gl.SCISSOR_TEST);
+  gl.scissor(0, 0, W, H);
+  gl.clearColor(0.06, 0.08, 0.105, 1);
+  gl.depthMask(true);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+  gl.enable(gl.DEPTH_TEST); gl.depthFunc(gl.LEQUAL);
+  gl.enable(gl.CULL_FACE); gl.cullFace(gl.BACK); gl.frontFace(gl.CCW);
+  setMainUniforms(R.progInst, skinView.vp, false);
+  const u = R.progInst.u;
+  gl.uniform1f(u.uShadowOn, 0);
+  gl.uniform1f(u.uFogDensity, 0);
+  gl.uniform3fv(u.uSkyColor, SKIN_VIEW_SKY); gl.uniform3fv(u.uSunColor, SKIN_VIEW_SUN);
+  drawBatch(R.batchVm);
+  gl.disable(gl.SCISSOR_TEST);
+  const g = c.getContext('2d');
+  g.clearRect(0, 0, W, H);
+  g.drawImage(R.canvas, 0, R.canvas.height - H, W, H, 0, 0, W, H);
+  batchReset(R.batchVm);
+}
+function skinViewSet(d) {
+  const n = SKIN_VIEW_GUNS.length;
+  skinView.idx = ((skinView.idx + d) % n + n) % n;
+  const el = document.getElementById('skin-gun');
+  if (el) el.textContent = WEAPONS[SKIN_VIEW_GUNS[skinView.idx]].name;
+}
+function bindSkinView() {
+  const c = document.getElementById('skin-canvas');
+  if (!c) return;
+  skinViewSet(0);
+  document.getElementById('skin-prev').addEventListener('click', () => skinViewSet(-1));
+  document.getElementById('skin-next').addEventListener('click', () => skinViewSet(1));
+  c.addEventListener('pointerdown', (e) => { skinView.drag = true; skinView.lastX = e.clientX; c.setPointerCapture(e.pointerId); });
+  c.addEventListener('pointermove', (e) => { if (!skinView.drag) return; skinView.yaw += (e.clientX - skinView.lastX) * 0.012; skinView.lastX = e.clientX; });
+  const up = () => { skinView.drag = false; skinView.held = performance.now() / 1000; };
+  c.addEventListener('pointerup', up);
+  c.addEventListener('pointercancel', up);
+}
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
 // =====================================================================
@@ -26452,6 +26544,7 @@ function bindUi() {
   on('bq-last', 'click', () => quickBuyKey('F4', false));
   on('bq-kit', 'click', () => quickBuyKey('F3', false));
   on('bq-save', 'click', () => quickBuyKey('F3', true));
+  bindSkinView();
   for (const [segId, key] of SEG_SETTINGS) {
     document.getElementById(segId).addEventListener('click', (e) => {
       const b = e.target.closest('button');
