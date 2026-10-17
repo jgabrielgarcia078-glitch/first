@@ -16918,6 +16918,7 @@ function startMatch(mode, drill, custom) {
   // indicadores de dano/som da partida anterior (o relógio do jogo volta a zero)
   hud.dirs.forEach((x) => x.el.remove());
   hud.dirs.length = 0;
+  hud.tempHintUntil = 0; hud.hitUntil = 0;
   hud.radio.forEach((x) => x.el.remove());
   hud.radio.length = 0;
   hud.hurt = 0;
