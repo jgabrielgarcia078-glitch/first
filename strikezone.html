@@ -9906,6 +9906,15 @@ const skinView = { idx: 0, yaw: 0, drag: false, lastX: 0, lastT: 0, held: 0, mat
 const GULAG_LAST_STAGE = 3;
 const GULAG_TIME = 45;
 const GULAG_LOADOUTS = ['pulga', 'sopro', 'ferrao', 'vespa', 'rajada'];
+// BR: acessórios no saque (peso do sorteio), máximo por arma e mochilas (curas extras por nível; cor da raridade)
+const BR_ATT_LOOT = [['optic', 4], ['grip', 4], ['mag', 4], ['laser', 2], ['silencer', 2]];
+const BR_ATT_MAX = 3;
+const BR_PACKS = [
+  { name: 'Sem mochila', extra: {}, rgb: [0.6, 0.6, 0.6] },
+  { name: 'Mochila comum', extra: { cell: 2, syringe: 2 }, rgb: [0.85, 0.85, 0.85] },
+  { name: 'Mochila rara', extra: { cell: 4, syringe: 4, battery: 1, medkit: 1 }, rgb: [0.3, 0.6, 1] },
+  { name: 'Mochila épica', extra: { cell: 6, syringe: 6, battery: 2, medkit: 2 }, rgb: [0.7, 0.35, 1] }
+];
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -15086,6 +15095,14 @@ function addBrObjects(set, I, now) {
     } else if (it.kind === 'ammo') {
       pushBox(set(it.x, y + 0.1, it.z, 0.34, 0.2, 0.22, spin), 0, 0, 0, 1, 1, 1, MAT.METAL, [0.3, 0.34, 0.22]);
       pushBox(set(it.x, y + 0.21, it.z, 0.26, 0.02, 0.06, spin), 0, 0, 0, 1, 1, 1, MAT.EMISSIVE, [1, 0.85, 0.3]);
+    } else if (it.kind === 'att') {
+      pushBox(set(it.x, y + 0.08, it.z, 0.3, 0.12, 0.18, spin), 0, 0, 0, 1, 1, 1, MAT.GUNMETAL, [0.22, 0.23, 0.26]);
+      pushBox(set(it.x, y + 0.16, it.z, 0.18, 0.04, 0.06, spin), 0, 0, 0, 1, 1, 1, MAT.EMISSIVE, [0.55, 0.85, 1]);
+    } else if (it.kind === 'pack') {
+      const c = BR_PACKS[it.tier].rgb;
+      pushBox(set(it.x, y + 0.22, it.z, 0.4, 0.44, 0.22, spin), 0, 0, 0, 1, 1, 1, MAT.CLOTH, [c[0] * 0.55, c[1] * 0.55, c[2] * 0.55]);
+      pushBox(set(it.x, y + 0.08, it.z, 0.42, 0.14, 0.26, spin), 0, 0, 0, 1, 1, 1, MAT.CLOTH, [c[0] * 0.4, c[1] * 0.4, c[2] * 0.4]);
+      pushBox(set(it.x, y + 0.36, it.z, 0.2, 0.03, 0.24, spin), 0, 0, 0, 1, 1, 1, MAT.EMISSIVE, c);
     } else if (it.kind === 'banner') {
       pushCyl(set(it.x, y + 0.6, it.z, 0.05, 0.05, 1.2, 0, HALF_PI), 0, 0, 0, 1, 1, 1, MAT.GUNMETAL, [0.3, 0.3, 0.32]);
       pushBox(set(it.x + 0.22, y + 1.0, it.z, 0.42, 0.28, 0.02, spin * 0.3), 0, 0, 0, 1, 1, 1, MAT.EMISSIVE, [0.3, 1, 0.45]);
@@ -19993,7 +20010,7 @@ function updateArenaGadgets(dt) {
     for (const q of game.players) {
       if (!q.alive || q.team !== pk.team || distXZ(q.pos[0], q.pos[2], pk.x, pk.z) > 10) continue;
       q.shieldTier = Math.min(game.br ? SHIELD_TIERS.length - 1 : ARENA_SHIELD_PRICE.length - 1, (q.shieldTier || 0) + 1);
-      q.armor = shieldMax(q); q.heals.battery = Math.min(HEAL_ITEMS.battery.max, q.heals.battery + 1);
+      q.armor = shieldMax(q); q.heals.battery = Math.min(healMax(q, 'battery'), q.heals.battery + 1);
       if (q === game.local) flashHint('Suprimentos: escudo ' + SHIELD_TIERS[q.shieldTier].name + ' cheio + bateria', 2);
     }
   }
@@ -20569,7 +20586,7 @@ function startBR() {
     p.inv.primary = null; p.inv.secondary = null; p.inv.grenades = []; p.inv.zeus = null; p.inv.bomb = false;
     p.slot = 'knife'; p.mats = 0; p.shieldTier = 0; p.armor = 0; p.helmet = false; p.hp = 100; p.ultCharge = 0.1; p.evoDmg = 0;
     p.heals = { cell: 0, battery: 0, syringe: 0, medkit: 0 }; p.banners = []; p.brFinal = false; p.perks = []; p.resetLoadout = false;
-    p.downUntil = 0; p.downInv = null; p.brKills = 0; p.inGulag = false; p.gulagUsed = false;
+    p.downUntil = 0; p.downInv = null; p.brKills = 0; p.inGulag = false; p.gulagUsed = false; p.packTier = 0;
     legendPlayerReset(p);
     p.onShip = true; p.hidden = true;
     if (p.isBot) { resetBotRound(p); p.bot.persona = p.bot.persona || pick(BOT_PERSONAS.T.concat(BOT_PERSONAS.CT)); }
@@ -20636,7 +20653,9 @@ function spawnLoot() {
       const ox = x + (k ? rand(-0.9, 0.9) : 0), oz = z + (k ? rand(-0.9, 0.9) : 0), r = Math.random();
       if (r < 0.36) addLoot({ kind: 'weapon', id: pickWeighted(BR_LOOT_WEAPONS), tier: rollTier(w), x: ox, z: oz });
       else if (r < 0.64) { const id = pickWeighted([['cell', 5], ['syringe', 5], ['battery', 1.6], ['medkit', 1.4]]); addLoot({ kind: 'heal', id, n: id === 'cell' || id === 'syringe' ? 2 : 1, x: ox, z: oz }); }
-      else if (r < 0.8) addLoot({ kind: 'shield', tier: Math.min(2, rollTier(w * 0.9)), x: ox, z: oz });
+      else if (r < 0.76) addLoot({ kind: 'shield', tier: Math.min(2, rollTier(w * 0.9)), x: ox, z: oz });
+      else if (r < 0.86) addLoot({ kind: 'att', id: pickWeighted(BR_ATT_LOOT), x: ox, z: oz });
+      else if (r < 0.91) addLoot({ kind: 'pack', tier: 1 + Math.min(2, rollTier(w * 0.9)), x: ox, z: oz });
       else addLoot({ kind: 'ammo', n: 1, x: ox, z: oz });
     }
   }
@@ -20646,11 +20665,15 @@ function lootName(it) {
   if (it.kind === 'heal') return HEAL_ITEMS[it.id].name + (it.n > 1 ? ' ×' + it.n : '');
   if (it.kind === 'shield') return 'Escudo ' + SHIELD_TIERS[it.tier].name;
   if (it.kind === 'banner') return 'Faixa de ' + it.victim.name;
+  if (it.kind === 'att') return ATTACHMENTS[it.id].name;
+  if (it.kind === 'pack') return BR_PACKS[it.tier].name;
   return 'Munição';
 }
 // vale a pena pegar? (bots pegam tudo que for útil; o jogador pega sozinho curas, munição e escudo melhor)
 function lootUseful(p, it) {
-  if (it.kind === 'heal') return p.heals[it.id] < HEAL_ITEMS[it.id].max;
+  if (it.kind === 'heal') return p.heals[it.id] < healMax(p, it.id);
+  if (it.kind === 'att') return !!attTarget(p, it.id);
+  if (it.kind === 'pack') return it.tier > (p.packTier || 0);
   if (it.kind === 'shield') return it.tier > (p.shieldTier || 0);
   if (it.kind === 'ammo') return !!(p.inv.primary || p.inv.secondary) && [p.inv.primary, p.inv.secondary].some((w) => w && w.reserve < WEAPONS[w.id].reserve * 1.5);
   if (it.kind === 'banner') return it.victim.team === p.team && !it.victim.alive;
@@ -20664,14 +20687,18 @@ function lootUseful(p, it) {
 }
 function applyLoot(p, it) {
   takeLoot(it);
-  if (it.kind === 'heal') p.heals[it.id] = Math.min(HEAL_ITEMS[it.id].max, p.heals[it.id] + it.n);
+  if (it.kind === 'heal') p.heals[it.id] = Math.min(healMax(p, it.id), p.heals[it.id] + it.n);
+  else if (it.kind === 'att') { const w = attTarget(p, it.id); if (w) attachTo(w, it.id); }
+  else if (it.kind === 'pack') { if (p.packTier) addLoot({ kind: 'pack', tier: p.packTier, x: p.pos[0] + rand(-0.6, 0.6), z: p.pos[2] + rand(-0.6, 0.6), y: p.pos[1] }); p.packTier = it.tier; }
   else if (it.kind === 'shield') { p.shieldTier = it.tier; p.armor = shieldMax(p); }
   else if (it.kind === 'ammo') { for (const w of [p.inv.primary, p.inv.secondary]) if (w) w.reserve = Math.min(WEAPONS[w.id].reserve * 2, w.reserve + weaponMag(w) * 2); }
   else if (it.kind === 'banner') { p.banners.push(it.victim); if (game.local && p.team === game.local.team) radioSay(p, 'comm', { text: 'Peguei a faixa de ' + it.victim.name + ' · leve até uma baliza' }); }
   else if (it.kind === 'weapon') {
     const d = WEAPONS[it.id], old = p.inv[d.slot];
-    if (old) addLoot({ kind: 'weapon', id: old.id, tier: old.tier || 0, x: p.pos[0] + rand(-0.6, 0.6), z: p.pos[2] + rand(-0.6, 0.6), y: p.pos[1], reserve: old.reserve });
-    const w = makeWeapon(it.id, p.skin); w.tier = it.tier; w.clip = weaponMag(w); if (it.reserve !== undefined) w.reserve = it.reserve;
+    if (old) addLoot({ kind: 'weapon', id: old.id, tier: old.tier || 0, x: p.pos[0] + rand(-0.6, 0.6), z: p.pos[2] + rand(-0.6, 0.6), y: p.pos[1], reserve: old.reserve, att: (old.att || []).slice() });
+    const w = makeWeapon(it.id, p.skin); w.tier = it.tier;
+    for (const k of it.att || []) attachTo(w, k);
+    w.clip = weaponMag(w); if (it.reserve !== undefined) w.reserve = it.reserve;
     p.inv[d.slot] = w;
     if (!old || p.slot === d.slot || p.slot === 'knife') switchSlot(p, d.slot, true);
   }
@@ -20865,12 +20892,13 @@ function brFinalDeath(p) {
   const x = p.rag ? p.rag.pos[0] : p.pos[0], z = p.rag ? p.rag.pos[2] : p.pos[2], y = p.rag ? p.rag.pos[1] : p.pos[1];
   const at = (k) => [x + Math.cos(k * 1.3) * 0.8, z + Math.sin(k * 1.3) * 0.8];
   let k = 0;
-  for (const w of [inv.primary, inv.secondary]) if (w && w.id && WEAPONS[w.id] && WEAPONS[w.id].apex) { const q = at(k++); addLoot({ kind: 'weapon', id: w.id, tier: w.tier || 0, x: q[0], z: q[1], y, reserve: w.reserve }); }
+  for (const w of [inv.primary, inv.secondary]) if (w && w.id && WEAPONS[w.id] && WEAPONS[w.id].apex) { const q = at(k++); addLoot({ kind: 'weapon', id: w.id, tier: w.tier || 0, x: q[0], z: q[1], y, reserve: w.reserve, att: (w.att || []).slice() }); }
+  if (p.packTier) { const q = at(k++); addLoot({ kind: 'pack', tier: p.packTier, x: q[0], z: q[1], y }); }
   for (const id of HEAL_ORDER) if (p.heals[id] > 0) { const q = at(k++); addLoot({ kind: 'heal', id, n: p.heals[id], x: q[0], z: q[1], y }); }
   if ((p.shieldTier || 0) > 0) { const q = at(k++); addLoot({ kind: 'shield', tier: Math.min(SHIELD_TIERS.length - 1, p.shieldTier), x: q[0], z: q[1], y }); }
   const q = at(k++); addLoot({ kind: 'ammo', n: 1, x: q[0], z: q[1], y });
   if (game.players.some((m) => m.alive && !m.inGulag && m.team === p.team)) addLoot({ kind: 'banner', victim: p, x, z, y, until: game.time + BR_BANNER_TIME });
-  p.heals = { cell: 0, battery: 0, syringe: 0, medkit: 0 };
+  p.heals = { cell: 0, battery: 0, syringe: 0, medkit: 0 }; p.packTier = 0;
   gulagEnqueue(p);
 }
 // balizas de renascimento: quem carrega faixas segura E perto de uma baliza livre
@@ -20925,7 +20953,7 @@ function brCheckEnd() {
 // ---------------- bots ----------------
 function brBotNeeds(p) {
   const heals = p.heals.cell + p.heals.syringe + p.heals.battery * 2 + p.heals.medkit * 2;
-  return { weapon: !p.inv.primary, shield: (p.shieldTier || 0) < 1, heals: heals < 4, upgrade: !p.inv.primary || (p.inv.primary.tier || 0) < 2 };
+  return { weapon: !p.inv.primary, shield: (p.shieldTier || 0) < 1, heals: heals < 4, upgrade: !p.inv.primary || (p.inv.primary.tier || 0) < 2 || (p.packTier || 0) < 1 || (p.inv.primary.att || []).length < 2 };
 }
 function decideBR(p) {
   const b = p.bot, now = game.time, r = game.arena.ring;
@@ -21089,6 +21117,26 @@ function decideGulag(p) {
   if (b.coverPos && game.time < b.coverUntil) { setGoal(b, b.coverPos[0], b.coverPos[1], 'cover' + Math.round(b.coverPos[0]) + ',' + Math.round(b.coverPos[1])); return; }
   setGoal(b, o.pos[0], o.pos[2], 'gulag' + Math.round(o.pos[0] / 2) + ',' + Math.round(o.pos[2] / 2));
 }
+// ---------------- acessórios e mochilas ----------------
+// cada arma leva até BR_ATT_MAX acessórios diferentes; o acessório vai para a arma na mão (ou a outra, se ela não aceitar)
+function attFits(w, id) {
+  if (!w || !WEAPONS[w.id] || hasAtt(w, id) || (w.att || []).length >= BR_ATT_MAX) return false;
+  const d = WEAPONS[w.id];
+  if (id === 'optic' && d.zoom) return false;
+  if (id === 'mag' && d.cls === 'shotgun' && d.pellets > 9) return false;
+  return true;
+}
+function attTarget(p, id) {
+  const cur = p.slot === 'primary' || p.slot === 'secondary' ? p.inv[p.slot] : null;
+  if (attFits(cur, id)) return cur;
+  return [p.inv.primary, p.inv.secondary].find((w) => attFits(w, id)) || null;
+}
+function attachTo(w, id) {
+  if (!attFits(w, id)) return;
+  (w.att = w.att || []).push(id);
+}
+// mochila: mais curas de cada tipo
+function healMax(p, id) { return HEAL_ITEMS[id].max + (game.br ? BR_PACKS[p.packTier || 0].extra[id] || 0 : 0); }
 // =====================================================================
 // 9. BOTS
 // =====================================================================
@@ -23584,8 +23632,8 @@ function updateArenaHud(l, subj) {
     ui.ahHp.classList.toggle('low', p.hp <= 30);
     ui.ahNums.textContent = Math.ceil(p.armor) + ' · ' + Math.max(0, Math.ceil(p.hp));
   }
-  const hk = HEAL_ORDER.map((k) => p.heals[k]).join(',') + (p.healing ? p.healing.item : '');
-  if (hud.cache.ahHeal !== hk) { hud.cache.ahHeal = hk; ui.ahHeals.innerHTML = HEAL_ORDER.map((k) => '<span class="' + (p.heals[k] ? '' : 'none') + '">' + HEAL_ITEMS[k].icon + ' ' + p.heals[k] + '</span>').join('') + '<em>H</em>'; }
+  const hk = HEAL_ORDER.map((k) => p.heals[k]).join(',') + (p.healing ? p.healing.item : '') + '|' + (p.packTier || 0);
+  if (hud.cache.ahHeal !== hk) { hud.cache.ahHeal = hk; ui.ahHeals.innerHTML = HEAL_ORDER.map((k) => '<span class="' + (p.heals[k] ? '' : 'none') + '">' + HEAL_ITEMS[k].icon + ' ' + p.heals[k] + '</span>').join('') + (game.br && p.packTier ? '<span title="' + BR_PACKS[p.packTier].name + '" style="color:rgb(' + BR_PACKS[p.packTier].rgb.map((v) => Math.round(v * 255)).join(',') + ')">🎒' + p.packTier + '</span>' : '') + '<em>H</em>'; }
   // habilidades
   const tl = tacticalLeft(p), tcd = L.tactical.cd, tmax = tacMax(p), tch = p.tacCharges === undefined ? tmax : p.tacCharges;
   const nextIn = tch < tmax ? Math.max(0, (p.tacReady || 0) - now) : 0;
