@@ -9719,6 +9719,10 @@ const SPEC_TP_PITCH = -0.22;
 const SPEC_TOP_H = 13;
 const SPEC_TOP_MIN = 3;
 const SPEC_SMOOTH = 8;
+// bots pulando: degrau, caixote e muro baixo até NAV_JUMP_UP (m) acima viram passagem (com custo, só vale quando encurta);
+// cerca baixa também; o bot pula a BOT_JUMP_AHEAD m do obstáculo e agacha no ar (como no CS)
+const NAV_JUMP_UP = 1.15;
+const BOT_JUMP_AHEAD = 0.8;
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -12209,8 +12213,8 @@ function goalLevelHint(x, z) {
 // bits: 1 = +x, 2 = -x, 4 = +z, 8 = -z
 function buildNavEdges() {
   const W = world.w, N = world.n;
-  if (!nav.edge || nav.edge.length !== N) nav.edge = new Uint8Array(N);
-  nav.edge.fill(0);
+  if (!nav.edge || nav.edge.length !== N) { nav.edge = new Uint8Array(N); nav.edgeJ = new Uint8Array(N); }
+  nav.edge.fill(0); nav.edgeJ.fill(0);
   const dirs = [[1, 0, 1, 2], [-1, 0, 2, 1], [0, 1, 4, 8], [0, -1, 8, 4]];
   for (let i = 0; i < N; i++) {
     const cp = world.cellProps[i];
@@ -12222,9 +12226,11 @@ function buildNavEdges() {
       for (const [dx, dz, bit, back] of dirs) {
         const mx = x + 0.5 + dx * 0.5, mz = z + 0.5 + dz * 0.5;
         if (p.min[0] <= mx + 0.05 && p.max[0] >= mx - 0.05 && p.min[2] <= mz + 0.05 && p.max[2] >= mz - 0.05) {
-          nav.edge[i] |= bit;
+          // cerca baixa (até NAV_JUMP_UP): passa pulando; mais alta bloqueia
+          const arr = p.max[1] <= h + NAV_JUMP_UP ? nav.edgeJ : nav.edge;
+          arr[i] |= bit;
           const j = cellIdx(x + dx, z + dz);
-          if (j >= 0) nav.edge[j] |= back;
+          if (j >= 0) arr[j] |= back;
         }
       }
     }
@@ -12234,11 +12240,11 @@ function buildNavEdges() {
 // nav.mvDrop bit k = é queda (custa mais). Nós do andar de cima continuam usando navStep na hora
 function buildNavMoves(x0, z0, x1, z1) {
   const W = world.w, D = world.d, N = world.n;
-  if (!nav.mv || nav.mv.length !== N) { nav.mv = new Uint8Array(N); nav.mvDrop = new Uint8Array(N); }
+  if (!nav.mv || nav.mv.length !== N) { nav.mv = new Uint8Array(N); nav.mvDrop = new Uint8Array(N); nav.mvJump = new Uint8Array(N); }
   for (let z = Math.max(0, z0); z <= Math.min(D - 1, z1); z++) {
     for (let x = Math.max(0, x0); x <= Math.min(W - 1, x1); x++) {
       const i = z * W + x;
-      let m = 0, dm = 0;
+      let m = 0, dm = 0, jm = 0;
       if (nav.walk[i]) {
         for (let k = 0; k < 8; k++) {
           const nb = NAV_NEIGHBORS[k], nx = x + nb[0], nz = z + nb[1];
@@ -12246,10 +12252,10 @@ function buildNavMoves(x0, z0, x1, z1) {
           const st = navStep(i, nz * W + nx, nb);
           if (st < 0) continue;
           m |= 1 << k;
-          if (st > 0) dm |= 1 << k;
+          if (st >= 3) dm |= 1 << k; else if (st > 0) jm |= 1 << k;
         }
       }
-      nav.mv[i] = m; nav.mvDrop[i] = dm;
+      nav.mv[i] = m; nav.mvDrop[i] = dm; nav.mvJump[i] = jm;
     }
   }
 }
@@ -12277,11 +12283,18 @@ function buildNavComps() {
     c++;
   }
 }
+// muro baixo (até NAV_JUMP_UP acima do chão vizinho mais alto): dá para subir com um pulo e andar por cima
+function lowWallTop(i) {
+  const W = world.w, x = i % W, z = Math.floor(i / W);
+  let nb = -Infinity;
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const j = cellIdx(x + dx, z + dz); if (j < 0 || world.wall[j] || world.ceil[j] - world.top[j] < 2.0) continue; nb = Math.max(nb, world.terr[j] ? triHeight(x + dx, z + dz, 0.5, 0.5) : world.top[j]); }
+  return nb > -Infinity && world.top[i] - nb > 0.05 && world.top[i] - nb <= NAV_JUMP_UP;
+}
 function navCell(i) {
   const W = world.w;
   const terr = world.terr[i] === 1;
   nav.walk[i] = 0; nav.h[i] = terr ? triHeight(i % W, Math.floor(i / W), 0.5, 0.5) : world.top[i]; nav.cost[i] = 0;
-  if (world.wall[i] || world.ceil[i] - world.top[i] < 2.0) return;
+  if ((world.wall[i] && !lowWallTop(i)) || world.ceil[i] - world.top[i] < 2.0) return;
   const x = (i % W) + 0.5, z = Math.floor(i / W) + 0.5;
   let h = nav.h[i];
   if (terr) {
@@ -12291,17 +12304,26 @@ function navCell(i) {
     h = Math.min(hv[o], hv[o + 1], hv[o + VW], hv[o + VW + 1]);
   }
   if (world.water[i] > NO_WATER && world.water[i] - h > 1.15) return;
-  for (let dz = -1; dz <= 1; dz++) {
-    for (let dx = -1; dx <= 1; dx++) {
-      const j = cellIdx(Math.floor(x) + dx, Math.floor(z) + dz), cp = j >= 0 ? world.cellProps[j] : null;
-      if (!cp) continue;
-      for (const k of cp) {
-        const p = world.props[k];
-        if (p.max[1] <= h + 0.45 || p.min[1] > h + 1.8) continue;
-        if (p.min[0] < x + 0.42 && p.max[0] > x - 0.42 && p.min[2] < z + 0.42 && p.max[2] > z - 0.42) return;
+  // objeto baixo que cobre o centro da célula (caixote): o nó fica em cima dele (sobe com um pulo)
+  let stand = -Infinity;
+  for (let pass = 0; pass < 2; pass++) {
+    for (let dz = -1; dz <= 1; dz++) {
+      for (let dx = -1; dx <= 1; dx++) {
+        const j = cellIdx(Math.floor(x) + dx, Math.floor(z) + dz), cp = j >= 0 ? world.cellProps[j] : null;
+        if (!cp) continue;
+        for (const k of cp) {
+          const p = world.props[k];
+          if (pass === 1) { if (p.min[1] > stand + 0.05 && p.min[1] < stand + 1.8 && p.min[0] < x + 0.42 && p.max[0] > x - 0.42 && p.min[2] < z + 0.42 && p.max[2] > z - 0.42) return; continue; }
+          if (p.max[1] <= h + 0.45 || p.min[1] > h + 1.8) continue;
+          if (!(p.min[0] < x + 0.42 && p.max[0] > x - 0.42 && p.min[2] < z + 0.42 && p.max[2] > z - 0.42)) continue;
+          if (p.max[1] <= h + NAV_JUMP_UP && p.min[1] <= h + 0.05 && p.min[0] <= x - 0.3 && p.max[0] >= x + 0.3 && p.min[2] <= z - 0.3 && p.max[2] >= z + 0.3) { stand = Math.max(stand, p.max[1]); continue; }
+          return;
+        }
       }
     }
+    if (stand === -Infinity) break;
   }
+  if (stand > -Infinity) { if (world.ceil[i] < stand + 1.9) return; nav.h[i] = stand; }
   nav.walk[i] = 1;
 }
 function navCost(i) {
@@ -12406,8 +12428,8 @@ function dropBlocked(ci, ni, lo, hi) {
 }
 // passo do nó c para o nó n (células vizinhas na direção nb): -1 se não dá, senão o custo extra (descer de um parapeito custa mais)
 // a passagem na direção nb sai de uma borda com cerca? (diagonal: qualquer uma das duas bordas)
-function edgeBits(ci, nb) {
-  const e = nav.edge[ci];
+function edgeBits(ci, nb, arr) {
+  const e = (arr || nav.edge)[ci];
   if (!e) return false;
   return (nb[0] > 0 && (e & 1)) || (nb[0] < 0 && (e & 2)) || (nb[1] > 0 && (e & 4)) || (nb[1] < 0 && (e & 8));
 }
@@ -12447,15 +12469,22 @@ function buildNavEdgeHeights() {
 function navStep(c, n, nb) {
   const N = world.n, ci = c < N ? c : nav.upCell[c - N], ni = n < N ? n : nav.upCell[n - N], ch = nav.h[c];
   if (nav.edge && edgeBits(ci, nb)) return -1;
+  const straight = nb[0] === 0 || nb[1] === 0;
+  // cerca baixa na borda: só pulando, em linha reta
+  const fence = nav.edgeJ && edgeBits(ci, nb, nav.edgeJ);
+  if (fence && !straight) return -1;
   const ec = navEdgeH(c, nb[0], nb[1]), en = navEdgeH(n, -nb[0], -nb[1]);
   const dh = en - ec, lim = NAV_EDGE_STEP;
-  // mapas com quedas (M.navDrop): pode descer de um parapeito na reta, só para baixo, sem teto nem laje em cima do destino
-  const drop = dh < -lim && M.navDrop && -dh <= M.navDrop && (nb[0] === 0 || nb[1] === 0) && !(n < N && world.ceil[ni] < ch + 1.8) && !(n < N && nav.upOf[ni]);
-  if (!drop && Math.abs(dh) > lim) return -1;
+  // pulo: degrau, caixote ou muro baixo até NAV_JUMP_UP, reto, entre nós do chão, com espaço para a cabeça
+  const jump = straight && dh > lim && dh <= NAV_JUMP_UP && c < N && n < N && world.ceil[ci] - nav.h[n] >= 1.8 && world.ceil[ni] - nav.h[n] >= 1.9;
+  // quedas: até M.navDrop nos mapas que pedem (descer de parapeito); nos outros só até NAV_JUMP_UP (dá para voltar pulando)
+  const dropMax = M.navDrop || NAV_JUMP_UP;
+  const drop = dh < -lim && -dh <= dropMax && straight && !(n < N && world.ceil[ni] < ch + 1.8) && !(n < N && nav.upOf[ni]);
+  if (!drop && !jump && Math.abs(dh) > lim) return -1;
   // relevo íngreme entre centros (fora dos mapas com rampas exatas) continua limitado
   // relevo contínuo dos dois lados (borda sem degrau): vale a inclinação que o corpo sobe; senão o desnível entre centros é limitado
   const bothTerr = c < N && n < N && world.terr[ci] && world.terr[ni];
-  if (!drop && Math.abs(nav.h[n] - ch) > (bothTerr ? (M.terrSteep || TERRAIN_STEEP) : Math.max(navStepTerr(), lim)) + 0.2) return -1;
+  if (!drop && !jump && Math.abs(nav.h[n] - ch) > (bothTerr ? (M.terrSteep || TERRAIN_STEEP) : Math.max(navStepTerr(), lim)) + 0.2) return -1;
   if (drop && dropBlocked(ci, ni, nav.h[n], ch)) return -1;
   if (nb[0] !== 0 && nb[1] !== 0) {
     const W = world.w, cx = ci % W, cz = Math.floor(ci / W);
@@ -12467,7 +12496,8 @@ function navStep(c, n, nb) {
       if (m < 0 || Math.abs(navEdgeH(m, -ax, -az) - navEdgeH(c, ax, az)) > lim) return -1;
     }
   }
-  return drop ? 3 : 0;
+  // queda grande custa 3; pulo, cerca baixa e queda pequena custam 1 (vale quando encurta o caminho)
+  return drop && -dh > NAV_JUMP_UP ? 3 : (drop || jump || fence ? 1 : 0);
 }
 // mapas com quedas: nós de onde não dá para voltar ao spawn CT (ou que não se alcança a partir dele) saem da navegação,
 // senão um bot que cai num buraco sem saída fica buscando caminho sem achar
@@ -12526,7 +12556,7 @@ function findPath(sx, sz, tx, tz, sy, ty) {
       for (let n = ni, u = two ? nav.upOf[ni] : 0; n >= 0; n = u ? N + u - 1 : -1, u = u ? nav.upNext[u - 1] : 0) {
         if (!nav.walk[n] || nav.closed[n] === S) continue;
         let step;
-        if (c < N && n < N) { const bit = 1 << k; if (!(nav.mv[c] & bit)) continue; step = nav.mvDrop[c] & bit ? 3 : 0; } else { step = navStep(c, n, nb); if (step < 0) continue; }
+        if (c < N && n < N) { const bit = 1 << k; if (!(nav.mv[c] & bit)) continue; step = nav.mvDrop[c] & bit ? 3 : (nav.mvJump[c] & bit ? 1 : 0); } else { step = navStep(c, n, nb); if (step < 0) continue; }
         const ng = cg + nb[2] + nav.cost[n] + (nav.fire[ni] ? 30 : 0) + (nav.ctx ? navExtraCost(ni) : 0) + step;
         if (nav.stamp[n] !== S || ng < nav.g[n]) {
           nav.stamp[n] = S; nav.g[n] = ng; nav.parent[n] = c;
@@ -21073,6 +21103,21 @@ function decideDM(p) {
   }
 }
 // y: altura do destino (só importa onde há andares sobrepostos; sem ela, vale a do ponto do mapa mais perto)
+// pulo no caminho: degrau, caixote ou muro baixo (ou cerca baixa) logo à frente na direção em que anda; agacha no ar
+function botAutoJump(p, b, mvx, mvz, now) {
+  if (!p.onGround || now < (b.jumpAt || 0)) return;
+  const ax = Math.abs(mvx) >= Math.abs(mvz), dx = ax ? Math.sign(mvx) : 0, dz = ax ? 0 : Math.sign(mvz);
+  const cx = Math.floor(p.pos[0]), cz = Math.floor(p.pos[2]), ci = cellIdx(cx, cz);
+  const tx = Math.floor(p.pos[0] + mvx * BOT_JUMP_AHEAD), tz = Math.floor(p.pos[2] + mvz * BOT_JUMP_AHEAD);
+  if (ci < 0 || (tx === cx && tz === cz)) return;
+  const ti = cellIdx(cx + dx, cz + dz);
+  if (ti < 0 || (cx + dx !== tx && cz + dz !== tz)) return;
+  const cn = navNodeNear(ci, p.pos[1], 0.6), tn = navNodeNear(ti, p.pos[1], NAV_JUMP_UP + 0.2);
+  if (cn < 0 || tn < 0) return;
+  const up = navEdgeH(tn, -dx, -dz) - navEdgeH(cn, dx, dz);
+  const fence = nav.edgeJ && edgeBits(ci, [dx, dz], nav.edgeJ);
+  if ((up > NAV_EDGE_STEP && up <= NAV_JUMP_UP + 0.1) || fence) { p.input.jump = true; b.jumpAt = now + 0.7; b.duckUntil = now + 0.6; }
+}
 function setGoal(b, x, z, key, y) {
   if (b.goalKey === key && b.goal) return;
   b.goal = [x, z, y === undefined ? goalLevelHint(x, z) : y]; b.goalKey = key; b.path = null; b.repathAt = 0;
@@ -21715,6 +21760,8 @@ function botNavigate(p, dt) {
     if (codMode() && now - b.lastSeenTime > 2 && b.goal && distXZ(p.pos[0], p.pos[2], b.goal[0], b.goal[1]) > 7) inp.sprint = true;
   }
   if (p.ws.zoom > 0 && moving) p.ws.zoom = 0;
+  if (moving) botAutoJump(p, b, mvx, mvz, now);
+  if (now < (b.duckUntil || 0) && !p.onGround) inp.crouch = true;
   // destravar em etapas: pulo + passo de lado, novo caminho, desvio para um ponto livre próximo
   if (moving) {
     if (now - b.progT > 0.5) {
