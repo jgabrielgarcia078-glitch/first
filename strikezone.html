@@ -441,6 +441,17 @@ button { font: inherit; color: inherit; }
 #me-score { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--muted); }
 .buy-quick { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
 .buy-quick .btn { width: auto; }
+#loading { z-index: 60; background: radial-gradient(ellipse at 50% 40%, #1d2633 0%, #0a0d12 75%); display: flex; align-items: center; justify-content: center; }
+#loading[hidden] { display: none; }
+.load-box { width: min(560px, 86vw); text-align: center; }
+.load-map { font-size: 34px; font-weight: 800; letter-spacing: 1px; color: #f1f3f6; }
+.load-desc { margin: 4px 0 22px; color: #9aa7b6; font-size: 14px; }
+.load-track { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.08); overflow: hidden; }
+.load-bar { height: 100%; width: 0; background: linear-gradient(90deg, #e2a03f, #f4c56a); transition: width 0.15s ease-out; }
+.load-step { margin-top: 10px; color: #cfd6df; font-size: 13px; }
+.load-tip { margin-top: 26px; color: #8793a1; font-size: 13px; font-style: italic; }
+.cg-mods { display: flex; gap: 6px 16px; flex-wrap: wrap; }
+.cg-mods label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 .me-actions { display: flex; gap: 8px; }
 .me-actions .btn { width: auto; }
 
@@ -674,6 +685,15 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
     </div>
   </div>
 
+  <div id="loading" class="screen" hidden>
+    <div class="load-box" role="status" aria-live="polite">
+      <div class="load-map" id="load-map"></div>
+      <div class="load-desc" id="load-desc"></div>
+      <div class="load-track"><div class="load-bar" id="load-bar"></div></div>
+      <div class="load-step" id="load-step"></div>
+      <div class="load-tip" id="load-tip"></div>
+    </div>
+  </div>
   <div id="menu" class="screen">
     <div class="menu-col">
       <div>
@@ -976,6 +996,14 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
           <button type="button" data-val="9">Primeiro a 9</button>
           <button type="button" data-val="13">Primeiro a 13</button>
           <button type="button" data-val="16">Primeiro a 16</button>
+        </div>
+      </div>
+      <div class="field"><span class="label">Modificadores</span>
+        <div class="cg-mods">
+          <label><input id="cg-hs" type="checkbox" data-setting="cgHs"> Só tiro na cabeça</label>
+          <label><input id="cg-pistols" type="checkbox" data-setting="cgPistols"> Só pistolas</label>
+          <label><input id="cg-lowgrav" type="checkbox" data-setting="cgLowGrav"> Gravidade baixa</label>
+          <label><input id="cg-infmoney" type="checkbox" data-setting="cgInfMoney"> Dinheiro infinito</label>
         </div>
       </div>
       <div class="field"><span class="label">Dinheiro inicial</span>
@@ -1300,7 +1328,7 @@ const DEFAULT_SETTINGS = {
   hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp', tickRate: '128', bhopAuto: false, vmPos: 'classic', buyKit: [],
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
-  cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800',
+  cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800', cgHs: false, cgPistols: false, cgLowGrav: false, cgInfMoney: false,
 };
 // ações com tecla configurável (Opções → Teclas): o jogo trabalha com a tecla padrão (def); a tecla escolhida pelo
 // jogador é traduzida para ela na entrada (remapKey)
@@ -9810,6 +9838,31 @@ const VM_OFFSETS = { classic: [0, 0, 0], compact: [0.035, -0.02, 0.06], low: [0.
 
 // pedido de drop do bot: o jogador precisa ficar com pelo menos isso depois de comprar a arma
 const DROP_ASK_KEEP = 1000;
+// modificadores do jogo personalizado (chave da configuração → chave em game.custom.mods)
+const CG_MODS = [
+  { key: 'cgHs', mod: 'hs', label: 'Só tiro na cabeça', short: 'só cabeça' },
+  { key: 'cgPistols', mod: 'pistols', label: 'Só pistolas', short: 'só pistolas' },
+  { key: 'cgLowGrav', mod: 'lowgrav', label: 'Gravidade baixa', short: 'gravidade baixa' },
+  { key: 'cgInfMoney', mod: 'money', label: 'Dinheiro infinito', short: 'dinheiro infinito' }
+];
+const CG_LOW_GRAV = 0.45;
+// tela de carregamento: peso de cada etapa da troca de mapa na barra e quanto a barra cheia fica na tela
+const LOAD_WEIGHTS = [45, 40, 10, 5];
+const LOAD_HOLD_MS = 180;
+const LOADING_TIPS = [
+  'pare antes de atirar (counter-strafe): a primeira bala vai onde a mira está',
+  'agachado a imprecisão cai, mas você fica mais lento e previsível',
+  'F4 repete a compra da rodada passada; Shift+F3 salva seu kit e F3 compra ele',
+  'quando um colega bot pedir drop, aperte G no tempo de compra',
+  'T marca o inimigo na mira; segure T para abrir a roda de marcações',
+  'Z abre o rádio: comande os bots ou escolha a tática do time',
+  'segure Espaço e vire o mouse junto com A/D para ganhar velocidade no ar',
+  'no treino há percursos de prefire e um circuito de bunny hop com recorde',
+  'uma fumaça bem jogada vale mais que um rifle numa rodada de eco',
+  'morto, aperte E para assumir o bot aliado que você está assistindo',
+  'ouça os passos: o som vem da direção certa com fones',
+  'M abre o mapa grande; Tab mostra placar, dinheiro e histórico das rodadas'
+];
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -10526,7 +10579,7 @@ const R = {
 const audio = { ctx: null, master: null, bus: null, noise: null, ringGain: null, voices: [], unlocked: false, failed: false, lastClock: -1, lastClockAt: 0, lastResume: 0 };
 const particles = [];
 const decals = [];
-const hud = { cache: {}, markers: [], classes: null, feed: [], radio: [], moneyShown: -1, deltaTimer: 0, hurt: 0, dirs: [], boardTimer: 0, radarTimer: 0, msgUntil: 0, targetTimer: 0, spotTimer: 0, quitArmed: 0, buyCol: -1, chKey: '', plates: [], flashCapture: false, report: null, reportUntil: 0 };
+const hud = { cache: {}, markers: [], classes: null, feed: [], radio: [], moneyShown: -1, deltaTimer: 0, hurt: 0, dirs: [], boardTimer: 0, radarTimer: 0, msgUntil: 0, targetTimer: 0, spotTimer: 0, quitArmed: 0, buyCol: -1, chKey: '', plates: [], flashCapture: false, report: null, reportUntil: 0, loading: false };
 const solidBuf = new Float32Array(6 * 1024);
 let solidCount = 0;
 let propStamp = 1;
@@ -16024,7 +16077,7 @@ function movePlayer(p, dt) {
   const hx0 = p.pos[0], hz0 = p.pos[2];
   slideMove(p, dt);
   if (world.hv) terrainBlock(p, hx0, hz0);
-  p.vel[1] -= GRAVITY * dt;
+  p.vel[1] -= gravityNow() * dt;
   const hitY = moveAxis(p, 1, p.vel[1] * dt);
   if (hitY) {
     if (p.vel[1] < 0) {
@@ -16588,6 +16641,7 @@ function traceBullet(shooter, def, eye, dir) {
   return end;
 }
 function applyBulletHit(victim, attacker, def, dmg, zone, dist, dir, wallbang) {
+  if (zone !== 'head' && cgMod('hs')) return;
   let d = dmg * Math.pow(def.rangeMod || 1, dist / 12.7);
   if (hasAtt(currentWeapon(attacker), 'silencer') && dist > 15) d *= 0.9;
   if (arenasMode()) d *= zone === 'head' ? (def.headMult || ARENA_HEAD_MULT) : (zone === 'legs' ? ARENA_LIMB_MULT : 1);
@@ -17324,7 +17378,7 @@ function dropOnDeath(p) {
 function updateItems(dt) {
   for (const it of game.items) {
     if (it.rest) continue;
-    it.vel[1] -= GRAVITY * dt;
+    it.vel[1] -= gravityNow() * dt;
     const sp = Math.hypot(it.vel[0], it.vel[1], it.vel[2]);
     const step = sp * dt;
     if (step < 1e-6) continue;
@@ -17427,6 +17481,7 @@ function buyBlockReason(p, id) {
     if (d.team && d.team !== p.team) return 'Arma do outro time';
     const cur = p.inv[d.slot];
     if (cur && cur.id === id) return 'Você já tem esta arma';
+    if (d.slot === 'primary' && cgMod('pistols')) return 'Só pistolas nesta partida';
   } else if (GRENADES[id]) {
     if (dmLike()) return 'Sem granadas no mata-mata';
     if (GRENADES[id].team && GRENADES[id].team !== p.team) return 'Granada do outro time';
@@ -17470,7 +17525,7 @@ function buyItem(p, id) {
   }
   if (p === game.local) { sfxUi('buy'); (game.buyLog = game.buyLog || []).push(id); }
   if (dmLike() && p === game.local && WEAPONS[id]) game.dmLoadout[WEAPONS[id].slot] = id;
-  if (!modeDef().rounds) p.money = MAX_MONEY;
+  if (!modeDef().rounds || cgMod('money')) p.money = MAX_MONEY;
   return '';
 }
 
@@ -18108,6 +18163,7 @@ function startRound() {
   if (game.buyLog && game.buyLog.length) game.lastBuy = game.buyLog.slice();
   game.dropAsk = null;
   game.buyLog = [];
+  if (cgMod('money')) for (const p of game.players) p.money = MAX_MONEY;
   game.phase = 'freeze';
   game.freezeLen = freezeLen();
   game.phaseTimer = modeDef().retake ? RETAKE_FREEZE : game.freezeLen;
@@ -18504,6 +18560,10 @@ function giveLoadout(p) {
       p.inv.grenades.unshift(c.lethal);
       for (const w of [p.inv.primary, p.inv.secondary]) if (w) w.reserve *= 2;
     }
+  }
+  if (cgMod('pistols') && game.mode !== 'gungame' && p.inv.primary) {
+    p.inv.primary = null;
+    if (!p.inv.secondary) p.inv.secondary = makeWeapon(defaultPistol(p.team), p.skin);
   }
 }
 function setGunGameWeapon(p) {
@@ -21119,7 +21179,7 @@ function botBuy(p, plan) {
 // um colega rico compra uma arma e larga no pé de quem não tem
 function dropGiftWeapon(donor, target, id) {
   const def = WEAPONS[id];
-  if (!def || donor.money < def.price) return false;
+  if (!def || donor.money < def.price || (def.slot === 'primary' && cgMod('pistols'))) return false;
   donor.money -= def.price;
   game.items.push({ kind: 'weapon', weapon: id, clip: def.mag, reserve: def.reserve, skin: donor.skin || 'none', pos: [target.pos[0], target.pos[1] + 0.9, target.pos[2]], vel: [0, 0.5, 0], yaw: target.yaw + Math.PI / 2, rest: false, dropper: donor.id, dropTime: game.time });
   return true;
@@ -23202,9 +23262,8 @@ function firstMapFor(mode) {
 function openModes() { ui.modesScr.hidden = false; refreshModeCards(); applySettingsToUi(); }
 function startMode(mode, custom) {
   const id = firstMapFor(mode);
-  if (id !== M.id) loadMap(id);
   ui.modesScr.hidden = true;
-  onPlay(mode, null, custom);
+  loadMapUi(id, () => onPlay(mode, null, custom));
 }
 function buildClassesUi() {
   document.getElementById('cl-tabs').innerHTML = DEFAULT_CLASSES.map((c, i) => '<button type="button" data-i="' + i + '">' + (i + 1) + '</button>').join('');
@@ -24431,8 +24490,8 @@ function updateNextMapBtn() {
 function playNextMap() {
   const id = nextMapFor(game.mode);
   if (!id) return;
-  loadMap(id);
-  onPlay(game.mode, null, game.custom);
+  const mode = game.mode, custom = game.custom;
+  loadMapUi(id, () => onPlay(mode, null, custom));
 }
 
 // ---------------- espectador ----------------
@@ -24618,6 +24677,45 @@ function quickBuyKey(code, shift) {
   if (!canBuy(l)) { flashHint('Fora do tempo ou da zona de compra', 1.5); return true; }
   if (code === 'F4') quickBuyList(game.lastBuy, 'Repetir compra'); else quickBuyList(settings.buyKit, 'Kit salvo');
   return true;
+}
+
+// ---------- modificadores do jogo personalizado ----------
+function cgMod(k) { return !!(game.custom && game.custom.mods && game.custom.mods[k]); }
+function cgModsFromSettings() {
+  const out = {};
+  for (const m of CG_MODS) if (settings[m.key]) out[m.mod] = true;
+  return out;
+}
+function gravityNow() { return cgMod('lowgrav') ? GRAVITY * CG_LOW_GRAV : GRAVITY; }
+
+// ---------- tela de carregamento ----------
+// troca o mapa uma etapa por quadro, com barra, nome do mapa e uma dica; depois chama then()
+function loadMapUi(id, then) {
+  const st = mapLoadStages(id);
+  if (!st) { if (then) then(); return; }
+  if (hud.loading) return;
+  const el = document.getElementById('loading'), m = MAPS[id];
+  const bar = document.getElementById('load-bar'), lbl = document.getElementById('load-step');
+  document.getElementById('load-map').textContent = m.name;
+  document.getElementById('load-desc').textContent = m.desc || '';
+  document.getElementById('load-tip').textContent = 'Dica: ' + pick(LOADING_TIPS);
+  bar.style.width = '0%'; lbl.textContent = st[0][0];
+  el.hidden = false;
+  hud.loading = true;
+  let i = 0, done = 0;
+  const total = LOAD_WEIGHTS.reduce((a, b) => a + b, 0);
+  // dois quadros antes de cada etapa: o navegador pinta a barra antes do trabalho pesado
+  const step = () => requestAnimationFrame(() => requestAnimationFrame(run));
+  const run = () => {
+    try { st[i][1](); } catch (e) { hud.loading = false; el.hidden = true; throw e; }
+    done += LOAD_WEIGHTS[i] || 0;
+    i++;
+    bar.style.width = (done / total * 100).toFixed(0) + '%';
+    if (i < st.length) { lbl.textContent = st[i][0]; step(); return; }
+    lbl.textContent = 'Pronto';
+    setTimeout(() => { el.hidden = true; hud.loading = false; if (then) then(); }, LOAD_HOLD_MS);
+  };
+  step();
 }
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
@@ -25209,18 +25307,21 @@ function buildRadarLayer(upperView) {
 function radarFor(subj) { return hud.radarLow && subj && subj.pos[1] < M.radarSplit ? hud.radarLow : hud.radarImg; }
 // troca o mapa (menu): refaz grade, navegação, malha estática, radar e decalques
 function loadMap(id) {
-  if (!MAPS[id]) return;
+  const st = mapLoadStages(id);
+  if (st) for (const s of st) s[1]();
+}
+// etapas da troca de mapa (loadMap roda todas de uma vez; loadMapUi uma por quadro, com barra)
+function mapLoadStages(id) {
+  if (!MAPS[id]) return null;
   // mapa só de exercício (circuito de bunny hop) não vira o mapa escolhido no menu
   if (!MAPS[id].hidden) { settings.map = id; saveSettings(); }
-  if (M && M.id === id) return;
-  M = MAPS[id];
-  buildWorld();
-  game.dmCells = null;
-  if (R.ok) buildMapGpu();
-  buildRadarImage();
-  decals.length = 0;
-  addMapDecals();
-  updateMapTag();
+  if (M && M.id === id) return null;
+  return [
+    ['Montando o mapa e a navegação dos bots', () => { M = MAPS[id]; buildWorld(); game.dmCells = null; }],
+    ['Gerando a malha 3D e a iluminação', () => { if (R.ok) buildMapGpu(); }],
+    ['Desenhando o radar', () => buildRadarImage()],
+    ['Pintando os detalhes', () => { decals.length = 0; addMapDecals(); updateMapTag(); }]
+  ];
 }
 function updateMapTag() {
   const el = document.getElementById('map-tag');
@@ -25239,6 +25340,8 @@ function customSummary() {
   t += ' · ' + md.name;
   if (md.rounds) t += ' · primeiro a ' + s.cgRounds + ' · começa com $' + Number(s.cgMoney).toLocaleString('pt-BR');
   else if (s.cgMode === 'dm' || s.cgMode === 'kc') t += ' até ' + dmTarget(you + them);
+  const mods = CG_MODS.filter((m) => s[m.key]).map((m) => m.short);
+  if (mods.length) t += ' · ' + mods.join(', ');
   if (!mapSupports(MAPS[s.map], s.cgMode)) t += ' · (joga em ' + MAPS[MAP_ORDER.find((k) => mapSupports(MAPS[k], s.cgMode))].name + ')';
   return t;
 }
@@ -25248,7 +25351,7 @@ function openCustom() {
 }
 function startCustom() {
   const s = settings;
-  startMode(s.cgMode, { team: s.cgTeam, allies: s.cgAllies, enemies: s.cgEnemies, rounds: Number(s.cgRounds), money: Number(s.cgMoney) });
+  startMode(s.cgMode, { team: s.cgTeam, allies: s.cgAllies, enemies: s.cgEnemies, rounds: Number(s.cgRounds), money: Number(s.cgMoney), mods: cgModsFromSettings() });
 }
 function drawRadar() {
   const g = ui.radarCtx, S = ui.radar.width;
@@ -25779,6 +25882,7 @@ function keyLabel(code) {
   return { Space: 'Espaço', ControlLeft: 'Ctrl esq.', ControlRight: 'Ctrl dir.', ShiftLeft: 'Shift esq.', ShiftRight: 'Shift dir.', AltLeft: 'Alt', Tab: 'Tab', CapsLock: 'Caps Lock', Backquote: '`', Enter: 'Enter', Backspace: 'Backspace' }[code] || code;
 }
 function onKeyDown(e) {
+  if (hud.loading) { e.preventDefault(); return; }
   if (hud.bindWait) { captureBind(e); return; }
   const code = remapKey(e.code);
   if (!code) return;
@@ -26225,7 +26329,7 @@ function bindUi() {
   on('btn-ar-play', 'click', startArenasFromMenu);
   ui.arLegends.addEventListener('click', (e) => { const b = e.target.closest('button[data-legend]'); if (b) { settings.legend = b.dataset.legend; saveSettings(); refreshArenasUi(); } });
   ui.arSize.addEventListener('click', (e) => { const b = e.target.closest('button[data-val]'); if (b) { if (hud.arMode === 'br') settings.brSquads = b.dataset.val; else settings.arenaSize = b.dataset.val; saveSettings(); refreshArenasUi(); } });
-  ui.arMaps.addEventListener('click', (e) => { const b = e.target.closest('button[data-val]'); if (b) { loadMap(b.dataset.val); refreshArenasUi(); } });
+  ui.arMaps.addEventListener('click', (e) => { const b = e.target.closest('button[data-val]'); if (b) loadMapUi(b.dataset.val, refreshArenasUi); });
   ui.ashop.addEventListener('click', onArenaShopClick);
   on('btn-md-back', 'click', () => { ui.modesScr.hidden = true; });
   ui.modeCards.addEventListener('click', (e) => { const b = e.target.closest('button[data-mode]'); if (b) startMode(b.dataset.mode); });
@@ -26242,12 +26346,14 @@ function bindUi() {
     const b = e.target.closest('button[data-drill]');
     if (!b) return;
     // granadas: precisa de um mapa com granadas fixas (os do CS)
-    if (b.dataset.drill === 'nades' && !(M.lineups && M.lineups.length)) loadMap(MAP_ORDER.find((k) => MAPS[k].lineups && MAPS[k].lineups.length));
-    if (b.dataset.drill === 'prefire' && !prefireLanes(M).length) loadMap(MAP_ORDER.find((k) => prefireLanes(MAPS[k]).length));
+    let id = M.id;
+    if (b.dataset.drill === 'nades' && !(M.lineups && M.lineups.length)) id = MAP_ORDER.find((k) => MAPS[k].lineups && MAPS[k].lineups.length);
+    if (b.dataset.drill === 'prefire' && !prefireLanes(M).length) id = MAP_ORDER.find((k) => prefireLanes(MAPS[k]).length);
     // circuito de bunny hop tem mapa próprio (fora das listas); os outros exercícios saem dele
-    if (b.dataset.drill === 'bhop') loadMap('bhop');
-    else if (M.hidden) loadMap(MAP_ORDER[0]);
-    onPlay('practice', b.dataset.drill);
+    if (b.dataset.drill === 'bhop') id = 'bhop';
+    else if (M.hidden && id === M.id) id = MAP_ORDER[0];
+    const drill = b.dataset.drill;
+    loadMapUi(id, () => onPlay('practice', drill));
   });
   on('btn-options', 'click', () => openPanel('options'));
   on('btn-controls', 'click', () => openPanel('controls'));
@@ -26268,7 +26374,7 @@ function bindUi() {
     document.getElementById(segId).addEventListener('click', (e) => {
       const b = e.target.closest('button');
       if (!b) return;
-      if (key === 'map') { loadMap(b.dataset.val); refreshModeCards(); }
+      if (key === 'map') { loadMapUi(b.dataset.val, () => { refreshModeCards(); applySettingsToUi(); }); }
       else settings[key] = b.dataset.val;
       saveSettings();
       applySettingsToUi();
