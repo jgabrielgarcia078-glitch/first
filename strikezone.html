@@ -839,6 +839,8 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <div class="opt-row"><label for="opt-wx">Clima</label><select id="opt-wx" data-setting="weather"><option value="auto">Sorteado a cada partida</option><option value="clear">Limpo</option><option value="rain">Chuva</option><option value="fog">Neblina</option><option value="sand">Tempestade de areia</option></select><output></output></div>
         <div class="opt-row"><label for="opt-tod">Hora do dia</label><select id="opt-tod" data-setting="timeOfDay"><option value="auto">Sorteada a cada partida</option><option value="day">Dia</option><option value="dusk">Entardecer</option><option value="night">Noite</option></select><output></output></div>
         <div class="opt-row"><label for="opt-ot">Prorrogação no desarme de bomba (empate: 6 rodadas com $10.000)</label><input id="opt-ot" type="checkbox" data-setting="overtime"><output></output></div>
+        <div class="opt-row"><label for="opt-tick">Tick do movimento no ar (air strafe): 64 como o matchmaking, 128 como servidores de campeonato</label><select id="opt-tick" data-setting="tickRate"><option value="64">64 tick</option><option value="128">128 tick</option></select><output></output></div>
+        <div class="opt-row"><label for="opt-bhopauto">Pulo automático no circuito de bunny hop (segurar o espaço)</label><input id="opt-bhopauto" type="checkbox" data-setting="bhopAuto"><output></output></div>
         <div class="opt-row"><label for="opt-bchat">Bots falam (frases com personalidade no rádio)</label><input id="opt-bchat" type="checkbox" data-setting="botChat"><output></output></div>
         <div class="opt-row"><label for="opt-bvoice">Voz sintetizada nas falas dos bots (português)</label><input id="opt-bvoice" type="checkbox" data-setting="botVoice"><output></output></div>
         <div class="opt-row"><label for="opt-kcam">Killcam (replay de quem te matou)</label><input id="opt-kcam" type="checkbox" data-setting="killcam"><output></output></div>
@@ -1291,7 +1293,7 @@ const DEFAULT_SETTINGS = {
   chOutline: true, chOutlineThick: 1, chDot: false, chDotSize: 2, chDynamic: false, chFollowRecoil: false,
   friendlyFire: false, nameplates: true, damageReport: true, voice: true, volume: 0.7, fullscreen: true, showFps: false,
   pingShow: true, pingBots: true, pingText: 'full', pingSize: 1, pingOpacity: 0.9, pingColorMode: 'type', pingColor: '#ffd84a', pingRadar: true, pingChat: true,
-  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp',
+  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp', tickRate: '128', bhopAuto: false,
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
   cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800',
@@ -1503,6 +1505,8 @@ const DRILLS = {
   track: { name: 'Tracking', desc: 'Um alvo correndo de um lado para o outro, com colete. Derrube o máximo em 45 segundos.', time: 45, score: 'kills' },
   spray: { name: 'Spray', desc: 'Segure o tiro e puxe o mouse para baixo (e para os lados) para manter as balas juntas. 5 rajadas de 15+ tiros; nota = distância média das balas até a mira (cm a 10 m, menor é melhor). O quadro à direita mostra cada bala e o padrão da arma.', time: 0, count: 5, score: 'spray' },
   nades: { name: 'Granadas do mapa', desc: 'Pratique as granadas fixas do mapa (as mesmas dos bots): o jogo te põe no lugar, mirando, com a granada certa e o alvo marcado. N próxima · Shift+N anterior · R repetir.', time: 0, score: '' },
+  prefire: { name: 'Prefire', desc: 'Entre em cada bomb pelas rotas dos TRs e derrube os inimigos parados nos ângulos de verdade (os mesmos dos CTs). O tempo corre do primeiro passo até o último alvo; cada tiro errado soma 0,25 s. Menor é melhor.', time: 0, score: 'time' },
+  bhop: { name: 'Bunny hop', desc: 'Circuito de plataformas sobre um fosso: emende os pulos e faça o air strafe (A/D junto com o mouse) para ganhar velocidade nos vãos longos. Cair volta ao último checkpoint. Sem stamina, como nos servidores de bhop; pulo automático segurando o espaço é opção em Jogo. Menor tempo é melhor.', time: 0, score: 'time' },
   react: { name: 'Reflexo', desc: 'O alvo aparece de repente na sua frente: atire o mais rápido possível. 15 alvos; errar conta 1 s.', time: 0, count: 15, score: 'react' },
 };
 // falas do rádio entre bots nos modos com renascimento
@@ -9062,6 +9066,71 @@ const MAPS = {
     practice: { start: [7, 18], yaw: -1.571, spots: [[24, 18], [24, 9], [24, 27], [34, 18], [35, 9], [35, 27], [30, 15], [30, 21]] },
     radarLabels: [["CT", 6, 18, "CT"], ["TR", 42, 18, "T"]],
   },
+  // bhop_circuito: circuito de bunny hop do treino. Gerado por gen_bhop.js (mapgen.js).
+  // Plataformas sobre um fosso com água; cair volta ao último checkpoint.
+  bhop: {
+    id: "bhop", name: "bhop_circuito", desc: "Circuito de bunny hop · treino", w: 150, d: 40,
+    modes: ["practice"],
+    hidden: true,
+    fog: 0.004,
+    light: { sunDir: [0.3, 0.8, 0.4], sun: [1.2, 1.1, 1], sky: [0.35, 0.42, 0.55], ground: [0.25, 0.27, 0.3], fog: [0.2, 0.24, 0.3], zenith: [0.08, 0.12, 0.25], sunGlow: [0.5, 0.5, 0.6] },
+    terrain: { base: 0.5, prims: [
+
+    ] },
+    ops: [
+      ["open", 1, 1, 149, 39, 0.5, MAT.CONCRETE], ["water", 3, 3, 147, 37, 1.4], ["wall", 1, 1, 149, 3, 14],
+      ["wallmat", 1, 1, 149, 3, MAT.CONCRETE], ["wall", 1, 37, 149, 39, 14], ["wallmat", 1, 37, 149, 39, MAT.CONCRETE],
+      ["wall", 1, 3, 3, 37, 14], ["wallmat", 1, 3, 3, 37, MAT.CONCRETE], ["wall", 147, 3, 149, 37, 14],
+      ["wallmat", 147, 3, 149, 37, MAT.CONCRETE],
+    ],
+    props: [
+      [4, 16, 14, 24, 0.5, 3.5, MAT.TILE], [16.8, 18.4, 18.6, 21.6, 0.5, 3.5, MAT.CONCRETE], [21.6, 18.4, 23.4, 21.6, 0.5, 3.5, MAT.CONCRETE],
+      [26.6, 18.4, 28.4, 21.6, 0.5, 3.5, MAT.CONCRETE], [31.8, 18.4, 33.6, 21.6, 0.5, 3.5, MAT.CONCRETE], [37.2, 18.4, 39, 21.6, 0.5, 3.5, MAT.CONCRETE],
+      [42.8, 18.4, 44.6, 21.6, 0.5, 3.5, MAT.CONCRETE], [48.2, 17, 52.7, 23, 0.5, 3.5, MAT.TILE], [55.7, 21.7, 57.5, 24.7, 0.5, 3.5, MAT.CONCRETE],
+      [60.7, 15.3, 62.5, 18.3, 0.5, 3.5, MAT.CONCRETE], [65.7, 21.7, 67.5, 24.7, 0.5, 3.5, MAT.CONCRETE], [70.9, 15.3, 72.7, 18.3, 0.5, 3.5, MAT.CONCRETE],
+      [76.1, 21.7, 77.9, 24.7, 0.5, 3.5, MAT.CONCRETE], [81.5, 15.3, 83.3, 18.3, 0.5, 3.5, MAT.CONCRETE], [86.7, 17, 91.2, 23, 0.5, 3.5, MAT.TILE],
+      [95.4, 18.3, 97, 21.7, 0.5, 3.5, MAT.CONCRETE], [101.5, 18.3, 103.1, 21.7, 0.5, 3.5, MAT.CONCRETE], [107.9, 18.3, 109.5, 21.7, 0.5, 3.5, MAT.CONCRETE],
+      [114.6, 18.3, 116.2, 21.7, 0.5, 3.5, MAT.CONCRETE], [121.6, 18.3, 123.2, 21.7, 0.5, 3.5, MAT.CONCRETE], [128, 16, 136, 24, 0.5, 3.5, MAT.TILE],
+    ],
+    ladders: [],
+    decor: [
+      ["neon", 4.05, 4.05, 20, 7.9, 0, [1, 0.85, 0.2]], ["neon", 13.95, 4.05, 20, 7.9, 0, [1, 0.85, 0.2]], ["neon", 16.85, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 18.55, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]],
+      ["neon", 21.65, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 23.35, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 26.65, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 28.35, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]],
+      ["neon", 31.85, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 33.55, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 37.25, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 38.95, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]],
+      ["neon", 42.85, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 44.55, 4.05, 20, 3.1, 0, [0.25, 0.8, 1]], ["neon", 48.25, 4.05, 20, 5.9, 0, [0.35, 1, 0.45]], ["neon", 52.65, 4.05, 20, 5.9, 0, [0.35, 1, 0.45]],
+      ["neon", 55.75, 4.05, 23.2, 2.9, 0, [0.25, 0.8, 1]], ["neon", 57.45, 4.05, 23.2, 2.9, 0, [0.25, 0.8, 1]], ["neon", 60.75, 4.05, 16.8, 2.9, 0, [0.25, 0.8, 1]], ["neon", 62.45, 4.05, 16.8, 2.9, 0, [0.25, 0.8, 1]],
+      ["neon", 65.75, 4.05, 23.2, 2.9, 0, [0.25, 0.8, 1]], ["neon", 67.45, 4.05, 23.2, 2.9, 0, [0.25, 0.8, 1]], ["neon", 70.95, 4.05, 16.8, 2.9, 0, [0.25, 0.8, 1]], ["neon", 72.65, 4.05, 16.8, 2.9, 0, [0.25, 0.8, 1]],
+      ["neon", 76.15, 4.05, 23.2, 2.9, 0, [0.25, 0.8, 1]], ["neon", 77.85, 4.05, 23.2, 2.9, 0, [0.25, 0.8, 1]], ["neon", 81.55, 4.05, 16.8, 2.9, 0, [0.25, 0.8, 1]], ["neon", 83.25, 4.05, 16.8, 2.9, 0, [0.25, 0.8, 1]],
+      ["neon", 86.75, 4.05, 20, 5.9, 0, [0.35, 1, 0.45]], ["neon", 91.15, 4.05, 20, 5.9, 0, [0.35, 1, 0.45]], ["neon", 95.45, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 96.95, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]],
+      ["neon", 101.55, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 103.05, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 107.95, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 109.45, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]],
+      ["neon", 114.65, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 116.15, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 121.65, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]], ["neon", 123.15, 4.05, 20, 3.3, 0, [0.25, 0.8, 1]],
+      ["neon", 128.05, 4.05, 20, 7.9, 0, [1, 0.3, 0.25]], ["neon", 135.95, 4.05, 20, 7.9, 0, [1, 0.3, 0.25]], ["lamp", 8, 4, 10, 2], ["lamp", 8, 36, 10, 0],
+      ["lamp", 24, 4, 10, 2], ["lamp", 24, 36, 10, 0], ["lamp", 40, 4, 10, 2], ["lamp", 40, 36, 10, 0],
+      ["lamp", 56, 4, 10, 2], ["lamp", 56, 36, 10, 0], ["lamp", 72, 4, 10, 2], ["lamp", 72, 36, 10, 0],
+      ["lamp", 88, 4, 10, 2], ["lamp", 88, 36, 10, 0], ["lamp", 104, 4, 10, 2], ["lamp", 104, 36, 10, 0],
+      ["lamp", 120, 4, 10, 2], ["lamp", 120, 36, 10, 0], ["lamp", 136, 4, 10, 2], ["lamp", 136, 36, 10, 0],
+      ["sign", 9, 7.2, 15.95, 0, 3, 0.9, [0.9, 0.7, 0.1]],
+    ],
+    decals: [],
+    places: [
+      { name: "Largada", r: [4, 16, 14, 24] },
+      { name: "Trecho 1", r: [14, 3, 48.2, 37] },
+      { name: "Checkpoint 1", r: [48.2, 17, 52.7, 23] },
+      { name: "Zigue-zague", r: [52.7, 3, 86.7, 37] },
+      { name: "Checkpoint 2", r: [86.7, 17, 91.2, 23] },
+      { name: "Vãos longos", r: [91.2, 3, 128, 37] },
+      { name: "Chegada", r: [128, 16, 136, 24] },
+    ],
+    facade: { every: 9, doors: 0 },
+    buyZones: { T: [4, 16, 14, 24], CT: [4, 16, 14, 24] },
+    spawns: { CT: [[7, 19], [7, 21]], T: [[7, 18], [7, 22]] },
+    spawnYaw: { CT: -1.571, T: -1.571 },
+    nav: { largada: [7.5, 20.5], chegada: [132, 20.5] },
+    lineups: [],
+    practice: { start: [7.5, 20.5], yaw: -1.571, spots: [[132, 20.5]] },
+    radarLabels: [],
+    bhop: { top: 4, killY: 2.8, start: [4, 16, 14, 24], end: [128, 16, 136, 24], cps: [{ name: "Largada", r: [4, 16, 14, 24], spawn: [5.2, 20] }, { name: "Checkpoint 1", r: [48.2, 17, 52.7, 23], spawn: [49.4, 20] }, { name: "Checkpoint 2", r: [86.7, 17, 91.2, 23], spawn: [87.9, 20] }] },
+  },
 };
 const MAP_ORDER = ['duna', 'miragem', 'trem', 'inferno', 'nuke', 'oasis', 'vale', 'cascata', 'serra', 'gulag'];
 
@@ -9725,6 +9794,11 @@ const NAV_JUMP_UP = 1.15;
 const BOT_JUMP_AHEAD = 0.8;
 // spawn de frente para a parede: se a vista na direção do time bate em algo antes de SPAWN_VIEW_MIN m, gira para o lado aberto mais perto
 const SPAWN_VIEW_MIN = 6;
+// treino de prefire: até PREFIRE_LANES percursos (rotas dos TRs) e PREFIRE_MISS s por tiro errado
+const PREFIRE_LANES = 6;
+const PREFIRE_MISS = 0.25;
+// aceleração no ar do jogador em tick fixo (como o servidor do CS): o ganho do air strafe não depende do FPS
+const TICK_RATES = { 64: 1 / 64, 128: 1 / 128 };
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -15907,7 +15981,8 @@ function movePlayer(p, dt) {
   if (lad && ladderMove(p, lad, wx * wl, wz * wl, dt)) return;
   p.onLadder = false;
   if (inp.jump && !p.isBot && codMode() && (p.jumpReady || (!p.onGround && inp.fwd > 0)) && tryMantle(p)) { p.jumpReady = false; return; }
-  if (p.stamina > 0) p.stamina = Math.max(0, p.stamina - STAMINA_RECOVERY * dt);
+  // circuito de bunny hop: sem stamina (como nos servidores de bhop)
+  if (p.stamina > 0) p.stamina = bhopDrill() && p === game.local ? 0 : Math.max(0, p.stamina - STAMINA_RECOVERY * dt);
   if (p.onGround && inp.jump && p.jumpReady) {
     // pulo seguido logo após cair sai mais baixo (stamina)
     p.vel[1] = JUMP_SPEED * (p.stamina > 0 ? (STAMINA_MAX - p.stamina) / STAMINA_MAX : 1); p.onGround = false; p.jumpReady = false; p.jumped = true;
@@ -15925,8 +16000,12 @@ function movePlayer(p, dt) {
     if (p.stamina > 0) { const r = Math.pow((STAMINA_MAX - p.stamina) / STAMINA_MAX, dt * 70); p.vel[0] *= r; p.vel[2] *= r; }
     if (wish > 0) accelerate(p, wx, wz, wish, GROUND_ACCEL, dt, wish);
   } else if (wish > 0) {
-    accelerate(p, wx, wz, wish, AIR_ACCEL * (p.legend === 'orbita' && game.arena && arenasMode() ? 2.4 : 1), dt, AIR_CAP);
+    const aa = AIR_ACCEL * (p.legend === 'orbita' && game.arena && arenasMode() ? 2.4 : 1);
+    // jogador: no ar a aceleração acontece em tick fixo (64/128), senão o air strafe muda com o FPS
+    if (p === game.local) { const T = TICK_RATES[settings.tickRate] || TICK_RATES[128]; p.airAcc = (p.airAcc || 0) + dt; while (p.airAcc >= T) { accelerate(p, wx, wz, wish, aa, T, AIR_CAP); p.airAcc -= T; } }
+    else accelerate(p, wx, wz, wish, aa, dt, AIR_CAP);
   }
+  if (p.onGround) p.airAcc = 0;
   const wasGround = p.onGround;
   const beforeY = p.pos[1];
   const hx0 = p.pos[0], hz0 = p.pos[2];
@@ -16131,7 +16210,7 @@ function playerTick(p, dt) {
   const inp = p.input;
   const frozen = game.phase === 'freeze' || p.plantT > 0 || p.defuseT > 0;
   if (frozen) { inp.fwd = 0; inp.side = 0; inp.jump = false; }
-  if (!inp.jump) p.jumpReady = true;
+  if (!inp.jump || (p === game.local && settings.bhopAuto && bhopDrill())) p.jumpReady = true;
   const wl = world.water[cellIdx(Math.floor(p.pos[0]), Math.floor(p.pos[2]))];
   p.wade = wl > NO_WATER ? clamp(wl - p.pos[1], 0, 2) : 0;
   updateCodState(p, dt);
@@ -17869,6 +17948,8 @@ function startPractice() {
     pr.startAt = game.time + 3;
     pr.nextAt = pr.startAt;
     if (pr.drill === 'nades') { pr.startAt = 0; showCenter('Treino · ' + d.name, d.desc, l.team, 4); nadesGo(0); }
+    else if (pr.drill === 'prefire') { pr.startAt = 0; showCenter('Treino · ' + d.name, d.desc, l.team, 4); prefireGo(0); }
+    else if (pr.drill === 'bhop') { pr.startAt = 0; showCenter('Treino · ' + d.name, 'Saia da largada para o tempo começar · cair volta ao último checkpoint · R recomeça', l.team, 4); bhopStart(); }
     else showCenter('Treino · ' + d.name, d.desc + (pr.drill === 'spray' ? '' : ' Começa em 3 s.'), l.team, 3);
   }
   sfxRoundStart();
@@ -17929,6 +18010,8 @@ function practiceUpdate() {
   }
   if (pr.drill === 'spray') { sprayTick(); return; }
   if (pr.drill === 'nades') { nadesTick(); return; }
+  if (pr.drill === 'prefire') { prefireTick(); return; }
+  if (pr.drill === 'bhop') { bhopTick(); return; }
   if (pr.drill === 'free' || pr.done || now < pr.startAt) return;
   if (d.time && now >= pr.startAt + d.time) { finishDrill(); return; }
   const t = pr.target;
@@ -17984,6 +18067,7 @@ function drillScore(pr) {
   const d = DRILLS[pr.drill];
   if (d.score === 'react') return pr.count ? Math.round((pr.reactSum + pr.misses * 1) * 1000 / pr.count) : 0;
   if (d.score === 'spray') return pr.sprays.length ? Math.round(pr.sprays.reduce((a, b) => a + b, 0) / pr.sprays.length) : 0;
+  if (d.score === 'time') return Math.round((pr.pfTimes || []).reduce((a, b) => a + b, 0) * 10) / 10;
   return pr.kills;
 }
 function finishDrill() {
@@ -17994,7 +18078,7 @@ function finishDrill() {
   const score = drillScore(pr);
   const rec = loadRecords();
   const old = rec[pr.drill];
-  const better = d.score === 'react' || d.score === 'spray' ? (score > 0 && (!old || score < old.best)) : (score > 0 && (!old || score > old.best));
+  const better = d.score === 'react' || d.score === 'spray' || d.score === 'time' ? (score > 0 && (!old || score < old.best)) : (score > 0 && (!old || score > old.best));
   if (better) { rec[pr.drill] = { best: score, date: new Date().toISOString().slice(0, 10) }; saveRecords(rec); }
   showDrillResult(pr, score, old ? old.best : null, better);
 }
@@ -21584,7 +21668,8 @@ function friendlyInLine(p, eye, tx, ty, tz, dist) {
 }
 function botDummy(p, dt) {
   const b = p.bot, inp = p.input, l = game.local;
-  if (l && l.alive) {
+  // alvo do prefire fica olhando para o ângulo dele (não acompanha o jogador)
+  if (l && l.alive && !b.prefire) {
     const e = eyePos(p, botEye);
     const a = anglesTo(e[0], e[1], e[2], l.pos[0], l.pos[1] + 1.4, l.pos[2]);
     turnToward(p, a.yaw, a.pitch, dt, 4);
@@ -24356,6 +24441,110 @@ function specCamera(subj, dt) {
   R.camPos[0] = hud.specCam.x; R.camPos[1] = hud.specCam.y; R.camPos[2] = hud.specCam.z;
   R.camYaw = yaw; R.camPitch = pitch;
 }
+
+// ---------------- treino de prefire: percursos pelas rotas dos TRs com alvos nos ângulos dos CTs ----------------
+function prefireLanes(m) {
+  const out = [];
+  if (!m || !m.tRoutes || !m.ctHolds || !m.nav) return out;
+  for (const s of ['A', 'B']) {
+    const holds = m.ctHolds[s];
+    if (!holds || !holds.length || !m.tRoutes[s]) continue;
+    for (const r of m.tRoutes[s]) { const st = m.nav[r.path[Math.min(r.stage, r.path.length - 1)]]; if (st) out.push({ site: s, name: r.name, start: st, holds }); }
+  }
+  return out.slice(0, PREFIRE_LANES);
+}
+function prefireGo(i) {
+  const pr = game.practice, l = game.local;
+  pr.pfLanes = pr.pfLanes || prefireLanes(M);
+  if (!pr.pfLanes.length) { flashHint('Este mapa não tem posições para o prefire', 3); return; }
+  pr.pfIdx = i;
+  const ln = pr.pfLanes[i], st = ln.start, site = M.sites[ln.site];
+  spawnPlayer(l, st[0], st[1]);
+  if (st[2] !== undefined) l.pos[1] = st[2] + 0.01;
+  l.yaw = Math.atan2(-(site.center[0] - st[0]), -(site.center[1] - st[1])); l.pitch = 0;
+  l.inv.primary = makeWeapon(l.team === 'T' ? 'ak47' : 'm4a4', l.skin); l.slot = 'primary';
+  // alvos nos holds do bomb (até o número de bots), cada um olhando para o ângulo dele, morrem com um tiro
+  const bots = game.players.filter((q) => q.isBot);
+  for (const q of bots) { q.alive = false; q.hidden = true; q.respawnAt = 0; q.bot.prefire = false; }
+  const used = [];
+  ln.holds.slice(0, bots.length).forEach((h, k) => {
+    const q = bots[k];
+    spawnPlayer(q, h.pos[0] + 0.5, h.pos[1] + 0.5);
+    if (h.pos[2] !== undefined) q.pos[1] = h.pos[2] + 0.01;
+    q.hidden = false; q.hideAt = 0; q.respawnAt = 0; q.hp = 1; q.armor = 0; q.helmet = false; q.headOnly = false;
+    q.inv.primary = makeWeapon(q.team === 'T' ? 'ak47' : 'm4a4', q.skin); q.slot = 'primary';
+    q.yaw = Math.atan2(-(h.look[0] + 0.5 - q.pos[0]), -(h.look[1] + 0.5 - q.pos[2]));
+    q.bot.prefire = true; q.bot.dummyMove = false; q.bot.dummyCrouch = false;
+    used.push(q);
+  });
+  pr.pf = { bots: used, t0: null, miss: 0, shots0: pr.shots, hits0: pr.hits, start: [l.pos[0], l.pos[2]], doneAt: 0 };
+  flashHint('Prefire · percurso ' + (i + 1) + ' de ' + pr.pfLanes.length + ' · bomb ' + ln.site + ' pela rota ' + ln.name + ' · ' + used.length + ' alvos', 4);
+}
+function prefireTick() {
+  const pr = game.practice, l = game.local, ln = pr.pf, now = game.time;
+  if (!ln || pr.done) return;
+  for (const q of ln.bots) q.respawnAt = 0;
+  if (ln.doneAt) { if (now >= ln.doneAt) { if (pr.pfIdx + 1 < pr.pfLanes.length) prefireGo(pr.pfIdx + 1); else finishDrill(); } return; }
+  // o tempo começa no primeiro passo ou no primeiro tiro
+  if (ln.t0 === null && (distXZ(l.pos[0], l.pos[2], ln.start[0], ln.start[1]) > 0.5 || pr.shots > ln.shots0)) ln.t0 = now;
+  ln.miss = Math.max(0, (pr.shots - ln.shots0) - (pr.hits - ln.hits0));
+  if (ln.bots.length && ln.bots.every((q) => !q.alive)) {
+    const t = (ln.t0 === null ? 0 : now - ln.t0) + ln.miss * PREFIRE_MISS;
+    (pr.pfTimes = pr.pfTimes || []).push(Math.round(t * 10) / 10);
+    ln.doneAt = now + 1.4;
+    flashHint('Percurso ' + (pr.pfIdx + 1) + ': ' + t.toFixed(1).replace('.', ',') + ' s' + (ln.miss ? ' (' + ln.miss + ' erros)' : ''), 1.6);
+    sfxUi('buy');
+  }
+}
+
+// ---------------- circuito de bunny hop ----------------
+function bhopDrill() { return game.mode === 'practice' && !!game.practice && game.practice.drill === 'bhop'; }
+function bhopStart() {
+  const pr = game.practice, l = game.local, B = M.bhop;
+  if (!B) { flashHint('Mapa sem circuito', 3); return; }
+  for (const q of game.players) if (q.isBot) { q.alive = false; q.hidden = true; q.respawnAt = 0; }
+  pr.bh = { cp: 0, t0: null, falls: 0, jumps: 0, perfect: 0, syncOk: 0, syncN: 0, wasGround: true, landT: 0, takeoff: 0, gain: 0, maxSpeed: 0 };
+  bhopSpawn(0);
+}
+function bhopSpawn(k) {
+  const l = game.local, B = M.bhop, c = B.cps[k];
+  l.pos[0] = c.spawn[0]; l.pos[2] = c.spawn[1]; l.pos[1] = B.top + 0.02;
+  l.vel[0] = l.vel[1] = l.vel[2] = 0; l.yaw = -Math.PI / 2; l.pitch = 0; l.onGround = true; l.stamina = 0;
+  if (l.slot !== 'knife') switchSlot(l, 'knife', true);
+}
+function bhopTick() {
+  const pr = game.practice, l = game.local, B = M.bhop, bh = pr.bh, now = game.time;
+  if (!B || !bh || pr.done || !l.alive) return;
+  const inR = (r) => l.pos[0] >= r[0] && l.pos[0] <= r[2] && l.pos[2] >= r[1] && l.pos[2] <= r[3] && l.pos[1] >= B.top - 0.3;
+  // caiu no fosso: volta ao último checkpoint (antes do primeiro, recomeça o tempo)
+  if (l.pos[1] < B.killY) { bh.falls++; if (bh.cp === 0) bh.t0 = null; bhopSpawn(bh.cp); sfxUi('deny'); return; }
+  if (bh.t0 === null && l.pos[0] > B.cps[0].r[2] + 0.1) bh.t0 = now;
+  for (let k = bh.cp + 1; k < B.cps.length; k++) if (inR(B.cps[k].r)) { bh.cp = k; flashHint(B.cps[k].name + ' · ' + (bh.t0 === null ? 0 : now - bh.t0).toFixed(2).replace('.', ',') + ' s', 1.6); sfxUi('click'); }
+  // pulos: perfeito = saiu do chão no mesmo instante em que caiu (sem perder velocidade no atrito)
+  const sp = Math.hypot(l.vel[0], l.vel[2]) / U;
+  bh.maxSpeed = Math.max(bh.maxSpeed, sp);
+  if (bh.wasGround && !l.onGround && l.vel[1] > 0.5) { bh.jumps++; if (now - bh.landT < 0.03) bh.perfect++; bh.gain = Math.round(sp - bh.takeoff); bh.takeoff = sp; }
+  if (!bh.wasGround && l.onGround) bh.landT = now;
+  bh.wasGround = l.onGround;
+  // sincronia do strafe: no ar, A/D para o mesmo lado em que o mouse gira
+  const dx = hud.mouseDX || 0, side = l.input.side;
+  if (!l.onGround && dx !== 0) { bh.syncN++; if (side !== 0 && Math.sign(side) === Math.sign(dx)) bh.syncOk++; }
+  if (bh.t0 !== null && inR(B.end)) {
+    const t = now - bh.t0;
+    pr.pfTimes = [Math.round(t * 100) / 100];
+    flashHint('Chegada · ' + t.toFixed(2).replace('.', ',') + ' s · ' + bh.jumps + ' pulos · velocidade máxima ' + Math.round(bh.maxSpeed) + ' u/s', 4);
+    finishDrill();
+  }
+}
+// R no circuito: recomeça da largada
+function bhopKey(code) {
+  if (!bhopDrill() || code !== 'KeyR') return false;
+  const pr = game.practice;
+  if (!pr.bh || pr.done) return false;
+  pr.bh.t0 = null; pr.bh.cp = 0; pr.bh.jumps = 0; pr.bh.perfect = 0; pr.bh.syncOk = 0; pr.bh.syncN = 0; pr.bh.maxSpeed = 0;
+  bhopSpawn(0);
+  return true;
+}
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
 // =====================================================================
@@ -24947,8 +25136,8 @@ function radarFor(subj) { return hud.radarLow && subj && subj.pos[1] < M.radarSp
 // troca o mapa (menu): refaz grade, navegação, malha estática, radar e decalques
 function loadMap(id) {
   if (!MAPS[id]) return;
-  settings.map = id;
-  saveSettings();
+  // mapa só de exercício (circuito de bunny hop) não vira o mapa escolhido no menu
+  if (!MAPS[id].hidden) { settings.map = id; saveSettings(); }
   if (M && M.id === id) return;
   M = MAPS[id];
   buildWorld();
@@ -25309,6 +25498,8 @@ function updatePracticeHud() {
   if (pr.drill === 'free') cells = [['Abates', String(pr.kills)], ['Precisão', acc], ['Na cabeça', (pr.hits ? Math.round(pr.heads / pr.hits * 100) : 0) + '%'], ['Tiros', String(pr.shots)]];
   else if (pr.drill === 'spray') cells = [['Rajadas', pr.sprays.length + '/' + d.count], ['Última', pr.sprays.length ? pr.sprays[pr.sprays.length - 1] + ' cm' : '—'], ['Média', pr.sprays.length ? Math.round(pr.sprays.reduce((a, b) => a + b, 0) / pr.sprays.length) + ' cm' : '—'], ['Tiros', String(pr.shots)]];
   else if (pr.drill === 'nades') cells = [['Granada', (pr.nadeIdx + 1) + '/' + ((M.lineups || []).length)], ['Bomb', pr.nade ? pr.nade.L.site : '—'], ['Lado', pr.nade ? (pr.nade.L.team === 'T' ? 'TR' : 'CT') : '—'], ['Último', pr.nade && pr.nade.short ? pr.nade.short : '—']];
+  else if (pr.drill === 'bhop') { const bh = pr.bh || {}; cells = [['Tempo', bh.t0 !== null && bh.t0 !== undefined ? (now - bh.t0).toFixed(2) + ' s' : '0,00 s'], ['Velocidade', Math.round(Math.hypot(game.local.vel[0], game.local.vel[2]) / U) + ' u/s'], ['Pulos', (bh.jumps || 0) + (bh.jumps ? ' · ' + (bh.perfect || 0) + ' perfeitos' : '')], ['Sincronia', bh.syncN ? Math.round(bh.syncOk / bh.syncN * 100) + '%' : '—']]; }
+  else if (pr.drill === 'prefire') { const ln = pr.pf; cells = [['Percurso', ln ? (pr.pfIdx + 1) + '/' + pr.pfLanes.length : '—'], ['Tempo', ln && ln.t0 !== null ? (now - ln.t0 + ln.miss * PREFIRE_MISS).toFixed(1) + ' s' : '0,0 s'], ['Alvos', ln ? ln.bots.filter((q) => !q.alive).length + '/' + ln.bots.length : '—'], ['Total', ((pr.pfTimes || []).reduce((a, b) => a + b, 0)).toFixed(1) + ' s']]; }
   else if (pr.drill === 'react') cells = [['Alvos', pr.count + '/' + d.count], ['Reação média', react], ['Erros', String(pr.misses)], ['Precisão', acc]];
   else {
     const left = now < pr.startAt ? d.time : Math.max(0, pr.startAt + d.time - now);
@@ -25320,7 +25511,7 @@ function openDrills() {
   const rec = loadRecords();
   ui.drillList.innerHTML = Object.keys(DRILLS).map((k) => {
     const d = DRILLS[k], r = rec[k];
-    const unit = { react: ' ms', spray: ' cm' }[d.score] || ' abates';
+    const unit = { react: ' ms', spray: ' cm', time: ' s' }[d.score] || ' abates';
     const recText = !d.score ? '' : (r ? 'Recorde: ' + r.best + unit : 'Sem recorde');
     return '<button type="button" data-drill="' + k + '"><span class="dl-name">' + escapeHtml(d.name) + '</span><span class="dl-rec">' + escapeHtml(recText) + '</span><span class="dl-desc">' + escapeHtml(d.desc) + '</span></button>';
   }).join('');
@@ -25334,10 +25525,10 @@ function showDrillResult(pr, score, oldBest, better) {
   ui.hud.hidden = true;
   const acc = pr.shots ? Math.round(Math.min(1, pr.hits / pr.shots) * 100) : 0;
   const react = pr.reactN ? Math.round(pr.reactSum / pr.reactN * 1000) + ' ms' : '—';
-  const scoreText = d.score === 'react' ? score + ' ms de média' : (d.score === 'spray' ? score + ' cm de média (' + pr.sprays.join(' · ') + ')' : score + ' abates');
+  const scoreText = d.score === 'react' ? score + ' ms de média' : (d.score === 'spray' ? score + ' cm de média (' + pr.sprays.join(' · ') + ')' : (d.score === 'time' ? score + ' s (' + (pr.pfTimes || []).map((t) => t.toFixed(1)).join(' · ') + ')' : score + ' abates'));
   ui.meResult.textContent = better ? 'Novo recorde!' : 'Treino concluído';
   ui.meResult.style.color = better ? 'var(--money)' : 'var(--text)';
-  ui.meScore.textContent = d.name + ' · ' + scoreText + (oldBest !== null && !better ? ' · recorde: ' + oldBest + ({ react: ' ms', spray: ' cm' }[d.score] || '') : '');
+  ui.meScore.textContent = d.name + ' · ' + scoreText + (oldBest !== null && !better ? ' · recorde: ' + oldBest + ({ react: ' ms', spray: ' cm', time: ' s' }[d.score] || '') : '');
   const cell = (v, l) => '<div><b>' + escapeHtml(String(v)) + '</b><span>' + l + '</span></div>';
   ui.meTable.innerHTML = '<div class="me-stats">' + cell(pr.kills, 'Abates') + cell(acc + '%', 'Precisão') + cell(pr.hits ? Math.round(pr.heads / pr.hits * 100) + '%' : '0%', 'Na cabeça') + cell(react, 'Reação média') + cell(pr.misses, 'Alvos perdidos') + cell(pr.shots, 'Tiros') + '</div>';
   ui.matchend.hidden = false;
@@ -25541,6 +25732,7 @@ function onKeyDown(e) {
   if (!e.repeat) input.pressed.add(code);
   input.keys.add(code);
   if (game.state === 'playing' && !e.repeat && !game.paused && nadesKey(code, e.shiftKey)) { e.preventDefault(); return; }
+  if (game.state === 'playing' && !e.repeat && !game.paused && bhopKey(code)) { e.preventDefault(); return; }
   if (game.state === 'playing') {
     if (code === 'Space' && game.killcam && game.killcam.on && !e.repeat) { kcSkip(); return; }
     if ((code === 'KeyV' || (code === 'Space' && !modeDef().roles)) && !e.repeat && !game.paused && specCycle()) return;
@@ -25975,6 +26167,10 @@ function bindUi() {
     if (!b) return;
     // granadas: precisa de um mapa com granadas fixas (os do CS)
     if (b.dataset.drill === 'nades' && !(M.lineups && M.lineups.length)) loadMap(MAP_ORDER.find((k) => MAPS[k].lineups && MAPS[k].lineups.length));
+    if (b.dataset.drill === 'prefire' && !prefireLanes(M).length) loadMap(MAP_ORDER.find((k) => prefireLanes(MAPS[k]).length));
+    // circuito de bunny hop tem mapa próprio (fora das listas); os outros exercícios saem dele
+    if (b.dataset.drill === 'bhop') loadMap('bhop');
+    else if (M.hidden) loadMap(MAP_ORDER[0]);
     onPlay('practice', b.dataset.drill);
   });
   on('btn-options', 'click', () => openPanel('options'));
