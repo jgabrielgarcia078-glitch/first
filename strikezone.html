@@ -439,6 +439,8 @@ button { font: inherit; color: inherit; }
 .me-box { width: min(760px, 100%); gap: 14px; }
 #me-result { font-family: var(--display); font-size: 56px; font-weight: 800; text-transform: uppercase; line-height: 1; }
 #me-score { font-family: var(--display); font-size: 28px; font-weight: 700; color: var(--muted); }
+.buy-quick { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.buy-quick .btn { width: auto; }
 .me-actions { display: flex; gap: 8px; }
 .me-actions .btn { width: auto; }
 
@@ -659,6 +661,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <div id="buy-bonus"></div>
         <button id="buy-close" class="btn small" type="button">Fechar · B</button>
       </div>
+      <div id="buy-quick" class="buy-quick"><button id="bq-last" class="btn small" type="button">Repetir compra · F4</button><button id="bq-kit" class="btn small" type="button">Kit salvo · F3</button><button id="bq-save" class="btn small" type="button">Salvar kit · Shift+F3</button></div>
       <div id="buy-econ"></div>
       <div id="buy-grid" class="buy-grid"></div>
     </div>
@@ -805,6 +808,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
       <section class="tab-page" data-page="video" role="tabpanel" hidden>
         <div class="opt-row"><label for="opt-fov">Campo de visão</label><input id="opt-fov" type="range" min="60" max="100" step="1" data-setting="fov"><output data-out="fov" data-fmt="deg"></output></div>
         <div class="opt-row"><label for="opt-vmfov">Campo de visão da arma</label><input id="opt-vmfov" type="range" min="50" max="75" step="1" data-setting="vmFov"><output data-out="vmFov" data-fmt="deg"></output></div>
+        <div class="opt-row"><label for="opt-vmpos">Posição da arma na tela</label><select id="opt-vmpos" data-setting="vmPos"><option value="classic">Clássica</option><option value="compact">Compacta (menor, mais para o canto)</option><option value="low">Baixa</option><option value="center">Centralizada</option></select><output></output></div>
         <div class="opt-row"><label for="opt-hand">Mão da arma</label><select id="opt-hand" data-setting="hand"><option value="right">Direita</option><option value="left">Esquerda</option></select><output></output></div>
         <div class="opt-row"><label for="opt-bob">Balanço da arma</label><select id="opt-bob" data-setting="vmBob"><option value="off">Desligado</option><option value="low">Baixo</option><option value="normal">Normal</option></select><output></output></div>
         <div class="opt-row"><label for="opt-vrecoil">Tranco da câmera ao atirar</label><input id="opt-vrecoil" type="range" min="0" max="1" step="0.05" data-setting="viewRecoil"><output data-out="viewRecoil" data-fmt="pct"></output></div>
@@ -1293,7 +1297,7 @@ const DEFAULT_SETTINGS = {
   chOutline: true, chOutlineThick: 1, chDot: false, chDotSize: 2, chDynamic: false, chFollowRecoil: false,
   friendlyFire: false, nameplates: true, damageReport: true, voice: true, volume: 0.7, fullscreen: true, showFps: false,
   pingShow: true, pingBots: true, pingText: 'full', pingSize: 1, pingOpacity: 0.9, pingColorMode: 'type', pingColor: '#ffd84a', pingRadar: true, pingChat: true,
-  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp', tickRate: '128', bhopAuto: false,
+  hitmarker: false, hitSound: true, hrtf: true, volShots: 1, volSteps: 1, volFx: 1, volUi: 1, volVoice: 1, volMusic: 0.5, soundViz: false, binds: {}, colorblind: 'off', killcam: true, adaptive: false, botChat: true, botVoice: true, overtime: true, weather: 'auto', timeOfDay: 'auto', bloom: true, skin: 'none', specMode: 'fp', tickRate: '128', bhopAuto: false, vmPos: 'classic', buyKit: [],
   team: 'CT', difficulty: 'normal', matchLength: 'short', map: 'duna', freezeTime: 'cs', wheelJump: 'off', showSpeed: false,
   role: 'medic', classIdx: 0, legend: 'vulto', arenaSize: '3', menuTab: 'cs', brSquads: '10',
   cgMode: 'match', cgTeam: 'CT', cgAllies: 4, cgEnemies: 5, cgRounds: '9', cgMoney: '800',
@@ -1553,6 +1557,8 @@ const RADIO_LINES = {
   fireOut: ['Molotov!', 'Fogo no {place}'],
   drop: ['Toma, larguei uma {weapon} pra você', 'Pega essa {weapon}'],
   noMoney: ['Tô sem grana pra dropar', 'Não dá, estou pobre'],
+  askDrop: ['Alguém dropa uma {weapon}? Tô sem grana (G)', 'Me dropa uma {weapon}? Aperta G'],
+  thanks: ['Valeu pelo drop!', 'Obrigado, agora vai'],
   rotate: ['Rodando para o {site}', 'Indo ajudar no {site}'],
   cmd: ['{text}'],
   retakeWait: ['Esperem juntar pra retomar', 'Juntando no {place} pro retake'],
@@ -9799,6 +9805,11 @@ const PREFIRE_LANES = 6;
 const PREFIRE_MISS = 0.25;
 // aceleração no ar do jogador em tick fixo (como o servidor do CS): o ganho do air strafe não depende do FPS
 const TICK_RATES = { 64: 1 / 64, 128: 1 / 128 };
+// posição da arma na tela (como os presets de viewmodel do CS): deslocamento x (direita), y (cima), z (para trás) em m
+const VM_OFFSETS = { classic: [0, 0, 0], compact: [0.035, -0.02, 0.06], low: [0.01, -0.045, 0.03], center: [-0.07, -0.012, 0.01] };
+
+// pedido de drop do bot: o jogador precisa ficar com pelo menos isso depois de comprar a arma
+const DROP_ASK_KEEP = 1000;
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -14199,6 +14210,8 @@ function buildViewmodel(p) {
     const sy = hasAtt(inst, 'optic') ? -((model && model.sightY) || 0.085) - 0.04 : -((model && model.sightY) || 0.085) + (model && model.pistol ? -0.035 : -0.1);
     px += (0 - px) * ads; py += (sy - py) * ads; pz += (-0.34 - pz) * ads; pyaw *= 1 - ads; proll *= 1 - ads; roll *= 1 - ads * 0.8;
   }
+  const vo = VM_OFFSETS[settings.vmPos] || VM_OFFSETS.classic;
+  px += vo[0] * (1 - ads); py += vo[1] * (1 - ads); pz += vo[2] * (1 - ads);
   if (spr > 0) { py -= 0.05 * spr; px += 0.02 * spr; pyaw += 0.55 * spr; proll += 0.32 * spr; dipRot += 0.22 * spr; }
   if (p.mantle) { dip += 0.14; dipRot += 0.4; }
   const sw = 1 - ads * 0.8;
@@ -17455,7 +17468,7 @@ function buyItem(p, id) {
   } else if (id === 'kit') {
     p.kit = true;
   }
-  if (p === game.local) sfxUi('buy');
+  if (p === game.local) { sfxUi('buy'); (game.buyLog = game.buyLog || []).push(id); }
   if (dmLike() && p === game.local && WEAPONS[id]) game.dmLoadout[WEAPONS[id].slot] = id;
   if (!modeDef().rounds) p.money = MAX_MONEY;
   return '';
@@ -17837,6 +17850,7 @@ function dmTarget(n) { return Math.max(10, Math.round(n * 4 / 5) * 5); }
 function startMatch(mode, drill, custom) {
   const s = settings;
   game.mode = MODES[mode] ? mode : 'match';
+  game.lastBuy = null; game.buyLog = [];
   game.custom = game.mode === 'practice' ? null : (custom || null);
   const cg = game.custom, md = modeDef();
   game.halfRounds = cg ? cg.rounds - 1 : (md.half || MATCH_LENGTHS[s.matchLength].half);
@@ -18090,6 +18104,10 @@ function saveRecords(r) {
 }
 function startRound() {
   game.roundNum++;
+  // compra rápida: o que você comprou na rodada anterior (F4 repete)
+  if (game.buyLog && game.buyLog.length) game.lastBuy = game.buyLog.slice();
+  game.dropAsk = null;
+  game.buyLog = [];
   game.phase = 'freeze';
   game.freezeLen = freezeLen();
   game.phaseTimer = modeDef().retake ? RETAKE_FREEZE : game.freezeLen;
@@ -21040,6 +21058,27 @@ function teamBuy(team) {
   }
   const l = game.local;
   if (l && l.team === team && bots.length && plan !== 'pistol') radioSay(bots[0], plan, {});
+  // bot sem arma pede drop ao jogador, que responde com G durante a compra
+  if (l && l.team === team) game.dropAsk = null;
+  if (l && l.alive && l.team === team && !l.isBot && plan !== 'pistol' && plan !== 'eco') {
+    const rifle = team === 'T' ? 'ak47' : 'm4a4';
+    const poor = bots.find((q) => !q.inv.primary && q.money < WEAPONS[rifle].price);
+    if (poor && l.money >= WEAPONS[rifle].price + DROP_ASK_KEEP) {
+      game.dropAsk = { bot: poor, weapon: rifle };
+      radioSay(poor, 'askDrop', { weapon: WEAPONS[rifle].name });
+    }
+  }
+}
+// G durante a compra com pedido aberto: compra a arma e larga no pé do colega
+function answerDropAsk(l) {
+  const a = game.dropAsk;
+  if (!a || !l || !canBuy(l) || !a.bot.alive || a.bot.inv.primary) return false;
+  if (!dropGiftWeapon(l, a.bot, a.weapon)) { flashHint('Dinheiro insuficiente para o drop', 1.2); return true; }
+  game.dropAsk = null;
+  sfxUi('buy');
+  flashHint('Drop: ' + WEAPONS[a.weapon].name + ' para ' + a.bot.name, 1.5);
+  radioSay(a.bot, 'thanks', {});
+  return true;
 }
 function botBuy(p, plan) {
   const tryBuy = (id) => buyItem(p, id) === '';
@@ -24545,6 +24584,41 @@ function bhopKey(code) {
   bhopSpawn(0);
   return true;
 }
+
+// ---------------- compra rápida: repetir a última compra (F4), kit salvo (F3), salvar o equipamento atual (Shift+F3) ----------------
+const QUICK_BUY_ORDER = ['helmet', 'kevlar'];
+function quickBuyList(list, label) {
+  const l = game.local;
+  if (!l || !list || !list.length) { flashHint(label + ': nada para comprar', 2); return; }
+  // colete primeiro, depois armas, granadas e kit (como o autobuy do CS)
+  const ids = list.slice().sort((a, b) => (QUICK_BUY_ORDER.indexOf(b) >= 0) - (QUICK_BUY_ORDER.indexOf(a) >= 0));
+  let n = 0, why = '';
+  for (const id of ids) {
+    if (WEAPONS[id] && l.inv[WEAPONS[id].slot] && l.inv[WEAPONS[id].slot].id === id) continue;
+    if ((id === 'kevlar' && l.armor >= 100) || (id === 'helmet' && l.helmet && l.armor >= 100) || (id === 'kit' && l.kit)) continue;
+    const r = buyItem(l, id);
+    if (r) why = why || r; else n++;
+  }
+  flashHint(label + ': ' + n + ' ite' + (n === 1 ? 'm' : 'ns') + (why ? ' · ' + why : ''), 2.2);
+  if (hud.buyOpen) refreshBuyMenu();
+}
+function currentKit() {
+  const l = game.local, out = [];
+  if (l.helmet) out.push('helmet'); else if (l.armor > 0) out.push('kevlar');
+  for (const s of ['primary', 'secondary', 'zeus']) if (l.inv[s] && WEAPONS[l.inv[s].id] && WEAPONS[l.inv[s].id].price > 0) out.push(l.inv[s].id);
+  for (const g of l.inv.grenades) out.push(g);
+  if (l.kit) out.push('kit');
+  return out;
+}
+function quickBuyKey(code, shift) {
+  if (code !== 'F3' && code !== 'F4') return false;
+  const l = game.local;
+  if (!l || !l.alive || !modeDef().rounds || modeDef().arenas) return false;
+  if (code === 'F3' && shift) { settings.buyKit = currentKit(); saveSettings(); flashHint('Kit salvo: ' + settings.buyKit.map((id) => (WEAPONS[id] ? WEAPONS[id].name : (GRENADES[id] ? GRENADES[id].name : id))).join(', '), 2.5); return true; }
+  if (!canBuy(l)) { flashHint('Fora do tempo ou da zona de compra', 1.5); return true; }
+  if (code === 'F4') quickBuyList(game.lastBuy, 'Repetir compra'); else quickBuyList(settings.buyKit, 'Kit salvo');
+  return true;
+}
 // =====================================================================
 // 10. INTERFACE: HUD, RADAR, LOJA, PLACAR E MENUS
 // =====================================================================
@@ -25733,6 +25807,8 @@ function onKeyDown(e) {
   input.keys.add(code);
   if (game.state === 'playing' && !e.repeat && !game.paused && nadesKey(code, e.shiftKey)) { e.preventDefault(); return; }
   if (game.state === 'playing' && !e.repeat && !game.paused && bhopKey(code)) { e.preventDefault(); return; }
+  if (game.state === 'playing' && !e.repeat && !game.paused && quickBuyKey(code, e.shiftKey)) { e.preventDefault(); return; }
+  if (game.state === 'playing' && !e.repeat && !game.paused && code === 'KeyG' && game.dropAsk && answerDropAsk(game.local)) { e.preventDefault(); return; }
   if (game.state === 'playing') {
     if (code === 'Space' && game.killcam && game.killcam.on && !e.repeat) { kcSkip(); return; }
     if ((code === 'KeyV' || (code === 'Space' && !modeDef().roles)) && !e.repeat && !game.paused && specCycle()) return;
@@ -26185,6 +26261,9 @@ function bindUi() {
   on('btn-nextmap', 'click', playNextMap);
   on('btn-menu', 'click', toMenu);
   ui.buyClose.addEventListener('click', () => closeBuyMenu(true));
+  on('bq-last', 'click', () => quickBuyKey('F4', false));
+  on('bq-kit', 'click', () => quickBuyKey('F3', false));
+  on('bq-save', 'click', () => quickBuyKey('F3', true));
   for (const [segId, key] of SEG_SETTINGS) {
     document.getElementById(segId).addEventListener('click', (e) => {
       const b = e.target.closest('button');
