@@ -1130,7 +1130,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.19.0';
+const GAME_VERSION = '1.20.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -2303,8 +2303,22 @@ const MAPS = {
       ["wallmat",20,63,21,64,MAT.CONCRETE], ["wallmat",73,63,74,65,MAT.BLUEWALL], ["wallmat",80,63,82,74,MAT.BLUEWALL], ["wallmat",74,64,75,65,MAT.BLUEWALL],
       ["wallmat",79,64,80,68,MAT.BLUEWALL], ["wallmat",82,64,84,82,MAT.BLUEWALL], ["wallmat",77,65,79,67,MAT.BLUEWALL], ["wallmat",84,65,85,68,MAT.BLUEWALL],
       ["wallmat",78,67,79,68,MAT.BLUEWALL], ["wallmat",81,74,82,82,MAT.BLUEWALL], ["wallmat",73,75,74,77,MAT.BLUEWALL], ["wallmat",84,79,95,82,MAT.BLUEWALL],
+      // v1.20: estrutura que faltava em relação ao CS (conferida na malha de colisão do CS2, em células inteiras)
+      // varanda do Under A: parede em cima do arco que dá para a rampa do A e o pilar inteiro (tinha um entalhe)
+      ["roof",74,25,75,31,6.7,8.6], ["wall",74,23,75,24,9.4],
+      // portas do Meio: verga em cima do vão e batente/folha do lado do CT (o vão fica com 3 m, como no CS)
+      ["roof",48,42,51,43,7.3,9], ["wall",51,42,52,43,9],
+      // portas do Long: a parede do prédio com a porta de 2,5 m e a coluna oeste do corredor (estava tudo aberto, 5 m de largura)
+      ["wall",73,68,74,76,16.5], ["wall",74,75,77,76,16.5], ["wall",79,75,80,76,16.5], ["roof",77,75,79,76,10.75,16.5],
+      ["wallh",73,68,74,76,16.5], ["wallh",74,75,77,76,16.5], ["wallh",79,75,80,76,16.5],
+      // portas do B: verga em cima do vão (a folha parada vai nos props)
+      ["roof",26,26,27,30,11,12],
+      // prédio das portas do Long na altura do CS (16 m)
+      ["wallh",72,68,73,71,16.25], ["wallh",74,64,75,65,16.25], ["wallh",78,76,79,77,16.25],
     ],
     props: [
+      // v1.20: folhas paradas das portas do Meio (uma de cada lado do vão, como no CS) e do B
+      [48,42.42,49.15,42.56,2.9,4,MAT.BEAM], [50,41.3,51.95,41.45,2.9,4,MAT.BEAM], [26.15,26,26.35,27.1,6.2,4.2,MAT.BEAM],
       [30.05,44.05,32.95,45.95,3.3499999046325684,0.9,MAT.CRATE], [83.05,52.05,84.95,54.95,6.199999809265137,1,MAT.CRATE], [64.05,85.05,65.95,86.95,6.199999809265137,1.1,MAT.CRATE], [67,18,68,30,8.25,0.35,MAT.TILE],
       [68,18,73,22,8.3,0.35,MAT.TILE], [73,20,74,31,8.25,0.35,MAT.TILE], [68,22,73,32,8.25,0.35,MAT.TILE], [77,22,79,23,9,0.35,MAT.TILE],
       [31,51,32,53,6.65,0.35,MAT.CONCRETE], [18,86,23,87,9.9,0.35,MAT.TILE], [20.05,13.05,20.95,13.95,6.349999904632568,1.1,MAT.CRATE], [18.05,18.05,19.95,18.95,6.199999809265137,1.1,MAT.CRATE],
