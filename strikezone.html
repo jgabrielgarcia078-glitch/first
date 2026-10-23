@@ -1130,7 +1130,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.18.0';
+const GAME_VERSION = '1.19.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -1144,6 +1144,8 @@ const NO_CEIL = 99;
 const GRAVITY = 20;
 // granadas caem mais devagar (no CS elas usam 0,4× a gravidade), o que dá o alcance dos lineups longos
 const NADE_GRAVITY = 9;
+// molotov/incendiária estouram ao bater no chão (parede faz quicar); só estouram no ar se passarem disso sem achar chão
+const FIRE_NADE_MAX_AIR = 8;
 // movimento do CS:GO (Source): pulo de 57 unidades (1,45 m), aceleração 5,5, atrito 5,2, parada 80 u/s, ar 12 com limite de 30 u/s
 const JUMP_SPEED = 7.61;
 // agachar no ar recolhe as pernas 9 unidades (pulo agachado alcança caixas de 64 unidades)
@@ -1514,8 +1516,8 @@ const GRENADES = {
   he: { name: 'Granada HE', short: 'HE', price: 300, max: 1, fuse: 1.6, sub: 'Até 98 de dano' },
   flash: { name: 'Flashbang', short: 'Flash', price: 200, max: 2, fuse: 1.6, sub: 'Cega quem olhar' },
   smoke: { name: 'Fumaça', short: 'Smoke', price: 300, max: 1, fuse: 1.8, sub: 'Bloqueia a visão por 18 s' },
-  molotov: { name: 'Molotov', short: 'Molotov', price: 400, max: 1, fuse: 2.2, team: 'T', fire: true, sub: 'Fogo no chão por 7 s' },
-  incgrenade: { name: 'Incendiária', short: 'Incend.', price: 600, max: 1, fuse: 2.0, team: 'CT', fire: true, sub: 'Fogo no chão por 7 s' },
+  molotov: { name: 'Molotov', short: 'Molotov', price: 400, max: 1, fuse: FIRE_NADE_MAX_AIR, team: 'T', fire: true, sub: 'Quebra no chão: fogo por 7 s' },
+  incgrenade: { name: 'Incendiária', short: 'Incend.', price: 600, max: 1, fuse: FIRE_NADE_MAX_AIR, team: 'CT', fire: true, sub: 'Estoura no chão: fogo por 7 s' },
   mine: { name: 'Mina de proximidade', short: 'Mina', price: 0, max: 2, fuse: 99, sticky: true, sub: 'Explode quando um inimigo passa perto' },
   sensor: { name: 'Sensor de movimento', short: 'Sensor', price: 0, max: 2, fuse: 99, sticky: true, sub: 'Mostra inimigos por perto no radar' },
 };
@@ -1664,7 +1666,8 @@ const MENU_FOG_DENSITY = 0.0035;
 
 // atlas de sprites: 8 colunas × 4 linhas
 const ATLAS = { SOFT: 0, SMOKE: 1, HOLE: 2, SPARK: 3, LETTER_A: 4, LETTER_B: 5, BLOOD: 6, FLASH: 7, CHUNK: 8, WINDOW: 9, DOOR: 10, ARROW: 11, DIRT: 12, CRACK: 13, FIRE: 14, SCORCH: 15,
-  HOLE_WOOD: 16, HOLE_METAL: 17, HOLE_STONE: 18, SPLAT: 19, POOL: 20, BLAST: 21, PUFF: 22, DEBRIS: 23 };
+  HOLE_WOOD: 16, HOLE_METAL: 17, HOLE_STONE: 18, SPLAT: 19, POOL: 20, BLAST: 21, PUFF: 22, DEBRIS: 23,
+  SIGN_A_R: 24, SIGN_A_L: 25, SIGN_B_R: 26, SIGN_B_L: 27 };
 const ATLAS_COLS = 8;
 const ATLAS_ROWS = 4;
 
@@ -11665,6 +11668,33 @@ const WALL_TINT_MIN = 10; // trecho menor que isso (em células) pega o tom do p
 // borda do relevo acima do vizinho: até esta altura (m) usa o próprio chão (areia, terra) ou meio-fio em vez do material da parede
 const TERRAIN_EDGE_LOW = 0.6;
 const TERRAIN_EDGE_NATURAL = new Set([MAT.SAND, MAT.GRASS, MAT.DIRT, MAT.ROCK, MAT.CLAY]);
+// leitura do mapa (mapas com bombs): rodapé escuro no pé das paredes, capa clara no topo das muretas, batente nas entradas cobertas
+// e placas "A →"/"← B" pintadas nas paredes ao longo dos caminhos dos spawns até os bombs — só desenho, a planta não muda
+const TRIM_PLINTH_H = 0.42; // altura do rodapé (m)
+const TRIM_PLINTH_D = 0.045; // quanto o rodapé sai da parede
+const TRIM_PLINTH_COL = [0.5, 0.46, 0.42];
+const TRIM_COPING_MAX = 2.3; // muro até esta altura acima do chão vizinho ganha capa no topo (lê como mureta)
+const TRIM_COPING_COL = [0.96, 0.94, 0.9];
+const TRIM_LINTEL_H = 0.26; // viga em cima da entrada coberta
+const TRIM_DOOR_MAX = 4.6; // pé-direito máximo de uma entrada coberta (porta, arco, túnel)
+const TRIM_FRAME_D = 0.1; // quanto a viga e os montantes saem da parede
+const TRIM_POST_W = 0.22; // largura dos montantes do batente
+const TRIM_FRAME_INDUSTRIAL = [0.72, 0.58, 0.18]; // batente de aço amarelo nos mapas de concreto (Train, Nuke, Overpass)
+const TRIM_LAMP_COL = [1, 0.86, 0.62]; // luminária em cima das entradas cobertas (só brilho, sem luz)
+const TRIM_QUOIN_W = 0.42; // pedras de canto nas quinas dos prédios (marca onde o muro acaba e começa a passagem)
+const TRIM_QUOIN_STEP = 0.58; // altura de cada pedra de canto
+const TRIM_QUOIN_D = 0.035;
+const TRIM_QUOIN_MAX = 4.2; // altura máxima das pedras de canto acima do chão
+const TRIM_QUOIN_COL = { stone: [1.1, 1.06, 0.98], stone2: [0.97, 0.93, 0.86], bare: [0.98, 0.95, 0.88], bare2: [0.86, 0.82, 0.76], industrial: [0.66, 0.66, 0.68] };
+const SIGN_START = 7; // metros depois do spawn para a primeira placa
+const SIGN_EVERY = 11; // distância entre placas no caminho
+const SIGN_END = 9; // para antes do bomb (lá já tem a letra grande)
+const SIGN_GAP = 9; // placa da mesma letra mais perto que isso não repete
+const SIGN_SIZE = 0.8; // meia largura da placa (m)
+const SIGN_REACH = 4.5; // parede do lado do caminho até esta distância
+const SIGN_Y = 1.75; // altura do centro da placa acima do chão
+const SIGN_TURN = 0.7; // curva do caminho (rad) que pede placa de frente na esquina
+const SIGN_LIGHT = { open: 0.86, roofed: 0.52 }; // a placa é pintura sem luz própria: mais escura embaixo de teto
 // ---------------------------------------------------------------------
 // Shaders (GLSL ES 3.0). '//#DEFINES' recebe '#define INSTANCED' na variante instanciada.
 // ---------------------------------------------------------------------
@@ -12511,7 +12541,7 @@ const input = { keys: new Set(), pressed: new Set(), mouseL: false, mouseR: fals
 let M = null;
 const world = {
   w: 1, d: 1, n: 1, top: null, ceil: null, roofTop: null, wall: null, wallMat: null, floorMat: null, roofMat: null,
-  props: [], cellProps: [], ladders: [], decorParts: [],
+  props: [], cellProps: [], ladders: [], decorParts: [], signs: null,
   // relevo: alturas nos vértices (hv), células de terreno (terr), nível da água por célula, vegetação que esconde
   hv: null, terr: null, water: null, foliage: [], folGrid: null, folW: 1, radarTrees: [],
 };
@@ -12949,6 +12979,8 @@ function buildWorld() {
   // ?debug=1: cada colisor guarda de que decoração veio (os testes comparam colisão com desenho)
   for (const dc of M.decor) { const k0 = world.props.length, q0 = world.decorParts.length; buildDecor(dc, world.decorParts, addProp); if (debugMode) { for (let k = k0; k < world.props.length; k++) world.props[k].src = dc[0]; for (let k = q0; k < world.decorParts.length; k++) world.decorParts[k].src = dc[0]; } }
   buildFacades(world.decorParts);
+  buildTrims(world.decorParts);
+  world.signs = null;
   if (M.surf) buildSurfRamps(world.decorParts);
   propMark = new Int32Array(world.props.length + 8);
   buildFoliageGrid();
@@ -13978,6 +14010,195 @@ function buildFacades(parts) {
       flush();
     }
   }
+}
+// leitura do mapa (só nos mapas com bombs): rodapé escuro no pé das paredes, pedras de canto nas quinas dos prédios, capa clara no topo
+// das muretas e batente (viga + montantes + luminária) nas entradas cobertas — só desenho, alguns centímetros para fora da parede; a
+// colisão continua a das células. O chão perto das paredes quase sempre é relevo (alturas nos vértices): a altura vem dos vértices.
+function buildTrims(parts) {
+  if (!M.sites) return;
+  const W = world.w, D = world.d, VW = W + 1;
+  const P = (x0, y0, z0, x1, y1, z1, mat, col) => parts.push({ s: 'b', x: (x0 + x1) / 2, y: (y0 + y1) / 2, z: (z0 + z1) / 2, sx: x1 - x0, sy: y1 - y0, sz: z1 - z0, mat, col, ry: 0, rx: 0, rz: 0 });
+  const open = (i) => i >= 0 && !world.wall[i];
+  const vh = (i, vx, vz) => (world.terr[i] ? world.hv[vz * VW + vx] : world.top[i]);
+  // altura do chão da célula i na borda virada para (dx, dz): [mais baixa, mais alta]
+  const edgeH = (i, dx, dz) => {
+    const x = i % W, z = Math.floor(i / W);
+    const vx0 = dx > 0 ? x + 1 : x, vz0 = dz > 0 ? z + 1 : z, vx1 = dx !== 0 ? vx0 : x + 1, vz1 = dz !== 0 ? vz0 : z + 1;
+    const a = vh(i, vx0, vz0), b = vh(i, vx1, vz1);
+    return [Math.min(a, b), Math.max(a, b)];
+  };
+  // mapa industrial (concreto): batente de aço pintado de amarelo e cantoneira lisa; cidade velha: madeira e pedras de canto
+  const indus = M.roofMat === MAT.CONCRETE || M.wallDefault === MAT.CONCRETE;
+  const frameMat = indus ? MAT.METAL : MAT.BEAM, frameCol = indus ? TRIM_FRAME_INDUSTRIAL : (M.facade && M.facade.frame) || [0.46, 0.33, 0.21];
+  for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+    const alongX = dz !== 0, lines = alongX ? D : W, len = alongX ? W : D;
+    for (let a = 0; a < lines; a++) {
+      // face entre a célula de chão i e a vizinha j: plano e sentido de j para i (para fora da parede)
+      const face = alongX ? a + (dz > 0 ? 1 : 0) : a + (dx > 0 ? 1 : 0), out = alongX ? -dz : -dx;
+      const slab = (u0, u1, y0, y1, d0, d1, mat, col) => { const c0 = face + out * d0, c1 = face + out * d1; if (alongX) P(u0, y0, Math.min(c0, c1), u1, y1, Math.max(c0, c1), mat, col); else P(Math.min(c0, c1), y0, u0, Math.max(c0, c1), y1, u1, mat, col); };
+      const at = (u, row) => (alongX ? cellIdx(u, a + row * dz) : cellIdx(a + row * dx, u));
+      let pl = null, dr = null;
+      const flushPl = () => { if (pl) slab(pl.s, pl.e, pl.lo - 0.05, pl.hi + TRIM_PLINTH_H, -0.01, TRIM_PLINTH_D, pl.mat, TRIM_PLINTH_COL); pl = null; };
+      const flushDr = () => {
+        if (!dr) return;
+        const r = dr; dr = null;
+        slab(r.s - 0.1, r.e + 0.1, r.c, r.c + TRIM_LINTEL_H, -0.01, TRIM_FRAME_D, frameMat, frameCol);
+        // luminária no meio da viga (porta, arco ou túnel de até 5 m)
+        if (r.e - r.s <= 5) { const m = (r.s + r.e) / 2; slab(m - 0.13, m + 0.13, r.c + TRIM_LINTEL_H + 0.02, r.c + TRIM_LINTEL_H + 0.13, 0.02, 0.14, MAT.EMISSIVE, TRIM_LAMP_COL); }
+        // montantes onde a abertura encosta numa parede (do lado de fora, sem estreitar a passagem)
+        const wb = at(r.s - 1, 1), we = at(r.e, 1);
+        if (wb >= 0 && world.wall[wb]) slab(r.s - TRIM_POST_W, r.s, r.f - 0.05, r.c + 0.02, -0.01, TRIM_FRAME_D, frameMat, frameCol);
+        if (we >= 0 && world.wall[we]) slab(r.e, r.e + TRIM_POST_W, r.f - 0.05, r.c + 0.02, -0.01, TRIM_FRAME_D, frameMat, frameCol);
+      };
+      for (let b = 0; b < len; b++) {
+        const i = at(b, 0), j = at(b, 1);
+        // rodapé: chão encostado numa parede bem mais alta (relevo: célula sozinha, seguindo os vértices da borda)
+        const eh = open(i) ? edgeH(i, dx, dz) : null;
+        const okP = eh && j >= 0 && world.wall[j] && world.top[j] - eh[1] >= 0.9 && eh[1] - eh[0] < 0.6 && world.water[i] < eh[0] + 0.05;
+        const lo = okP ? Math.round(eh[0] * 20) / 20 : 0, hi = okP ? Math.round(eh[1] * 20) / 20 : 0, mat = okP ? world.wallMat[j] : 0;
+        if (pl && (!okP || lo !== pl.lo || hi !== pl.hi || mat !== pl.mat)) flushPl();
+        if (okP) { if (!pl) pl = { s: b, e: b + 1, lo, hi, mat }; else pl.e = b + 1; }
+        // batente: célula a céu aberto encostada numa coberta com pé-direito de porta/túnel
+        const okD = eh && world.ceil[i] >= NO_CEIL && j >= 0 && !world.wall[j] && world.ceil[j] < NO_CEIL && world.roofTop[j] > world.ceil[j] + 0.05 && world.ceil[j] - eh[1] >= 1.9 && world.ceil[j] - eh[0] <= TRIM_DOOR_MAX;
+        const c = okD ? Math.round(world.ceil[j] * 20) / 20 : 0;
+        if (dr && (!okD || c !== dr.c)) flushDr();
+        if (okD) { if (!dr) dr = { s: b, e: b + 1, c, f: eh[0] }; else { dr.e = b + 1; dr.f = Math.min(dr.f, eh[0]); } }
+      }
+      flushPl(); flushDr();
+    }
+  }
+  // pedras de canto nas quinas de fora dos prédios (as duas faces dão para o chão): blocos alternados compridos/curtos como nos muros de
+  // pedra do CS; nos mapas industriais, cantoneira lisa — mostra onde o muro acaba e a passagem começa
+  for (let z = 1; z < D - 1; z++) for (let x = 1; x < W - 1; x++) {
+    const j = z * W + x;
+    if (!world.wall[j]) continue;
+    for (const [sx, sz] of [[1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+      const a = cellIdx(x + sx, z), c = cellIdx(x, z + sz);
+      if (!open(a) || !open(c)) continue;
+      const cx = sx > 0 ? x + 1 : x, cz = sz > 0 ? z + 1 : z;
+      const f = Math.max(vh(a, cx, cz), vh(c, cx, cz)) - 0.03, h = Math.min(world.top[j], f + TRIM_QUOIN_MAX);
+      if (h - f < 2.4) continue;
+      const wm = world.wallMat[j], d = TRIM_QUOIN_D;
+      // pedra (mapas de cidade velha): arenito com tons alternados — no reboco/barro, pedra à mostra na quina; concreto: cantoneira lisa
+      const stone = !indus && (wm === MAT.SANDSTONE || wm === MAT.PLASTER || wm === MAT.CLAY), m = stone ? MAT.SANDSTONE : wm;
+      if (!stone && wm !== MAT.CONCRETE) continue;
+      // face de x (normal ±x, largura em z) e face de z (normal ±z, largura em x)
+      const fx = (y0, y1, w, col) => P(Math.min(cx, cx + sx * d), y0, Math.min(cz, cz - sz * w), Math.max(cx, cx + sx * d), y1, Math.max(cz, cz - sz * w), m, col);
+      const fz = (y0, y1, w, col) => P(Math.min(cx, cx - sx * w), y0, Math.min(cz, cz + sz * d), Math.max(cx, cx - sx * w), y1, Math.max(cz, cz + sz * d), m, col);
+      if (!stone) { fx(f, h, TRIM_QUOIN_W * 0.6, TRIM_QUOIN_COL.industrial); fz(f, h, TRIM_QUOIN_W * 0.6, TRIM_QUOIN_COL.industrial); continue; }
+      const tone = wm === MAT.SANDSTONE ? [TRIM_QUOIN_COL.stone, TRIM_QUOIN_COL.stone2] : [TRIM_QUOIN_COL.bare, TRIM_QUOIN_COL.bare2];
+      let k = 0;
+      for (let y = f; y < h - 0.2; y += TRIM_QUOIN_STEP, k++) {
+        const y1 = Math.min(h, y + TRIM_QUOIN_STEP - 0.04), long = k % 2 === 0, col = tone[k % 2];
+        fx(y, y1, long ? TRIM_QUOIN_W : TRIM_QUOIN_W * 0.62, col);
+        fz(y, y1, long ? TRIM_QUOIN_W * 0.62 : TRIM_QUOIN_W, col);
+      }
+    }
+  }
+  // capa no topo das muretas (muro até TRIM_COPING_MAX acima do chão vizinho), com beiral nos lados à mostra; trechos na mesma linha juntos
+  const cap = new Float32Array(W * D).fill(-1);
+  for (let z = 0; z < D; z++) for (let x = 0; x < W; x++) {
+    const j = z * W + x;
+    if (!world.wall[j]) continue;
+    let fl = -Infinity;
+    for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const k = cellIdx(x + dx, z + dz); if (open(k)) fl = Math.max(fl, edgeH(k, -dx, -dz)[1]); }
+    const h = world.top[j] - fl;
+    if (h >= 0.35 && h <= TRIM_COPING_MAX) cap[j] = world.top[j];
+  }
+  const exposed = (j, k) => k < 0 || !world.wall[k] || world.top[k] < world.top[j] - 0.05;
+  for (let z = 0; z < D; z++) {
+    let run = null;
+    const flush = () => { if (!run) return; const r = run; run = null; P(r.x0 - r.ow, r.t - 0.07, z - r.on, r.x1 + r.oe, r.t + 0.012, z + 1 + r.os, MAT.CURB, TRIM_COPING_COL); };
+    for (let x = 0; x <= W; x++) {
+      const j = x < W ? z * W + x : -1, t = j >= 0 ? cap[j] : -1;
+      const on = t >= 0 && exposed(j, cellIdx(x, z - 1)) ? 0.05 : 0, os = t >= 0 && exposed(j, cellIdx(x, z + 1)) ? 0.05 : 0;
+      if (run && (t < 0 || Math.abs(t - run.t) > 0.01 || on !== run.on || os !== run.os)) flush();
+      if (t < 0) continue;
+      if (!run) run = { x0: x, x1: x + 1, t, on, os, ow: exposed(j, cellIdx(x - 1, z)) ? 0.05 : 0, oe: 0 };
+      else run.x1 = x + 1;
+      run.oe = exposed(j, cellIdx(x + 1, z)) ? 0.05 : 0;
+    }
+  }
+}
+// placas "A →"/"← B" pintadas nas paredes ao longo dos caminhos dos dois spawns até os dois bombs (como as do CS): a cada SIGN_EVERY m
+// numa parede lisa do lado do caminho e de frente nas esquinas; a seta aponta para onde o caminho segue. Calculadas uma vez por mapa.
+function routeSigns() {
+  if (world.signs) return world.signs;
+  const out = world.signs = [];
+  if (!M.sites || !M.spawns || !M.spawns.T || !M.spawns.CT || !M.sites.A || !M.sites.B) return out;
+  const cells = { A: [ATLAS.SIGN_A_R, ATLAS.SIGN_A_L], B: [ATLAS.SIGN_B_R, ATLAS.SIGN_B_L] };
+  const wallHit = (x, y, z, dx, dz, max) => {
+    const t = raycastWorld(x, y, z, dx, 0, dz, max, rayOut2);
+    if (t >= max || rayOut2.sky || rayOut2.prop >= 0 || Math.abs(rayOut2.ny) > 0.3) return null;
+    return { t, nx: rayOut2.nx, nz: rayOut2.nz };
+  };
+  // parede lisa em volta do ponto (sem quina, porta, janela nem objeto no meio da placa)
+  const flatWall = (x, y, z, dx, dz, t0) => {
+    for (const [o, h] of [[-0.85, -0.4], [0.85, -0.4], [-0.85, 0.4], [0.85, 0.4], [0, 0.4], [0, -0.4]]) {
+      const r = wallHit(x - dz * o, y + h, z + dx * o, dx, dz, t0 + 0.6);
+      if (!r || Math.abs(r.t - t0) > 0.1) return false;
+    }
+    // portas e janelas de fachada são só desenho (o raio não vê): a placa não vai em cima delas
+    const hx = x + dx * t0, hz = z + dz * t0;
+    for (const q of world.decorParts) if (q.s === 'b' && Math.abs(q.x - hx) < q.sx / 2 + 1 && Math.abs(q.z - hz) < q.sz / 2 + 1 && Math.abs(q.y - y) < q.sy / 2 + 0.5) return false;
+    return true;
+  };
+  // (dx, dz): raio até a parede; (mx, mz): sentido do caminho (para onde a seta aponta). Se o ponto não tem parede lisa, escorrega
+  // a placa ao longo da parede até 1,5 m para cada lado
+  const place = (letter, px, py, pz, dx, dz, mx, mz, maxT) => {
+    const y = py + SIGN_Y;
+    let r = null, ox = px, oz = pz;
+    for (const o of [0, 0.5, -0.5, 1, -1, 1.5, -1.5]) {
+      const qx = px - dz * o, qz = pz + dx * o, h = wallHit(qx, y, qz, dx, dz, maxT);
+      if (!h || h.t < 0.3 || Math.abs(h.nx * dx + h.nz * dz) < 0.9 || !flatWall(qx, y, qz, dx, dz, h.t)) continue;
+      r = h; ox = qx; oz = qz; break;
+    }
+    if (!r) return false;
+    const hx = ox + dx * r.t, hz = oz + dz * r.t;
+    for (const s of out) if (s.letter === letter && Math.hypot(s.x - hx, s.z - hz) < SIGN_GAP && Math.abs(s.y - y) < 3) return false;
+    let yy = y;
+    for (const s of out) if (s.letter !== letter && Math.hypot(s.x - hx, s.z - hz) < 1.9 && Math.abs(s.y - yy) < 0.8) yy -= 0.9; // a outra letra já está aqui: vai embaixo
+    const ci = cellIdx(Math.floor(ox), Math.floor(oz)), light = ci >= 0 && world.ceil[ci] < NO_CEIL ? SIGN_LIGHT.roofed : SIGN_LIGHT.open;
+    out.push({ letter, x: hx + r.nx * 0.012, y: yy, z: hz + r.nz * 0.012, nx: r.nx, nz: r.nz, light, cell: cells[letter][mx * r.nz - mz * r.nx >= 0 ? 0 : 1] });
+    return true;
+  };
+  for (const team of ['T', 'CT']) for (const letter of ['A', 'B']) {
+    const sp = M.spawns[team];
+    let sx = 0, sz = 0;
+    for (const q of sp) { sx += q[0]; sz += q[1]; }
+    sx /= sp.length; sz /= sp.length;
+    const g = M.sites[letter].center, sy = floorAt(sx, sz), path = findPath(sx, sz, g[0], g[1], sy);
+    if (!path || path.length < 2) continue;
+    // pontos a cada ~0,5 m com a altura do chão seguida passo a passo (mapas de dois andares) e a distância acumulada
+    const pts = [];
+    let y = sy, dist = 0;
+    for (let k = 1; k < path.length; k++) {
+      const a = path[k - 1], b = path[k], L = Math.hypot(b[0] - a[0], b[1] - a[1]), n = Math.max(1, Math.ceil(L / 0.5));
+      for (let q = 0; q < n; q++) { const x = a[0] + (b[0] - a[0]) * q / n, z = a[1] + (b[1] - a[1]) * q / n; y = groundBelow(x, y + 1.2, z); pts.push([x, y, z, dist]); dist += L / n; }
+    }
+    const dirAt = (k, back, ahead) => { const a = pts[Math.max(0, k - back)], b = pts[Math.min(pts.length - 1, k + ahead)], L = Math.hypot(b[0] - a[0], b[2] - a[2]) || 1; return [(b[0] - a[0]) / L, (b[2] - a[2]) / L]; };
+    let next = SIGN_START;
+    for (let k = 0; k < pts.length; k++) {
+      const p = pts[k];
+      if (p[3] > dist - SIGN_END) break;
+      // esquina: placa na parede de frente para quem chega, com a seta para o lado da saída
+      const din = dirAt(k, 8, 0), dout = dirAt(k, 0, 8);
+      if (k > 8 && k < pts.length - 8 && Math.acos(clamp(din[0] * dout[0] + din[1] * dout[1], -1, 1)) > SIGN_TURN) {
+        const q = pts[k - 8];
+        if (place(letter, q[0], q[1], q[2], din[0], din[1], dout[0], dout[1], 9)) { next = p[3] + SIGN_EVERY; k += 8; continue; }
+      }
+      if (p[3] < next) continue;
+      // parede do lado do caminho (de frente para o raio e ao lado de quem passa, não na frente), a mais perto primeiro
+      const d = dirAt(k, 4, 4), y0 = p[1] + SIGN_Y, sides = [];
+      for (const r0 of [[-d[1], d[0]], [d[1], -d[0]], [1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const h = wallHit(p[0], y0, p[2], r0[0], r0[1], SIGN_REACH);
+        if (h && Math.abs(h.nx * d[0] + h.nz * d[1]) < 0.8) sides.push([r0[0], r0[1], h.t]);
+      }
+      sides.sort((u, v) => u[2] - v[2]);
+      for (const sd of sides) if (place(letter, p[0], p[1], p[2], sd[0], sd[1], d[0], d[1], SIGN_REACH)) { next = p[3] + SIGN_EVERY; break; }
+    }
+  }
+  return out;
 }
 // sorteio com semente para as decorações saírem iguais toda vez que o mapa é montado
 function drand(a, b) { decorSeed = (decorSeed * 16807) % 2147483647; return a + (b - a) * (decorSeed / 2147483647); }
@@ -15405,6 +15626,8 @@ function setPropVisible(pr, vis) {
 }
 // peça de decoração (caixa ou cilindro transformado) com cor própria, assada na malha estática
 function addDecorPart(mb, pt) {
+  // placa com os 4 cantos já no mundo (rampas do surf)
+  if (pt.s === 'q') { mb.setColor(pt.col || [1, 1, 1]); mb.quad(pt.v[0], pt.v[1], pt.v[2], pt.v[3], pt.n, pt.mat, pt.uv); return; }
   const A = DECOR_M, B = DECOR_R;
   m4Identity(A); m4Translate(A, pt.x, pt.y, pt.z);
   if (pt.ry) m4RotY(A, pt.ry);
@@ -15774,6 +15997,33 @@ function buildAtlas() {
   // estilhaço (colorido pela partícula)
   p = at(ATLAS.DEBRIS);
   blob(p[0] + 128, p[1] + 128, 70, 0.35, 'rgba(255,255,255,1)');
+  // placas de caminho pintadas na parede: plaqueta clara com borda, letra e seta (dir 1 = seta para a direita de quem olha)
+  const sign = (k, ch, dir) => {
+    const q = at(k);
+    g.save();
+    g.translate(q[0], q[1]);
+    const plate = (x0, y0, x1, y1, c) => { g.beginPath(); g.moveTo(x0 + c, y0); g.lineTo(x1 - c, y0); g.lineTo(x1, y0 + c); g.lineTo(x1, y1 - c); g.lineTo(x1 - c, y1); g.lineTo(x0 + c, y1); g.lineTo(x0, y1 - c); g.lineTo(x0, y0 + c); g.closePath(); };
+    g.fillStyle = 'rgba(28,24,20,0.95)'; plate(8, 66, 248, 190, 14); g.fill();
+    g.fillStyle = 'rgba(238,230,210,0.97)'; plate(16, 74, 240, 182, 10); g.fill();
+    g.fillStyle = 'rgba(30,26,22,0.97)';
+    g.font = '900 104px Arial, Helvetica, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(ch, dir > 0 ? 70 : 186, 133);
+    g.save();
+    g.translate(dir > 0 ? 166 : 90, 128);
+    g.scale(dir, 1);
+    g.beginPath(); g.moveTo(-50, -13); g.lineTo(6, -13); g.lineTo(6, -36); g.lineTo(56, 0); g.lineTo(6, 36); g.lineTo(6, 13); g.lineTo(-50, 13); g.closePath(); g.fill();
+    g.restore();
+    // desgaste da tinta
+    g.globalCompositeOperation = 'destination-out';
+    for (let n = 0; n < 260; n++) { g.fillStyle = 'rgba(0,0,0,' + (0.15 + Math.random() * 0.6) + ')'; g.fillRect(8 + Math.random() * 240, 66 + Math.random() * 124, 1 + Math.random() * 5, 1 + Math.random() * 3); }
+    g.restore();
+  };
+  sign(ATLAS.SIGN_A_R, 'A', 1);
+  sign(ATLAS.SIGN_A_L, 'A', -1);
+  sign(ATLAS.SIGN_B_R, 'B', 1);
+  sign(ATLAS.SIGN_B_L, 'B', -1);
   R.atlasTex = gl.createTexture();
   gl.bindTexture(gl.TEXTURE_2D, R.atlasTex);
   gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
@@ -20280,6 +20530,7 @@ function startMatch(mode, drill, custom) {
 }
 function addMapDecals() {
   for (const L of M.decals) addDecal(L.pos[0], L.pos[1], L.pos[2], L.normal[0], L.normal[1], L.normal[2], L.size, L.cell, 1, 1, 1, L.cell === ATLAS.WINDOW || L.cell === ATLAS.DOOR ? 1 : 0.9, true, L.rot || 0);
+  for (const S of routeSigns()) addDecal(S.x, S.y, S.z, S.nx, 0, S.nz, SIGN_SIZE, S.cell, S.light, S.light, S.light, 0.95, true, 0);
   let seed = 7;
   const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
   let placed = 0;
@@ -20542,6 +20793,9 @@ function spawnPlayer(p, x, z) {
   p.hidden = false; p.controlled = false;
   p.hp = 100;
   p.pos[0] = x; p.pos[1] = floorAt(x, z) + 0.01; p.pos[2] = z;
+  // caixote/objeto baixo na célula (a navegação anda por cima dele): nasce em cima, não dentro
+  const sc = cellIdx(Math.floor(x), Math.floor(z));
+  if (sc >= 0 && !world.terr[sc] && nav.walk[sc] && nav.h[sc] > p.pos[1] + 0.05 && nav.h[sc] - p.pos[1] < 2.5 && !spaceFree(x, p.pos[1] + 0.03, z, STAND_H - 0.08)) p.pos[1] = nav.h[sc] + 0.01;
   p.vel[0] = p.vel[1] = p.vel[2] = 0;
   p.yaw = spawnYawAt(p.team, x, z, M.spawnYaw[p.team] === undefined ? p.yaw || 0 : M.spawnYaw[p.team]) + rand(-0.12, 0.12);
   p.pitch = 0;
@@ -27587,17 +27841,27 @@ function surfRamps(p) {
     break;
   }
 }
-// desenho das rampas: duas placas inclinadas por rampa
+// desenho das rampas: as faces saem da mesma conta da colisão (surfHeight), com espessura embaixo e tampas nas pontas
+// (as placas giradas de antes torciam ao longo do comprimento e ficavam metros fora da superfície que segura o corpo)
 function buildSurfRamps(parts) {
+  const th = 0.3, uv = [0, 0, 1, 0, 1, 1, 0, 1];
   for (const R of M.surf.ramps) {
-    const ang = R[6] * DEG, len = R[1] - R[0], cx = (R[0] + R[1]) / 2, topMid = (R[4] + R[5]) / 2;
-    const slant = R[3] / Math.cos(ang), tilt = Math.atan2(R[4] - R[5], len), th = 0.3;
+    const t = Math.tan(R[6] * DEG), drop = R[3] * t, x0 = R[0], x1 = R[1], zc = R[2];
+    const len = x1 - x0, tilt = Math.atan2(R[4] - R[5], len);
     for (const sg of [-1, 1]) {
-      const nz = sg * Math.sin(ang), ny = Math.cos(ang);
-      const cz = R[2] + sg * R[3] / 2 - nz * th / 2, cy = topMid - R[3] * Math.tan(ang) / 2 - ny * th / 2;
-      parts.push({ s: 'b', x: cx, y: cy, z: cz, sx: Math.hypot(len, R[4] - R[5]), sy: th, sz: slant, mat: MAT.METAL, col: sg > 0 ? [0.32, 0.5, 0.72] : [0.28, 0.44, 0.66], ry: 0, rx: sg * ang, rz: -tilt });
+      const ze = zc + sg * R[3], col = sg > 0 ? [0.32, 0.5, 0.72] : [0.28, 0.44, 0.66];
+      let nx = -(R[5] - R[4]) / len, ny = 1, nz = sg * t;
+      const L = Math.hypot(nx, ny, nz); nx /= L; ny /= L; nz /= L;
+      const top = [[x0, R[4], zc], [x1, R[5], zc], [x1, R[5] - drop, ze], [x0, R[4] - drop, ze]];
+      const bot = top.map((q) => [q[0] - nx * th, q[1] - ny * th, q[2] - nz * th]);
+      parts.push({ s: 'q', v: top, n: [nx, ny, nz], mat: MAT.METAL, col, uv });
+      parts.push({ s: 'q', v: bot, n: [-nx, -ny, -nz], mat: MAT.METAL, col: [col[0] * 0.6, col[1] * 0.6, col[2] * 0.6], uv });
+      // borda de baixo e tampas das pontas
+      parts.push({ s: 'q', v: [top[3], top[2], bot[2], bot[3]], n: [0, -t / Math.hypot(t, 1), sg / Math.hypot(t, 1)], mat: MAT.METAL, col, uv });
+      parts.push({ s: 'q', v: [top[0], top[3], bot[3], bot[0]], n: [-1, 0, 0], mat: MAT.METAL, col, uv });
+      parts.push({ s: 'q', v: [top[1], top[2], bot[2], bot[1]], n: [1, 0, 0], mat: MAT.METAL, col, uv });
     }
-    parts.push({ s: 'b', x: cx, y: topMid + 0.02, z: R[2], sx: Math.hypot(len, R[4] - R[5]), sy: 0.06, sz: 0.25, mat: MAT.EMISSIVE, col: [0.35, 0.85, 1], ry: 0, rx: 0, rz: -tilt });
+    parts.push({ s: 'b', x: (x0 + x1) / 2, y: (R[4] + R[5]) / 2 + 0.02, z: zc, sx: Math.hypot(len, R[4] - R[5]), sy: 0.06, sz: 0.25, mat: MAT.EMISSIVE, col: [0.35, 0.85, 1], ry: 0, rx: 0, rz: -tilt });
   }
 }
 
@@ -30240,6 +30504,7 @@ function exposeDebug() {
       }
       return out;
     },
+    routeSigns: () => routeSigns(),
     // captura para testes visuais: pausa, põe a câmera no ponto e desenha um quadro na hora
     snapshot(pos, yaw, pitch, type) {
       const l = game.local; game.paused = true;
