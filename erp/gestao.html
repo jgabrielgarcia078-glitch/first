@@ -93,8 +93,7 @@
   .menu-item[aria-disabled="true"] { color: #8b93a1; }
   .menu-item[aria-disabled="true"].active { background: var(--surface-3); border-color: transparent; }
   .menu-note { font-style: italic; }
-  .mi-check { text-align: center; color: #d97706; font-size: 12px; }
-  .mi-check.checked { color: var(--accent); }
+  .mi-check { text-align: center; color: var(--accent); font-size: 12px; font-weight: 700; }
   .mi-label { overflow: hidden; text-overflow: ellipsis; }
   .mi-hint { padding-left: 24px; color: var(--text-muted); font-size: 12px; }
   .mi-arrow { text-align: right; font-size: 15px; line-height: 1; color: #4b5567; }
@@ -263,6 +262,18 @@
   }
   .map-link:hover { text-decoration: underline; }
 
+  .favman { padding: 14px 18px 18px; }
+  .favman-list { margin: 10px 0 12px; padding: 0; list-style: none; border: 1px solid #e1e6ee; border-radius: 6px; }
+  .favman-list li { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 10px; }
+  .favman-list li + li { border-top: 1px solid #eef1f5; }
+  .favman-num { flex: 0 0 18px; color: var(--text-muted); font-size: 12px; text-align: right; }
+  .favman-name { flex: 1 1 auto; min-width: 0; }
+  .favman-name small { display: block; color: var(--text-muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .favman-empty { padding: 10px; color: var(--text-muted); }
+  .btn.btn-sm { height: 26px; padding: 0 9px; font-size: 12px; }
+  .favman-bar { display: flex; gap: 8px; align-items: center; }
+  .favman-bar select { flex: 1 1 auto; min-width: 0; height: 30px; padding: 0 6px; border: 1px solid #c3cad6; border-radius: 6px; background: var(--surface); }
+
   /* ---------- Modais ---------- */
   .modal-backdrop {
     position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 20px;
@@ -279,7 +290,8 @@
   .modal-lead { margin-bottom: 14px; color: var(--text-muted); }
   .icon-btn { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: var(--text-muted); }
   .icon-btn:hover { background: var(--surface-3); color: var(--text); }
-  .btn { height: 32px; padding: 0 14px; border: 1px solid #c3cad6; border-radius: 6px; background: var(--surface); font-weight: 600; cursor: pointer; }
+  .btn { height: 32px; padding: 0 14px; border: 1px solid #c3cad6; border-radius: 6px; background: var(--surface); font-weight: 600; white-space: nowrap; cursor: pointer; }
+  .btn:disabled { opacity: 0.45; cursor: default; }
   .btn:hover { background: var(--surface-2); }
   .btn-primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
   .btn-primary:hover { background: var(--accent-hover); }
@@ -412,7 +424,7 @@
    * ===================================================================== */
 
   const APP_NAME = 'Gestão Empresarial';
-  const APP_VERSION = '0.1.0';
+  const APP_VERSION = '0.2.0';
   const APP_BUILD_DATE = '28/10/2026';
   const CURRENT_SCHEMA_VERSION = 1;
 
@@ -465,6 +477,20 @@
     'margem-lucro': { title: 'Consulta Margem de Lucro Líquido', icon: '📈' },
     'consulta-lancamentos-caixa': { title: 'Consulta Lançamentos de Caixa e Cartões', icon: '🔎' },
     'etiquetas-codbarras': { title: 'Imprimir Etiquetas do Cód. de Barras', icon: '🏷️' },
+    'cpr-minutas': { title: 'Cadastro de Minutas para Emissão de CPR e Opção de Compra', icon: '📝' },
+    'cpr-emissao': { title: 'Emissão de CPR e Opção de Compra', icon: '🌾' },
+    'verifica-versao': { title: 'Verifica Versão', icon: '🔄' },
+    'customizacao': { title: 'Customização', icon: '🎨' },
+    'usuarios': { title: 'Usuários', icon: '👤' },
+    'favoritos': { title: 'Favoritos', icon: '⭐', view: 'favoritos', status: 'pronto', w: 580, h: 590 },
+    'alterar-senha': { title: 'Alterar Senha', icon: '🔑' },
+    'liberacao-operacoes': { title: 'Liberação de Operações', icon: '🔓' },
+    'reimpressao-danfe': { title: 'Reimpressão do DANFE / CCe / NFSe', icon: '🖨️' },
+    'liberar-acesso-nf': { title: 'Liberar Acesso a Notas Fiscais', icon: '🗝️' },
+    'copiar-backup-xml': { title: 'Copiar Arquivos de Backup e XML', icon: '💾' },
+    'tef': { title: 'TEF', icon: '💳' },
+    'ajuda-conteudos': { title: 'Conteúdos e Índices', icon: '📚' },
+    'ajuda': { title: 'Ajuda', icon: '❓' },
     'mapa-sistema': { title: 'Mapa do sistema', icon: '🗺️', view: 'mapa', status: 'pronto', own: true, w: 640, h: 580 }
   };
 
@@ -479,6 +505,7 @@
   // Árvore de menus. '&' marca a letra do atalho Alt+letra.
   // { program } abre um programa · { action } executa uma ação · { label, items } submenu conhecido
   // { label, pending: true } submenu que ainda não vimos (aguardando print) · { note } linha informativa
+  // hint: 'Ctrl+L' num programa mostra o atalho no menu e o registra como tecla de atalho global.
   const MENU_TREE = [
     { id: 'cadastros', label: '&Cadastros', items: [
       { program: 'clientes-fornecedores' },
@@ -523,18 +550,41 @@
       { label: 'Consulta Cliente/Fornecedor', pending: true },
       { label: 'Consulta Produção da Indústria', pending: true }
     ] },
-    { id: 'cpr', label: 'C&PR', pending: true },
+    { id: 'cpr', label: 'C&PR', items: [
+      { program: 'cpr-minutas' },
+      { program: 'cpr-emissao' }
+    ] },
     { id: 'sistema', label: '&Sistema', items: [
-      { program: 'mapa-sistema' },
-      { action: 'empresa-usuario', label: 'Empresa e usuário…' },
+      { program: 'verifica-versao' },
       MENU_SEP,
-      { note: 'Demais itens deste menu: aguardando print', pending: true }
+      { program: 'customizacao' },
+      { program: 'usuarios' },
+      { program: 'favoritos' },
+      MENU_SEP,
+      { program: 'alterar-senha' },
+      MENU_SEP,
+      { label: 'Cupom Fiscal', pending: true },
+      { program: 'liberacao-operacoes', hint: 'Ctrl+L' },
+      MENU_SEP,
+      { program: 'reimpressao-danfe' },
+      { program: 'etiquetas-codbarras' },
+      MENU_SEP,
+      { label: 'Verificar Pendências SEFAZ / Receita Federal', pending: true },
+      MENU_SEP,
+      { program: 'liberar-acesso-nf' },
+      { program: 'copiar-backup-xml' },
+      { program: 'tef' },
+      MENU_SEP,
+      { program: 'mapa-sistema' },
+      { action: 'empresa-usuario', label: 'Empresa e usuário…' }
     ] },
     { id: 'ajuda', label: '&Ajuda', items: [
-      { action: 'atalhos', label: 'Atalhos de teclado' },
-      { action: 'sobre', label: 'Sobre o sistema' },
+      { program: 'ajuda-conteudos' },
       MENU_SEP,
-      { note: 'Demais itens deste menu: aguardando print', pending: true }
+      { action: 'sobre', label: 'Sobre o Sistema' },
+      { program: 'ajuda' },
+      MENU_SEP,
+      { action: 'atalhos', label: 'Atalhos de teclado' }
     ] },
     { id: 'sair', label: 'Sa&ir', action: 'sair' },
     { id: 'aguardar', label: 'A&guardar', pending: true },
@@ -575,6 +625,7 @@
   let settings = null;
   let savePending = false;
   let programPaths = {};
+  let programHotkeys = {};
 
   const wins = [];
   let winSeq = 0;
@@ -971,14 +1022,17 @@
 
   function buildWindowMenuItems() {
     const none = wins.length === 0;
+    // Os 4 primeiros itens seguem o sistema atual; os seguintes são extras deste sistema.
     const items = [
-      { action: 'win-cascade', label: 'Cascata', disabled: none },
-      { action: 'win-tile-v', label: 'Lado a lado (colunas)', disabled: none },
-      { action: 'win-tile-h', label: 'Lado a lado (linhas)', disabled: none },
+      { action: 'win-close-all', label: 'Fechar Todas', disabled: none },
+      { action: 'win-max-all', label: 'Maximizar Todas', disabled: none },
       MENU_SEP,
-      { action: 'win-min-all', label: 'Minimizar todas', disabled: none },
-      { action: 'win-restore-all', label: 'Restaurar todas', disabled: none },
-      { action: 'win-close-all', label: 'Fechar todas', disabled: none },
+      { action: 'win-cascade', label: 'Cascata', disabled: none },
+      { action: 'win-tile-v', label: 'Lado a Lado', disabled: none },
+      { action: 'win-tile-h', label: 'Lado a Lado (em linhas)', disabled: none },
+      MENU_SEP,
+      { action: 'win-min-all', label: 'Minimizar Todas', disabled: none },
+      { action: 'win-restore-all', label: 'Restaurar Todas', disabled: none },
       MENU_SEP
     ];
     if (none) items.push({ note: 'Nenhum programa aberto' });
@@ -997,10 +1051,11 @@
       if (item.sep) return '<div class="menu-sep" role="separator"></div>';
       const sub = isSubmenu(item);
       const fav = !!item.program && isFavorite(item.program);
-      const mark = item.checked ? '✓' : fav ? '★' : '';
+      // ✓ = está nos Favoritos (como no sistema atual) ou, no menu Janela, a janela ativa.
+      const mark = item.checked || fav ? '✓' : '';
       return '<button type="button" class="menu-item' + (item.note ? ' menu-note' : '') + '" role="menuitem" tabindex="-1" data-idx="' + idx + '"' +
         (isDisabled(item) ? ' aria-disabled="true"' : '') + (sub ? ' aria-haspopup="true"' : '') + '>' +
-        '<span class="mi-check' + (item.checked ? ' checked' : '') + '" title="' + (fav ? 'Nos Favoritos' : '') + '">' + mark + '</span>' +
+        '<span class="mi-check" title="' + (fav ? 'Nos Favoritos' : '') + '">' + mark + '</span>' +
         '<span class="mi-label">' + escapeHtml(menuItemLabel(item)) + '</span>' +
         '<span class="mi-hint">' + escapeHtml(item.hint || '') + '</span>' +
         '<span class="mi-arrow">' + (sub ? '›' : '') + '</span></button>';
@@ -1289,7 +1344,7 @@
     const item = l && l.items[Number(itemEl.dataset.idx)];
     if (!item || !item.program) return;
     toggleFavorite(item.program);
-    itemEl.querySelector('.mi-check').textContent = isFavorite(item.program) ? '★' : '';
+    itemEl.querySelector('.mi-check').textContent = isFavorite(item.program) ? '✓' : '';
   }
 
   function onDocPointerDown(e) {
@@ -1460,6 +1515,15 @@
     activateTopmost();
   }
 
+  function maximizeAllWins() {
+    wins.forEach(function (w) {
+      w.minimized = false;
+      w.maximized = true;
+      applyWinGeometry(w);
+    });
+    activateTopmost();
+  }
+
   function restoreAllWins() {
     wins.forEach(function (w) {
       w.minimized = false;
@@ -1588,8 +1652,22 @@
       else if (cmd === 'fav') toggleFavorite(win.programId);
       return;
     }
+    const favCmd = e.target.closest('[data-fav-cmd]');
+    if (favCmd) {
+      runFavoriteCommand(favCmd);
+      return;
+    }
     const openBtn = e.target.closest('[data-open-program]');
     if (openBtn) openProgram(openBtn.dataset.openProgram);
+  }
+
+  function onWinChange(e) {
+    const select = e.target.closest('[data-fav-add]');
+    if (!select || !select.value) return;
+    const winEl = select.closest('.mdi-win');
+    toggleFavorite(select.value);
+    const again = winEl.querySelector('[data-fav-add]');
+    if (again) again.focus();
   }
 
   function onWinDblClick(e) {
@@ -1620,18 +1698,39 @@
    * 10. PROGRAMAS (conteúdo das janelas)
    * ===================================================================== */
 
-  function buildProgramPaths() {
-    const out = {};
-    function walk(items, trail) {
+  // Percorre todos os itens dos menus (com submenus), passando o caminho de rótulos até o item.
+  function forEachMenuItem(callback) {
+    function visit(items, trail) {
       items.forEach(function (item) {
-        if (item.program && !out[item.program]) out[item.program] = trail.concat(PROGRAMS[item.program].title);
-        if (item.items) walk(item.items, trail.concat(item.label));
+        callback(item, trail);
+        if (item.items) visit(item.items, trail.concat(item.label));
       });
     }
     MENU_TREE.forEach(function (top) {
-      if (top.items) walk(top.items, [plainLabel(top.label)]);
+      if (top.items) visit(top.items, [plainLabel(top.label)]);
+    });
+  }
+
+  function buildProgramPaths() {
+    const out = {};
+    forEachMenuItem(function (item, trail) {
+      if (item.program && !out[item.program]) out[item.program] = trail.concat(PROGRAMS[item.program].title);
     });
     return out;
+  }
+
+  // hint 'Ctrl+L' → 'ctrl+l' (escrever os modificadores na ordem Ctrl+Alt+Shift+tecla).
+  function buildProgramHotkeys() {
+    const out = {};
+    forEachMenuItem(function (item) {
+      if (item.program && item.hint) out[normalizeText(item.hint).replace(/\s+/g, '')] = item.program;
+    });
+    return out;
+  }
+
+  function eventHotkey(e) {
+    if (!(e.ctrlKey || e.metaKey) || !ACCEL_CODE_RE.test(e.code || '')) return '';
+    return 'ctrl+' + (e.altKey ? 'alt+' : '') + (e.shiftKey ? 'shift+' : '') + e.code.charAt(3).toLowerCase();
   }
 
   function programPathLabel(programId) {
@@ -1646,7 +1745,51 @@
   function mountProgramView(win) {
     const program = PROGRAMS[win.programId];
     const body = win.el.querySelector('.win-body');
-    body.innerHTML = program.view === 'mapa' ? renderSystemMap() : renderPlaceholder(win.programId);
+    if (program.view === 'mapa') body.innerHTML = renderSystemMap();
+    else if (program.view === 'favoritos') body.innerHTML = renderFavoritesManager();
+    else body.innerHTML = renderPlaceholder(win.programId);
+  }
+
+  // Janelas cujo conteúdo depende da lista de favoritos são redesenhadas quando ela muda.
+  function refreshFavoriteViews() {
+    wins.forEach(function (w) {
+      if (PROGRAMS[w.programId].view === 'favoritos') mountProgramView(w);
+    });
+  }
+
+  function renderFavoritesManager() {
+    const list = settings.favoritos;
+    const rows = list.map(function (id, i) {
+      const p = PROGRAMS[id];
+      return '<li><span class="favman-num">' + (i + 1) + '</span><span aria-hidden="true">' + p.icon + '</span>' +
+        '<span class="favman-name">' + escapeHtml(p.title) + '<small>' + escapeHtml(programPathLabel(id) || 'Local no menu ainda não mapeado') + '</small></span>' +
+        '<button type="button" class="btn btn-sm" data-fav-cmd="up" data-target="' + id + '" title="Mover para cima" aria-label="Mover para cima"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+        '<button type="button" class="btn btn-sm" data-fav-cmd="down" data-target="' + id + '" title="Mover para baixo" aria-label="Mover para baixo"' + (i === list.length - 1 ? ' disabled' : '') + '>↓</button>' +
+        '<button type="button" class="btn btn-sm" data-fav-cmd="remove" data-target="' + id + '">Remover</button></li>';
+    }).join('');
+    const available = Object.keys(PROGRAMS).filter(function (id) { return list.indexOf(id) < 0; }).sort(function (a, b) {
+      return PROGRAMS[a].title.localeCompare(PROGRAMS[b].title, 'pt-BR');
+    });
+    return '<div class="favman">' +
+      '<p class="map-intro">Programas que aparecem na lateral, nesta ordem. Também dá para usar ☆ na janela ou o botão direito no menu.</p>' +
+      '<ol class="favman-list">' + (rows || '<li class="favman-empty">Nenhum favorito.</li>') + '</ol>' +
+      '<div class="favman-bar"><select data-fav-add aria-label="Adicionar programa aos Favoritos"><option value="">Adicionar programa…</option>' +
+      available.map(function (id) { return '<option value="' + id + '">' + escapeHtml(PROGRAMS[id].title) + '</option>'; }).join('') +
+      '</select><button type="button" class="btn btn-sm" data-fav-cmd="reset">Restaurar padrão</button></div></div>';
+  }
+
+  function runFavoriteCommand(btn) {
+    const cmd = btn.dataset.favCmd;
+    const id = btn.dataset.target;
+    const winEl = btn.closest('.mdi-win');
+    if (cmd === 'up') moveFavorite(id, -1);
+    else if (cmd === 'down') moveFavorite(id, 1);
+    else if (cmd === 'remove') toggleFavorite(id);
+    else if (cmd === 'reset') resetFavorites();
+    // O conteúdo foi redesenhado: devolve o foco ao mesmo botão (bom para quem usa o teclado).
+    const again = winEl.querySelector('[data-fav-cmd="' + cmd + '"]' + (id ? '[data-target="' + id + '"]' : ''));
+    if (again && !again.disabled) again.focus();
+    else winEl.focus({ preventScroll: true });
   }
 
   function renderPlaceholder(programId) {
@@ -1742,6 +1885,7 @@
     scheduleSave();
     renderFavorites();
     updateWindowChrome();
+    refreshFavoriteViews();
     showToast((idx >= 0 ? 'Removido dos Favoritos: ' : 'Adicionado aos Favoritos: ') + PROGRAMS[programId].title, { type: idx >= 0 ? 'info' : 'success' });
   }
 
@@ -1754,6 +1898,16 @@
     list[j] = programId;
     scheduleSave();
     renderFavorites();
+    refreshFavoriteViews();
+  }
+
+  function resetFavorites() {
+    settings.favoritos = DEFAULT_FAVORITES.slice();
+    scheduleSave();
+    renderFavorites();
+    updateWindowChrome();
+    refreshFavoriteViews();
+    showToast('Favoritos restaurados para o padrão.', { type: 'success' });
   }
 
   // null quando a busca está vazia (mostra os Favoritos).
@@ -1918,6 +2072,7 @@
       case 'win-min-all': minimizeAllWins(); break;
       case 'win-restore-all': restoreAllWins(); break;
       case 'win-close-all': closeAllWins(); break;
+      case 'win-max-all': maximizeAllWins(); break;
       case 'win-focus': {
         const w = findWin(item.winId);
         if (w) focusWin(w, false);
@@ -1964,11 +2119,18 @@
     });
   }
 
+  function formatHotkey(key) {
+    return key.split('+').map(function (p) { return p.length === 1 ? p.toUpperCase() : p.charAt(0).toUpperCase() + p.slice(1); }).join(' + ');
+  }
+
   function openShortcutsDialog() {
+    const rows = SHORTCUTS.concat(Object.keys(programHotkeys).map(function (key) {
+      return [formatHotkey(key), 'Abre ' + PROGRAMS[programHotkeys[key]].title];
+    }));
     openModal({
       title: 'Atalhos de teclado',
       size: 'lg',
-      body: '<table class="kbd-table"><tbody>' + SHORTCUTS.map(function (row) {
+      body: '<table class="kbd-table"><tbody>' + rows.map(function (row) {
         return '<tr><td><kbd>' + escapeHtml(row[0]) + '</kbd></td><td>' + escapeHtml(row[1]) + '</td></tr>';
       }).join('') + '</tbody></table>',
       actions: [{ id: 'ok', label: 'Fechar', variant: 'primary', submit: true }]
@@ -2051,6 +2213,12 @@
       openTopMenu(0, 'key');
       return;
     }
+    const hotkeyProgram = programHotkeys[eventHotkey(e)];
+    if (hotkeyProgram) {
+      e.preventDefault();
+      openProgram(hotkeyProgram);
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === 'k') {
       e.preventDefault();
       focusSearch();
@@ -2092,6 +2260,7 @@
     area.addEventListener('lostpointercapture', endGesture);
     area.addEventListener('click', onWinClick);
     area.addEventListener('dblclick', onWinDblClick);
+    area.addEventListener('change', onWinChange);
     document.getElementById('win-taskbar').addEventListener('click', onTaskbarClick);
 
     const favList = document.getElementById('fav-list');
@@ -2114,6 +2283,7 @@
 
   function init() {
     programPaths = buildProgramPaths();
+    programHotkeys = buildProgramHotkeys();
     renderMenubar();
     bindGlobalEvents();
     document.getElementById('sb-version').textContent = 'Versão ' + APP_VERSION + ' · ' + APP_BUILD_DATE;

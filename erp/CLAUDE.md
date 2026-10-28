@@ -38,12 +38,13 @@ Uso em desktop/PC (Windows). Telas densas, estilo sistema de gestão clássico: 
 ## Arquitetura da casca
 
 - **`MENU_TREE`** — a árvore de menus como dados. Rótulo com `&` marca a letra do Alt+letra. Itens:
-  `{ program: id }` abre um programa · `{ action: id, label }` executa uma ação (`runAction`) · `{ label, items: [...] }` submenu conhecido · `{ label, pending: true }` submenu ainda não visto (mostra "Aguardando o print") · `{ note, pending }` linha informativa · `MENU_SEP`. Item de topo com `action` (Sair) executa direto; `dynamic: 'janela'` é montado na hora (`buildWindowMenuItems`).
+  `{ program: id }` abre um programa · `{ action: id, label }` executa uma ação (`runAction`) · `{ label, items: [...] }` submenu conhecido · `{ label, pending: true }` submenu ainda não visto (mostra "Aguardando o print") · `{ note, pending }` linha informativa · `MENU_SEP`. Item de topo com `action` (Sair) executa direto; `dynamic: 'janela'` é montado na hora (`buildWindowMenuItems`). `hint: 'Ctrl+L'` num programa mostra o atalho no menu e o registra como tecla global (`programHotkeys`; escrever na ordem Ctrl+Alt+Shift+tecla). `forEachMenuItem` é o único percorredor da árvore.
+- Itens deste sistema que não existem no sistema atual ficam no fim do menu, depois de um separador (Sistema: Mapa do sistema, Empresa e usuário; Ajuda: Atalhos de teclado; Janela: Lado a Lado em linhas, Minimizar/Restaurar Todas e a lista de janelas).
 - **`PROGRAMS`** — registro de telas (`id → { title, icon, status, view, w, h, own }`). Sem `view` = placeholder "A construir" com o que mandar. Para construir uma tela: dar a ela um `view`, tratar o caso em `mountProgramView`, marcar `status: 'pronto'`. `own: true` = tela que não existe no sistema de referência (fica fora das contagens do mapa).
 - Programas vistos só nos Favoritos (Cadastro de Produtos, Baixa de Títulos…) ainda não têm lugar no `MENU_TREE`. Quando chegar o print do submenu, trocar o `{ label, pending: true }` por `{ label, items: [...] }` com eles dentro — o caminho no menu (`programPaths`) e o Mapa do sistema se atualizam sozinhos.
 - **Janelas internas (MDI):** uma instância por programa (abrir de novo foca a existente); arrastar pelo título, redimensionar pelas bordas direita/inferior, duplo clique maximiza, minimizar vai para a barra de tarefas no rodapé da área de trabalho; menu Janela com cascata, lado a lado e lista numerada. Eventos registrados uma única vez em `bindGlobalEvents` (delegação em `#win-area`).
 - **Teclado:** `keydown` em fase de captura. Com menu aberto, o menu consome a tecla (`stopPropagation`). Alt+letra, F10, setas, Enter, letra = pula para o item, Esc; Ctrl+K = busca; Esc fecha a janela ativa quando o foco não está num campo. Alt+E pode ser capturado pelo próprio Chrome/Edge.
-- **Favoritos:** `settings.favoritos` (padrão = os 10 do print, na mesma ordem). ☆ na barra da janela, botão direito num item do menu (liga/desliga), botão direito num favorito (abrir, mover, remover). A caixa de busca procura em todos os programas, sem acento, e mostra o caminho no menu.
+- **Favoritos:** `settings.favoritos` (padrão = os 10 do print, na mesma ordem). No menu, ✓ à esquerda = está nos Favoritos (igual ao sistema atual). ☆ na barra da janela, botão direito num item do menu (liga/desliga), botão direito num favorito (abrir, mover, remover) e a tela **Sistema › Favoritos** (ordenar, remover, adicionar, restaurar padrão). Toda mudança chama `renderFavorites` + `updateWindowChrome` + `refreshFavoriteViews`. A caixa de busca procura em todos os programas, sem acento, e mostra o caminho no menu.
 - **Quadro ATENÇÃO:** `collectAlerts()` devolve frases. É onde entrarão os avisos reais (NF-e pendentes na SEFAZ, certidões vencendo, lista de impostos aproximados vencendo, títulos vencidos…).
 - **Barra de status:** usuário, empresa, CAPS, NUM, relógio, NF-e (placeholder).
 - **Sair:** fecha os programas e mostra a tela "Sessão encerrada" (o navegador não deixa a página fechar a própria aba). Login/senha de verdade virá com o menu Sistema.
@@ -51,15 +52,21 @@ Uso em desktop/PC (Windows). Telas densas, estilo sistema de gestão clássico: 
 ## O que já vimos do sistema atual (prints de 28/10/2026)
 
 - **Tela principal:** título "Gestão Empresarial - Licenciado para <EMPRESA> - <usuário>"; barra de menus Cadastros, Lançamentos, Estoque, Consultas, CPR, Sistema, Ajuda, Sair, Aguardar, Janela; painel Favoritos com busca e 10 atalhos; quadro ATENÇÃO (ex.: "3 NF-e pendentes de retorno na SEFAZ", "faltam 11 dias para vencer a Certidão Negativa de Débitos — sem ela não fatura nota interestadual", "faltam 3 dias para vencer a Lista de Impostos Aproximados"); "Programas Abertos N"; botões chave, atualizar e desligar; "Versão Atual: data/hora"; barra de status com NUM, hora - data e "NF-e: Ambiente: Produção | Versão NF-e: 4.00 | Dt Validade Cert.".
-- **Menus já abertos nos prints:** Cadastros, Lançamentos, Estoque, Consultas (conteúdo transcrito em `MENU_TREE`).
-- **Ainda não vistos:** menus CPR, Sistema, Ajuda, Aguardar, Janela e todos os submenus (›).
-- **Dúvidas para o usuário:** o que faz "Aguardar"; o que significa o ✓ ao lado de "Clientes e Fornecedores" no menu (por ora interpretado como "está nos Favoritos", mostrado como ★); o que exatamente fazem os botões chave e atualizar.
+- **Menus já transcritos em `MENU_TREE`:** Cadastros, Lançamentos, Estoque, Consultas (1ª leva de prints); CPR, Sistema, Ajuda, Janela (2ª leva, fotos da tela). Separadores do menu Sistema deduzidos pelo espaçamento das fotos.
+- **Confirmado:** o ✓ à esquerda de um item do menu = está nos Favoritos (aparece em "Clientes e Fornecedores" e em "Sistema › Imprimir Etiquetas do Cód. de Barras", ambos favoritos).
+- **Sistema atual, menu Sistema:** tem Customização, Usuários, Favoritos, Alterar Senha → login/usuários/personalização entram por ali. "Liberação de Operações" tem atalho Ctrl+L. "Copiar Arquivos de Backup e XML" → backup.
+- **Ainda não vistos:** "Aguardar" (sem dropdown nas fotos — talvez ação direta, como Sair), submenus Cupom Fiscal e Verificar Pendências SEFAZ / Receita Federal, e todos os submenus › de Cadastros, Lançamentos, Estoque e Consultas. O menu Janela do sistema atual não mostrava lista de janelas (estava com 0 programas abertos).
+- **Dúvidas para o usuário:** o que faz "Aguardar"; o que exatamente fazem os botões chave e atualizar da lateral.
 
 ## Status
 
 ### Fase 0 — Casca ✅ (v0.1.0, schema v1)
 
 Tela principal no layout do sistema atual: menus completos dos 4 prints (mouse e teclado, submenus com atraso para atravessar na diagonal), janelas internas, barra de tarefas, menu Janela, Favoritos com busca e reordenação, quadro ATENÇÃO, barra de status com relógio e CAPS/NUM, primeiro uso pede empresa e usuário, Sistema › Mapa do sistema (o que já foi mapeado e o que falta de print), Ajuda › Atalhos/Sobre, Sair. Todas as telas ainda são placeholders.
+
+### Fase 0.1 — Menus completos ✅ (v0.2.0, schema v1)
+
+Menus CPR, Sistema, Ajuda e Janela iguais aos prints (28 programas conhecidos). ✓ nos menus para favoritos. Atalho Ctrl+L (Liberação de Operações), gerado a partir do `hint` do item. Janela › Maximizar Todas. **Sistema › Favoritos** é a primeira tela pronta (versão deste sistema; o print da tela original ainda não veio).
 
 ### Próximos passos sugeridos
 
