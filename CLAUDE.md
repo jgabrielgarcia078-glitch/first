@@ -1,5 +1,7 @@
 # GoalQuest — Contexto do Projeto
 
+> Este repositório tem dois projetos. Este arquivo é do **GoalQuest** (`goalquest.html`). O **sistema de gestão empresarial (ERP)** fica em `erp/` — contexto e decisões em `erp/CLAUDE.md`.
+
 Este arquivo é carregado automaticamente pelo Claude Code no início de toda sessão nesta pasta. Leia por completo antes de escrever qualquer código.
 
 ## Visão geral

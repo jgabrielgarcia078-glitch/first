@@ -1,0 +1,2136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gestão Empresarial</title>
+<style>
+  :root {
+    --bg: #e8edf5;
+    --surface: #ffffff;
+    --surface-2: #f5f7fb;
+    --surface-3: #eceff4;
+    --text: #1d2433;
+    --text-muted: #5d6779;
+    --border: #cfd6e3;
+    --border-strong: #b6bfcc;
+    --accent: #1d4ed8;
+    --accent-hover: #1e40af;
+    --accent-soft: #dbe7fd;
+    --focus: #2563eb;
+    --success: #15803d;
+    --warning: #b45309;
+    --danger: #dc2626;
+    --menu-hover: #d4e5fb;
+    --menu-hover-border: #9cc3f5;
+    --side-bg: linear-gradient(180deg, #0d47c9 0%, #0a38a8 55%, #0a2f8f 100%);
+    --side-text: #ffffff;
+    --alert-text: #ffe066;
+    --side-foot: linear-gradient(135deg, #0b3a9c 0%, #137f9e 55%, #1fb3a1 100%);
+    --title-active: linear-gradient(180deg, #2a5fdc 0%, #1b46b3 100%);
+    --title-inactive: #dfe5ee;
+    --win-border: #8ea0bd;
+    --win-shadow: 0 10px 28px rgba(15, 30, 60, 0.22), 0 2px 6px rgba(15, 30, 60, 0.12);
+    --taskbar-h: 34px;
+    --font: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; padding: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    line-height: 1.4;
+    min-width: 960px;
+    min-height: 560px;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  h1, h2, h3, p { margin: 0; }
+  :focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+  body.gesturing { user-select: none; }
+  body.gesture-move, body.gesture-move * { cursor: move !important; }
+  body.gesture-resize-e, body.gesture-resize-e * { cursor: ew-resize !important; }
+  body.gesture-resize-s, body.gesture-resize-s * { cursor: ns-resize !important; }
+  body.gesture-resize-se, body.gesture-resize-se * { cursor: nwse-resize !important; }
+
+  /* ---------- Estrutura principal ---------- */
+  #app { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; height: 100vh; min-height: 560px; overflow: hidden; }
+  #main { display: grid; grid-template-columns: 268px minmax(0, 1fr); min-height: 0; }
+
+  /* ---------- Barra de menus ---------- */
+  #menubar {
+    display: flex; align-items: stretch; height: 28px; padding: 0 4px;
+    background: linear-gradient(180deg, #fbfbfc 0%, #eef0f3 100%);
+    border-bottom: 1px solid #c9ced8;
+  }
+  #menubar-items { display: flex; align-items: stretch; }
+  .menubar-btn {
+    margin: 2px 0; padding: 0 9px; border: 1px solid transparent; border-radius: 3px;
+    background: transparent; cursor: default; white-space: nowrap;
+  }
+  .menubar-btn:hover, .menubar-btn.open { background: var(--menu-hover); border-color: var(--menu-hover-border); }
+  .menubar-btn u, .menu-item u { text-decoration-thickness: 1px; text-underline-offset: 2px; }
+
+  #menu-layer { position: fixed; inset: 0; pointer-events: none; z-index: 1000; }
+  .menu-pop {
+    position: fixed; pointer-events: auto; min-width: 230px; max-height: calc(100vh - 8px); overflow-y: auto;
+    padding: 3px; background: var(--surface); border: 1px solid var(--border-strong);
+    box-shadow: 2px 5px 14px rgba(15, 30, 60, 0.2);
+  }
+  .menu-item {
+    display: grid; grid-template-columns: 22px minmax(0, 1fr) auto 16px; align-items: center;
+    width: 100%; height: 26px; padding: 0 6px 0 4px; border: 1px solid transparent; border-radius: 3px;
+    background: none; text-align: left; white-space: nowrap; cursor: default;
+  }
+  .menu-item.active { background: var(--menu-hover); border-color: var(--menu-hover-border); }
+  .menu-item[aria-disabled="true"] { color: #8b93a1; }
+  .menu-item[aria-disabled="true"].active { background: var(--surface-3); border-color: transparent; }
+  .menu-note { font-style: italic; }
+  .mi-check { text-align: center; color: #d97706; font-size: 12px; }
+  .mi-check.checked { color: var(--accent); }
+  .mi-label { overflow: hidden; text-overflow: ellipsis; }
+  .mi-hint { padding-left: 24px; color: var(--text-muted); font-size: 12px; }
+  .mi-arrow { text-align: right; font-size: 15px; line-height: 1; color: #4b5567; }
+  .menu-sep { height: 1px; margin: 4px 6px 4px 28px; background: #e1e5eb; }
+
+  /* ---------- Lateral: Favoritos, avisos, rodapé ---------- */
+  #sidebar {
+    display: flex; flex-direction: column; min-height: 0;
+    background: var(--side-bg); color: var(--side-text); border-right: 1px solid #082a7a;
+  }
+  .sb-head { padding: 4px 8px; background: #e9edf3; color: #4b5567; font-size: 12px; border-bottom: 1px solid #c9ced8; }
+  .fav-search-wrap { position: relative; padding: 6px 8px; }
+  #fav-search {
+    width: 100%; height: 28px; padding: 0 30px 0 8px; border: 1px solid #7f9bd6; border-radius: 3px;
+    background: #ffffff; color: #111827;
+  }
+  #fav-search::-webkit-search-cancel-button { display: none; }
+  #fav-clear {
+    position: absolute; right: 12px; top: 10px; width: 22px; height: 20px; padding: 0;
+    border: 0; border-radius: 3px; background: transparent; color: #374151; cursor: pointer; font-size: 15px; line-height: 1;
+  }
+  #fav-clear:hover { background: #e5e9f0; }
+  #fav-list { flex: 1 1 auto; min-height: 60px; overflow-y: auto; padding: 0 6px 6px; }
+  .fav-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; padding: 4px 6px; border: 0; border-radius: 4px;
+    background: transparent; color: var(--side-text); font-weight: 600; font-size: 12.5px; text-align: left; cursor: pointer;
+  }
+  .fav-item:hover, .fav-item.active { background: rgba(255, 255, 255, 0.15); }
+  .fav-icon {
+    flex: 0 0 22px; height: 22px; display: grid; place-items: center; border-radius: 50%;
+    background: rgba(255, 255, 255, 0.18); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25); font-size: 11px;
+  }
+  .fav-text { display: flex; flex-direction: column; min-width: 0; }
+  .fav-label { line-height: 1.2; }
+  .fav-path { font-size: 11px; font-weight: 400; opacity: 0.78; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fav-empty { padding: 8px; font-size: 12px; opacity: 0.88; }
+
+  .alerts { margin: 0 6px 6px; border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 4px; background: rgba(0, 0, 30, 0.22); }
+  .alerts h2 { margin: 4px 0 2px; color: var(--alert-text); font-size: 13px; text-align: center; letter-spacing: 0.6px; }
+  #alerts-box { min-height: 26px; max-height: 84px; overflow-y: auto; padding: 2px 10px 8px; color: var(--alert-text); font-weight: 700; font-size: 12px; text-align: center; line-height: 1.35; }
+  #alerts-box p + p { margin-top: 6px; }
+  .alert-none { color: rgba(255, 255, 255, 0.78); font-weight: 400; }
+
+  .sb-foot { padding: 7px 12px 9px; background: var(--side-foot); }
+  .open-count { display: flex; align-items: center; justify-content: flex-end; gap: 10px; font-weight: 700; font-size: 12px; }
+  .open-count strong { font-size: 22px; line-height: 1; }
+  .sb-actions { display: flex; justify-content: space-around; margin-top: 6px; }
+  .round-btn {
+    width: 40px; height: 40px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 50%; cursor: pointer;
+    box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.25);
+  }
+  .round-btn:hover { filter: brightness(1.08); }
+  .round-btn:active { transform: translateY(1px); }
+  .round-btn-key { background: radial-gradient(circle at 35% 30%, #ffe08a, #e0a91f); color: #5a3b00; }
+  .round-btn-refresh { background: radial-gradient(circle at 35% 30%, #8fb2ff, #2f5fd0); color: #ffffff; }
+  .round-btn-power { background: radial-gradient(circle at 35% 30%, #ff8a80, #c62828); color: #ffffff; }
+  .sb-version { padding: 5px 10px; background: #0a2f8f; font-size: 11px; font-weight: 700; }
+
+  /* ---------- Área de trabalho e janelas internas ---------- */
+  #workspace { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 42%, #ffffff 0%, #eef2f8 55%, #e3e9f2 100%); }
+  #workspace-bg {
+    position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; pointer-events: none; user-select: none;
+  }
+  .bg-logo { width: 180px; height: 180px; filter: drop-shadow(0 10px 18px rgba(30, 64, 175, 0.25)); }
+  .bg-name {
+    font-size: 46px; font-weight: 800; letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #1e3a8a, #0e7490); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .bg-license { color: #64748b; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; }
+
+  #win-area { position: absolute; inset: 0; z-index: 0; }
+  #workspace.has-wins #win-area { bottom: var(--taskbar-h); }
+  .mdi-win {
+    position: absolute; display: flex; flex-direction: column; overflow: hidden;
+    min-width: 300px; min-height: 160px;
+    background: var(--surface); border: 1px solid var(--win-border); border-radius: 7px; box-shadow: var(--win-shadow);
+  }
+  .mdi-win:focus { outline: none; }
+  .mdi-win.maximized { left: 0 !important; top: 0 !important; width: 100% !important; height: 100% !important; border-width: 0; border-radius: 0; }
+  .mdi-win.maximized .win-resize { display: none; }
+  .win-titlebar {
+    flex: 0 0 30px; display: flex; align-items: center; gap: 8px; padding: 0 3px 0 10px;
+    background: var(--title-inactive); color: #4b5567; user-select: none; touch-action: none;
+  }
+  .mdi-win.active .win-titlebar { background: var(--title-active); color: #ffffff; }
+  .win-icon { font-size: 14px; }
+  .win-title { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+  .win-buttons { display: flex; gap: 1px; }
+  .win-btn {
+    width: 30px; height: 24px; display: grid; place-items: center; padding: 0; border: 0; border-radius: 3px;
+    background: transparent; color: inherit; cursor: pointer; font-size: 14px; line-height: 1;
+  }
+  .win-btn:hover { background: rgba(127, 140, 160, 0.25); }
+  .mdi-win.active .win-btn:hover { background: rgba(255, 255, 255, 0.2); }
+  .win-btn.on { color: #f59e0b; }
+  .mdi-win.active .win-btn.on { color: #ffd34d; }
+  .win-btn-close:hover, .mdi-win.active .win-btn-close:hover { background: #e81123; color: #ffffff; }
+  .win-body { flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--surface); }
+  .win-resize { position: absolute; z-index: 2; }
+  .win-resize[data-resize="e"] { top: 30px; right: 0; bottom: 12px; width: 6px; cursor: ew-resize; }
+  .win-resize[data-resize="s"] { left: 0; right: 12px; bottom: 0; height: 6px; cursor: ns-resize; }
+  .win-resize[data-resize="se"] {
+    right: 0; bottom: 0; width: 14px; height: 14px; cursor: nwse-resize;
+    background: linear-gradient(135deg, transparent 50%, rgba(100, 116, 139, 0.45) 50%, rgba(100, 116, 139, 0.45) 60%, transparent 60%, transparent 72%, rgba(100, 116, 139, 0.45) 72%, rgba(100, 116, 139, 0.45) 82%, transparent 82%);
+  }
+
+  #win-taskbar {
+    position: absolute; left: 0; right: 0; bottom: 0; height: var(--taskbar-h); display: none; gap: 4px; padding: 4px 6px;
+    overflow-x: auto; background: rgba(248, 250, 253, 0.97); border-top: 1px solid var(--border);
+  }
+  #workspace.has-wins #win-taskbar { display: flex; }
+  .task-btn {
+    flex: 0 1 210px; min-width: 110px; height: 26px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+    border: 1px solid #c7cfdc; border-radius: 4px; background: var(--surface); cursor: pointer; font-size: 12px; text-align: left;
+  }
+  .task-btn:hover { background: var(--surface-2); }
+  .task-btn.active { background: var(--accent-soft); border-color: #8db5ee; font-weight: 600; }
+  .task-btn.minimized { color: var(--text-muted); font-style: italic; }
+  .task-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* ---------- Barra de status ---------- */
+  #statusbar {
+    display: flex; height: 24px; background: #eceef2; border-top: 1px solid #c4c9d2; font-size: 12px; color: #2d3442;
+  }
+  .st-cell {
+    padding: 0 10px; line-height: 23px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    border-left: 1px solid #c9ced6; box-shadow: inset 1px 0 0 #ffffff;
+  }
+  .st-cell:first-child { border-left: 0; box-shadow: none; }
+  .st-grow { flex: 1 1 auto; }
+  .st-key { color: #a2a9b5; font-weight: 600; }
+  .st-key.on { color: #111827; }
+
+  /* ---------- Conteúdo dos programas ---------- */
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+  .st-pendente { background: #fff1cc; color: #8a5a00; }
+  .st-pronto { background: #dcf5e3; color: #146c2e; }
+  .st-print { background: #e8ecff; color: #3743a5; }
+
+  .ph { max-width: 580px; margin: 0 auto; padding: 26px 24px 30px; text-align: center; }
+  .ph-icon { font-size: 42px; line-height: 1.1; }
+  .ph h2 { margin-top: 6px; font-size: 18px; }
+  .ph-path { margin: 4px 0 10px; color: var(--text-muted); }
+  .ph-box { margin-top: 18px; padding: 14px 18px; text-align: left; background: var(--surface-2); border: 1px solid #dfe5ef; border-radius: 8px; }
+  .ph-box ul { margin: 8px 0 0; padding-left: 20px; }
+  .ph-box li + li { margin-top: 3px; }
+
+  .map { padding: 14px 18px 22px; }
+  .map-intro { color: var(--text-muted); }
+  .map-summary { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+  .map-stat { padding: 7px 12px; background: var(--surface-2); border: 1px solid #e1e6ee; border-radius: 6px; color: var(--text-muted); font-size: 12px; }
+  .map-stat strong { display: block; color: var(--text); font-size: 18px; line-height: 1.2; }
+  .map-top h3 {
+    margin: 16px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #e3e8f0;
+    color: var(--accent); font-size: 12px; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .map ul { margin: 0; padding-left: 16px; list-style: none; }
+  .map-top > ul { padding-left: 2px; }
+  .map li { padding: 2px 0; }
+  .map-sub { color: #374151; }
+  .map-note, .map-action { color: var(--text-muted); font-style: italic; }
+  .map-link {
+    display: inline-flex; align-items: center; gap: 6px; padding: 0; border: 0; background: none;
+    color: var(--accent); cursor: pointer; text-align: left;
+  }
+  .map-link:hover { text-decoration: underline; }
+
+  /* ---------- Modais ---------- */
+  .modal-backdrop {
+    position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 20px;
+    background: rgba(15, 23, 42, 0.4); opacity: 0; transition: opacity 0.14s ease;
+  }
+  .modal-backdrop.show { opacity: 1; }
+  .modal { width: min(500px, 100%); max-height: calc(100vh - 40px); display: flex; flex-direction: column; background: var(--surface); border-radius: 10px; box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35); }
+  .modal-sm { width: min(400px, 100%); }
+  .modal-lg { width: min(640px, 100%); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 18px; border-bottom: 1px solid var(--border); }
+  .modal-header h2 { font-size: 15px; }
+  .modal-body { padding: 16px 18px; overflow-y: auto; }
+  .modal-footer { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--border); background: #f8fafc; border-radius: 0 0 10px 10px; }
+  .modal-lead { margin-bottom: 14px; color: var(--text-muted); }
+  .icon-btn { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; cursor: pointer; color: var(--text-muted); }
+  .icon-btn:hover { background: var(--surface-3); color: var(--text); }
+  .btn { height: 32px; padding: 0 14px; border: 1px solid #c3cad6; border-radius: 6px; background: var(--surface); font-weight: 600; cursor: pointer; }
+  .btn:hover { background: var(--surface-2); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-danger { background: var(--danger); border-color: var(--danger); color: #ffffff; }
+  .btn-danger:hover { background: #b91c1c; }
+  .field { display: block; margin-bottom: 12px; }
+  .field > span { display: block; margin-bottom: 4px; color: #374151; font-size: 12px; font-weight: 600; }
+  .field input { width: 100%; height: 34px; padding: 0 10px; border: 1px solid #c3cad6; border-radius: 6px; background: var(--surface); }
+  .field input:focus { outline: 2px solid #93b4f5; outline-offset: 0; border-color: var(--focus); }
+  .field-error { color: var(--danger); font-size: 12px; font-weight: 600; }
+  .kbd-table { width: 100%; border-collapse: collapse; }
+  .kbd-table td { padding: 6px 0; border-bottom: 1px solid #eef1f5; vertical-align: top; }
+  .kbd-table td:first-child { width: 42%; padding-right: 12px; }
+  kbd { display: inline-block; padding: 1px 6px; border: 1px solid #cbd2dd; border-bottom-width: 2px; border-radius: 4px; background: var(--surface-2); font-family: inherit; font-size: 12px; white-space: nowrap; }
+  .about-list { margin: 10px 0 0; padding-left: 18px; }
+  .about-list li + li { margin-top: 4px; }
+
+  /* ---------- Toasts ---------- */
+  #toast-root { position: fixed; right: 16px; bottom: 36px; z-index: 2500; display: flex; flex-direction: column; gap: 8px; pointer-events: none; }
+  .toast {
+    display: flex; align-items: flex-start; gap: 10px; min-width: 240px; max-width: 380px; padding: 10px 12px;
+    background: #1f2937; color: #ffffff; border-left: 4px solid #60a5fa; border-radius: 8px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+    pointer-events: auto; opacity: 0; transform: translateY(8px); transition: opacity 0.18s ease, transform 0.18s ease;
+  }
+  .toast.show { opacity: 1; transform: none; }
+  .toast-success { border-left-color: #22c55e; }
+  .toast-warning { border-left-color: #f59e0b; }
+  .toast-error { border-left-color: #ef4444; }
+  .toast-close { margin-left: auto; padding: 0 2px; border: 0; background: none; color: inherit; opacity: 0.7; cursor: pointer; }
+  .toast-close:hover { opacity: 1; }
+
+  /* ---------- Tela de saída ---------- */
+  #lock-screen { position: fixed; inset: 0; z-index: 3000; display: grid; place-items: center; background: linear-gradient(135deg, #0a2f8f 0%, #137f9e 100%); }
+  .lock-card { width: 360px; padding: 30px 28px; text-align: center; background: var(--surface); border-radius: 14px; box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35); }
+  .lock-card svg { width: 72px; height: 72px; }
+  .lock-card h1 { margin-top: 10px; font-size: 20px; }
+  .lock-card p { margin: 6px 0 18px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e40af"/>
+      <stop offset="1" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 120 120">
+    <rect x="6" y="6" width="108" height="108" rx="26" fill="url(#logo-grad)"/>
+    <rect x="28" y="64" width="16" height="28" rx="3" fill="#ffffff" opacity="0.72"/>
+    <rect x="52" y="47" width="16" height="45" rx="3" fill="#ffffff" opacity="0.86"/>
+    <rect x="76" y="29" width="16" height="63" rx="3" fill="#ffffff"/>
+  </symbol>
+</svg>
+
+<div id="app">
+  <nav id="menubar" aria-label="Menu principal">
+    <div id="menubar-items" role="menubar"></div>
+  </nav>
+
+  <div id="main">
+    <aside id="sidebar" aria-label="Favoritos e avisos">
+      <div class="sb-head">Favoritos</div>
+      <div class="fav-search-wrap">
+        <input id="fav-search" type="search" placeholder="Buscar programa… (Ctrl+K)" autocomplete="off" spellcheck="false" aria-label="Buscar programa">
+        <button type="button" id="fav-clear" title="Limpar busca" aria-label="Limpar busca">↶</button>
+      </div>
+      <div id="fav-list" role="listbox" aria-label="Favoritos"></div>
+      <section class="alerts" aria-label="Avisos">
+        <h2>ATENÇÃO</h2>
+        <div id="alerts-box"></div>
+      </section>
+      <div class="sb-foot">
+        <div class="open-count"><span>Programas Abertos</span><strong id="open-count">0</strong></div>
+        <div class="sb-actions">
+          <button type="button" class="round-btn round-btn-key" data-action="empresa-usuario" title="Empresa e usuário" aria-label="Empresa e usuário">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 20 3M16 7l3 3M14 9l2 2"/></svg>
+          </button>
+          <button type="button" class="round-btn round-btn-refresh" data-action="atualizar" title="Atualizar avisos" aria-label="Atualizar avisos">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8M4 4v4h4M4 13a8 8 0 0 0 14.3 4.9L20 16M20 20v-4h-4"/></svg>
+          </button>
+          <button type="button" class="round-btn round-btn-power" data-action="sair" title="Sair do sistema" aria-label="Sair do sistema">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="sb-version" id="sb-version"></div>
+    </aside>
+
+    <main id="workspace">
+      <div id="workspace-bg" aria-hidden="true">
+        <svg class="bg-logo"><use href="#logo"/></svg>
+        <div class="bg-name">Gestão Empresarial</div>
+        <div class="bg-license" id="bg-license"></div>
+      </div>
+      <div id="win-area"></div>
+      <div id="win-taskbar" role="toolbar" aria-label="Programas abertos"></div>
+    </main>
+  </div>
+
+  <footer id="statusbar">
+    <span class="st-cell" id="st-user"></span>
+    <span class="st-cell st-grow" id="st-empresa"></span>
+    <span class="st-cell st-key" id="st-caps" title="Caps Lock">CAPS</span>
+    <span class="st-cell st-key" id="st-num" title="Num Lock">NUM</span>
+    <span class="st-cell" id="st-clock"></span>
+    <span class="st-cell" id="st-fiscal">NF-e: não configurada</span>
+  </footer>
+</div>
+
+<div id="menu-layer"></div>
+<div id="modal-root"></div>
+<div id="toast-root" aria-live="polite"></div>
+
+<div id="lock-screen" hidden>
+  <div class="lock-card">
+    <svg aria-hidden="true"><use href="#logo"/></svg>
+    <h1>Gestão Empresarial</h1>
+    <p id="lock-msg">Sessão encerrada.</p>
+    <button type="button" class="btn btn-primary" id="lock-enter">Entrar novamente</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+   * 1. CONSTANTES (todas declaradas aqui, antes de qualquer função)
+   * ===================================================================== */
+
+  const APP_NAME = 'Gestão Empresarial';
+  const APP_VERSION = '0.1.0';
+  const APP_BUILD_DATE = '28/10/2026';
+  const CURRENT_SCHEMA_VERSION = 1;
+
+  const DB_NAME = 'gestao-empresarial';
+  const DB_VERSION = 1;
+  const STORE_CONFIG = 'config';
+  const SETTINGS_KEY = 'settings';
+
+  const CLOCK_INTERVAL_MS = 1000;
+  const TOAST_DURATION_MS = 3800;
+  const TOAST_MAX = 4;
+  const SUBMENU_DELAY_MS = 180;
+  const SEARCH_MAX_RESULTS = 30;
+
+  const WIN_DEFAULT_W = 760;
+  const WIN_DEFAULT_H = 470;
+  const WIN_MIN_W = 300;
+  const WIN_MIN_H = 160;
+  const WIN_TITLEBAR_H = 30;
+  const WIN_CASCADE_STEP = 26;
+  const WIN_CASCADE_SLOTS = 8;
+  const WIN_KEEP_VISIBLE = 90; // px da janela que sempre ficam dentro da área ao arrastar para os lados
+
+  const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  const ACCEL_CODE_RE = /^Key[A-Z]$/;
+
+  const ICONS = {
+    min: '<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M1 8.5h8" stroke="currentColor" stroke-width="1.3"/></svg>',
+    max: '<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>',
+    restore: '<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M3 1h6v6M1 3h6v6H1z" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>',
+    close: '<svg viewBox="0 0 10 10" width="10" height="10" aria-hidden="true"><path d="M1 1l8 8M9 1l-8 8" stroke="currentColor" stroke-width="1.3"/></svg>'
+  };
+
+  const STATUS_LABELS = { pendente: 'A construir', pronto: 'Pronto' };
+
+  // Programas = cada tela que abre numa janela. status: 'pendente' (padrão) ou 'pronto'.
+  // own: true = tela deste sistema (não existe no sistema de referência; fora das contagens do mapa).
+  const PROGRAMS = {
+    'clientes-fornecedores': { title: 'Clientes e Fornecedores', icon: '👥' },
+    'transportadora-veiculos': { title: 'Transportadora/Veículos', icon: '🚚' },
+    'emprestimo-produtos': { title: 'Empréstimo de Produtos', icon: '🔁' },
+    'ordens-entrega': { title: 'Emissão de Ordens de Entrega', icon: '📋' },
+    'orcamento-faturamento': { title: 'Orçamento e Ordem de Faturamento', icon: '🧮' },
+    'cadastro-produtos': { title: 'Cadastro de Produtos', icon: '📦' },
+    'historico-cliente': { title: 'Histórico da Vida do Cliente', icon: '🗂️' },
+    'conciliacao-bancaria': { title: 'Conciliação Bancária', icon: '🏦' },
+    'cheques-fornecedores': { title: 'Emissão Cheques Fornecedores', icon: '✍️' },
+    'baixa-titulos': { title: 'Baixa de Títulos', icon: '✅' },
+    'lancamento-caixa': { title: 'Lançamento de Caixa, Banco e Cartões', icon: '💵' },
+    'margem-lucro': { title: 'Consulta Margem de Lucro Líquido', icon: '📈' },
+    'consulta-lancamentos-caixa': { title: 'Consulta Lançamentos de Caixa e Cartões', icon: '🔎' },
+    'etiquetas-codbarras': { title: 'Imprimir Etiquetas do Cód. de Barras', icon: '🏷️' },
+    'mapa-sistema': { title: 'Mapa do sistema', icon: '🗺️', view: 'mapa', status: 'pronto', own: true, w: 640, h: 580 }
+  };
+
+  // Mesma ordem dos Favoritos do sistema atual (print de 28/10/2026).
+  const DEFAULT_FAVORITES = [
+    'clientes-fornecedores', 'cadastro-produtos', 'historico-cliente', 'conciliacao-bancaria', 'cheques-fornecedores',
+    'baixa-titulos', 'lancamento-caixa', 'margem-lucro', 'consulta-lancamentos-caixa', 'etiquetas-codbarras'
+  ];
+
+  const MENU_SEP = { sep: true };
+
+  // Árvore de menus. '&' marca a letra do atalho Alt+letra.
+  // { program } abre um programa · { action } executa uma ação · { label, items } submenu conhecido
+  // { label, pending: true } submenu que ainda não vimos (aguardando print) · { note } linha informativa
+  const MENU_TREE = [
+    { id: 'cadastros', label: '&Cadastros', items: [
+      { program: 'clientes-fornecedores' },
+      { label: 'Vendedores', pending: true },
+      { label: 'Cadastros Bancários', pending: true },
+      MENU_SEP,
+      { label: 'Cadastro de Estoque', pending: true },
+      { label: 'Tributos', pending: true },
+      { label: 'Moedas', pending: true },
+      MENU_SEP,
+      { label: 'Cadastro Contábil', pending: true },
+      { label: 'Empresas', pending: true },
+      { label: 'Folha de Pagamento', pending: true },
+      { program: 'transportadora-veiculos' },
+      { label: 'Outros', pending: true }
+    ] },
+    { id: 'lancamentos', label: '&Lançamentos', items: [
+      { label: 'Financeiro', pending: true },
+      { label: 'Comissões', pending: true },
+      MENU_SEP,
+      { label: 'Lançamentos Bancários', pending: true },
+      { label: 'Lançamentos Contábeis', pending: true },
+      { label: 'Atualizações', pending: true },
+      { label: 'Livros Fiscais', pending: true }
+    ] },
+    { id: 'estoque', label: '&Estoque', items: [
+      { label: 'Pedidos', pending: true },
+      { label: 'Notas Fiscais', pending: true },
+      MENU_SEP,
+      { program: 'emprestimo-produtos' },
+      { program: 'ordens-entrega' },
+      { program: 'orcamento-faturamento' },
+      MENU_SEP,
+      { label: 'Cancelar Notas Fiscais', pending: true }
+    ] },
+    { id: 'consultas', label: 'C&onsultas', items: [
+      { label: 'Consulta Produtos', pending: true },
+      { label: 'Consultas Contábeis', pending: true },
+      { label: 'Consulta Comissões', pending: true },
+      { label: 'Consultas Financeiras', pending: true },
+      { label: 'Consulta Pedidos', pending: true },
+      { label: 'Consulta Cliente/Fornecedor', pending: true },
+      { label: 'Consulta Produção da Indústria', pending: true }
+    ] },
+    { id: 'cpr', label: 'C&PR', pending: true },
+    { id: 'sistema', label: '&Sistema', items: [
+      { program: 'mapa-sistema' },
+      { action: 'empresa-usuario', label: 'Empresa e usuário…' },
+      MENU_SEP,
+      { note: 'Demais itens deste menu: aguardando print', pending: true }
+    ] },
+    { id: 'ajuda', label: '&Ajuda', items: [
+      { action: 'atalhos', label: 'Atalhos de teclado' },
+      { action: 'sobre', label: 'Sobre o sistema' },
+      MENU_SEP,
+      { note: 'Demais itens deste menu: aguardando print', pending: true }
+    ] },
+    { id: 'sair', label: 'Sa&ir', action: 'sair' },
+    { id: 'aguardar', label: 'A&guardar', pending: true },
+    { id: 'janela', label: '&Janela', dynamic: 'janela' }
+  ];
+
+  // Estrutura do IndexedDB: cada versão cria/ajusta object stores, aplicadas em sequência.
+  // Cada cadastro novo (clientes, produtos, títulos…) ganha o seu store aqui, com índices.
+  const DB_UPGRADES = {
+    1: function (db) {
+      if (!db.objectStoreNames.contains(STORE_CONFIG)) db.createObjectStore(STORE_CONFIG, { keyPath: 'key' });
+    }
+  };
+
+  // Formato dos dados salvos: MIGRATIONS[n] converte um registro da versão n-1 para a versão n.
+  const MIGRATIONS = {};
+
+  const SHORTCUTS = [
+    ['Alt + letra sublinhada', 'Abre o menu (Alt+C Cadastros, Alt+L Lançamentos, Alt+J Janela…)'],
+    ['F10', 'Abre o primeiro menu'],
+    ['↑ ↓ ← →', 'Navegam pelos menus e submenus'],
+    ['Enter', 'Abre o item destacado'],
+    ['Letra (menu aberto)', 'Pula para o item que começa com essa letra'],
+    ['Esc', 'Fecha o menu; fora de campos de texto, fecha a janela ativa'],
+    ['Ctrl + K', 'Busca um programa pelo nome (caixa dos Favoritos)'],
+    ['Duplo clique no título', 'Maximiza ou restaura a janela'],
+    ['Botão direito num item do menu', 'Adiciona ou remove dos Favoritos'],
+    ['Botão direito num favorito', 'Abrir, mover para cima/baixo ou remover']
+  ];
+
+  /* =====================================================================
+   * 2. ESTADO
+   * ===================================================================== */
+
+  let dbPromise = null;
+  let storageAvailable = true;
+  let persistenceBlocked = false;
+  let settings = null;
+  let savePending = false;
+  let programPaths = {};
+
+  const wins = [];
+  let winSeq = 0;
+  let zTop = 10;
+  let activeWinId = null;
+  let gesture = null;
+
+  const menu = { top: -1, levels: [], context: false, timer: null };
+  const modalStack = [];
+  let searchActive = 0;
+  let sessionLocked = false;
+
+  /* =====================================================================
+   * 3. UTILITÁRIOS
+   * ===================================================================== */
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value).replace(/[&<>"']/g, function (ch) { return HTML_ESCAPES[ch]; });
+  }
+
+  function normalizeText(value) {
+    return String(value == null ? '' : value).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  }
+
+  function clamp(n, min, max) {
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function pad2(n) {
+    return (n < 10 ? '0' : '') + n;
+  }
+
+  function formatClock(d) {
+    return pad2(d.getHours()) + ':' + pad2(d.getMinutes()) + ':' + pad2(d.getSeconds()) + ' - ' +
+      pad2(d.getDate()) + '/' + pad2(d.getMonth() + 1) + '/' + d.getFullYear();
+  }
+
+  function plural(n, one, many) {
+    return n + ' ' + (n === 1 ? one : many);
+  }
+
+  function describeError(err) {
+    return err && err.message ? err.message : String(err);
+  }
+
+  function isEditable(el) {
+    return !!(el && el.closest && el.closest('input, textarea, select, [contenteditable="true"]'));
+  }
+
+  /* =====================================================================
+   * 4. ARMAZENAMENTO — wrapper Promise para IndexedDB
+   *    Toda leitura/gravação passa por aqui (as telas nunca tocam no IndexedDB
+   *    diretamente), para que um dia dê para trocar por um servidor.
+   * ===================================================================== */
+
+  function openDatabase() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve, reject) {
+      if (!window.indexedDB) {
+        reject(new Error('IndexedDB não está disponível neste navegador.'));
+        return;
+      }
+      let request;
+      try {
+        request = window.indexedDB.open(DB_NAME, DB_VERSION);
+      } catch (err) {
+        reject(err);
+        return;
+      }
+      request.addEventListener('upgradeneeded', function (e) {
+        const db = request.result;
+        for (let v = e.oldVersion + 1; v <= DB_VERSION; v++) {
+          if (DB_UPGRADES[v]) DB_UPGRADES[v](db, request.transaction);
+        }
+      });
+      request.addEventListener('success', function () {
+        const db = request.result;
+        db.addEventListener('versionchange', function () {
+          db.close();
+          dbPromise = null;
+          showToast('O sistema foi atualizado em outra aba. Recarregue esta página.', { type: 'warning' });
+        });
+        resolve(db);
+      });
+      request.addEventListener('error', function () {
+        reject(request.error || new Error('Falha ao abrir o IndexedDB.'));
+      });
+      request.addEventListener('blocked', function () {
+        showToast('Feche as outras abas do sistema para concluir a atualização do banco.', { type: 'warning' });
+      });
+    });
+    dbPromise.catch(function () { dbPromise = null; });
+    return dbPromise;
+  }
+
+  function idbTransaction(storeName, mode, operation) {
+    return openDatabase().then(function (db) {
+      return new Promise(function (resolve, reject) {
+        let tx;
+        try {
+          tx = db.transaction(storeName, mode);
+        } catch (err) {
+          reject(err);
+          return;
+        }
+        const request = operation(tx.objectStore(storeName));
+        let result;
+        request.addEventListener('success', function () { result = request.result; });
+        tx.addEventListener('complete', function () { resolve(result); });
+        tx.addEventListener('error', function () { reject(tx.error || request.error); });
+        tx.addEventListener('abort', function () { reject(tx.error || new Error('Transação abortada.')); });
+      });
+    });
+  }
+
+  function idbGet(storeName, key) {
+    return idbTransaction(storeName, 'readonly', function (store) { return store.get(key); });
+  }
+
+  function idbPut(storeName, value) {
+    return idbTransaction(storeName, 'readwrite', function (store) { return store.put(value); });
+  }
+
+  function requestPersistentStorage() {
+    if (navigator.storage && navigator.storage.persist) {
+      navigator.storage.persist().catch(function () {});
+    }
+  }
+
+  /* =====================================================================
+   * 5. MODELO DE DADOS — configurações, migração, carga e gravação
+   * ===================================================================== */
+
+  function createDefaultSettings() {
+    return {
+      key: SETTINGS_KEY,
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      empresaNome: '',
+      usuarioNome: '',
+      favoritos: DEFAULT_FAVORITES.slice()
+    };
+  }
+
+  function migrateSettings(raw) {
+    let data = raw;
+    let version = Number(data.schemaVersion) || 1;
+    while (version < CURRENT_SCHEMA_VERSION) {
+      const next = version + 1;
+      if (!MIGRATIONS[next]) throw new Error('Migração ausente para a versão ' + next + '.');
+      data = MIGRATIONS[next](data);
+      version = next;
+      data.schemaVersion = version;
+    }
+    return data;
+  }
+
+  function normalizeSettings(raw) {
+    const out = createDefaultSettings();
+    const src = raw && typeof raw === 'object' ? raw : {};
+    out.empresaNome = typeof src.empresaNome === 'string' ? src.empresaNome.trim().slice(0, 120) : '';
+    out.usuarioNome = typeof src.usuarioNome === 'string' ? src.usuarioNome.trim().slice(0, 60) : '';
+    if (Array.isArray(src.favoritos)) {
+      out.favoritos = src.favoritos.filter(function (id, i, arr) { return !!PROGRAMS[id] && arr.indexOf(id) === i; });
+    }
+    return out;
+  }
+
+  // Resolve { firstRun } — true quando ainda faltam empresa/usuário.
+  function loadSettings() {
+    return idbGet(STORE_CONFIG, SETTINGS_KEY).then(function (raw) {
+      if (!raw) {
+        settings = createDefaultSettings();
+        return { firstRun: true };
+      }
+      const fromVersion = Number(raw.schemaVersion) || 1;
+      if (fromVersion > CURRENT_SCHEMA_VERSION) {
+        persistenceBlocked = true;
+        settings = normalizeSettings(raw);
+        return { firstRun: false };
+      }
+      settings = normalizeSettings(migrateSettings(raw));
+      if (fromVersion < CURRENT_SCHEMA_VERSION) scheduleSave();
+      return { firstRun: !settings.empresaNome || !settings.usuarioNome };
+    }, function (err) {
+      console.error(err);
+      storageAvailable = false;
+      settings = createDefaultSettings();
+      return { firstRun: true };
+    }).catch(function (err) {
+      console.error(err);
+      persistenceBlocked = true;
+      if (!settings) settings = createDefaultSettings();
+      showToast('Não foi possível ler os dados salvos: ' + describeError(err), { type: 'error' });
+      return { firstRun: !settings.empresaNome };
+    });
+  }
+
+  // Sem debounce de tempo: várias alterações na mesma rodada viram uma gravação só.
+  function scheduleSave() {
+    if (savePending) return;
+    savePending = true;
+    Promise.resolve().then(function () {
+      savePending = false;
+      persistNow();
+    });
+  }
+
+  function persistNow() {
+    if (!storageAvailable || persistenceBlocked) return Promise.resolve();
+    return idbPut(STORE_CONFIG, settings).catch(function (err) {
+      console.error(err);
+      showToast('Não foi possível salvar: ' + describeError(err), { type: 'error' });
+    });
+  }
+
+  /* =====================================================================
+   * 6. TOASTS
+   * ===================================================================== */
+
+  function showToast(message, options) {
+    const opts = options || {};
+    const root = document.getElementById('toast-root');
+    while (root.children.length >= TOAST_MAX) root.removeChild(root.firstChild);
+    const el = document.createElement('div');
+    el.className = 'toast toast-' + (opts.type || 'info');
+    el.setAttribute('role', 'status');
+    el.innerHTML = '<span class="toast-msg">' + escapeHtml(message) + '</span>' +
+      '<button type="button" class="toast-close" aria-label="Fechar">✕</button>';
+    let timer = null;
+    function dismiss() {
+      clearTimeout(timer);
+      el.classList.remove('show');
+      setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 200);
+    }
+    el.querySelector('.toast-close').addEventListener('click', dismiss);
+    el.addEventListener('mouseenter', function () { clearTimeout(timer); });
+    el.addEventListener('mouseleave', function () { timer = setTimeout(dismiss, TOAST_DURATION_MS); });
+    root.appendChild(el);
+    requestAnimationFrame(function () { el.classList.add('show'); });
+    timer = setTimeout(dismiss, opts.duration || TOAST_DURATION_MS);
+  }
+
+  /* =====================================================================
+   * 7. MODAIS
+   * ===================================================================== */
+
+  function syncInert() {
+    document.getElementById('app').inert = sessionLocked || modalStack.length > 0;
+  }
+
+  // opts: { title, body (HTML), size: 'sm'|'lg', dismissible (padrão true),
+  //         actions: [{ id, label, variant: 'primary'|'danger', submit }],
+  //         onAction(id, modal) → false mantém aberto, onClose(reason) }
+  function openModal(opts) {
+    const root = document.getElementById('modal-root');
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    const dismissible = opts.dismissible !== false;
+    const actionList = opts.actions || [];
+    const actions = actionList.map(function (a) {
+      const cls = a.variant === 'primary' ? 'btn btn-primary' : a.variant === 'danger' ? 'btn btn-danger' : 'btn';
+      return '<button type="' + (a.submit ? 'submit' : 'button') + '" class="' + cls + '" data-modal-action="' + escapeHtml(a.id) + '">' + escapeHtml(a.label) + '</button>';
+    }).join('');
+    backdrop.innerHTML =
+      '<form class="modal' + (opts.size ? ' modal-' + opts.size : '') + '" role="dialog" aria-modal="true" aria-label="' + escapeHtml(opts.title) + '" novalidate>' +
+      '<header class="modal-header"><h2>' + escapeHtml(opts.title) + '</h2>' +
+      (dismissible ? '<button type="button" class="icon-btn" data-modal-close aria-label="Fechar">✕</button>' : '') + '</header>' +
+      '<div class="modal-body">' + (opts.body || '') + '</div>' +
+      (actions ? '<footer class="modal-footer">' + actions + '</footer>' : '') +
+      '</form>';
+    const form = backdrop.querySelector('form');
+    const modal = { el: form, dismissible: dismissible, closed: false, close: null };
+
+    function close(reason) {
+      if (modal.closed) return;
+      modal.closed = true;
+      const idx = modalStack.indexOf(modal);
+      if (idx >= 0) modalStack.splice(idx, 1);
+      syncInert();
+      backdrop.classList.remove('show');
+      setTimeout(function () { if (backdrop.parentNode) backdrop.parentNode.removeChild(backdrop); }, 150);
+      if (opts.onClose) opts.onClose(reason || 'close');
+    }
+    modal.close = close;
+
+    function runModalAction(id) {
+      if (modal.closed) return;
+      const result = opts.onAction ? opts.onAction(id, modal) : undefined;
+      if (result !== false) close(id);
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const primary = actionList.filter(function (a) { return a.submit; })[0];
+      if (primary) runModalAction(primary.id);
+    });
+    form.addEventListener('click', function (e) {
+      const btn = e.target.closest('[data-modal-action]');
+      if (btn && btn.type !== 'submit') runModalAction(btn.getAttribute('data-modal-action'));
+      if (e.target.closest('[data-modal-close]')) close('dismiss');
+    });
+    backdrop.addEventListener('pointerdown', function (e) {
+      if (e.target === backdrop && modal.dismissible) close('dismiss');
+    });
+
+    root.appendChild(backdrop);
+    modalStack.push(modal);
+    syncInert();
+    requestAnimationFrame(function () { backdrop.classList.add('show'); });
+    const focusTarget = form.querySelector('.modal-body input') || form.querySelector('.modal-footer [type="submit"]') || form;
+    focusTarget.focus();
+    return modal;
+  }
+
+  function confirmDialog(opts) {
+    return new Promise(function (resolve) {
+      let answered = false;
+      openModal({
+        title: opts.title,
+        size: 'sm',
+        body: '<p>' + escapeHtml(opts.message) + '</p>',
+        actions: [
+          { id: 'cancel', label: 'Cancelar' },
+          { id: 'ok', label: opts.confirmLabel || 'Confirmar', variant: opts.variant || 'primary', submit: true }
+        ],
+        onAction: function (id) {
+          answered = true;
+          resolve(id === 'ok');
+        },
+        onClose: function () { if (!answered) resolve(false); }
+      });
+    });
+  }
+
+  /* =====================================================================
+   * 8. MENUS (barra, dropdowns, submenus, menu de contexto, teclado)
+   * ===================================================================== */
+
+  function accelHtml(label) {
+    const i = label.indexOf('&');
+    if (i < 0) return escapeHtml(label);
+    return escapeHtml(label.slice(0, i)) + '<u>' + escapeHtml(label.charAt(i + 1)) + '</u>' + escapeHtml(label.slice(i + 2));
+  }
+
+  function plainLabel(label) {
+    return label.replace('&', '');
+  }
+
+  function accelKey(label) {
+    const i = label.indexOf('&');
+    return i < 0 ? '' : normalizeText(label.charAt(i + 1));
+  }
+
+  function topIndexByAccel(letter) {
+    for (let i = 0; i < MENU_TREE.length; i++) {
+      if (accelKey(MENU_TREE[i].label) === letter) return i;
+    }
+    return -1;
+  }
+
+  function renderMenubar() {
+    document.getElementById('menubar-items').innerHTML = MENU_TREE.map(function (top, idx) {
+      return '<button type="button" class="menubar-btn" role="menuitem" data-top="' + idx + '" aria-haspopup="' + (top.action ? 'false' : 'true') + '" aria-expanded="false">' + accelHtml(top.label) + '</button>';
+    }).join('');
+  }
+
+  function topButton(index) {
+    return document.querySelector('#menubar-items [data-top="' + index + '"]');
+  }
+
+  function isSubmenu(item) {
+    return !!(item.items || (item.pending && !item.note));
+  }
+
+  function isDisabled(item) {
+    return !!(item.sep || item.note || item.disabled);
+  }
+
+  function menuItemLabel(item) {
+    if (item.program) return PROGRAMS[item.program].title;
+    return item.label || item.note || '';
+  }
+
+  function submenuItems(item) {
+    if (item.items) return item.items;
+    return [{ note: 'Aguardando o print deste submenu', pending: true }];
+  }
+
+  function topMenuItems(top) {
+    if (top.dynamic === 'janela') return buildWindowMenuItems();
+    if (top.pending) return [{ note: 'Aguardando o print deste menu', pending: true }];
+    return top.items;
+  }
+
+  function buildWindowMenuItems() {
+    const none = wins.length === 0;
+    const items = [
+      { action: 'win-cascade', label: 'Cascata', disabled: none },
+      { action: 'win-tile-v', label: 'Lado a lado (colunas)', disabled: none },
+      { action: 'win-tile-h', label: 'Lado a lado (linhas)', disabled: none },
+      MENU_SEP,
+      { action: 'win-min-all', label: 'Minimizar todas', disabled: none },
+      { action: 'win-restore-all', label: 'Restaurar todas', disabled: none },
+      { action: 'win-close-all', label: 'Fechar todas', disabled: none },
+      MENU_SEP
+    ];
+    if (none) items.push({ note: 'Nenhum programa aberto' });
+    wins.forEach(function (w, i) {
+      items.push({ action: 'win-focus', winId: w.id, label: (i + 1) + '  ' + PROGRAMS[w.programId].title, checked: w.id === activeWinId && !w.minimized });
+    });
+    return items;
+  }
+
+  function renderMenuPopup(items, level) {
+    const pop = document.createElement('div');
+    pop.className = 'menu-pop';
+    pop.setAttribute('role', 'menu');
+    pop.dataset.level = String(level);
+    pop.innerHTML = items.map(function (item, idx) {
+      if (item.sep) return '<div class="menu-sep" role="separator"></div>';
+      const sub = isSubmenu(item);
+      const fav = !!item.program && isFavorite(item.program);
+      const mark = item.checked ? '✓' : fav ? '★' : '';
+      return '<button type="button" class="menu-item' + (item.note ? ' menu-note' : '') + '" role="menuitem" tabindex="-1" data-idx="' + idx + '"' +
+        (isDisabled(item) ? ' aria-disabled="true"' : '') + (sub ? ' aria-haspopup="true"' : '') + '>' +
+        '<span class="mi-check' + (item.checked ? ' checked' : '') + '" title="' + (fav ? 'Nos Favoritos' : '') + '">' + mark + '</span>' +
+        '<span class="mi-label">' + escapeHtml(menuItemLabel(item)) + '</span>' +
+        '<span class="mi-hint">' + escapeHtml(item.hint || '') + '</span>' +
+        '<span class="mi-arrow">' + (sub ? '›' : '') + '</span></button>';
+    }).join('');
+    document.getElementById('menu-layer').appendChild(pop);
+    return pop;
+  }
+
+  // flipX: borda alternativa (à esquerda) usada quando o popup não cabe à direita.
+  function placePopup(pop, x, y, flipX) {
+    pop.style.left = '0px';
+    pop.style.top = '0px';
+    const w = pop.offsetWidth;
+    const h = pop.offsetHeight;
+    let left = x;
+    let top = y;
+    if (left + w > window.innerWidth - 4) left = flipX != null ? flipX - w : window.innerWidth - w - 4;
+    if (top + h > window.innerHeight - 4) top = window.innerHeight - h - 4;
+    pop.style.left = Math.max(0, left) + 'px';
+    pop.style.top = Math.max(0, top) + 'px';
+  }
+
+  function menuIsOpen() {
+    return menu.top !== -1 || menu.context;
+  }
+
+  function clearMenuTimer() {
+    if (menu.timer) {
+      clearTimeout(menu.timer);
+      menu.timer = null;
+    }
+  }
+
+  function closeMenuLevelsFrom(level) {
+    while (menu.levels.length > level) menu.levels.pop().pop.remove();
+  }
+
+  function closeMenus() {
+    clearMenuTimer();
+    closeMenuLevelsFrom(0);
+    document.querySelectorAll('#menubar-items .menubar-btn.open').forEach(function (b) {
+      b.classList.remove('open');
+      b.setAttribute('aria-expanded', 'false');
+    });
+    menu.top = -1;
+    menu.context = false;
+  }
+
+  // mode: 'click' | 'key' (executam ações diretas como Sair) · 'hover' | 'nav' (só destacam)
+  function openTopMenu(index, mode) {
+    const top = MENU_TREE[index];
+    if (!top) return;
+    closeMenus();
+    if (top.action && (mode === 'click' || mode === 'key')) {
+      runAction(top.action);
+      return;
+    }
+    menu.top = index;
+    const btn = topButton(index);
+    btn.classList.add('open');
+    btn.setAttribute('aria-expanded', 'true');
+    if (top.action) return;
+    const items = topMenuItems(top);
+    const pop = renderMenuPopup(items, 0);
+    const r = btn.getBoundingClientRect();
+    placePopup(pop, r.left, r.bottom, null);
+    menu.levels.push({ pop: pop, items: items, active: -1, parentIdx: -1 });
+    if (mode === 'key' || mode === 'nav') setMenuActive(0, nextEnabled(items, -1, 1), 'key');
+  }
+
+  function openContextMenu(x, y, items) {
+    closeMenus();
+    menu.context = true;
+    const pop = renderMenuPopup(items, 0);
+    placePopup(pop, x, y, x);
+    menu.levels.push({ pop: pop, items: items, active: -1, parentIdx: -1 });
+  }
+
+  function nextEnabled(items, from, dir) {
+    const n = items.length;
+    const start = from < 0 ? (dir > 0 ? -1 : 0) : from;
+    for (let step = 1; step <= n; step++) {
+      const i = ((start + dir * step) % n + n) % n;
+      if (!isDisabled(items[i])) return i;
+    }
+    return -1;
+  }
+
+  function markActive(level, idx) {
+    const l = menu.levels[level];
+    if (!l) return;
+    const prev = l.pop.querySelector('.menu-item.active');
+    if (prev) prev.classList.remove('active');
+    l.active = idx;
+    if (idx < 0) return;
+    const el = l.pop.querySelector('[data-idx="' + idx + '"]');
+    if (el) {
+      el.classList.add('active');
+      el.scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  // Passar o mouse abre/fecha submenus com atraso (permite atravessar outros itens na diagonal).
+  function setMenuActive(level, idx, mode) {
+    if (!menu.levels[level]) return;
+    clearMenuTimer();
+    for (let k = level; k > 0; k--) markActive(k - 1, menu.levels[k].parentIdx);
+    markActive(level, idx);
+    if (mode === 'hover') {
+      menu.timer = setTimeout(function () {
+        menu.timer = null;
+        syncSubmenu(level);
+      }, SUBMENU_DELAY_MS);
+    } else {
+      closeMenuLevelsFrom(level + 1);
+    }
+  }
+
+  function syncSubmenu(level) {
+    const l = menu.levels[level];
+    if (!l) return;
+    const child = menu.levels[level + 1];
+    if (child && child.parentIdx === l.active) return;
+    closeMenuLevelsFrom(level + 1);
+    const item = l.items[l.active];
+    if (item && isSubmenu(item)) openSubmenu(level, l.active, false);
+  }
+
+  function openSubmenu(level, idx, focusFirst) {
+    const l = menu.levels[level];
+    const item = l.items[idx];
+    closeMenuLevelsFrom(level + 1);
+    const items = submenuItems(item);
+    const pop = renderMenuPopup(items, level + 1);
+    const anchor = l.pop.querySelector('[data-idx="' + idx + '"]').getBoundingClientRect();
+    placePopup(pop, anchor.right - 2, anchor.top - 4, anchor.left + 2);
+    menu.levels.push({ pop: pop, items: items, active: -1, parentIdx: idx });
+    if (focusFirst) setMenuActive(level + 1, nextEnabled(items, -1, 1), 'key');
+  }
+
+  function activateItem(level, idx, viaKey) {
+    const l = menu.levels[level];
+    if (!l) return;
+    const item = l.items[idx];
+    if (!item || isDisabled(item)) return;
+    if (isSubmenu(item)) {
+      clearMenuTimer();
+      markActive(level, idx);
+      openSubmenu(level, idx, viaKey);
+      return;
+    }
+    closeMenus();
+    if (item.program) openProgram(item.program);
+    else if (item.action) runAction(item.action, item);
+  }
+
+  function moveTop(dir) {
+    const n = MENU_TREE.length;
+    openTopMenu(((menu.top + dir) % n + n) % n, 'nav');
+  }
+
+  function typeAhead(level, ch) {
+    const l = menu.levels[level];
+    const c = normalizeText(ch);
+    if (!l || !c) return;
+    const n = l.items.length;
+    for (let step = 1; step <= n; step++) {
+      const i = (l.active + step + n) % n;
+      const item = l.items[i];
+      if (!isDisabled(item) && normalizeText(menuItemLabel(item)).charAt(0) === c) {
+        setMenuActive(level, i, 'key');
+        return;
+      }
+    }
+  }
+
+  // Retorna true quando a tecla foi consumida pelo menu aberto.
+  function handleMenuKey(e) {
+    if (!menuIsOpen()) return false;
+    const key = e.key || '';
+    if (key === 'Shift' || key === 'Control' || key === 'Alt' || key === 'Meta') return false;
+    e.preventDefault();
+    e.stopPropagation();
+    const depth = menu.levels.length;
+    const level = depth - 1;
+    const cur = menu.levels[level];
+    if (key === 'Escape') {
+      if (depth > 1) closeMenuLevelsFrom(level);
+      else closeMenus();
+      return true;
+    }
+    if (!cur) {
+      // Item de ação na barra (Sair) apenas destacado
+      if (key === 'Enter' || key === ' ' || key === 'ArrowDown') {
+        const top = MENU_TREE[menu.top];
+        closeMenus();
+        runAction(top.action);
+      } else if (key === 'ArrowRight' || key === 'ArrowLeft') {
+        moveTop(key === 'ArrowRight' ? 1 : -1);
+      } else if (key === 'Tab') {
+        closeMenus();
+      }
+      return true;
+    }
+    switch (key) {
+      case 'ArrowDown':
+        setMenuActive(level, nextEnabled(cur.items, cur.active, 1), 'key');
+        break;
+      case 'ArrowUp':
+        setMenuActive(level, nextEnabled(cur.items, cur.active, -1), 'key');
+        break;
+      case 'Home':
+        setMenuActive(level, nextEnabled(cur.items, -1, 1), 'key');
+        break;
+      case 'End':
+        setMenuActive(level, nextEnabled(cur.items, -1, -1), 'key');
+        break;
+      case 'ArrowRight': {
+        const item = cur.items[cur.active];
+        if (item && isSubmenu(item)) openSubmenu(level, cur.active, true);
+        else if (!menu.context) moveTop(1);
+        break;
+      }
+      case 'ArrowLeft':
+        if (level > 0) closeMenuLevelsFrom(level);
+        else if (!menu.context) moveTop(-1);
+        break;
+      case 'Enter':
+      case ' ':
+        if (cur.active >= 0) activateItem(level, cur.active, true);
+        break;
+      case 'Tab':
+        closeMenus();
+        break;
+      default:
+        if (key.length === 1) typeAhead(level, key);
+    }
+    return true;
+  }
+
+  function popupLevel(el) {
+    const pop = el.closest('.menu-pop');
+    return pop ? Number(pop.dataset.level) : -1;
+  }
+
+  function onMenubarClick(e) {
+    const btn = e.target.closest('[data-top]');
+    if (!btn) return;
+    const idx = Number(btn.dataset.top);
+    if (menu.top === idx && !menu.context && !MENU_TREE[idx].action) {
+      closeMenus();
+      return;
+    }
+    openTopMenu(idx, 'click');
+  }
+
+  function onMenubarOver(e) {
+    const btn = e.target.closest('[data-top]');
+    if (!btn || menu.top === -1 || menu.context) return;
+    const idx = Number(btn.dataset.top);
+    if (idx !== menu.top) openTopMenu(idx, 'hover');
+  }
+
+  function onMenuLayerOver(e) {
+    const itemEl = e.target.closest('.menu-item');
+    if (!itemEl) return;
+    const level = popupLevel(itemEl);
+    const l = menu.levels[level];
+    const idx = Number(itemEl.dataset.idx);
+    if (!l || isDisabled(l.items[idx])) return;
+    setMenuActive(level, idx, 'hover');
+  }
+
+  function onMenuLayerClick(e) {
+    const itemEl = e.target.closest('.menu-item');
+    if (!itemEl) return;
+    activateItem(popupLevel(itemEl), Number(itemEl.dataset.idx), false);
+  }
+
+  // Botão direito num programa do menu: adiciona/remove dos Favoritos sem fechar o menu.
+  function onMenuLayerContext(e) {
+    e.preventDefault();
+    const itemEl = e.target.closest('.menu-item');
+    if (!itemEl || menu.context) return;
+    const l = menu.levels[popupLevel(itemEl)];
+    const item = l && l.items[Number(itemEl.dataset.idx)];
+    if (!item || !item.program) return;
+    toggleFavorite(item.program);
+    itemEl.querySelector('.mi-check').textContent = isFavorite(item.program) ? '★' : '';
+  }
+
+  function onDocPointerDown(e) {
+    updateLockKeys(e);
+    if (!menuIsOpen()) return;
+    if (e.target.closest('#menu-layer .menu-pop') || e.target.closest('#menubar')) return;
+    closeMenus();
+  }
+
+  /* =====================================================================
+   * 9. JANELAS INTERNAS (MDI): abrir, focar, arrastar, redimensionar, organizar
+   * ===================================================================== */
+
+  function winArea() {
+    return document.getElementById('win-area');
+  }
+
+  function areaSize() {
+    const a = winArea();
+    return { w: a.clientWidth, h: a.clientHeight };
+  }
+
+  function findWin(id) {
+    for (let i = 0; i < wins.length; i++) if (wins[i].id === id) return wins[i];
+    return null;
+  }
+
+  function findWinByProgram(programId) {
+    for (let i = 0; i < wins.length; i++) if (wins[i].programId === programId) return wins[i];
+    return null;
+  }
+
+  function clampWin(win) {
+    const area = areaSize();
+    win.w = clamp(win.w, WIN_MIN_W, Math.max(WIN_MIN_W, area.w));
+    win.h = clamp(win.h, WIN_MIN_H, Math.max(WIN_MIN_H, area.h));
+    win.x = clamp(win.x, WIN_KEEP_VISIBLE - win.w, area.w - WIN_KEEP_VISIBLE);
+    win.y = clamp(win.y, 0, Math.max(0, area.h - WIN_TITLEBAR_H));
+  }
+
+  function createWinElement(win, program) {
+    const el = document.createElement('section');
+    el.className = 'mdi-win';
+    el.dataset.win = win.id;
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-label', program.title);
+    el.tabIndex = -1;
+    el.innerHTML =
+      '<header class="win-titlebar">' +
+      '<span class="win-icon" aria-hidden="true">' + program.icon + '</span>' +
+      '<span class="win-title">' + escapeHtml(program.title) + '</span>' +
+      '<span class="win-buttons">' +
+      '<button type="button" class="win-btn" data-win-cmd="fav"></button>' +
+      '<button type="button" class="win-btn" data-win-cmd="min" title="Minimizar" aria-label="Minimizar">' + ICONS.min + '</button>' +
+      '<button type="button" class="win-btn" data-win-cmd="max"></button>' +
+      '<button type="button" class="win-btn win-btn-close" data-win-cmd="close" title="Fechar (Esc)" aria-label="Fechar">' + ICONS.close + '</button>' +
+      '</span></header>' +
+      '<div class="win-body"></div>' +
+      '<span class="win-resize" data-resize="e"></span>' +
+      '<span class="win-resize" data-resize="s"></span>' +
+      '<span class="win-resize" data-resize="se"></span>';
+    return el;
+  }
+
+  function applyWinGeometry(win) {
+    const el = win.el;
+    el.classList.toggle('maximized', win.maximized);
+    el.hidden = win.minimized;
+    el.style.left = win.x + 'px';
+    el.style.top = win.y + 'px';
+    el.style.width = win.w + 'px';
+    el.style.height = win.h + 'px';
+    el.style.zIndex = String(win.z);
+    const maxBtn = el.querySelector('[data-win-cmd="max"]');
+    maxBtn.innerHTML = win.maximized ? ICONS.restore : ICONS.max;
+    maxBtn.title = win.maximized ? 'Restaurar' : 'Maximizar';
+    maxBtn.setAttribute('aria-label', maxBtn.title);
+  }
+
+  function openProgram(programId) {
+    const program = PROGRAMS[programId];
+    if (!program || sessionLocked) return null;
+    const existing = findWinByProgram(programId);
+    if (existing) {
+      focusWin(existing, false);
+      return existing;
+    }
+    document.getElementById('workspace').classList.add('has-wins');
+    const area = areaSize();
+    const slot = wins.length % WIN_CASCADE_SLOTS;
+    const win = {
+      id: 'w' + (++winSeq),
+      programId: programId,
+      x: 14 + slot * WIN_CASCADE_STEP,
+      y: 10 + slot * WIN_CASCADE_STEP,
+      w: Math.min(program.w || WIN_DEFAULT_W, area.w - 28),
+      h: Math.min(program.h || WIN_DEFAULT_H, area.h - 20),
+      z: 0,
+      minimized: false,
+      maximized: false,
+      el: null
+    };
+    clampWin(win);
+    win.el = createWinElement(win, program);
+    winArea().appendChild(win.el);
+    wins.push(win);
+    mountProgramView(win);
+    focusWin(win, false);
+    return win;
+  }
+
+  // fromPointer: o clique já leva o foco ao elemento certo; não roubar o foco dele.
+  function focusWin(win, fromPointer) {
+    win.minimized = false;
+    if (win.z !== zTop) win.z = ++zTop;
+    activeWinId = win.id;
+    applyWinGeometry(win);
+    if (!fromPointer && !win.el.contains(document.activeElement)) win.el.focus({ preventScroll: true });
+    updateWindowChrome();
+  }
+
+  function activateTopmost() {
+    let best = null;
+    wins.forEach(function (w) { if (!w.minimized && (!best || w.z > best.z)) best = w; });
+    if (best) {
+      focusWin(best, false);
+      return;
+    }
+    activeWinId = null;
+    if (document.activeElement && winArea().contains(document.activeElement)) document.activeElement.blur();
+    updateWindowChrome();
+  }
+
+  function minimizeWin(win) {
+    win.minimized = true;
+    applyWinGeometry(win);
+    if (activeWinId === win.id) activateTopmost();
+    else updateWindowChrome();
+  }
+
+  function toggleMaximize(win) {
+    win.maximized = !win.maximized;
+    if (!win.maximized) clampWin(win);
+    focusWin(win, false);
+  }
+
+  function closeWin(win) {
+    const idx = wins.indexOf(win);
+    if (idx < 0) return;
+    wins.splice(idx, 1);
+    win.el.remove();
+    if (activeWinId === win.id) activateTopmost();
+    else updateWindowChrome();
+  }
+
+  function closeAllWins() {
+    wins.forEach(function (w) { w.el.remove(); });
+    wins.length = 0;
+    activeWinId = null;
+    updateWindowChrome();
+  }
+
+  function minimizeAllWins() {
+    wins.forEach(function (w) {
+      w.minimized = true;
+      applyWinGeometry(w);
+    });
+    activateTopmost();
+  }
+
+  function restoreAllWins() {
+    wins.forEach(function (w) {
+      w.minimized = false;
+      applyWinGeometry(w);
+    });
+    activateTopmost();
+  }
+
+  // mode: 'cascade' | 'tile-v' (colunas) | 'tile-h' (linhas)
+  function arrangeWindows(mode) {
+    const list = wins.filter(function (w) { return !w.minimized; }).sort(function (a, b) { return a.z - b.z; });
+    if (!list.length) return;
+    const area = areaSize();
+    const n = list.length;
+    if (mode === 'cascade') {
+      list.forEach(function (w, i) {
+        const slot = i % WIN_CASCADE_SLOTS;
+        w.maximized = false;
+        w.x = 14 + slot * WIN_CASCADE_STEP;
+        w.y = 10 + slot * WIN_CASCADE_STEP;
+        w.w = Math.min(w.w, area.w - w.x - 14);
+        w.h = Math.min(w.h, area.h - w.y - 10);
+        clampWin(w);
+      });
+    } else {
+      const lines = n <= 3 ? n : Math.ceil(Math.sqrt(n));
+      const cols = mode === 'tile-v' ? lines : Math.ceil(n / lines);
+      const rows = mode === 'tile-v' ? Math.ceil(n / lines) : lines;
+      const cellW = Math.floor(area.w / cols);
+      const cellH = Math.floor(area.h / rows);
+      list.forEach(function (w, i) {
+        const col = mode === 'tile-v' ? i % cols : Math.floor(i / rows);
+        const row = mode === 'tile-v' ? Math.floor(i / cols) : i % rows;
+        w.maximized = false;
+        w.x = col * cellW;
+        w.y = row * cellH;
+        w.w = cellW;
+        w.h = cellH;
+        clampWin(w);
+      });
+    }
+    list.forEach(applyWinGeometry);
+    updateWindowChrome();
+  }
+
+  function updateWindowChrome() {
+    wins.forEach(function (w) {
+      w.el.classList.toggle('active', w.id === activeWinId && !w.minimized);
+      const fav = w.el.querySelector('[data-win-cmd="fav"]');
+      const on = isFavorite(w.programId);
+      fav.textContent = on ? '★' : '☆';
+      fav.title = on ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos';
+      fav.setAttribute('aria-label', fav.title);
+      fav.classList.toggle('on', on);
+    });
+    document.getElementById('workspace').classList.toggle('has-wins', wins.length > 0);
+    document.getElementById('open-count').textContent = String(wins.length);
+    renderTaskbar();
+  }
+
+  function renderTaskbar() {
+    document.getElementById('win-taskbar').innerHTML = wins.map(function (w) {
+      const p = PROGRAMS[w.programId];
+      const cls = 'task-btn' + (w.id === activeWinId && !w.minimized ? ' active' : '') + (w.minimized ? ' minimized' : '');
+      return '<button type="button" class="' + cls + '" data-task="' + w.id + '" title="' + escapeHtml(p.title) + '">' +
+        '<span aria-hidden="true">' + p.icon + '</span><span class="task-label">' + escapeHtml(p.title) + '</span></button>';
+    }).join('');
+  }
+
+  function onWinPointerDown(e) {
+    const winEl = e.target.closest('.mdi-win');
+    if (!winEl) return;
+    const win = findWin(winEl.dataset.win);
+    if (!win) return;
+    if (activeWinId !== win.id) focusWin(win, true);
+    if (e.button !== 0) return;
+    const handle = e.target.closest('.win-resize');
+    const title = e.target.closest('.win-titlebar');
+    if (handle && !win.maximized) {
+      gesture = { type: 'resize', dir: handle.dataset.resize, win: win, sx: e.clientX, sy: e.clientY, ow: win.w, oh: win.h };
+    } else if (title && !e.target.closest('.win-btn') && !win.maximized) {
+      gesture = { type: 'move', win: win, sx: e.clientX, sy: e.clientY, ox: win.x, oy: win.y };
+    } else {
+      return;
+    }
+    // preventDefault impede o foco nativo: sem isso o foco ficaria preso, por exemplo, na busca.
+    e.preventDefault();
+    if (!win.el.contains(document.activeElement)) win.el.focus({ preventScroll: true });
+    (handle || title).setPointerCapture(e.pointerId);
+    document.body.classList.add('gesturing', gesture.type === 'move' ? 'gesture-move' : 'gesture-resize-' + gesture.dir);
+  }
+
+  function onWinPointerMove(e) {
+    if (!gesture) return;
+    const g = gesture;
+    const win = g.win;
+    const area = areaSize();
+    const dx = e.clientX - g.sx;
+    const dy = e.clientY - g.sy;
+    if (g.type === 'move') {
+      win.x = g.ox + dx;
+      win.y = g.oy + dy;
+    } else {
+      if (g.dir.indexOf('e') >= 0) win.w = Math.max(WIN_MIN_W, Math.min(g.ow + dx, area.w - win.x));
+      if (g.dir.indexOf('s') >= 0) win.h = Math.max(WIN_MIN_H, Math.min(g.oh + dy, area.h - win.y));
+    }
+    clampWin(win);
+    applyWinGeometry(win);
+  }
+
+  function endGesture() {
+    if (!gesture) return;
+    gesture = null;
+    document.body.classList.remove('gesturing', 'gesture-move', 'gesture-resize-e', 'gesture-resize-s', 'gesture-resize-se');
+  }
+
+  function onWinClick(e) {
+    const cmdBtn = e.target.closest('[data-win-cmd]');
+    if (cmdBtn) {
+      const win = findWin(cmdBtn.closest('.mdi-win').dataset.win);
+      if (!win) return;
+      const cmd = cmdBtn.dataset.winCmd;
+      if (cmd === 'close') closeWin(win);
+      else if (cmd === 'min') minimizeWin(win);
+      else if (cmd === 'max') toggleMaximize(win);
+      else if (cmd === 'fav') toggleFavorite(win.programId);
+      return;
+    }
+    const openBtn = e.target.closest('[data-open-program]');
+    if (openBtn) openProgram(openBtn.dataset.openProgram);
+  }
+
+  function onWinDblClick(e) {
+    const title = e.target.closest('.win-titlebar');
+    if (!title || e.target.closest('.win-btn')) return;
+    const win = findWin(title.closest('.mdi-win').dataset.win);
+    if (win) toggleMaximize(win);
+  }
+
+  function onTaskbarClick(e) {
+    const btn = e.target.closest('[data-task]');
+    if (!btn) return;
+    const win = findWin(btn.dataset.task);
+    if (!win) return;
+    if (win.id === activeWinId && !win.minimized) minimizeWin(win);
+    else focusWin(win, false);
+  }
+
+  function onWindowResize() {
+    closeMenus();
+    wins.forEach(function (w) {
+      clampWin(w);
+      applyWinGeometry(w);
+    });
+  }
+
+  /* =====================================================================
+   * 10. PROGRAMAS (conteúdo das janelas)
+   * ===================================================================== */
+
+  function buildProgramPaths() {
+    const out = {};
+    function walk(items, trail) {
+      items.forEach(function (item) {
+        if (item.program && !out[item.program]) out[item.program] = trail.concat(PROGRAMS[item.program].title);
+        if (item.items) walk(item.items, trail.concat(item.label));
+      });
+    }
+    MENU_TREE.forEach(function (top) {
+      if (top.items) walk(top.items, [plainLabel(top.label)]);
+    });
+    return out;
+  }
+
+  function programPathLabel(programId) {
+    const path = programPaths[programId];
+    return path ? path.join(' › ') : '';
+  }
+
+  function programStatus(programId) {
+    return PROGRAMS[programId].status || 'pendente';
+  }
+
+  function mountProgramView(win) {
+    const program = PROGRAMS[win.programId];
+    const body = win.el.querySelector('.win-body');
+    body.innerHTML = program.view === 'mapa' ? renderSystemMap() : renderPlaceholder(win.programId);
+  }
+
+  function renderPlaceholder(programId) {
+    const program = PROGRAMS[programId];
+    const path = programPathLabel(programId);
+    return '<div class="ph">' +
+      '<div class="ph-icon" aria-hidden="true">' + program.icon + '</div>' +
+      '<h2>' + escapeHtml(program.title) + '</h2>' +
+      '<p class="ph-path">' + (path ? 'Menu: ' + escapeHtml(path) : 'Local no menu ainda não mapeado (aparece nos seus Favoritos)') + '</p>' +
+      '<span class="badge st-pendente">' + STATUS_LABELS.pendente + '</span>' +
+      '<div class="ph-box"><strong>Esta tela ainda não foi construída.</strong> Para construí-la, mande:<ul>' +
+      '<li>Os prints desta tela no sistema atual (vazia e preenchida; pode borrar dados de clientes)</li>' +
+      '<li>Para que você usa e o que mais usa nela</li>' +
+      '<li>Quais campos são obrigatórios e quais botões ou atalhos você usa</li>' +
+      '<li>O que ela imprime ou gera (relatórios, etiquetas, cheques…)</li>' +
+      '</ul></div></div>';
+  }
+
+  function programLinkHtml(programId) {
+    const p = PROGRAMS[programId];
+    const st = programStatus(programId);
+    return '<button type="button" class="map-link" data-open-program="' + programId + '"><span aria-hidden="true">' + p.icon + '</span>' + escapeHtml(p.title) + '</button> ' +
+      '<span class="badge ' + (st === 'pronto' ? 'st-pronto' : 'st-pendente') + '">' + STATUS_LABELS[st] + '</span>';
+  }
+
+  function renderSystemMap() {
+    const counts = { programas: 0, prontos: 0, aguardando: 0 };
+    function countProgram(id) {
+      if (PROGRAMS[id].own) return;
+      counts.programas++;
+      if (programStatus(id) === 'pronto') counts.prontos++;
+    }
+    function itemHtml(item) {
+      if (item.sep) return '';
+      if (item.program) {
+        countProgram(item.program);
+        return '<li>' + programLinkHtml(item.program) + '</li>';
+      }
+      if (item.note) {
+        if (item.pending) counts.aguardando++;
+        return '<li class="map-note">' + escapeHtml(item.note) + (item.pending ? ' <span class="badge st-print">aguardando print</span>' : '') + '</li>';
+      }
+      if (item.action) return '<li class="map-action">' + escapeHtml(item.label) + '</li>';
+      if (item.items) return '<li class="map-sub">' + escapeHtml(item.label) + ' ›<ul>' + item.items.map(itemHtml).join('') + '</ul></li>';
+      if (item.pending) {
+        counts.aguardando++;
+        return '<li class="map-sub">' + escapeHtml(item.label) + ' › <span class="badge st-print">aguardando print</span></li>';
+      }
+      return '';
+    }
+    const sections = MENU_TREE.filter(function (top) { return !top.action && !top.dynamic; }).map(function (top) {
+      let body;
+      if (top.pending) {
+        counts.aguardando++;
+        body = '<ul><li class="map-note">Menu inteiro <span class="badge st-print">aguardando print</span></li></ul>';
+      } else {
+        body = '<ul>' + top.items.map(itemHtml).join('') + '</ul>';
+      }
+      return '<section class="map-top"><h3>' + escapeHtml(plainLabel(top.label)) + '</h3>' + body + '</section>';
+    }).join('');
+    const orphans = Object.keys(PROGRAMS).filter(function (id) { return !programPaths[id] && !PROGRAMS[id].own; });
+    orphans.forEach(countProgram);
+    const orphanHtml = orphans.length
+      ? '<section class="map-top"><h3>Vistos só nos Favoritos — local no menu a descobrir</h3><ul>' +
+        orphans.map(function (id) { return '<li>' + programLinkHtml(id) + '</li>'; }).join('') + '</ul></section>'
+      : '';
+    function stat(n, label) {
+      return '<div class="map-stat"><strong>' + n + '</strong>' + escapeHtml(label) + '</div>';
+    }
+    return '<div class="map">' +
+      '<p class="map-intro">Tudo o que já foi mapeado do sistema atual. Clique num programa para abrir.</p>' +
+      '<div class="map-summary">' +
+      stat(counts.programas, 'programas conhecidos') +
+      stat(counts.prontos, 'prontos') +
+      stat(counts.programas - counts.prontos, 'a construir') +
+      stat(counts.aguardando, 'menus/submenus aguardando print') +
+      '</div>' + sections + orphanHtml + '</div>';
+  }
+
+  /* =====================================================================
+   * 11. FAVORITOS E BUSCA DE PROGRAMAS
+   * ===================================================================== */
+
+  function isFavorite(programId) {
+    return !!settings && settings.favoritos.indexOf(programId) >= 0;
+  }
+
+  function toggleFavorite(programId) {
+    const list = settings.favoritos;
+    const idx = list.indexOf(programId);
+    if (idx >= 0) list.splice(idx, 1);
+    else list.push(programId);
+    scheduleSave();
+    renderFavorites();
+    updateWindowChrome();
+    showToast((idx >= 0 ? 'Removido dos Favoritos: ' : 'Adicionado aos Favoritos: ') + PROGRAMS[programId].title, { type: idx >= 0 ? 'info' : 'success' });
+  }
+
+  function moveFavorite(programId, dir) {
+    const list = settings.favoritos;
+    const i = list.indexOf(programId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    list[i] = list[j];
+    list[j] = programId;
+    scheduleSave();
+    renderFavorites();
+  }
+
+  // null quando a busca está vazia (mostra os Favoritos).
+  function currentSearchResults() {
+    const q = normalizeText(document.getElementById('fav-search').value);
+    if (!q) return null;
+    const words = q.split(/\s+/);
+    const found = [];
+    Object.keys(PROGRAMS).forEach(function (id) {
+      const title = normalizeText(PROGRAMS[id].title);
+      const hay = title + ' ' + normalizeText(programPathLabel(id));
+      if (!words.every(function (w) { return hay.indexOf(w) >= 0; })) return;
+      const pos = title.indexOf(words[0]);
+      found.push({ id: id, score: pos === 0 ? 0 : pos > 0 ? 1 : 2 });
+    });
+    found.sort(function (a, b) {
+      return a.score - b.score || PROGRAMS[a.id].title.localeCompare(PROGRAMS[b.id].title, 'pt-BR');
+    });
+    return found.slice(0, SEARCH_MAX_RESULTS).map(function (f) { return f.id; });
+  }
+
+  function renderFavorites() {
+    const list = document.getElementById('fav-list');
+    const results = currentSearchResults();
+    const ids = results || settings.favoritos;
+    if (results) searchActive = clamp(searchActive, 0, Math.max(0, ids.length - 1));
+    if (!ids.length) {
+      list.innerHTML = '<p class="fav-empty">' + (results
+        ? 'Nenhum programa encontrado.'
+        : 'Nenhum favorito. Abra um programa e clique em ☆ na barra da janela, ou clique com o botão direito num item do menu.') + '</p>';
+      return;
+    }
+    list.innerHTML = ids.map(function (id, i) {
+      const p = PROGRAMS[id];
+      return '<button type="button" class="fav-item' + (results && i === searchActive ? ' active' : '') + '" data-program="' + id + '" role="option" title="' + escapeHtml(p.title) + '">' +
+        '<span class="fav-icon" aria-hidden="true">' + p.icon + '</span>' +
+        '<span class="fav-text"><span class="fav-label">' + escapeHtml(p.title) + '</span>' +
+        (results ? '<span class="fav-path">' + escapeHtml(programPathLabel(id) || 'Favoritos') + '</span>' : '') +
+        '</span></button>';
+    }).join('');
+  }
+
+  function focusSearch() {
+    const input = document.getElementById('fav-search');
+    input.focus();
+    input.select();
+  }
+
+  function clearSearch(keepFocus) {
+    const input = document.getElementById('fav-search');
+    input.value = '';
+    searchActive = 0;
+    renderFavorites();
+    if (keepFocus) input.focus();
+  }
+
+  function onSearchInput() {
+    searchActive = 0;
+    renderFavorites();
+  }
+
+  function onSearchKeydown(e) {
+    const results = currentSearchResults();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (!results || !results.length) return;
+      e.preventDefault();
+      searchActive = clamp(searchActive + (e.key === 'ArrowDown' ? 1 : -1), 0, results.length - 1);
+      renderFavorites();
+      const act = document.querySelector('#fav-list .fav-item.active');
+      if (act) act.scrollIntoView({ block: 'nearest' });
+    } else if (e.key === 'Enter') {
+      if (!results || !results.length) return;
+      e.preventDefault();
+      const id = results[clamp(searchActive, 0, results.length - 1)];
+      clearSearch(false);
+      e.target.blur();
+      openProgram(id);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      if (e.target.value) clearSearch(true);
+      else e.target.blur();
+    }
+  }
+
+  function onFavClick(e) {
+    const btn = e.target.closest('[data-program]');
+    if (btn) openProgram(btn.dataset.program);
+  }
+
+  function onFavContext(e) {
+    const btn = e.target.closest('[data-program]');
+    if (!btn) return;
+    e.preventDefault();
+    const id = btn.dataset.program;
+    const list = settings.favoritos;
+    const pos = list.indexOf(id);
+    const items = [{ action: 'fav-open', target: id, label: 'Abrir' }];
+    if (!currentSearchResults() && pos >= 0) {
+      items.push({ action: 'fav-up', target: id, label: 'Mover para cima', disabled: pos === 0 });
+      items.push({ action: 'fav-down', target: id, label: 'Mover para baixo', disabled: pos === list.length - 1 });
+    }
+    items.push(MENU_SEP);
+    items.push({ action: 'fav-toggle', target: id, label: pos >= 0 ? 'Remover dos Favoritos' : 'Adicionar aos Favoritos' });
+    openContextMenu(e.clientX, e.clientY, items);
+  }
+
+  /* =====================================================================
+   * 12. AVISOS, IDENTIFICAÇÃO E BARRA DE STATUS
+   * ===================================================================== */
+
+  // Cada aviso é uma frase. Futuro: certidões vencendo, NF-e pendentes na SEFAZ, títulos vencidos…
+  function collectAlerts() {
+    const out = [];
+    if (!storageAvailable) out.push('Armazenamento indisponível neste navegador: nada será salvo ao fechar.');
+    if (persistenceBlocked) out.push('Os dados salvos vieram de uma versão mais nova do sistema. Esta versão não vai gravar nada.');
+    return out;
+  }
+
+  function renderAlerts() {
+    const alerts = collectAlerts();
+    document.getElementById('alerts-box').innerHTML = alerts.length
+      ? alerts.map(function (a) { return '<p>' + escapeHtml(a) + '</p>'; }).join('')
+      : '<p class="alert-none">Nenhum aviso no momento.</p>';
+  }
+
+  function renderIdentity() {
+    const empresa = settings.empresaNome || 'Empresa não informada';
+    const usuario = settings.usuarioNome || 'Usuário';
+    document.title = APP_NAME + ' - Licenciado para ' + empresa + ' - ' + usuario;
+    document.getElementById('st-user').textContent = 'Usuário: ' + usuario;
+    document.getElementById('st-empresa').textContent = empresa;
+    document.getElementById('bg-license').textContent = 'Licenciado para ' + empresa;
+  }
+
+  function updateClock() {
+    document.getElementById('st-clock').textContent = formatClock(new Date());
+  }
+
+  function updateLockKeys(e) {
+    if (!e || typeof e.getModifierState !== 'function') return;
+    document.getElementById('st-caps').classList.toggle('on', e.getModifierState('CapsLock'));
+    document.getElementById('st-num').classList.toggle('on', e.getModifierState('NumLock'));
+  }
+
+  /* =====================================================================
+   * 13. AÇÕES E DIÁLOGOS
+   * ===================================================================== */
+
+  function runAction(id, item) {
+    switch (id) {
+      case 'empresa-usuario': openCompanyUserDialog(false); break;
+      case 'atalhos': openShortcutsDialog(); break;
+      case 'sobre': openAboutDialog(); break;
+      case 'sair': requestExit(); break;
+      case 'atualizar':
+        renderAlerts();
+        showToast('Avisos atualizados.');
+        break;
+      case 'win-cascade': arrangeWindows('cascade'); break;
+      case 'win-tile-v': arrangeWindows('tile-v'); break;
+      case 'win-tile-h': arrangeWindows('tile-h'); break;
+      case 'win-min-all': minimizeAllWins(); break;
+      case 'win-restore-all': restoreAllWins(); break;
+      case 'win-close-all': closeAllWins(); break;
+      case 'win-focus': {
+        const w = findWin(item.winId);
+        if (w) focusWin(w, false);
+        break;
+      }
+      case 'fav-open': openProgram(item.target); break;
+      case 'fav-toggle': toggleFavorite(item.target); break;
+      case 'fav-up': moveFavorite(item.target, -1); break;
+      case 'fav-down': moveFavorite(item.target, 1); break;
+      default: console.warn('Ação desconhecida: ' + id);
+    }
+  }
+
+  function openCompanyUserDialog(firstRun) {
+    const body =
+      (firstRun ? '<p class="modal-lead">Antes de começar, informe a empresa e o seu nome. Eles aparecem no título da janela e na barra de status. Dá para mudar depois em Sistema › Empresa e usuário.</p>' : '') +
+      '<label class="field"><span>Empresa (Licenciado para)</span><input type="text" name="empresa" maxlength="120" autocomplete="organization" placeholder="Ex.: Minha Empresa Ltda" value="' + escapeHtml(settings.empresaNome) + '"></label>' +
+      '<label class="field"><span>Usuário</span><input type="text" name="usuario" maxlength="60" autocomplete="name" placeholder="Seu nome" value="' + escapeHtml(settings.usuarioNome) + '"></label>' +
+      '<p class="field-error" data-error hidden></p>';
+    openModal({
+      title: firstRun ? 'Bem-vindo! Vamos começar' : 'Empresa e usuário',
+      dismissible: !firstRun,
+      body: body,
+      actions: firstRun
+        ? [{ id: 'save', label: 'Começar', variant: 'primary', submit: true }]
+        : [{ id: 'cancel', label: 'Cancelar' }, { id: 'save', label: 'Salvar', variant: 'primary', submit: true }],
+      onAction: function (id, modal) {
+        if (id !== 'save') return;
+        const empresa = modal.el.querySelector('[name="empresa"]').value.trim();
+        const usuario = modal.el.querySelector('[name="usuario"]').value.trim();
+        const error = modal.el.querySelector('[data-error]');
+        if (!empresa || !usuario) {
+          error.textContent = 'Preencha a empresa e o usuário.';
+          error.hidden = false;
+          modal.el.querySelector(!empresa ? '[name="empresa"]' : '[name="usuario"]').focus();
+          return false;
+        }
+        settings.empresaNome = empresa;
+        settings.usuarioNome = usuario;
+        scheduleSave();
+        renderIdentity();
+        showToast(firstRun ? 'Tudo pronto. Bom trabalho, ' + usuario.split(' ')[0] + '!' : 'Dados salvos.', { type: 'success' });
+      }
+    });
+  }
+
+  function openShortcutsDialog() {
+    openModal({
+      title: 'Atalhos de teclado',
+      size: 'lg',
+      body: '<table class="kbd-table"><tbody>' + SHORTCUTS.map(function (row) {
+        return '<tr><td><kbd>' + escapeHtml(row[0]) + '</kbd></td><td>' + escapeHtml(row[1]) + '</td></tr>';
+      }).join('') + '</tbody></table>',
+      actions: [{ id: 'ok', label: 'Fechar', variant: 'primary', submit: true }]
+    });
+  }
+
+  function openAboutDialog() {
+    const storage = !storageAvailable ? 'indisponível — nada está sendo salvo'
+      : persistenceBlocked ? 'somente leitura (dados de uma versão mais nova)'
+      : 'IndexedDB deste navegador, neste computador';
+    openModal({
+      title: 'Sobre o sistema',
+      size: 'sm',
+      body: '<p><strong>' + escapeHtml(APP_NAME) + '</strong> — versão ' + APP_VERSION + ' (' + APP_BUILD_DATE + ')</p>' +
+        '<ul class="about-list">' +
+        '<li>Licenciado para: ' + escapeHtml(settings.empresaNome || '—') + '</li>' +
+        '<li>Usuário: ' + escapeHtml(settings.usuarioNome || '—') + '</li>' +
+        '<li>Dados: ' + escapeHtml(storage) + '</li>' +
+        '<li>Formato dos dados: v' + CURRENT_SCHEMA_VERSION + '</li>' +
+        '</ul>',
+      actions: [{ id: 'ok', label: 'Fechar', variant: 'primary', submit: true }]
+    });
+  }
+
+  function requestExit() {
+    const n = wins.length;
+    confirmDialog({
+      title: 'Sair do sistema',
+      message: n ? 'Fechar ' + plural(n, 'programa aberto', 'programas abertos') + ' e sair?' : 'Deseja sair do sistema?',
+      confirmLabel: 'Sair',
+      variant: 'danger'
+    }).then(function (ok) { if (ok) lockSession(); });
+  }
+
+  function lockSession() {
+    closeMenus();
+    closeAllWins();
+    sessionLocked = true;
+    syncInert();
+    const nome = (settings.usuarioNome || '').split(' ')[0];
+    document.getElementById('lock-msg').textContent = (nome ? 'Até logo, ' + nome + '. ' : '') + 'Sessão encerrada.';
+    document.getElementById('lock-screen').hidden = false;
+    document.getElementById('lock-enter').focus();
+  }
+
+  function unlockSession() {
+    sessionLocked = false;
+    document.getElementById('lock-screen').hidden = true;
+    syncInert();
+  }
+
+  /* =====================================================================
+   * 14. EVENTOS GLOBAIS (registrados uma única vez)
+   * ===================================================================== */
+
+  // Fase de captura: o menu aberto e os modais têm prioridade sobre os campos da página.
+  function onKeyDown(e) {
+    updateLockKeys(e);
+    if (sessionLocked) return;
+    if (modalStack.length) {
+      const top = modalStack[modalStack.length - 1];
+      if (e.key === 'Escape' && top.dismissible) {
+        e.preventDefault();
+        e.stopPropagation();
+        top.close('escape');
+      }
+      return;
+    }
+    if (handleMenuKey(e)) return;
+    if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && ACCEL_CODE_RE.test(e.code || '')) {
+      const idx = topIndexByAccel(e.code.charAt(3).toLowerCase());
+      if (idx >= 0) {
+        e.preventDefault();
+        openTopMenu(idx, 'key');
+      }
+      return;
+    }
+    if (e.key === 'F10' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+      e.preventDefault();
+      openTopMenu(0, 'key');
+      return;
+    }
+    if ((e.ctrlKey || e.metaKey) && !e.altKey && !e.shiftKey && String(e.key).toLowerCase() === 'k') {
+      e.preventDefault();
+      focusSearch();
+      return;
+    }
+    if (e.key === 'Escape' && activeWinId && !isEditable(e.target)) {
+      const w = findWin(activeWinId);
+      if (w) {
+        e.preventDefault();
+        closeWin(w);
+      }
+    }
+  }
+
+  function onSidebarAction(e) {
+    const btn = e.target.closest('[data-action]');
+    if (btn) runAction(btn.dataset.action);
+  }
+
+  function bindGlobalEvents() {
+    const menubar = document.getElementById('menubar-items');
+    menubar.addEventListener('click', onMenubarClick);
+    menubar.addEventListener('mouseover', onMenubarOver);
+
+    const layer = document.getElementById('menu-layer');
+    layer.addEventListener('mouseover', onMenuLayerOver);
+    layer.addEventListener('click', onMenuLayerClick);
+    layer.addEventListener('contextmenu', onMenuLayerContext);
+
+    document.addEventListener('pointerdown', onDocPointerDown, true);
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('keyup', updateLockKeys);
+
+    const area = winArea();
+    area.addEventListener('pointerdown', onWinPointerDown);
+    area.addEventListener('pointermove', onWinPointerMove);
+    area.addEventListener('pointerup', endGesture);
+    area.addEventListener('pointercancel', endGesture);
+    area.addEventListener('lostpointercapture', endGesture);
+    area.addEventListener('click', onWinClick);
+    area.addEventListener('dblclick', onWinDblClick);
+    document.getElementById('win-taskbar').addEventListener('click', onTaskbarClick);
+
+    const favList = document.getElementById('fav-list');
+    favList.addEventListener('click', onFavClick);
+    favList.addEventListener('contextmenu', onFavContext);
+    const search = document.getElementById('fav-search');
+    search.addEventListener('input', onSearchInput);
+    search.addEventListener('keydown', onSearchKeydown);
+    document.getElementById('fav-clear').addEventListener('click', function () { clearSearch(true); });
+    document.getElementById('sidebar').addEventListener('click', onSidebarAction);
+    document.getElementById('lock-enter').addEventListener('click', unlockSession);
+
+    window.addEventListener('resize', onWindowResize);
+    window.addEventListener('blur', closeMenus);
+  }
+
+  /* =====================================================================
+   * 15. INICIALIZAÇÃO (ponto único, chamado uma vez)
+   * ===================================================================== */
+
+  function init() {
+    programPaths = buildProgramPaths();
+    renderMenubar();
+    bindGlobalEvents();
+    document.getElementById('sb-version').textContent = 'Versão ' + APP_VERSION + ' · ' + APP_BUILD_DATE;
+    updateClock();
+    setInterval(updateClock, CLOCK_INTERVAL_MS);
+    requestPersistentStorage();
+    loadSettings().then(function (result) {
+      renderIdentity();
+      renderFavorites();
+      renderAlerts();
+      updateWindowChrome();
+      if (result.firstRun) openCompanyUserDialog(true);
+    });
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>
