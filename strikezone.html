@@ -15040,9 +15040,10 @@ function findPath(sx, sz, tx, tz, sy, ty) {
   const W = world.w, D = world.d, N = world.n, two = nav.U > 0;
   const gc = navCellOf(g), gx = gc % W, gz = Math.floor(gc / W);
   // veículo parado: as células embaixo dele não entram no caminho (só o custo não bastava: com a heurística forte dos mapas
-  // grandes o A* passava reto por dentro do jipe e o bot ficava empurrando). Valem as vizinhas da largada (para sair de perto
-  // dele) e, quando o objetivo é o próprio veículo (embarcar), só o custo. Se assim não há caminho, tenta de novo só com o custo.
-  const vehHard = !nav.vehSoft && !nav.veh[gc], sc0 = navCellOf(s), sx0 = sc0 % W, sz0 = Math.floor(sc0 / W);
+  // grandes o A* passava reto por dentro do jipe e o bot ficava empurrando). A largada pode estar embaixo dele (sai pela
+  // vizinha livre); quando o objetivo é o próprio veículo (embarcar) vale só o custo, e se assim não há caminho tenta de novo
+  // só com o custo.
+  const vehHard = !nav.vehSoft && !nav.veh[gc];
   let vehSkipped = false;
   nav.stamp[s] = S; nav.g[s] = 0; nav.parent[s] = -1;
   heapPush(s, hw * navHeuristic(navCellOf(s), gx, gz));
@@ -15062,7 +15063,7 @@ function findPath(sx, sz, tx, tz, sy, ty) {
       const nx = cx + nb[0], nz = cz + nb[1];
       if (nx < 0 || nz < 0 || nx >= W || nz >= D) continue;
       const ni = nz * W + nx;
-      if (vehHard && nav.veh[ni] && (Math.abs(nx - sx0) > 1 || Math.abs(nz - sz0) > 1)) { vehSkipped = true; continue; }
+      if (vehHard && nav.veh[ni]) { vehSkipped = true; continue; }
       for (let n = ni, u = two ? nav.upOf[ni] : 0; n >= 0; n = u ? N + u - 1 : -1, u = u ? nav.upNext[u - 1] : 0) {
         if (!nav.walk[n] || nav.closed[n] === S) continue;
         let step;
@@ -20572,6 +20573,10 @@ function startMatch(mode, drill, custom) {
   hud.dirs.forEach((x) => x.el.remove());
   hud.dirs.length = 0;
   hud.tempHintUntil = 0; hud.hitUntil = 0;
+  // temporizadores no relógio da partida: sem zerar, na partida seguinte ficavam parados até o relógio alcançar o valor antigo
+  // (médico sem curar, reconhecimento sem marcar, bots sem embarcar nem desviar dos veículos parados, sem falas no chat)
+  hud.markScan = 0; hud.auraAt = 0; hud.ashopAt = 0; hud.reportUntil = 0; hud.radioMenuUntil = 0;
+  game.vehBotAt = 0; game.chatAt = -99; game.threat = null; game.threatAt = -9;
   hud.radio.forEach((x) => x.el.remove());
   hud.radio.length = 0;
   hud.hurt = 0;
