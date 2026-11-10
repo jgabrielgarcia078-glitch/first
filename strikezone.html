@@ -388,6 +388,7 @@ button { font: inherit; color: inherit; }
 .seg button.on { background: rgba(216, 154, 60, 0.2); border-color: var(--accent); color: #fff; }
 .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .menu-foot { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 40ch; }
+.menu-side { display: flex; flex-direction: column; gap: 14px; }
 .mobile-note { display: none; }
 @media (max-height: 820px) {
   .menu-col { padding: 22px 36px 16px; gap: 14px; }
@@ -415,9 +416,18 @@ button { font: inherit; color: inherit; }
   .menu-foot { display: none; }
 }
 
+/* telas largas (desktop): modos à esquerda, opções da partida num cartão ao lado — tudo visível sem rolar */
+@media (min-width: 1100px) {
+  .menu-col { width: min(920px, 100%); display: grid; grid-template-columns: minmax(0, 428px) minmax(0, 364px); grid-template-rows: auto auto 1fr; column-gap: 20px; align-content: start; }
+  .menu-col > * { grid-column: 1; }
+  .menu-col > .menu-side { grid-column: 2; grid-row: 2 / span 2; align-self: start; background: rgba(12, 14, 17, 0.72); border: 1px solid var(--line); border-radius: 4px; padding: 14px 14px 12px; }
+  .menu-side .menu-foot { max-width: none; }
+}
+
 .panel { background: var(--panel-strong); border: 1px solid var(--line); border-radius: 4px; padding: 22px 24px; width: min(560px, 100%); max-height: calc(100% - 32px); overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
 .panel h2 { margin: 0; font-family: var(--display); font-size: 30px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .panel.wide { width: min(880px, 100%); }
+.panel.xwide { width: min(1160px, 100%); }
 .opt-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .tabs { display: flex; gap: 2px; flex-wrap: wrap; }
 .tabs button { font-family: var(--display); font-weight: 700; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 14px; background: transparent; border: 0; border-bottom: 2px solid transparent; color: var(--muted); cursor: pointer; }
@@ -447,6 +457,7 @@ button { font: inherit; color: inherit; }
 .opt-row select { width: 100%; padding: 5px 6px; background: #1b1f25; color: var(--text); border: 1px solid var(--line); border-radius: 2px; font: inherit; }
 .opt-row input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); justify-self: start; }
 .keys { display: grid; grid-template-columns: auto 1fr; gap: 7px 16px; margin: 0; }
+@media (min-width: 900px) { .panel.wide .keys { grid-template-columns: auto 1fr auto 1fr; gap: 6px 14px; font-size: 14px; } }
 .keys dt { text-align: right; }
 .keys dd { margin: 0; color: #d6cfbf; }
 .panel-actions { display: flex; gap: 8px; justify-content: flex-end; }
@@ -505,8 +516,8 @@ button { font: inherit; color: inherit; }
 .buy-item.owned { border-color: rgba(159, 220, 124, 0.55); }
 
 /* lista de exercícios do treino */
-.drill-list { display: flex; flex-direction: column; gap: 6px; }
-.drill-list button { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; text-align: left; padding: 10px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; }
+.drill-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 6px; }
+.drill-list button { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto 1fr; gap: 2px 12px; text-align: left; align-content: start; padding: 8px 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line); border-radius: 3px; cursor: pointer; }
 .drill-list button:hover, .drill-list button:focus-visible { background: rgba(216, 154, 60, 0.14); border-color: var(--accent); outline: none; }
 .drill-list .dl-name { font-family: var(--display); font-size: 20px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
 .drill-list .dl-rec { font-family: var(--display); font-size: 15px; font-weight: 700; color: var(--money); align-self: center; }
@@ -777,6 +788,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
         <button id="btn-options" class="btn" type="button">Opções</button>
         <button id="btn-controls" class="btn" type="button">Controles</button>
       </nav>
+      <div class="menu-side">
       <div class="setup">
         <div class="field" data-tabs="cs war">
           <span class="label">Mapa</span>
@@ -810,6 +822,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
       <p class="menu-foot" data-tabs="cs">Rodadas com economia, C4 e granadas. Você e 4 bots contra 5; no jogo personalizado dá para montar de 1 contra 1 até 32 contra 32. Morreu? Aperte E observando um bot aliado para assumir o lugar dele. T marca inimigos e locais (segure para a roda). Esc pausa.</p>
       <p class="menu-foot" data-tabs="war">Renascimento, classes, sequências de abates, correr, deslizar e escalar. Mapas grandes com 32 contra 32, veículos de apoio e esquadrões. T marca (segure para a roda): os bots do time entendem e mudam a tática.</p>
       <p class="menu-foot" data-tabs="apex">Lendas com passiva, tática (Q) e suprema (Z), escudos, curas e armas por raridade. Battle Royale: salte da nave, junte equipamento e seja o último esquadrão vivo. T marca inimigos, saque e destinos para o esquadrão.</p>
+      </div>
     </div>
   </div>
 
@@ -983,7 +996,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
   </div>
 
   <div id="drills" class="screen dim" hidden>
-    <div class="panel" role="dialog" aria-label="Treino de mira">
+    <div class="panel wide" role="dialog" aria-label="Treino de mira">
       <h2>Treino de mira</h2>
       <p class="opt-note">Escolha o exercício. Os recordes ficam salvos neste navegador.</p>
       <div id="drill-list" class="drill-list"></div>
@@ -992,7 +1005,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
   </div>
 
   <div id="modes" class="screen dim" hidden>
-    <div class="panel wide" role="dialog" aria-label="Modos de jogo">
+    <div class="panel wide xwide" role="dialog" aria-label="Modos de jogo">
       <h2>Modos de jogo</h2>
       <div class="field"><span class="label">Mapa</span><div class="seg" id="md-map"></div></div>
       <div id="mode-cards" class="mode-cards"></div>
@@ -1031,7 +1044,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
   </div>
 
   <div id="custom" class="screen dim" hidden>
-    <div class="panel" role="dialog" aria-label="Jogo personalizado">
+    <div class="panel wide" role="dialog" aria-label="Jogo personalizado">
       <h2>Jogo personalizado</h2>
       <p class="opt-note">Monte a partida do seu jeito: você sozinho contra 32 bots, 2 contra 2, 32 contra 32, qualquer lado. A dificuldade é a mesma escolhida no menu.</p>
       <div class="field"><span class="label">Mapa</span><div class="seg" id="cg-map"></div></div>
@@ -1077,7 +1090,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
   </div>
 
   <div id="controls" class="screen dim" hidden>
-    <div class="panel" role="dialog" aria-label="Controles">
+    <div class="panel wide" role="dialog" aria-label="Controles">
       <h2>Controles</h2>
       <dl class="keys">
         <dt><span class="kbd">W A S D</span></dt><dd>Mover</dd>
@@ -1281,6 +1294,12 @@ const DM_PROTECT = 1.5;
 // Todos contra todos: alvo de abates; Duelo 1×1: tempo da rodada e armas sorteadas (as duas iguais para os dois)
 const FFA_TARGET = 20;
 const BOT_SKIP_CHECK = 0.15; // bots: intervalo da conferência "dá para ir reto até o ponto seguinte" (s)
+// bot em cima de algo que a navegação não conhece (laje fina de teto, topo de objeto alto, muro): desce pela beirada mais perto
+const OFFNAV_GAP = 1.6;    // diferença de altura (m) entre os pés e o nó da navegação para contar como "fora da malha"
+const OFFNAV_EVERY = 0.5;  // intervalo da conferência (s); duas seguidas fora da malha disparam a saída
+const OFFNAV_DIRS = 16;    // direções sondadas
+const OFFNAV_REACH = 8;    // distância máxima até a beirada (m)
+const OFFNAV_DROP = 12;    // queda máxima aceita (m)
 // prorrogação do desarme de bomba (MR3 como no CS:GO): 3 rodadas por lado e $10.000 para todos
 const OT_HALF = 3;
 const OT_MONEY = 10000;
@@ -2102,7 +2121,7 @@ const MAPS = {
       ["terrain",17,59,20,63,MAT.CONCRETE], ["open",16,60,17,64,6.949999809265137,MAT.CONCRETE], ["open",53,60,54,61,5.349999904632568,MAT.SAND], ["open",54,60,55,62,6.199999809265137,MAT.TILE],
       ["terrain",53,61,54,76,MAT.SAND], ["terrain",54,62,56,64,MAT.TILE], ["terrain",17,63,19,66,MAT.CONCRETE], ["open",19,63,20,64,7,MAT.CONCRETE],
       ["terrain",74,63,76,64,MAT.SAND], ["terrain",79,63,80,64,MAT.SAND], ["terrain",82,63,86,64,MAT.SAND], ["terrain",16,64,17,65,MAT.CONCRETE],
-      ["open",19,64,20,65,6.949999809265137,MAT.CONCRETE], ["open",20,64,25,65,5.349999904632568,MAT.SAND], ["terrain",54,64,55,76,MAT.SAND], ["terrain",55,64,56,66,MAT.TILE],
+      ["open",19,64,20,65,6.949999809265137,MAT.CONCRETE], ["open",20,64,25,65,7,MAT.SAND], ["terrain",54,64,55,76,MAT.SAND], ["terrain",55,64,56,66,MAT.TILE],
       ["terrain",75,64,76,94,MAT.SAND], ["terrain",84,64,86,65,MAT.SAND], ["open",12,65,16,68,7,MAT.SAND], ["terrain",16,65,17,86,MAT.SAND],
       ["open",19,65,24,66,7,MAT.SAND], ["open",73,65,75,70,6.25,MAT.SAND], ["terrain",76,65,77,83,MAT.SAND], ["terrain",85,65,86,79,MAT.SAND],
       ["open",92,65,93,75,7,MAT.SAND], ["terrain",17,66,25,69,MAT.SAND], ["terrain",55,66,57,76,MAT.SAND], ["terrain",86,66,91,79,MAT.SAND],
@@ -11579,7 +11598,7 @@ const SKIN_VIEW_FOV = 32;
 const SKIN_VIEW_SKY = [0.55, 0.56, 0.6];
 const SKIN_VIEW_SUN = [1.9, 1.8, 1.65];
 // estado da prévia (arma escolhida, giro, arrasto e caixas dos modelos)
-const skinView = { idx: 0, yaw: 0, drag: false, lastX: 0, lastT: 0, held: 0, mat: new Float32Array(16), vp: new Float32Array(16), proj: new Float32Array(16), box: {} };
+const skinView = { idx: 0, yaw: 1.25, drag: false, lastX: 0, lastT: 0, held: 0, mat: new Float32Array(16), vp: new Float32Array(16), proj: new Float32Array(16), box: {} };
 // Gulag do Battle Royale: até qual anel vale, duração do duelo (s) e armas sorteadas (as mesmas para os dois)
 const GULAG_LAST_STAGE = 3;
 const GULAG_TIME = 45;
@@ -24130,6 +24149,32 @@ function setGoal(b, x, z, key, y) {
 }
 const tmpSteer = [0, 0];
 // sem caminho porque o bot está numa ilha (platô, torre): caminho até a ponta de tirolesa da ilha mais perto
+// Fora da malha de navegação: os pés estão bem acima/abaixo do nó da célula (ou em cima de uma célula de parede). O caminho
+// calculado é o do andar de baixo, então o bot andava contra a parede para sempre. Devolve a beirada mais perto de onde
+// dá para descer até um ponto da malha (ou null).
+function botOffNav(p) {
+  const x = p.pos[0], y = p.pos[1], z = p.pos[2], ci = cellIdx(Math.floor(x), Math.floor(z));
+  if (ci < 0 || world.wall[ci]) return true;
+  const ni = navNodeAt(x, z, y);
+  return ni < 0 || Math.abs(y - nav.h[ni]) > OFFNAV_GAP;
+}
+function offNavExit(p) {
+  const x = p.pos[0], y = p.pos[1], z = p.pos[2];
+  let best = null, bd = 1e9;
+  for (let k = 0; k < OFFNAV_DIRS; k++) {
+    const a = k / OFFNAV_DIRS * Math.PI * 2, dx = Math.sin(a), dz = Math.cos(a);
+    for (let d = 0.5; d <= OFFNAV_REACH && d < bd; d += 0.5) {
+      const qx = x + dx * d, qz = z + dz * d;
+      if (!hullFree(qx, y + 0.3, qz, STAND_H - 0.3)) break; // parede ou objeto no caminho
+      const gy = groundBelow(qx, y + 0.5, qz);
+      if (y - gy < 1) continue; // ainda em cima da mesma superfície
+      const qc = cellIdx(Math.floor(qx), Math.floor(qz)), qi = navNodeAt(qx, qz, gy);
+      if (qc >= 0 && !world.wall[qc] && qi >= 0 && Math.abs(gy - nav.h[qi]) <= OFFNAV_GAP && y - gy <= OFFNAV_DROP) { bd = d; best = [qx + dx * 0.5, qz + dz * 0.5]; }
+      break;
+    }
+  }
+  return best;
+}
 function botIslandEscape(p) {
   const b = p.bot, A = game.arena;
   if (!nav.comp || !A || !A.zips.length || !b.goal) return false;
@@ -24711,6 +24756,12 @@ function botNavigate(p, dt) {
   }
   const inst = currentWeapon(p);
   if (inst && !p.ws.reloading && inst.clip < (WEAPONS[inst.id].mag || 1) * 0.6 && inst.reserve > 0 && now - b.lastSeenTime > 2.5) inp.reload = true;
+  // em cima de algo fora da malha (duas conferências seguidas): vai reto até a beirada mais perto e desce
+  if (p.onGround && !p.climb && !p.veh && !b.detour && now >= (b.offNavAt || 0)) {
+    b.offNavAt = now + OFFNAV_EVERY;
+    b.offNavN = botOffNav(p) ? (b.offNavN || 0) + 1 : 0;
+    if (b.offNavN >= 2) { const ex = offNavExit(p); b.offNavN = 0; if (ex) { b.detour = ex; b.detourUntil = now + 4; b.path = null; b.repathAt = 0; } }
+  }
   // subindo/descendo a escada de mão: o movimento é da escada; nada de detector de travada (contava a escada como travada)
   if (p.climb) { b.progPos[0] = p.pos[0]; b.progPos[1] = p.pos[2]; b.progT = now; b.stuck = 0; return; }
   let moving = false, mvx = 0, mvz = 0;
