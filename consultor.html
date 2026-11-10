@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GARCIA WEALTH · Ferramentas do consultor</title>
+<style>
+:root {
+  --bg: #0a0b0a; --surface: #121412; --surface2: #191c19; --field: #0d0f0d;
+  --line: #232723; --line2: #333a32;
+  --text: #eceee8; --text2: #b3b9ae; --muted: #7b8477;
+  --accent: #97aa63; --accent-strong: #b2c57c; --accent-soft: rgba(151, 170, 99, .12); --on-accent: #0c0e09;
+  --c1: #7d9a3c; --c2: #3f8fd0; --c3: #c98500; --c4: #b565c9; --c5: #d95926;
+  --good: #0ca30c; --warn: #fab219; --serious: #ec835a; --crit: #d03b3b;
+  --radius: 14px; --shadow: 0 18px 50px rgba(0, 0, 0, .55);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 14px/1.5 "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+::selection { background: rgba(151, 170, 99, .35); }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #2a2f29; border-radius: 10px; border: 2px solid var(--bg); }
+
+#app { display: grid; grid-template-columns: 252px 1fr; min-height: 100vh; }
+
+/* ---------- barra lateral ---------- */
+.side { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; border-right: 1px solid var(--line); padding: 26px 16px 16px; overflow-y: auto; }
+.brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 22px; }
+.brand-mark { width: 30px; height: 30px; border: 1.5px solid var(--accent); border-radius: 8px; display: grid; place-items: center; font-weight: 600; font-size: 14px; color: var(--accent); letter-spacing: 0; flex: none; }
+.brand-name { font-size: 13px; letter-spacing: .2em; line-height: 1.25; font-weight: 300; text-transform: uppercase; }
+.brand-name b { font-weight: 700; }
+.brand-name small { display: block; font-size: 10px; letter-spacing: .08em; color: var(--muted); text-transform: none; margin-top: 3px; font-weight: 400; }
+.client-box { margin: 0 4px 18px; }
+.client-box label { display: block; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0 4px 6px; }
+.nav-group { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 18px 12px 6px; }
+.nav a { display: flex; align-items: center; gap: 11px; padding: 8px 12px; border-radius: 9px; color: var(--text2); text-decoration: none; font-size: 13.5px; position: relative; }
+.nav a:hover { background: var(--surface); color: var(--text); }
+.nav a.on { background: var(--accent-soft); color: var(--text); }
+.nav a.on::before { content: ""; position: absolute; left: -16px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--accent); }
+.nav a.on .ico { color: var(--accent); }
+.nav .tick { margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.ico { width: 17px; height: 17px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.side-foot { margin-top: auto; padding: 18px 12px 0; font-size: 11px; color: var(--muted); }
+
+/* ---------- área principal ---------- */
+main { padding: 38px 46px 80px; min-width: 0; max-width: 1320px; width: 100%; }
+.th { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 26px; }
+.th h1 { font-size: 27px; font-weight: 600; letter-spacing: -.015em; margin: 0 0 4px; }
+.th p { margin: 0; color: var(--text2); font-size: 14.5px; }
+.eyebrow { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin-bottom: 8px; }
+.th-actions { display: flex; gap: 8px; flex: none; }
+
+.btn { text-decoration: none; height: 36px; padding: 0 14px; border-radius: 9px; border: 1px solid var(--line2); background: transparent; color: var(--text2); font-size: 13px; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.btn:hover { border-color: var(--accent); color: var(--text); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); font-weight: 600; }
+.btn.primary:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: var(--on-accent); }
+.btn.ghost { border-color: transparent; }
+.btn.danger:hover { border-color: var(--crit); color: #ff8f8f; }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 12.5px; }
+.btn.on { border-color: var(--accent); color: var(--text); background: var(--accent-soft); }
+
+.tool { display: grid; grid-template-columns: 348px 1fr; gap: 26px; align-items: start; }
+.tool.wide { grid-template-columns: 1fr; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.form { display: grid; gap: 14px; }
+.tool:not(.wide) .form { position: sticky; top: 24px; }
+.tool.wide .form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tool.wide .form .sec, .tool.wide .form .tbl, .tool.wide .form .presets { grid-column: 1 / -1; }
+.sec { font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--line); }
+.f { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
+.fl { font-size: 12.5px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
+.fi { display: flex; align-items: center; height: 40px; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 0 12px; gap: 8px; transition: border-color .12s; }
+.fi:focus-within { border-color: var(--accent); }
+.fi em { font-style: normal; color: var(--muted); font-size: 12.5px; flex: none; }
+.fi input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; height: 100%; text-align: right; font-variant-numeric: tabular-nums; }
+.fi input.txt { text-align: left; }
+select, textarea, .plain { width: 100%; height: 40px; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 0 12px; outline: 0; }
+select:focus, textarea:focus, .plain:focus { border-color: var(--accent); }
+textarea { height: 84px; padding: 10px 12px; resize: vertical; }
+select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 17px) 17px, calc(100% - 12px) 17px; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 30px; }
+select option { background: var(--surface); }
+.q { width: 15px; height: 15px; border-radius: 50%; border: 1px solid var(--line2); color: var(--muted); font-size: 10px; font-style: normal; display: inline-grid; place-items: center; cursor: help; flex: none; }
+.q:hover { border-color: var(--accent); color: var(--accent); }
+.sw { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: var(--text2); min-height: 40px; }
+.sw input { appearance: none; width: 34px; height: 20px; border-radius: 20px; background: var(--line2); position: relative; outline: 0; cursor: pointer; flex: none; transition: background .15s; margin: 0; }
+.sw input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 14px; height: 14px; border-radius: 50%; background: var(--text2); transition: transform .15s; }
+.sw input:checked { background: var(--accent); }
+.sw input:checked::after { transform: translateX(14px); background: var(--on-accent); }
+
+.choice { display: grid; gap: 7px; }
+.choice-q { font-size: 13px; color: var(--text); }
+.choice-q span { color: var(--muted); margin-right: 6px; }
+.choice-o { display: grid; gap: 5px; }
+.choice-o button { text-align: left; padding: 8px 11px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); color: var(--text2); font-size: 12.5px; }
+.choice-o button:hover { border-color: var(--line2); color: var(--text); }
+.choice-o button.on { border-color: var(--accent); background: var(--accent-soft); color: var(--text); }
+
+.tbl { display: grid; gap: 6px; }
+.tr { display: grid; gap: 8px; align-items: center; }
+.tr.head { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 2px 2px; }
+.tr.head > span { display: flex; align-items: center; gap: 6px; }
+.tr .fi { height: 36px; }
+.tr select { height: 36px; background-position: calc(100% - 17px) 15px, calc(100% - 12px) 15px; }
+.tr .lbl { font-size: 13.5px; color: var(--text); }
+.tr .del { width: 30px; height: 30px; border-radius: 8px; border: 0; background: none; color: var(--muted); font-size: 17px; line-height: 1; }
+.tr .del:hover { background: var(--surface2); color: #ff8f8f; }
+.tr .sw { justify-content: center; min-height: 36px; }
+.tbl .add { justify-self: start; margin-top: 4px; }
+.presets { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.presets span { font-size: 12.5px; color: var(--muted); margin-right: 4px; }
+
+/* ---------- resultados ---------- */
+.results { display: grid; gap: 18px; min-width: 0; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+.kpis.k4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tool.wide .kpis.k4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 20px; min-width: 0; }
+.kpi.hero { border-color: rgba(151, 170, 99, .45); background: linear-gradient(180deg, rgba(151, 170, 99, .09), rgba(151, 170, 99, .02) 70%), var(--surface); }
+.kpi-l { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.kpi-v { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi.hero .kpi-v { font-size: 31px; }
+.kpi.long .kpi-v { font-size: 19px; line-height: 1.3; white-space: normal; margin-top: 10px; }
+.kpi-s { font-size: 12.5px; color: var(--text2); margin-top: 3px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
+.insight { border-left: 2px solid var(--accent); padding: 4px 0 4px 18px; font-size: 15.5px; line-height: 1.6; color: var(--text); max-width: 860px; }
+.insight b { font-weight: 600; color: var(--accent-strong); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; min-width: 0; }
+.card-t { font-size: 13.5px; font-weight: 600; margin: 0 0 3px; }
+.card-s { font-size: 12.5px; color: var(--muted); margin: 0 0 14px; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.warn-box { border: 1px solid rgba(250, 178, 25, .4); background: rgba(250, 178, 25, .07); border-radius: 10px; padding: 11px 14px; font-size: 13.5px; color: var(--text); }
+details.more { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+details.more summary { padding: 14px 20px; font-size: 13px; color: var(--text2); cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::before { content: "+"; color: var(--accent); font-size: 16px; width: 12px; }
+details.more[open] summary::before { content: "–"; }
+details.more .inner { padding: 0 20px 18px; }
+.method { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+
+table.t { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+table.t th { text-align: right; font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+table.t td { text-align: right; padding: 10px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.t th:first-child, table.t td:first-child { text-align: left; padding-left: 0; white-space: normal; }
+table.t th:last-child, table.t td:last-child { padding-right: 0; }
+table.t tr:last-child td { border-bottom: 0; }
+table.t tr.best td { color: var(--text); }
+table.t tr.best td:first-child::after { content: attr(data-badge); margin-left: 8px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--on-accent); background: var(--accent); padding: 2px 6px; border-radius: 4px; }
+table.t tfoot td { border-top: 1px solid var(--line2); border-bottom: 0; font-weight: 600; }
+.pos { color: var(--accent-strong); } .neg { color: #e8866b; } .mut { color: var(--muted); }
+.tag { display: inline-block; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; border: 1px solid var(--line2); color: var(--text2); }
+
+/* gráficos */
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .xh { stroke: var(--line2); stroke-width: 1; display: none; }
+.legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 10px; font-size: 12.5px; color: var(--text2); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; margin-right: 7px; vertical-align: middle; }
+.legend i.band { height: 10px; opacity: .3; }
+.bars { display: grid; gap: 11px; }
+.bar-row { display: grid; grid-template-columns: minmax(120px, 34%) 1fr auto; gap: 14px; align-items: center; font-size: 13px; }
+.bar-row .bl { color: var(--text2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-row .bl small { display: block; color: var(--muted); font-size: 11.5px; }
+.bar-track { height: 10px; background: var(--field); border-radius: 3px; position: relative; }
+.bar-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 0 4px 4px 0; background: var(--c1); min-width: 2px; }
+.bar-mark { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); border-radius: 1px; }
+.bar-row .bv { text-align: right; white-space: nowrap; min-width: 84px; }
+.bars.two .bar-track { height: 18px; background: none; }
+.bars.two .bar-fill { height: 7px; bottom: auto; }
+.bars.two .bar-fill.b2 { top: 10px; background: var(--c2); }
+.score { display: flex; align-items: baseline; gap: 10px; }
+.score b { font-size: 54px; font-weight: 600; letter-spacing: -.03em; line-height: 1; }
+.score span { color: var(--muted); font-size: 15px; }
+
+/* painel inicial */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 14px; }
+.tcard { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; transition: border-color .12s, transform .12s; position: relative; }
+.tcard:hover { border-color: var(--accent); transform: translateY(-1px); }
+.tcard .ico { width: 20px; height: 20px; color: var(--accent); margin-bottom: 14px; }
+.tcard h3 { font-size: 14.5px; font-weight: 600; margin: 0 0 4px; }
+.tcard p { font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.5; }
+.tcard .done { position: absolute; top: 18px; right: 18px; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.group-t { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin: 30px 0 12px; display: flex; align-items: center; gap: 12px; }
+.group-t::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.group-t b { color: var(--accent); font-weight: 500; }
+.strip { display: grid; grid-template-columns: 1.3fr 1fr; gap: 14px; }
+.agenda li { display: flex; gap: 10px; align-items: baseline; padding: 5px 0; font-size: 13.5px; color: var(--text2); }
+.agenda ul { list-style: none; margin: 0; padding: 0; }
+.agenda li::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: none; transform: translateY(-2px); }
+.agenda .next { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.agenda .next li::before { background: var(--line2); }
+.prem { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.prem div { font-size: 11px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+.prem b { display: block; font-size: 21px; color: var(--text); letter-spacing: -.01em; margin-top: 4px; font-weight: 600; text-transform: none; }
+
+.clist { display: grid; gap: 10px; }
+.crow { display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; }
+.crow.on { border-color: rgba(151, 170, 99, .5); }
+.crow h3 { margin: 0 0 2px; font-size: 15px; font-weight: 600; }
+.crow p { margin: 0; font-size: 12.5px; color: var(--muted); }
+.crow .acts { display: flex; gap: 6px; }
+.empty { border: 1px dashed var(--line2); border-radius: var(--radius); padding: 44px 20px; text-align: center; color: var(--muted); }
+.empty b { display: block; color: var(--text); font-size: 15px; margin-bottom: 6px; font-weight: 600; }
+.empty .btn { margin-top: 16px; }
+.cfg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+.cfg .form { position: static; }
+.row-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* modal, avisos e dicas */
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .66); display: grid; place-items: center; z-index: 50; padding: 20px; }
+.modal { width: min(560px, 100%); max-height: 90vh; overflow: auto; background: var(--surface); border: 1px solid var(--line2); border-radius: 16px; padding: 26px; box-shadow: var(--shadow); }
+.modal h2 { margin: 0 0 6px; font-size: 18px; font-weight: 600; }
+.modal p { margin: 0 0 18px; color: var(--text2); }
+.modal .form { grid-template-columns: 1fr 1fr; }
+.modal .form .full { grid-column: 1 / -1; }
+.modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 22px; }
+#toasts { position: fixed; right: 22px; bottom: 22px; display: grid; gap: 8px; z-index: 60; }
+.toast { background: var(--surface2); border: 1px solid var(--line2); border-left: 3px solid var(--accent); border-radius: 10px; padding: 11px 16px; font-size: 13.5px; box-shadow: var(--shadow); max-width: 360px; }
+.toast.err { border-left-color: var(--crit); }
+#tip { position: fixed; z-index: 70; pointer-events: none; background: #1d211d; border: 1px solid var(--line2); border-radius: 9px; padding: 9px 12px; font-size: 12.5px; color: var(--text); box-shadow: var(--shadow); display: none; max-width: 280px; line-height: 1.5; }
+#tip .tt { color: var(--muted); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 5px; }
+#tip .tr2 { display: flex; justify-content: space-between; gap: 18px; white-space: nowrap; }
+#tip .tr2 i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 7px; }
+
+/* relatório */
+.report { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 44px 48px; max-width: 920px; }
+.rep-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; padding-bottom: 22px; border-bottom: 1px solid var(--line2); margin-bottom: 8px; }
+.rep-head .brand { padding: 0; }
+.rep-meta { text-align: right; font-size: 12.5px; color: var(--text2); }
+.rep-meta b { display: block; font-size: 17px; color: var(--text); font-weight: 600; }
+.rep-sec { padding: 26px 0; border-bottom: 1px solid var(--line); break-inside: avoid; }
+.rep-sec h2 { font-size: 16px; margin: 0 0 14px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.rep-sec h2 .ico { color: var(--accent); }
+.rep-sec .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.rep-sec .kpi { padding: 12px 14px; }
+.rep-sec .kpi-v, .rep-sec .kpi.hero .kpi-v { font-size: 18px; }
+.rep-sec .insight { font-size: 14px; }
+.rep-sec .card { margin-top: 14px; border: 0; padding: 0; background: none; }
+.rep-sec .chart { max-width: 660px; }
+.rep-sec .grid2 { grid-template-columns: 1fr; }
+.rep-foot { padding-top: 20px; font-size: 11px; color: var(--muted); line-height: 1.6; }
+.checks { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+
+@media (max-width: 1080px) {
+  #app { grid-template-columns: 1fr; }
+  .side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+  main { padding: 26px 20px 60px; }
+  .tool, .grid2, .strip, .cfg { grid-template-columns: 1fr; }
+  .tool:not(.wide) .form { position: static; }
+  .tool.wide .form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media print {
+  :root {
+    --bg: #fff; --surface: #fff; --surface2: #f4f5f1; --field: #f4f5f1; --line: #dfe2d9; --line2: #c5cabd;
+    --text: #151713; --text2: #3d4239; --muted: #6c7366; --accent: #5f7a22; --accent-strong: #4b6218; --accent-soft: rgba(95, 122, 34, .1);
+    --c1: #5f7a22; --c2: #2a6fb5; --c3: #a86e00; --c4: #9a48b0; --c5: #c04a1c; color-scheme: light;
+  }
+  @page { margin: 14mm; }
+  body { background: #fff; }
+  #app { display: block; }
+  .side, .th, .checks, #toasts, #tip, .no-print { display: none !important; }
+  main { padding: 0; max-width: none; }
+  .report { border: 0; padding: 0; max-width: none; }
+  .kpi.hero { background: #fff; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside class="side">
+    <div class="brand" id="brandBox"></div>
+    <div class="client-box">
+      <label for="clientSelect">Cliente</label>
+      <select id="clientSelect"></select>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="side-foot" id="sideFoot"></div>
+  </aside>
+  <main id="main"></main>
+</div>
+<div id="modalRoot"></div>
+<div id="toasts"></div>
+<div id="tip"></div>
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     1. CONSTANTES — tudo que é configuração/dado estático fica aqui em cima
+     ===================================================================== */
+  const APP_VERSION = '1.0.0';
+  const CURRENT_SCHEMA_VERSION = 1;
+  const DB_NAME = 'garcia-wealth-suite';
+  const DB_VERSION = 1;
+  const DB_STORE = 'kv';
+  const STATE_KEY = 'state';
+  const BRAND_DEFAULT = 'GARCIA WEALTH';
+  const TAGLINE_DEFAULT = 'Consultoria de investimentos';
+  const MC_SEED = 20261110;
+  const MC_SIMS = 1000;
+  // Renda com guardrails: margem de longevidade no prazo e queda de renda considerada aceitável
+  const RENDA_MARGEM_ANOS = 3;
+  const RENDA_PISO_FIRME = 0.8;
+
+  // Premissas de mercado (editáveis em Configurações). Referência: nov/2026.
+  const DEFAULT_PREMISSAS = { selic: 13.75, cdi: 13.65, ipca: 4.6, tr: 2.0 };
+
+  // IR regressivo da renda fixa: [prazo máximo em dias, alíquota %]
+  const IR_RENDA_FIXA = [[180, 22.5], [360, 20], [720, 17.5], [Infinity, 15]];
+  // IOF regressivo sobre o rendimento, dias 1 a 30
+  const IOF_TABELA = [96, 93, 90, 86, 83, 80, 76, 73, 70, 66, 63, 60, 56, 53, 50, 46, 43, 40, 36, 33, 30, 26, 23, 20, 16, 13, 10, 6, 3, 0];
+  // Poupança: Selic acima do gatilho rende 0,5% a.m. + TR; abaixo, 70% da Selic + TR
+  const POUPANCA_GATILHO_SELIC = 8.5;
+  const POUPANCA_TAXA_MENSAL = 0.5;
+  const POUPANCA_PCT_SELIC = 70;
+
+  // IRPF anual (ano-calendário 2026 = 12 × tabela mensal): [teto da base, alíquota %, parcela a deduzir]
+  const IRPF_ANUAL = [[29145.60, 0, 0], [33919.80, 7.5, 2185.92], [45012.60, 15, 4729.92], [55976.16, 22.5, 8105.88], [Infinity, 27.5, 10904.76]];
+  // Redutor da Lei 15.270/2025 (isenção efetiva até R$ 60 mil/ano, redução parcial até R$ 88,2 mil)
+  const IRPF_REDUTOR = { isento: 60000, limite: 88200, maximo: 2694.15, a: 8429.73, b: 0.095575 };
+  const IRPF_DEPENDENTE = 2275.08;
+  const IRPF_SIMPLIFICADO_PCT = 20;
+  const IRPF_SIMPLIFICADO_TETO = 16754.34;
+  const PGBL_LIMITE_PCT = 12;
+  // Tabela regressiva da previdência: [anos até, alíquota %]
+  const PREV_REGRESSIVA = [[2, 35], [4, 30], [6, 25], [8, 20], [10, 15], [Infinity, 10]];
+  const COME_COTAS_PCT = 15;
+
+  // Classes de ativos: retorno real esperado e volatilidade (% a.a.) — premissas de longo prazo
+  const ASSET_CLASSES = [
+    { id: 'pos', name: 'Pós-fixado (CDI)', ret: 4.5, vol: 1 },
+    { id: 'ipca', name: 'Inflação (IPCA+)', ret: 6, vol: 7 },
+    { id: 'pre', name: 'Prefixado', ret: 5.5, vol: 6 },
+    { id: 'multi', name: 'Multimercado', ret: 5.5, vol: 6 },
+    { id: 'acoes', name: 'Ações Brasil', ret: 8, vol: 24 },
+    { id: 'fii', name: 'Fundos imobiliários', ret: 7, vol: 14 },
+    { id: 'ext', name: 'Exterior', ret: 7, vol: 17 },
+    { id: 'alt', name: 'Alternativos', ret: 8, vol: 30 }
+  ];
+  // Correlações na mesma ordem de ASSET_CLASSES
+  const ASSET_CORR = [
+    [1, 0.1, 0.1, 0.1, 0, 0, 0, 0],
+    [0.1, 1, 0.7, 0.4, 0.4, 0.4, -0.1, 0.1],
+    [0.1, 0.7, 1, 0.4, 0.4, 0.4, -0.2, 0.1],
+    [0.1, 0.4, 0.4, 1, 0.5, 0.3, 0.1, 0.2],
+    [0, 0.4, 0.4, 0.5, 1, 0.5, 0.2, 0.3],
+    [0, 0.4, 0.4, 0.3, 0.5, 1, 0, 0.2],
+    [0, -0.1, -0.2, 0.1, 0.2, 0, 1, 0.3],
+    [0, 0.1, 0.1, 0.2, 0.3, 0.2, 0.3, 1]
+  ];
+  const PROFILES = [
+    { id: 'conservador', name: 'Conservador' },
+    { id: 'moderado', name: 'Moderado' },
+    { id: 'arrojado', name: 'Arrojado' },
+    { id: 'agressivo', name: 'Agressivo' }
+  ];
+  const MODEL_PORTFOLIOS = {
+    conservador: { pos: 70, ipca: 20, pre: 5, multi: 5, acoes: 0, fii: 0, ext: 0, alt: 0 },
+    moderado: { pos: 40, ipca: 25, pre: 5, multi: 10, acoes: 8, fii: 5, ext: 7, alt: 0 },
+    arrojado: { pos: 20, ipca: 25, pre: 5, multi: 10, acoes: 18, fii: 7, ext: 13, alt: 2 },
+    agressivo: { pos: 8, ipca: 20, pre: 2, multi: 8, acoes: 30, fii: 8, ext: 20, alt: 4 }
+  };
+  // Choques aproximados por classe (%), com base em índices de mercado no período
+  const STRESS_SCENARIOS = [
+    { id: 'c2008', name: 'Crise global · ano de 2008', s: { pos: 12, ipca: 11, pre: 14, multi: 5, acoes: -41, fii: -15, ext: -19, alt: -25 } },
+    { id: 'c2015', name: 'Crise fiscal · ano de 2015', s: { pos: 13, ipca: 9, pre: 7, multi: 17, acoes: -13, fii: 5, ext: 46, alt: 0 } },
+    { id: 'c2020', name: 'Covid · 1º tri de 2020', s: { pos: 1, ipca: -6, pre: 1, multi: -6, acoes: -37, fii: -22, ext: 3, alt: -15 } }
+  ];
+
+  const RISK_QUESTIONS = [
+    { k: 'q1', dim: 'cap', q: 'Por quanto tempo o dinheiro pode ficar investido?', o: ['Menos de 2 anos', '2 a 5 anos', '5 a 10 anos', 'Mais de 10 anos'] },
+    { k: 'q2', dim: 'cap', q: 'Como é a sua renda?', o: ['Instável', 'Razoavelmente estável', 'Estável', 'Estável e com folga'] },
+    { k: 'q3', dim: 'cap', q: 'Sua reserva de emergência cobre quantos meses?', o: ['Menos de 3', '3 a 6', '6 a 12', 'Mais de 12'] },
+    { k: 'q4', dim: 'cap', q: 'Quanto do seu patrimônio está nesta carteira?', o: ['Quase tudo', 'Mais da metade', 'Menos da metade', 'Uma parte pequena'] },
+    { k: 'q5', dim: 'tol', q: 'A carteira caiu 20% em seis meses. Você…', o: ['Resgata tudo', 'Resgata uma parte', 'Mantém', 'Investe mais'] },
+    { k: 'q6', dim: 'tol', q: 'Qual é o seu objetivo principal?', o: ['Preservar o capital', 'Renda com pouca oscilação', 'Crescer aceitando oscilações', 'Maximizar o retorno'] },
+    { k: 'q7', dim: 'tol', q: 'Sua experiência com renda variável', o: ['Nenhuma', 'Pouca', 'Alguns anos', 'Já atravessei crises investido'] },
+    { k: 'q8', dim: 'tol', q: 'Qual resultado de 1 ano você aceitaria?', o: ['+8% ou −2%', '+12% ou −8%', '+18% ou −15%', '+25% ou −25%'] }
+  ];
+  const RISK_CUTS = [3, 6, 9]; // pontuação máxima de cada perfil (0–12 por dimensão)
+
+  // Alíquotas de referência do ITCMD (causa mortis). Confirmar sempre na SEFAZ do estado.
+  const ITCMD_UF = [
+    { uf: 'SP', name: 'São Paulo', ref: 4, faixa: '4% fixa' },
+    { uf: 'MG', name: 'Minas Gerais', ref: 5, faixa: '5% fixa' },
+    { uf: 'PR', name: 'Paraná', ref: 4, faixa: '4% fixa' },
+    { uf: 'MS', name: 'Mato Grosso do Sul', ref: 6, faixa: '6% fixa' },
+    { uf: 'RJ', name: 'Rio de Janeiro', ref: 8, faixa: '4% a 8%' },
+    { uf: 'RS', name: 'Rio Grande do Sul', ref: 6, faixa: 'até 6%' },
+    { uf: 'GO', name: 'Goiás', ref: 8, faixa: '2% a 8%' },
+    { uf: 'MT', name: 'Mato Grosso', ref: 8, faixa: '2% a 8%' },
+    { uf: 'XX', name: 'Outro estado', ref: 4, faixa: '2% a 8%' }
+  ];
+  const ITCMD_TETO = 8;
+
+  const RESERVA_MESES = { servidor: 3, clt: 6, autonomo: 12 };
+  const HEALTH_WEIGHTS = { poupanca: 20, reserva: 20, parcelas: 15, endividamento: 10, liquidez: 10, protecao: 10, aposentadoria: 15 };
+  // Referência de patrimônio investido em múltiplos da renda anual, por idade
+  const RETIRE_BENCH = [[22, 0], [30, 1], [35, 2], [40, 3], [45, 4], [50, 6], [55, 7], [60, 8], [67, 10]];
+  const MILESTONES = [100000, 500000, 1000000, 5000000];
+
+  const MONTHS = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  const SERVICE_CALENDAR = [
+    ['Revisão anual de metas e orçamento', 'IPVA e IPTU no fluxo de caixa'],
+    ['Reunir informes de rendimento', 'Checar reserva de emergência'],
+    ['Preparar a declaração de IR', 'Revisar ganhos de capital do ano anterior'],
+    ['Entregar a declaração de IR', 'Planejar o uso da restituição'],
+    ['Come-cotas dos fundos', 'Rebalanceamento da carteira'],
+    ['Revisão semestral do plano', 'Atualizar perfil de risco'],
+    ['Check-up de seguros e proteção', 'Revisar dependentes e beneficiários'],
+    ['Revisão de sucessão', 'Custos de inventário atualizados'],
+    ['Planejamento tributário do ano', 'Projetar a renda tributável'],
+    ['Simular o aporte ideal em PGBL', 'Revisar custos da carteira'],
+    ['Come-cotas dos fundos', '13º salário: aportes e PGBL'],
+    ['Último aporte em PGBL do ano', 'Doações em vida e fechamento do ano']
+  ];
+
+  const ICONS = {
+    home: '<path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/>',
+    users: '<circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.2a3 3 0 010 5.6"/><path d="M18 14.5c1.8.8 3 2.6 3 4.7"/>',
+    pulse: '<path d="M3 12h4l2-6 4 12 2-6h6"/>',
+    shield: '<path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/>',
+    gauge: '<path d="M4 16a8 8 0 1116 0"/><path d="M12 16l4-5"/>',
+    coins: '<ellipse cx="12" cy="7" rx="7" ry="3"/><path d="M5 7v5c0 1.7 3.1 3 7 3s7-1.3 7-3V7"/><path d="M5 12v5c0 1.7 3.1 3 7 3s7-1.3 7-3v-5"/>',
+    growth: '<path d="M4 19h16"/><path d="M5 15l4-4 3 3 7-8"/><path d="M15 6h4v4"/>',
+    flag: '<path d="M6 21V4"/><path d="M6 5h11l-2 3.5 2 3.5H6"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+    target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="0.6"/>',
+    scale: '<path d="M12 4v16M7 20h10M5 8h14"/><path d="M5 8l-2.5 6h5zM19 8l-2.5 6h5z"/>',
+    pie: '<path d="M12 4a8 8 0 108 8h-8z"/><path d="M15 3.5A7.5 7.5 0 0120.5 9H15z"/>',
+    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+    umbrella: '<path d="M3 12a9 9 0 0118 0z"/><path d="M12 12v6a2 2 0 004 0"/>',
+    tree: '<circle cx="12" cy="5" r="2"/><circle cx="6" cy="18" r="2"/><circle cx="18" cy="18" r="2"/><path d="M12 7v5M6 16v-2h12v2"/>',
+    house: '<path d="M4 11l8-7 8 7"/><path d="M6 10v10h12V10"/><path d="M10 20v-5h4v5"/>',
+    doc: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+    gear: '<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/>'
+  };
+
+  const TOOL_GROUPS = [
+    { id: 'diag', name: 'Diagnóstico' },
+    { id: 'plan', name: 'Planejamento' },
+    { id: 'inv', name: 'Investimentos' },
+    { id: 'prot', name: 'Impostos e proteção' }
+  ];
+
+  const UNITS = { money: 'R$', pct: '%', int: '', num: '' };
+
+  /* Definição dos campos de cada ferramenta.
+     d = valor padrão (ou função de env); u = unidade exibida; tip = ajuda curta. */
+  const TOOL_DEFS = [
+    {
+      id: 'raiox', group: 'diag', icon: 'pulse', name: 'Raio-X financeiro',
+      desc: 'Nota de 0 a 100 da saúde financeira e as prioridades do cliente.',
+      fields: [
+        { k: 'idade', l: 'Idade', t: 'int', u: 'anos', d: function (e) { return e.facts.idade || 38; } },
+        { k: 'tipoRenda', l: 'Tipo de renda', t: 'select', d: 'clt', o: [['servidor', 'Servidor público'], ['clt', 'Assalariado'], ['autonomo', 'Autônomo ou empresário']] },
+        { k: 'renda', l: 'Renda mensal líquida', t: 'money', d: function (e) { return e.facts.renda || 18000; } },
+        { k: 'despesas', l: 'Despesas mensais', t: 'money', d: function (e) { return e.facts.despesas || 12000; } },
+        { k: 'aporte', l: 'Investe por mês', t: 'money', d: function (e) { return e.facts.aporte || 2500; } },
+        { k: 'parcelas', l: 'Parcelas de dívidas por mês', t: 'money', d: 3200, tip: 'Financiamentos, empréstimos e cartão parcelado.' },
+        { sec: 'Patrimônio' },
+        { k: 'reserva', l: 'Reserva de emergência', t: 'money', d: 30000, tip: 'Dinheiro com liquidez imediata.' },
+        { k: 'investimentos', l: 'Investimentos financeiros', t: 'money', d: function (e) { return e.facts.patrimonio || 250000; }, tip: 'Total, incluindo a reserva.' },
+        { k: 'imobilizado', l: 'Imóveis, empresa e outros bens', t: 'money', d: 900000 },
+        { k: 'dividas', l: 'Saldo total de dívidas', t: 'money', d: 280000 },
+        { sec: 'Proteção' },
+        { k: 'dependentes', l: 'Dependentes financeiros', t: 'int', d: 2 },
+        { k: 'seguro', l: 'Seguro de vida contratado', t: 'money', d: 200000, tip: 'Capital segurado por morte.' }
+      ]
+    },
+    {
+      id: 'risco', group: 'diag', icon: 'gauge', name: 'Perfil de risco',
+      desc: 'Tolerância e capacidade de risco, traduzidas em reais.',
+      fields: [
+        { k: 'patrimonio', l: 'Valor da carteira', t: 'money', d: function (e) { return e.facts.patrimonio || 500000; } },
+        { sec: 'Questionário' },
+        { k: 'q1', t: 'choice', d: null }, { k: 'q2', t: 'choice', d: null }, { k: 'q3', t: 'choice', d: null }, { k: 'q4', t: 'choice', d: null },
+        { k: 'q5', t: 'choice', d: null }, { k: 'q6', t: 'choice', d: null }, { k: 'q7', t: 'choice', d: null }, { k: 'q8', t: 'choice', d: null }
+      ]
+    },
+    {
+      id: 'custos', group: 'diag', icon: 'receipt', name: 'Raio-X de custos', wide: true,
+      desc: 'Quanto a carteira atual paga em taxas — e quanto isso custa no longo prazo.',
+      fields: [
+        {
+          k: 'rows', t: 'table', add: 'Adicionar produto',
+          cols: [{ k: 'nome', l: 'Produto', t: 'text', w: 3 }, { k: 'valor', l: 'Valor', t: 'money', w: 2 }, { k: 'adm', l: 'Taxa de adm.', t: 'pct', w: 1.3 }, { k: 'perf', l: 'Performance', t: 'pct', w: 1.3, tip: 'Estimativa média ao ano.' }, { k: 'outros', l: 'Outros custos', t: 'pct', w: 1.3, tip: 'Comissões embutidas, spread, carregamento.' }],
+          d: [
+            { nome: 'Fundo multimercado do banco', valor: 300000, adm: 2, perf: 0.5, outros: 0 },
+            { nome: 'Fundo de ações', valor: 150000, adm: 2.5, perf: 0.8, outros: 0 },
+            { nome: 'Previdência do banco', valor: 200000, adm: 1.8, perf: 0, outros: 0.5 },
+            { nome: 'COE', valor: 100000, adm: 0, perf: 0, outros: 1.5 },
+            { nome: 'CDB', valor: 250000, adm: 0, perf: 0, outros: 0.3 }
+          ]
+        },
+        { sec: 'Comparação' },
+        { k: 'anos', l: 'Horizonte', t: 'int', u: 'anos', d: 20 },
+        { k: 'retBruto', l: 'Retorno bruto esperado a.a.', t: 'pct', d: 10 },
+        { k: 'custoNovo', l: 'Custo da carteira proposta a.a.', t: 'pct', d: 0.3, tip: 'Custo médio dos produtos que você recomendaria.' },
+        { k: 'fee', l: 'Honorário da consultoria a.a.', t: 'pct', d: 0.8 }
+      ]
+    },
+    {
+      id: 'juros', group: 'plan', icon: 'growth', name: 'Juros compostos',
+      desc: 'Quanto o dinheiro cresce com aportes, tempo e taxa.',
+      fields: [
+        { k: 'inicial', l: 'Valor inicial', t: 'money', d: 10000 },
+        { k: 'aporte', l: 'Aporte mensal', t: 'money', d: function (e) { return e.facts.aporte || 1000; } },
+        { k: 'taxa', l: 'Rentabilidade a.a.', t: 'pct', d: 10 },
+        { k: 'anos', l: 'Prazo', t: 'int', u: 'anos', d: 20 },
+        { sec: 'Ajustes' },
+        { k: 'crescAporte', l: 'Aumento anual do aporte', t: 'pct', d: 0 },
+        { k: 'inflacao', l: 'Inflação a.a.', t: 'pct', d: 4.5 },
+        { k: 'custo', l: 'Taxas a.a.', t: 'pct', d: 0, tip: 'Taxa de administração do produto.' },
+        { k: 'ir', l: 'IR sobre o ganho', t: 'pct', d: 15, tip: '15% acima de 2 anos. Use 0 para isentos.' },
+        { k: 'atraso', l: 'E se adiar o início?', t: 'int', u: 'anos', d: 5 }
+      ]
+    },
+    {
+      id: 'indep', group: 'plan', icon: 'sun', name: 'Independência financeira',
+      desc: 'O plano chega lá? Quanto falta e o que ajustar.',
+      fields: [
+        { k: 'idade', l: 'Idade atual', t: 'int', u: 'anos', d: function (e) { return e.facts.idade || 38; } },
+        { k: 'idadeApos', l: 'Idade da independência', t: 'int', u: 'anos', d: 60 },
+        { k: 'expectativa', l: 'Planejar até', t: 'int', u: 'anos', d: 95 },
+        { k: 'patrimonio', l: 'Patrimônio investido', t: 'money', d: function (e) { return e.facts.patrimonio || 250000; } },
+        { k: 'aporte', l: 'Aporte mensal', t: 'money', d: function (e) { return e.facts.aporte || 2500; } },
+        { k: 'rendaDesejada', l: 'Renda mensal desejada', t: 'money', d: function (e) { return e.facts.despesas || 12000; }, tip: 'Em valores de hoje.' },
+        { k: 'outrasRendas', l: 'Outras rendas na aposentadoria', t: 'money', d: 3000, tip: 'INSS, aluguéis, pensões.' },
+        { sec: 'Premissas · acima da inflação' },
+        { k: 'retAcum', l: 'Retorno real até lá', t: 'pct', d: 5 },
+        { k: 'retApos', l: 'Retorno real depois', t: 'pct', d: 4 },
+        { k: 'vol', l: 'Oscilação anual da carteira', t: 'pct', d: 8, tip: 'Volatilidade usada na simulação de cenários.' },
+        { k: 'crescAporte', l: 'Aumento real do aporte a.a.', t: 'pct', d: 0 },
+        { k: 'legado', l: 'Herança a deixar', t: 'money', d: 0 }
+      ]
+    },
+    {
+      id: 'renda', group: 'plan', icon: 'scale', name: 'Renda com guardrails',
+      desc: 'Quanto retirar por mês — e quando ajustar para cima ou para baixo.',
+      fields: [
+        { k: 'patrimonio', l: 'Patrimônio investido', t: 'money', d: function (e) { return e.facts.patrimonio || 2000000; } },
+        { k: 'rendaMensal', l: 'Retirada mensal', t: 'money', d: 8000, tip: 'Em valores de hoje, corrigida pela inflação.' },
+        { k: 'anos', l: 'Duração', t: 'int', u: 'anos', d: 30 },
+        { sec: 'Premissas · acima da inflação' },
+        { k: 'ret', l: 'Retorno real a.a.', t: 'pct', d: 4 },
+        { k: 'vol', l: 'Oscilação anual', t: 'pct', d: 8 },
+        { sec: 'Regra de ajuste' },
+        { k: 'faixa', l: 'Largura da faixa', t: 'pct', d: 20, tip: 'Desvio da taxa de retirada que dispara um ajuste.' },
+        { k: 'ajuste', l: 'Tamanho do ajuste', t: 'pct', d: 10 }
+      ]
+    },
+    {
+      id: 'metas', group: 'plan', icon: 'target', name: 'Metas', wide: true,
+      desc: 'Quanto guardar por mês para cada objetivo, por ordem de prioridade.',
+      fields: [
+        {
+          k: 'rows', t: 'table', add: 'Adicionar meta',
+          cols: [{ k: 'nome', l: 'Meta', t: 'text', w: 3 }, { k: 'valor', l: 'Valor hoje', t: 'money', w: 2 }, { k: 'anos', l: 'Prazo (anos)', t: 'num', w: 1.2 }, { k: 'reservado', l: 'Já reservado', t: 'money', w: 2 }, { k: 'prio', l: 'Prioridade', t: 'select', w: 1.4, o: [[1, 'Alta'], [2, 'Média'], [3, 'Baixa']] }],
+          d: [
+            { nome: 'Reserva de emergência', valor: 72000, anos: 1, reservado: 30000, prio: 1 },
+            { nome: 'Entrada do imóvel', valor: 200000, anos: 5, reservado: 40000, prio: 2 },
+            { nome: 'Faculdade dos filhos', valor: 300000, anos: 12, reservado: 0, prio: 2 },
+            { nome: 'Viagem em família', valor: 40000, anos: 2, reservado: 0, prio: 3 }
+          ]
+        },
+        { sec: 'Capacidade e premissas' },
+        { k: 'capacidade', l: 'Disponível por mês', t: 'money', d: function (e) { return e.facts.aporte || 5000; } },
+        { k: 'retCurto', l: 'Retorno real · até 2 anos', t: 'pct', d: 3 },
+        { k: 'retMedio', l: 'Retorno real · 2 a 5 anos', t: 'pct', d: 4.5 },
+        { k: 'retLongo', l: 'Retorno real · acima de 5', t: 'pct', d: 5.5 }
+      ]
+    },
+    {
+      id: 'rendafixa', group: 'inv', icon: 'coins', name: 'Renda fixa', wide: true,
+      desc: 'Qual título rende mais depois do imposto.',
+      fields: [
+        {
+          k: 'rows', t: 'table', add: 'Adicionar título',
+          cols: [{ k: 'nome', l: 'Título', t: 'text', w: 3 }, { k: 'tipo', l: 'Indexador', t: 'select', w: 2, o: [['cdi', '% do CDI'], ['pre', 'Prefixado a.a.'], ['ipca', 'IPCA + a.a.'], ['poup', 'Poupança']] }, { k: 'taxa', l: 'Taxa', t: 'pct', w: 1.2 }, { k: 'isento', l: 'Isento de IR', t: 'check', w: 1 }, { k: 'custo', l: 'Custo a.a.', t: 'pct', w: 1.2, tip: 'Custódia ou taxa de administração.' }],
+          d: [
+            { nome: 'CDB 110% do CDI', tipo: 'cdi', taxa: 110, isento: false, custo: 0 },
+            { nome: 'LCA 92% do CDI', tipo: 'cdi', taxa: 92, isento: true, custo: 0 },
+            { nome: 'Tesouro Selic', tipo: 'cdi', taxa: 100, isento: false, custo: 0.2 },
+            { nome: 'Tesouro Prefixado', tipo: 'pre', taxa: 13.4, isento: false, custo: 0.2 },
+            { nome: 'Tesouro IPCA+', tipo: 'ipca', taxa: 7.3, isento: false, custo: 0.2 },
+            { nome: 'Poupança', tipo: 'poup', taxa: 0, isento: true, custo: 0 }
+          ]
+        },
+        { sec: 'Aplicação' },
+        { k: 'valor', l: 'Valor aplicado', t: 'money', d: 100000 },
+        { k: 'dias', l: 'Prazo', t: 'int', u: 'dias', d: 720 },
+        { k: 'cdi', l: 'CDI a.a.', t: 'pct', d: function (e) { return e.premissas.cdi; } },
+        { k: 'ipca', l: 'IPCA a.a.', t: 'pct', d: function (e) { return e.premissas.ipca; } },
+        { sec: 'Marcação a mercado' },
+        { k: 'mtmTaxa', l: 'Taxa contratada a.a.', t: 'pct', d: 7.3 },
+        { k: 'mtmAnos', l: 'Prazo até o vencimento', t: 'num', u: 'anos', d: 10 }
+      ]
+    },
+    {
+      id: 'alocacao', group: 'inv', icon: 'pie', name: 'Alocação e rebalanceamento', wide: true,
+      desc: 'Carteira atual × carteira-alvo: o que comprar, o que vender e o risco de cada uma.',
+      actions: [['conservador', 'Conservador'], ['moderado', 'Moderado'], ['arrojado', 'Arrojado'], ['agressivo', 'Agressivo']],
+      actionsLabel: 'Carteira-modelo',
+      fields: [
+        {
+          k: 'rows', t: 'table', fixed: true,
+          cols: [{ k: 'nome', l: 'Classe', t: 'label', w: 3 }, { k: 'atual', l: 'Posição atual', t: 'money', w: 2 }, { k: 'alvo', l: 'Alvo', t: 'pct', w: 1.2 }],
+          d: [
+            { id: 'pos', nome: 'Pós-fixado (CDI)', atual: 420000, alvo: 40 },
+            { id: 'ipca', nome: 'Inflação (IPCA+)', atual: 80000, alvo: 25 },
+            { id: 'pre', nome: 'Prefixado', atual: 50000, alvo: 5 },
+            { id: 'multi', nome: 'Multimercado', atual: 250000, alvo: 10 },
+            { id: 'acoes', nome: 'Ações Brasil', atual: 150000, alvo: 8 },
+            { id: 'fii', nome: 'Fundos imobiliários', atual: 50000, alvo: 5 },
+            { id: 'ext', nome: 'Exterior', atual: 0, alvo: 7 },
+            { id: 'alt', nome: 'Alternativos', atual: 0, alvo: 0 }
+          ]
+        },
+        { sec: 'Rebalanceamento' },
+        { k: 'aporte', l: 'Dinheiro novo a investir', t: 'money', d: 50000 },
+        { k: 'modo', l: 'Como rebalancear', t: 'select', d: 'aporte', o: [['aporte', 'Só com o dinheiro novo'], ['completo', 'Comprando e vendendo']] }
+      ]
+    },
+    {
+      id: 'pgbl', group: 'prot', icon: 'doc', name: 'PGBL e imposto de renda',
+      desc: 'O aporte em PGBL que mais reduz o IR deste ano.',
+      fields: [
+        { k: 'rendaAnual', l: 'Renda tributável no ano', t: 'money', d: function (e) { return e.facts.renda ? Math.round(e.facts.renda * 12 / 0.8 / 1000) * 1000 : 300000; }, tip: 'Salário bruto, pró-labore e aluguéis.' },
+        { k: 'contribui', l: 'Contribui para o INSS ou regime próprio', t: 'check', d: true, tip: 'Exigência para deduzir o PGBL.' },
+        { k: 'inss', l: 'INSS pago no ano', t: 'money', d: 12800 },
+        { k: 'dependentes', l: 'Dependentes', t: 'int', d: 2 },
+        { k: 'saude', l: 'Despesas médicas', t: 'money', d: 14000 },
+        { k: 'educacao', l: 'Educação dedutível', t: 'money', d: 7123, tip: 'Limite de R$ 3.561,50 por pessoa.' },
+        { k: 'pensao', l: 'Pensão alimentícia', t: 'money', d: 0 },
+        { k: 'pgblFeito', l: 'PGBL já aportado no ano', t: 'money', d: 0 },
+        { sec: 'Longo prazo' },
+        { k: 'anos', l: 'Horizonte', t: 'int', u: 'anos', d: 20 },
+        { k: 'retorno', l: 'Rentabilidade a.a.', t: 'pct', d: 10 }
+      ]
+    },
+    {
+      id: 'protecao', group: 'prot', icon: 'umbrella', name: 'Reserva e seguro de vida',
+      desc: 'O tamanho certo da reserva de emergência e do seguro de vida.',
+      fields: [
+        { k: 'despesas', l: 'Despesas essenciais por mês', t: 'money', d: function (e) { return e.facts.despesas || 12000; } },
+        { k: 'tipoRenda', l: 'Tipo de renda', t: 'select', d: 'clt', o: [['servidor', 'Servidor público · 3 meses'], ['clt', 'Assalariado · 6 meses'], ['autonomo', 'Autônomo ou empresário · 12 meses']] },
+        { k: 'reservaAtual', l: 'Reserva atual', t: 'money', d: 30000 },
+        { sec: 'Seguro de vida · se o provedor faltar' },
+        { k: 'despesasFamilia', l: 'Renda mensal para a família', t: 'money', d: 10000 },
+        { k: 'anosCobertura', l: 'Por quantos anos', t: 'int', u: 'anos', d: 15, tip: 'Até os filhos serem independentes.' },
+        { k: 'dividas', l: 'Dívidas a quitar', t: 'money', d: 280000 },
+        { k: 'educacao', l: 'Educação dos filhos', t: 'money', d: 300000 },
+        { k: 'inventario', l: 'Custos de inventário', t: 'money', d: 100000, tip: 'Veja a ferramenta Sucessão.' },
+        { k: 'patrimonio', l: 'Investimentos disponíveis', t: 'money', d: function (e) { return e.facts.patrimonio || 250000; } },
+        { k: 'seguros', l: 'Seguros já contratados', t: 'money', d: 200000 },
+        { k: 'taxaReal', l: 'Retorno real do capital', t: 'pct', d: 3 }
+      ]
+    },
+    {
+      id: 'sucessao', group: 'prot', icon: 'tree', name: 'Sucessão',
+      desc: 'Quanto custa o inventário e se a família terá liquidez para pagar.',
+      fields: [
+        { k: 'uf', l: 'Estado', t: 'select', d: 'SP', o: ITCMD_UF.map(function (u) { return [u.uf, u.name + ' · ' + u.faixa]; }) },
+        { k: 'aliquota', l: 'Alíquota do ITCMD', t: 'pct', d: 4, tip: 'Referência do estado. Confirme na SEFAZ.' },
+        { k: 'meacao', l: 'Cônjuge com meação', t: 'select', d: 50, o: [[50, 'Sim · metade é do cônjuge'], [0, 'Não']] },
+        { k: 'herdeiros', l: 'Herdeiros', t: 'int', d: 2 },
+        { sec: 'Bens que entram no inventário' },
+        { k: 'imoveis', l: 'Imóveis e terras', t: 'money', d: 2500000 },
+        { k: 'empresa', l: 'Empresa e participações', t: 'money', d: 1500000 },
+        { k: 'investimentos', l: 'Investimentos', t: 'money', d: 800000 },
+        { k: 'outros', l: 'Veículos e outros', t: 'money', d: 200000 },
+        { k: 'dividas', l: 'Dívidas', t: 'money', d: 300000 },
+        { sec: 'Fora do inventário' },
+        { k: 'previdencia', l: 'Previdência privada', t: 'money', d: 200000 },
+        { k: 'seguro', l: 'Seguro de vida', t: 'money', d: 200000 },
+        { sec: 'Custos' },
+        { k: 'honorarios', l: 'Honorários advocatícios', t: 'pct', d: 6 },
+        { k: 'custas', l: 'Custas e cartório', t: 'pct', d: 1 }
+      ]
+    },
+    {
+      id: 'imovel', group: 'prot', icon: 'house', name: 'Imóvel e financiamento',
+      desc: 'SAC ou Price, o efeito de amortizar e a conta de comprar ou alugar.',
+      fields: [
+        { k: 'valorImovel', l: 'Valor do imóvel', t: 'money', d: 600000 },
+        { k: 'entrada', l: 'Entrada', t: 'money', d: 120000 },
+        { k: 'taxa', l: 'Juros a.a.', t: 'pct', d: 11.5, tip: 'Custo efetivo total.' },
+        { k: 'prazo', l: 'Prazo', t: 'int', u: 'meses', d: 360 },
+        { k: 'sistema', l: 'Sistema', t: 'select', d: 'sac', o: [['sac', 'SAC · parcelas decrescentes'], ['price', 'Price · parcelas fixas']] },
+        { k: 'extra', l: 'Amortização extra por mês', t: 'money', d: 500 },
+        { sec: 'Comprar ou alugar' },
+        { k: 'aluguel', l: 'Aluguel equivalente', t: 'money', d: 2800 },
+        { k: 'horizonte', l: 'Horizonte', t: 'int', u: 'anos', d: 15 },
+        { k: 'valorizacao', l: 'Valorização do imóvel a.a.', t: 'pct', d: 5 },
+        { k: 'reajuste', l: 'Reajuste do aluguel a.a.', t: 'pct', d: 5 },
+        { k: 'retInvest', l: 'Retorno líquido dos investimentos a.a.', t: 'pct', d: 9.5 },
+        { k: 'custosProp', l: 'IPTU e manutenção a.a.', t: 'pct', d: 1.5, tip: 'Percentual do valor do imóvel.' },
+        { k: 'custoCompra', l: 'ITBI e cartório', t: 'pct', d: 5 }
+      ]
+    }
+  ];
+
+  const CLIENT_FIELDS = [
+    { k: 'nome', l: 'Nome', t: 'text' },
+    { k: 'idade', l: 'Idade', t: 'int', u: 'anos' },
+    { k: 'profissao', l: 'Profissão', t: 'text' },
+    { k: 'renda', l: 'Renda mensal líquida', t: 'money' },
+    { k: 'despesas', l: 'Despesas mensais', t: 'money' },
+    { k: 'patrimonio', l: 'Investimentos financeiros', t: 'money' },
+    { k: 'aporte', l: 'Investe por mês', t: 'money' },
+    { k: 'obs', l: 'Observações', t: 'textarea' }
+  ];
+
+  const DISCLAIMER = 'Simulações com base em premissas informadas, sem garantia de resultado. Rentabilidade passada não representa rentabilidade futura. Este material não substitui a verificação de adequação ao perfil do investidor (suitability) nem orientação jurídica ou tributária específica.';
+
+  const METHODS = {
+    raiox: 'Sete indicadores, cada um de 0 a 100, ponderados: poupança 20, reserva 20, parcelas 15, rumo da aposentadoria 15, endividamento 10, liquidez 10 e proteção 10. A referência de aposentadoria usa múltiplos da renda anual por idade (1× aos 30, 3× aos 40, 6× aos 50, 10× aos 67).',
+    risco: 'Quatro perguntas medem capacidade (prazo, renda, reserva, concentração) e quatro medem tolerância. Vale o menor dos dois. A faixa em reais cobre 95% dos semestres esperados para a carteira-modelo de cada perfil. Apoio à conversa: não substitui o processo formal de suitability (Resolução CVM 30).',
+    custos: 'Custo anual = valor × (administração + performance + outros). Projeção: patrimônio × [(1 + retorno) × (1 − custo)]^anos, sem novos aportes. A proposta soma o custo dos produtos ao honorário da consultoria.',
+    juros: 'Capitalização mensal, aportes no fim de cada mês. Taxas reduzem a rentabilidade: (1 + taxa) × (1 − custo) − 1. O IR incide sobre o ganho no resgate. Valores de hoje descontam a inflação informada.',
+    indep: 'Tudo em valores de hoje, com retornos acima da inflação. O patrimônio necessário é o valor presente das retiradas mensais até a idade final. A chance de sucesso vem de 1.000 cenários com retornos lognormais, cuja mediana é a taxa informada.',
+    renda: 'Uma revisão por ano. Retirada sustentável: a que zera o saldo no fim do prazo, mais 3 anos de margem, ao retorno esperado. A regra compara a retirada atual com a sustentável para o prazo que falta; se a relação passar da inicial em mais que a faixa, corta-se a retirada, e se ficar abaixo, aumenta-se. Os limites de patrimônio valem para a próxima revisão: recalcule todo ano. 1.000 cenários lognormais, valores acima da inflação, retirada no início de cada ano. Manter a renda: o dinheiro dura todo o prazo e a renda nunca cai mais de 20%.',
+    metas: 'Parcela mensal para completar cada meta no prazo, em valores de hoje, descontando o que já está reservado. A taxa real depende do prazo. O valor disponível é distribuído por prioridade e, no empate, pelo prazo mais curto.',
+    rendafixa: 'CDI capitalizado por dia útil (252 por ano). IR regressivo: 22,5% até 180 dias, 20% até 360, 17,5% até 720 e 15% acima; IOF nos primeiros 30 dias. LCI, LCA, CRI, CRA, debêntures incentivadas e poupança são isentos para pessoa física. Marcação a mercado estimada para um título sem cupons.',
+    alocacao: 'Retorno e risco usam premissas de longo prazo por classe (acima da inflação) e uma matriz de correlações. Ano ruim: limite inferior da faixa de 95%. Os cenários de estresse aplicam variações aproximadas de índices de mercado em cada período e servem como ordem de grandeza.',
+    pgbl: 'Tabela progressiva anual de 2026 com o redutor da Lei 15.270/2025. PGBL dedutível até 12% da renda tributável, só na declaração completa e para quem contribui com a previdência oficial. Desconto simplificado de 20%, limitado a R$ 16.754,34. Longo prazo: tabela regressiva (10% após 10 anos) e come-cotas semestral de 15% no fundo.',
+    protecao: 'Reserva: despesas essenciais × meses conforme a estabilidade da renda. Seguro: valor presente da renda da família pelo período escolhido, mais dívidas, educação e inventário, menos investimentos e seguros existentes.',
+    sucessao: 'Base = (bens − dívidas) × parte que não é meação. Custo = ITCMD + honorários + custas sobre essa base. Previdência privada e seguro de vida em geral não entram no inventário e chegam rápido aos beneficiários. A LC 227/2026 exige alíquotas progressivas, com teto de 8%: confirme a regra vigente no estado e valide o planejamento com um advogado.',
+    imovel: 'Juros mensais equivalentes à taxa anual. SAC: amortização constante; Price: parcela constante. A amortização extra reduz o prazo. Comprar × alugar: quem gasta menos no mês investe a diferença; o comprador termina com o imóvel menos o saldo devedor.'
+  };
+
+  // Cálculo e leitura de cada ferramenta (as funções são declaradas mais abaixo e já estão disponíveis aqui)
+  const TOOL_IMPL = {
+    raiox: { compute: computeRaioX, view: viewRaioX }, risco: { compute: computeRisco, view: viewRisco }, custos: { compute: computeCustos, view: viewCustos },
+    juros: { compute: computeJuros, view: viewJuros }, indep: { compute: computeIndep, view: viewIndep }, renda: { compute: computeRenda, view: viewRenda },
+    metas: { compute: computeMetas, view: viewMetas }, rendafixa: { compute: computeRendaFixa, view: viewRendaFixa }, alocacao: { compute: computeAlocacao, view: viewAlocacao },
+    pgbl: { compute: computePgbl, view: viewPgbl }, protecao: { compute: computeProtecao, view: viewProtecao }, sucessao: { compute: computeSucessao, view: viewSucessao },
+    imovel: { compute: computeImovel, view: viewImovel }
+  };
+
+  const NF0 = new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 });
+  const MIGRATIONS = {};
+  const CHART_W = 760;
+  const CHART_PAD = { l: 66, r: 18, t: 14, b: 30 };
+  const ROUTES_FIXED = ['painel', 'clientes', 'relatorio', 'config'];
+
+  /* Estado em memória (declarado antes de qualquer função que o use) */
+  let state = null;
+  let dbHandle = null;
+  let memoryOnly = false;
+  let saveQueued = false;
+  let current = { route: 'painel', toolId: null, inputs: null };
+  let chartReg = {};
+  let chartSeq = 0;
+  let resultsQueued = false;
+  let modalClose = null;
+
+  /* =====================================================================
+     2. MATEMÁTICA FINANCEIRA — funções puras (sem DOM), testadas uma a uma
+     ===================================================================== */
+  function num(v, d) { v = Number(v); return isFinite(v) ? v : (d || 0); }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function sum(arr) { let s = 0; for (let i = 0; i < arr.length; i++) s += arr[i]; return s; }
+
+  // Taxa mensal equivalente a uma taxa anual efetiva (em %)
+  function rateMonthly(aPct) { return Math.pow(1 + aPct / 100, 1 / 12) - 1; }
+  // Valor presente de uma série de 1 por período, paga no fim de cada período
+  function annuityFactor(r, n) { return r === 0 ? n : (1 - Math.pow(1 + r, -n)) / r; }
+  // Idem, paga no início de cada período
+  function annuityDueFactor(r, n) { return annuityFactor(r, n) * (1 + r); }
+  // Valor futuro de uma série de 1 por período, paga no fim de cada período
+  function fvFactor(r, n) { return r === 0 ? n : (Math.pow(1 + r, n) - 1) / r; }
+
+  function irRendaFixa(dias) {
+    for (let i = 0; i < IR_RENDA_FIXA.length; i++) if (dias <= IR_RENDA_FIXA[i][0]) return IR_RENDA_FIXA[i][1];
+    return 15;
+  }
+  function iofPct(dias) { return dias >= 30 ? 0 : IOF_TABELA[Math.max(1, Math.round(dias)) - 1]; }
+  function aliquotaRegressiva(anos) {
+    for (let i = 0; i < PREV_REGRESSIVA.length; i++) if (anos <= PREV_REGRESSIVA[i][0]) return PREV_REGRESSIVA[i][1];
+    return 10;
+  }
+  function irpfTabela(base) {
+    base = Math.max(0, base);
+    for (let i = 0; i < IRPF_ANUAL.length; i++) {
+      if (base <= IRPF_ANUAL[i][0]) return Math.max(0, base * IRPF_ANUAL[i][1] / 100 - IRPF_ANUAL[i][2]);
+    }
+    return 0;
+  }
+  function irpfAliquotaMarginal(base) {
+    for (let i = 0; i < IRPF_ANUAL.length; i++) if (base <= IRPF_ANUAL[i][0]) return IRPF_ANUAL[i][1];
+    return 27.5;
+  }
+  // Imposto anual já com o redutor da Lei 15.270/2025 (calculado sobre a renda tributável)
+  function irpfDevido(rendaTributavel, base) {
+    const imposto = irpfTabela(base);
+    let red = 0;
+    if (rendaTributavel <= IRPF_REDUTOR.isento) red = imposto;
+    else if (rendaTributavel <= IRPF_REDUTOR.limite) red = Math.max(0, IRPF_REDUTOR.a - IRPF_REDUTOR.b * rendaTributavel);
+    return Math.max(0, imposto - Math.min(imposto, red));
+  }
+
+  // Gerador pseudoaleatório com semente (resultados estáveis entre recálculos)
+  function mulberry32(seed) {
+    let a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      let t = a;
+      t = Math.imul(t ^ (t >>> 15), t | 1);
+      t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function gaussianMatrix(rows, cols, seed) {
+    const rnd = mulberry32(seed);
+    const out = [];
+    for (let i = 0; i < rows; i++) {
+      const row = new Float64Array(cols);
+      for (let j = 0; j < cols; j++) {
+        let u = rnd(); if (u < 1e-12) u = 1e-12;
+        row[j] = Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * rnd());
+      }
+      out.push(row);
+    }
+    return out;
+  }
+  function percentile(sorted, p) {
+    if (!sorted.length) return 0;
+    const idx = (sorted.length - 1) * p;
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
+  }
+  function columnPercentiles(matrix, cols, ps) {
+    const out = ps.map(function () { return []; });
+    for (let j = 0; j < cols; j++) {
+      const col = [];
+      for (let i = 0; i < matrix.length; i++) col.push(matrix[i][j]);
+      col.sort(function (a, b) { return a - b; });
+      for (let k = 0; k < ps.length; k++) out[k].push(percentile(col, ps[k]));
+    }
+    return out;
+  }
+  // Retorno anual lognormal cuja mediana é a taxa informada
+  function lognormalReturn(retPct, volPct, z) { return Math.exp(Math.log(1 + retPct / 100) + (volPct / 100) * z) - 1; }
+
+  function portfolioStats(weightsPct) {
+    let ret = 0, variance = 0, total = 0;
+    const w = ASSET_CLASSES.map(function (c) { const v = num(weightsPct[c.id]) / 100; total += v; return v; });
+    for (let i = 0; i < w.length; i++) {
+      ret += w[i] * ASSET_CLASSES[i].ret;
+      for (let j = 0; j < w.length; j++) variance += w[i] * w[j] * ASSET_CORR[i][j] * ASSET_CLASSES[i].vol * ASSET_CLASSES[j].vol;
+    }
+    return { ret: ret, vol: Math.sqrt(Math.max(0, variance)), total: total * 100 };
+  }
+  // Faixa de 95% para um horizonte em anos (retorno e volatilidade em % a.a.)
+  function range95(retPct, volPct, years) {
+    const mean = (Math.pow(1 + retPct / 100, years) - 1) * 100;
+    const sd = volPct * Math.sqrt(years);
+    return { lo: mean - 1.96 * sd, hi: mean + 1.96 * sd, mean: mean };
+  }
+  function stressImpact(weightsPct, scenario) {
+    let r = 0;
+    ASSET_CLASSES.forEach(function (c) { r += num(weightsPct[c.id]) / 100 * num(scenario.s[c.id]); });
+    return r;
+  }
+
+  /* ---------- Juros compostos ---------- */
+  function simulateGrowth(inicial, aporte, crescPct, rm, meses) {
+    let bal = inicial, investido = inicial, ap = aporte;
+    const saldo = [bal], inv = [investido];
+    let cruzamento = null;
+    const marcos = MILESTONES.map(function (v) { return { v: v, mes: inicial >= v ? 0 : null }; });
+    for (let m = 1; m <= meses; m++) {
+      const juros = bal * rm;
+      if (cruzamento === null && ap > 0 && juros >= ap) cruzamento = m;
+      bal += juros + ap;
+      investido += ap;
+      for (let k = 0; k < marcos.length; k++) if (marcos[k].mes === null && bal >= marcos[k].v) marcos[k].mes = m;
+      if (m % 12 === 0) { saldo.push(bal); inv.push(investido); ap *= 1 + crescPct / 100; }
+    }
+    return { bal: bal, investido: investido, saldo: saldo, inv: inv, cruzamento: cruzamento, marcos: marcos };
+  }
+  function computeJuros(i) {
+    const anos = clamp(Math.round(num(i.anos)), 1, 80);
+    const taxaLiq = ((1 + num(i.taxa) / 100) * (1 - num(i.custo) / 100) - 1) * 100;
+    const rm = rateMonthly(taxaLiq);
+    const sim = simulateGrowth(num(i.inicial), num(i.aporte), num(i.crescAporte), rm, anos * 12);
+    const infl = num(i.inflacao) / 100;
+    const ganho = sim.bal - sim.investido;
+    const ir = Math.max(0, ganho) * num(i.ir) / 100;
+    const liquido = sim.bal - ir;
+    const deflator = Math.pow(1 + infl, anos);
+    const taxaReal = ((1 + taxaLiq / 100) / (1 + infl) - 1) * 100;
+    const real = sim.saldo.map(function (v, k) { return v / Math.pow(1 + infl, k); });
+    const labels = sim.saldo.map(function (v, k) { return k === 0 ? 'Hoje' : k + (k === 1 ? ' ano' : ' anos'); });
+    const atr = clamp(Math.round(num(i.atraso)), 0, anos - 1);
+    let atraso = null;
+    if (atr > 0) {
+      const s2 = simulateGrowth(num(i.inicial), num(i.aporte), num(i.crescAporte), rm, (anos - atr) * 12);
+      const liq2 = s2.bal - Math.max(0, s2.bal - s2.investido) * num(i.ir) / 100;
+      atraso = { anos: atr, liquido: liq2, custo: liquido - liq2 };
+    }
+    return {
+      anos: anos, taxaLiq: taxaLiq, taxaReal: taxaReal, bruto: sim.bal, investido: sim.investido, ganho: ganho, ir: ir,
+      liquido: liquido, liquidoReal: liquido / deflator,
+      rendaPerpetua: taxaReal > 0 ? (liquido / deflator) * rateMonthly(taxaReal) : 0,
+      cruzamento: sim.cruzamento, marcos: sim.marcos, atraso: atraso,
+      series: { labels: labels, saldo: sim.saldo, investido: sim.inv, real: real }
+    };
+  }
+
+  /* ---------- Independência financeira (tudo em valores de hoje) ---------- */
+  function necessarioAposentadoria(saqueMensal, anos, retRealPct, legado) {
+    const rm = rateMonthly(retRealPct);
+    return saqueMensal * annuityDueFactor(rm, anos * 12) + legado / Math.pow(1 + retRealPct / 100, anos);
+  }
+  function computeIndep(i) {
+    const idade = clamp(Math.round(num(i.idade)), 0, 110);
+    const idadeApos = clamp(Math.round(num(i.idadeApos)), idade, 115);
+    const expect = clamp(Math.round(num(i.expectativa)), idadeApos + 1, 120);
+    const nAcc = idadeApos - idade, nRet = expect - idadeApos;
+    const rmA = rateMonthly(num(i.retAcum)), rmD = rateMonthly(num(i.retApos));
+    const saque = Math.max(0, num(i.rendaDesejada) - num(i.outrasRendas));
+    const legado = Math.max(0, num(i.legado));
+    const acc = simulateGrowth(num(i.patrimonio), num(i.aporte), num(i.crescAporte), rmA, nAcc * 12);
+    const patApos = acc.bal;
+    const necessario = necessarioAposentadoria(saque, nRet, num(i.retApos), legado);
+    const pvLegado = legado / Math.pow(1 + num(i.retApos) / 100, nRet);
+    const rendaSust = Math.max(0, patApos - pvLegado) / annuityDueFactor(rmD, nRet * 12) + num(i.outrasRendas);
+    // aporte necessário: o valor futuro é linear no aporte
+    const unit = simulateGrowth(0, 1, num(i.crescAporte), rmA, nAcc * 12).bal;
+    const semAporte = num(i.patrimonio) * Math.pow(1 + rmA, nAcc * 12);
+    const aporteReq = unit > 0 ? Math.max(0, (necessario - semAporte) / unit) : null;
+    // trajetória determinística ano a ano
+    const labels = [], det = [];
+    for (let k = 0; k <= nAcc; k++) { labels.push(String(idade + k)); det.push(acc.saldo[k]); }
+    let bal = patApos, idadeFim = null;
+    for (let m = 1; m <= nRet * 12; m++) {
+      bal = (bal - saque) * (1 + rmD);
+      if (bal < 0 && idadeFim === null) idadeFim = idadeApos + Math.floor((m - 1) / 12);
+      if (m % 12 === 0) { labels.push(String(idadeApos + m / 12)); det.push(Math.max(0, bal)); }
+    }
+    // quantos anos a mais de trabalho fecham a conta
+    let anosExtras = null;
+    for (let k = 0; k <= 30 && idadeApos + k < expect; k++) {
+      const p = simulateGrowth(num(i.patrimonio), num(i.aporte), num(i.crescAporte), rmA, (nAcc + k) * 12).bal;
+      if (p >= necessarioAposentadoria(saque, nRet - k, num(i.retApos), legado)) { anosExtras = k; break; }
+    }
+    // Monte Carlo com passos anuais
+    const total = nAcc + nRet;
+    const z = gaussianMatrix(MC_SIMS, total, MC_SEED);
+    const paths = [];
+    let ok = 0;
+    for (let s = 0; s < MC_SIMS; s++) {
+      const path = new Float64Array(total + 1);
+      let b = num(i.patrimonio), ap = num(i.aporte) * 12, falhou = false;
+      path[0] = b;
+      for (let y = 0; y < total; y++) {
+        if (y < nAcc) {
+          const r = lognormalReturn(num(i.retAcum), num(i.vol), z[s][y]);
+          b = b * (1 + r) + ap * Math.sqrt(1 + r);
+          ap *= 1 + num(i.crescAporte) / 100;
+        } else {
+          const r2 = lognormalReturn(num(i.retApos), num(i.vol), z[s][y]);
+          b = b * (1 + r2) - saque * 12 * Math.sqrt(1 + r2);
+          if (b < 0) { falhou = true; b = 0; }
+        }
+        path[y + 1] = b;
+      }
+      if (!falhou && path[total] >= legado * 0.999) ok++;
+      paths.push(path);
+    }
+    const pcs = columnPercentiles(paths, total + 1, [0.1, 0.5, 0.9]);
+    return {
+      idade: idade, idadeApos: idadeApos, expect: expect, nAcc: nAcc, nRet: nRet, saque: saque,
+      patApos: patApos, necessario: necessario, gap: patApos - necessario, rendaSust: rendaSust,
+      aporteReq: aporteReq, idadeFim: idadeFim, anosExtras: anosExtras, prob: ok / MC_SIMS * 100,
+      series: { labels: labels, det: det, p10: pcs[0], p50: pcs[1], p90: pcs[2] }
+    };
+  }
+
+  /* ---------- Renda com guardrails ---------- */
+  // Retirada anual sustentável: zera o saldo no fim do prazo (mais a margem de segurança), à taxa esperada
+  function saqueSustentavel(saldo, anosRestantes, retPct) { return saldo / annuityDueFactor(retPct / 100, anosRestantes + RENDA_MARGEM_ANOS); }
+  /* Regra de ajuste (guardrails que consideram o prazo restante): a cada revisão anual compara-se a
+     retirada com a sustentável para o prazo que falta. A referência é a relação inicial, limitada a 1
+     (um plano que já começa acima do sustentável não é tratado como normal). Se a relação passar da
+     referência em mais que a faixa, corta-se a retirada; se ficar abaixo, aumenta-se. */
+  function simulateWithdrawals(P0, saqueAnual, anos, retPct, volPct, z, regra) {
+    const n = z.length;
+    const kRef = Math.min(1, saqueAnual / saqueSustentavel(P0, anos, retPct));
+    let ok = 0, cortes = 0, firmes = 0;
+    const rendas = [], saldos = [], minimos = [];
+    for (let s = 0; s < n; s++) {
+      let b = P0, w = saqueAnual, falhou = false, cortou = false, minW = saqueAnual;
+      const wPath = new Float64Array(anos), bPath = new Float64Array(anos + 1);
+      bPath[0] = b;
+      for (let y = 0; y < anos; y++) {
+        if (regra && y > 0 && b > 0) {
+          const k = w / saqueSustentavel(b, anos - y, retPct);
+          if (k > kRef * (1 + regra.faixa)) { w *= 1 - regra.ajuste; cortou = true; }
+          else if (k < kRef * (1 - regra.faixa)) w *= 1 + regra.ajuste;
+        }
+        if (b <= 0) { falhou = true; b = 0; wPath[y] = 0; bPath[y + 1] = 0; minW = 0; continue; }
+        const pago = Math.min(w, b);
+        if (pago < w - 1e-9) falhou = true;
+        if (pago < minW) minW = pago;
+        wPath[y] = pago / 12;
+        b = (b - pago) * (1 + lognormalReturn(retPct, volPct, z[s][y]));
+        bPath[y + 1] = b;
+      }
+      if (!falhou) ok++;
+      if (cortou) cortes++;
+      if (!falhou && minW >= saqueAnual * RENDA_PISO_FIRME - 1e-9) firmes++;
+      rendas.push(wPath); saldos.push(bPath); minimos.push(minW / 12);
+    }
+    minimos.sort(function (a, b) { return a - b; });
+    return { sucesso: ok / n * 100, cortes: cortes / n * 100, firme: firmes / n * 100, rendas: rendas, saldos: saldos, piorRenda: percentile(minimos, 0.1) };
+  }
+  function computeRenda(i) {
+    const P0 = Math.max(1, num(i.patrimonio));
+    const anos = clamp(Math.round(num(i.anos)), 2, 70);
+    const saque = Math.max(0, num(i.rendaMensal)) * 12;
+    const regra = { faixa: clamp(num(i.faixa), 1, 90) / 100, ajuste: clamp(num(i.ajuste), 1, 50) / 100 };
+    const z = gaussianMatrix(MC_SIMS, anos, MC_SEED);
+    const fixo = simulateWithdrawals(P0, saque, anos, num(i.ret), num(i.vol), z, null);
+    const guard = simulateWithdrawals(P0, saque, anos, num(i.ret), num(i.vol), z, regra);
+    const pr = columnPercentiles(guard.rendas, anos, [0.1, 0.5, 0.9]);
+    const labels = [];
+    for (let y = 1; y <= anos; y++) labels.push('Ano ' + y);
+    const sust = saqueSustentavel(P0, anos, num(i.ret));
+    const kRef = Math.min(1, saque / sust);
+    // limites de patrimônio na próxima revisão anual (falta um ano a menos)
+    const fator = annuityDueFactor(num(i.ret) / 100, anos - 1 + RENDA_MARGEM_ANOS);
+    return {
+      anos: anos, taxaInicial: saque / P0 * 100, fixo: fixo.sucesso, guard: guard.sucesso, firme: guard.firme, cortes: guard.cortes,
+      piorRenda: guard.piorRenda, sustentavel: sust / 12, acimaDoSustentavel: saque > sust * 1.0001,
+      pisoPatrimonio: kRef > 0 ? saque * fator / (kRef * (1 + regra.faixa)) : 0, tetoPatrimonio: kRef > 0 ? saque * fator / (kRef * (1 - regra.faixa)) : 0,
+      rendaCorte: saque / 12 * (1 - regra.ajuste), rendaAumento: saque / 12 * (1 + regra.ajuste),
+      series: { labels: labels, p10: pr[0], p50: pr[1], p90: pr[2] }
+    };
+  }
+
+  /* ---------- Metas ---------- */
+  function computeMetas(i) {
+    const cap = Math.max(0, num(i.capacidade));
+    const metas = (i.rows || []).map(function (g, idx) {
+      const anos = Math.max(1 / 12, num(g.anos));
+      const ret = anos <= 2 ? num(i.retCurto) : (anos <= 5 ? num(i.retMedio) : num(i.retLongo));
+      const rm = rateMonthly(ret), n = Math.round(anos * 12);
+      const fvRes = num(g.reservado) * Math.pow(1 + rm, n);
+      const falta = Math.max(0, num(g.valor) - fvRes);
+      return {
+        idx: idx, nome: g.nome || 'Meta', valor: num(g.valor), anos: anos, prio: num(g.prio) || 2, ret: ret,
+        pmt: falta / fvFactor(rm, n), pronto: num(g.valor) > 0 ? clamp(fvRes / num(g.valor), 0, 1) * 100 : 100
+      };
+    });
+    const ordem = metas.slice().sort(function (a, b) { return a.prio - b.prio || a.anos - b.anos; });
+    let resto = cap;
+    ordem.forEach(function (m) {
+      m.alocado = Math.min(m.pmt, resto);
+      resto -= m.alocado;
+      m.cobertura = m.pmt > 0 ? m.alocado / m.pmt * 100 : 100;
+    });
+    const necessario = sum(metas.map(function (m) { return m.pmt; }));
+    return { metas: ordem, necessario: necessario, capacidade: cap, saldo: cap - necessario, cobertas: ordem.filter(function (m) { return m.cobertura >= 99.9; }).length };
+  }
+
+  /* ---------- Raio-X financeiro ---------- */
+  function benchAposentadoria(idade) {
+    const b = RETIRE_BENCH;
+    if (idade <= b[0][0]) return b[0][1];
+    for (let k = 1; k < b.length; k++) {
+      if (idade <= b[k][0]) return b[k - 1][1] + (b[k][1] - b[k - 1][1]) * (idade - b[k - 1][0]) / (b[k][0] - b[k - 1][0]);
+    }
+    return b[b.length - 1][1];
+  }
+  function scoreLinear(v, zero, cem) { return clamp((v - zero) / (cem - zero), 0, 1) * 100; }
+  function computeRaioX(i) {
+    const renda = Math.max(1, num(i.renda)), despesas = Math.max(1, num(i.despesas));
+    const ativos = Math.max(1, num(i.investimentos) + num(i.imobilizado));
+    const mesesAlvo = RESERVA_MESES[i.tipoRenda] || 6;
+    const poup = num(i.aporte) / renda * 100;
+    const meses = num(i.reserva) / despesas;
+    const parc = num(i.parcelas) / renda * 100;
+    const endiv = num(i.dividas) / ativos * 100;
+    const liq = num(i.investimentos) / ativos * 100;
+    const dep = Math.round(num(i.dependentes));
+    const necessidade = renda * 12 * 5;
+    const cobertura = (num(i.seguro) + num(i.investimentos)) / necessidade * 100;
+    const mult = num(i.investimentos) / (renda * 12);
+    const bench = benchAposentadoria(num(i.idade));
+    const ind = [
+      { id: 'poupanca', nome: 'Taxa de poupança', valor: poup, un: '%', meta: '20% ou mais', score: scoreLinear(poup, 0, 20), acao: 'Elevar o aporte mensal em direção a 20% da renda.' },
+      { id: 'reserva', nome: 'Reserva de emergência', valor: meses, un: ' meses', meta: mesesAlvo + ' meses', score: scoreLinear(meses, 0, mesesAlvo), acao: 'Completar a reserva de emergência antes de assumir mais risco.' },
+      { id: 'parcelas', nome: 'Renda comprometida com dívidas', valor: parc, un: '%', meta: 'até 15%', score: scoreLinear(parc, 45, 15), acao: 'Reduzir as parcelas: renegociar ou quitar as dívidas mais caras.' },
+      { id: 'endividamento', nome: 'Dívidas sobre o patrimônio', valor: endiv, un: '%', meta: 'até 10%', score: scoreLinear(endiv, 60, 10), acao: 'Diminuir o endividamento em relação aos bens.' },
+      { id: 'liquidez', nome: 'Patrimônio com liquidez', valor: liq, un: '%', meta: '40% ou mais', score: scoreLinear(liq, 0, 40), acao: 'Aumentar a parcela líquida: o patrimônio está concentrado em bens difíceis de vender.' },
+      { id: 'protecao', nome: 'Proteção da família', valor: dep > 0 ? cobertura : null, un: '%', meta: '5 anos de renda', score: dep > 0 ? scoreLinear(cobertura, 0, 100) : 100, acao: 'Contratar ou ampliar o seguro de vida para proteger os dependentes.' },
+      { id: 'aposentadoria', nome: 'Rumo da aposentadoria', valor: mult, un: '× renda anual', meta: bench.toFixed(1).replace('.', ',') + '× para a idade', score: bench > 0 ? scoreLinear(mult, 0, bench) : 100, acao: 'Acelerar a acumulação para a aposentadoria.' }
+    ];
+    let total = 0, pesos = 0;
+    ind.forEach(function (x) { total += x.score * HEALTH_WEIGHTS[x.id]; pesos += HEALTH_WEIGHTS[x.id]; });
+    const nota = total / pesos;
+    const prioridades = ind.filter(function (x) { return x.score < 80; }).sort(function (a, b) { return a.score - b.score; }).slice(0, 3);
+    return { nota: nota, faixa: nota >= 85 ? 'Excelente' : (nota >= 70 ? 'Bom' : (nota >= 50 ? 'Atenção' : 'Crítico')), indicadores: ind, prioridades: prioridades };
+  }
+
+  /* ---------- Perfil de risco ---------- */
+  function profileIndex(score) { for (let k = 0; k < RISK_CUTS.length; k++) if (score <= RISK_CUTS[k]) return k; return 3; }
+  function computeRisco(i) {
+    let cap = 0, tol = 0, respondidas = 0;
+    RISK_QUESTIONS.forEach(function (q) {
+      const v = i[q.k];
+      if (v === null || v === undefined || v === '') return;
+      respondidas++;
+      if (q.dim === 'cap') cap += num(v); else tol += num(v);
+    });
+    const completo = respondidas === RISK_QUESTIONS.length;
+    const capIdx = profileIndex(cap), tolIdx = profileIndex(tol);
+    const idx = Math.min(capIdx, tolIdx);
+    const pat = num(i.patrimonio);
+    const tabela = PROFILES.map(function (p) {
+      const st = portfolioStats(MODEL_PORTFOLIOS[p.id]);
+      const r6 = range95(st.ret, st.vol, 0.5);
+      return { id: p.id, nome: p.name, ret: st.ret, vol: st.vol, lo: r6.lo, hi: r6.hi, loRs: pat * r6.lo / 100, hiRs: pat * r6.hi / 100 };
+    });
+    return { completo: completo, respondidas: respondidas, cap: cap, tol: tol, capIdx: capIdx, tolIdx: tolIdx, idx: idx, perfil: PROFILES[idx], tabela: tabela, divergente: completo && capIdx !== tolIdx };
+  }
+
+  /* ---------- Raio-X de custos ---------- */
+  function computeCustos(i) {
+    const rows = (i.rows || []).map(function (r) {
+      const c = num(r.adm) + num(r.perf) + num(r.outros);
+      return { nome: r.nome || 'Produto', valor: num(r.valor), custoPct: c, custoRs: num(r.valor) * c / 100 };
+    });
+    const total = sum(rows.map(function (r) { return r.valor; }));
+    const custoRs = sum(rows.map(function (r) { return r.custoRs; }));
+    const custoPct = total > 0 ? custoRs / total * 100 : 0;
+    const anos = clamp(Math.round(num(i.anos)), 1, 60);
+    const r = num(i.retBruto) / 100;
+    const novoPct = num(i.custoNovo) + num(i.fee);
+    const fAtual = (1 + r) * (1 - custoPct / 100), fNovo = (1 + r) * (1 - novoPct / 100);
+    const labels = [], atual = [], novo = [], semCusto = [];
+    for (let y = 0; y <= anos; y++) {
+      labels.push(y === 0 ? 'Hoje' : y + (y === 1 ? ' ano' : ' anos'));
+      atual.push(total * Math.pow(fAtual, y)); novo.push(total * Math.pow(fNovo, y)); semCusto.push(total * Math.pow(1 + r, y));
+    }
+    return {
+      rows: rows.slice().sort(function (a, b) { return b.custoRs - a.custoRs; }), total: total, custoRs: custoRs, custoPct: custoPct,
+      novoPct: novoPct, novoRs: total * novoPct / 100, anos: anos, fvAtual: atual[anos], fvNovo: novo[anos],
+      diferenca: novo[anos] - atual[anos], custoAcumulado: semCusto[anos] - atual[anos],
+      series: { labels: labels, atual: atual, novo: novo }
+    };
+  }
+
+  /* ---------- Renda fixa ---------- */
+  function poupancaMensal(selicPct, trPct) {
+    const base = selicPct > POUPANCA_GATILHO_SELIC ? POUPANCA_TAXA_MENSAL / 100 : rateMonthly(selicPct) * POUPANCA_PCT_SELIC / 100;
+    return (1 + base) * (1 + rateMonthly(trPct)) - 1;
+  }
+  function fatorBruto(tipo, taxa, dias, cdiPct, ipcaPct, selicPct, trPct) {
+    const du = Math.round(dias * 252 / 365);
+    if (tipo === 'cdi') return Math.pow(1 + (Math.pow(1 + cdiPct / 100, 1 / 252) - 1) * taxa / 100, du);
+    if (tipo === 'pre') return Math.pow(1 + taxa / 100, du / 252);
+    if (tipo === 'ipca') return Math.pow((1 + ipcaPct / 100) * (1 + taxa / 100), du / 252);
+    return Math.pow(1 + poupancaMensal(selicPct, trPct), Math.floor(dias / 30));
+  }
+  function computeRendaFixa(i, env) {
+    const valor = Math.max(0, num(i.valor)), dias = clamp(Math.round(num(i.dias)), 1, 36500);
+    const cdi = num(i.cdi), ipca = num(i.ipca);
+    const selic = env.premissas.selic, tr = env.premissas.tr;
+    const du = Math.round(dias * 252 / 365);
+    const cdiDia = Math.pow(1 + cdi / 100, 1 / 252) - 1;
+    const aliq = irRendaFixa(dias), iof = iofPct(dias);
+    const rows = (i.rows || []).map(function (r) {
+      const isento = !!r.isento || r.tipo === 'poup';
+      const f = fatorBruto(r.tipo, num(r.taxa), dias, cdi, ipca, selic, tr) * Math.pow(1 - num(r.custo) / 100, dias / 365);
+      const ganho = valor * (f - 1);
+      const vIof = isento ? 0 : Math.max(0, ganho) * iof / 100;
+      const vIr = isento ? 0 : Math.max(0, ganho - vIof) * aliq / 100;
+      const liquido = valor + ganho - vIof - vIr;
+      const liqAa = valor > 0 ? (Math.pow(liquido / valor, 365 / dias) - 1) * 100 : 0;
+      // CDB tributado que entrega o mesmo líquido
+      const fEq = 1 + (liquido / Math.max(1, valor) - 1) / (1 - aliq / 100);
+      const equiv = cdiDia > 0 && du > 0 && fEq > 0 ? (Math.pow(fEq, 1 / du) - 1) / cdiDia * 100 : 0;
+      return { nome: r.nome || 'Título', tipo: r.tipo, isento: isento, bruto: valor + ganho, ir: vIr + vIof, liquido: liquido, liqAa: liqAa, realAa: ((1 + liqAa / 100) / (1 + ipca / 100) - 1) * 100, equiv: equiv };
+    }).sort(function (a, b) { return b.liquido - a.liquido; });
+    const mtm = [-2, -1, -0.5, 0.5, 1, 2].map(function (d) {
+      const nova = num(i.mtmTaxa) + d;
+      return { delta: d, nova: nova, variacao: (Math.pow((1 + num(i.mtmTaxa) / 100) / (1 + nova / 100), num(i.mtmAnos)) - 1) * 100 };
+    });
+    return { rows: rows, aliq: aliq, iof: iof, dias: dias, valor: valor, mtm: mtm };
+  }
+
+  /* ---------- Alocação e rebalanceamento ---------- */
+  function computeAlocacao(i) {
+    const rows = i.rows || [];
+    const total = sum(rows.map(function (r) { return Math.max(0, num(r.atual)); }));
+    const aporte = Math.max(0, num(i.aporte));
+    const somaAlvo = sum(rows.map(function (r) { return num(r.alvo); }));
+    const final = total + aporte;
+    const out = rows.map(function (r) {
+      const atual = Math.max(0, num(r.atual));
+      return { id: r.id, nome: r.nome, atual: atual, atualPct: total > 0 ? atual / total * 100 : 0, alvo: num(r.alvo), alvoRs: final * num(r.alvo) / 100, ordem: 0 };
+    });
+    if (i.modo === 'completo') {
+      out.forEach(function (r) { r.ordem = r.alvoRs - r.atual; });
+    } else {
+      const deficits = out.map(function (r) { return Math.max(0, r.alvoRs - r.atual); });
+      const somaDef = sum(deficits);
+      out.forEach(function (r, k) { r.ordem = somaDef > 0 ? aporte * deficits[k] / somaDef : aporte * r.alvo / Math.max(1, somaAlvo); });
+    }
+    const wAtual = {}, wAlvo = {}, wDepois = {};
+    out.forEach(function (r) {
+      r.depois = r.atual + r.ordem;
+      r.depoisPct = final > 0 ? r.depois / final * 100 : 0;
+      r.desvio = r.atualPct - r.alvo;
+      wAtual[r.id] = r.atualPct; wAlvo[r.id] = r.alvo; wDepois[r.id] = r.depoisPct;
+    });
+    const sAtual = portfolioStats(wAtual), sAlvo = portfolioStats(wAlvo);
+    const stress = STRESS_SCENARIOS.map(function (s) { return { nome: s.name, atual: stressImpact(wAtual, s), alvo: stressImpact(wAlvo, s) }; });
+    return {
+      rows: out, total: total, final: final, somaAlvo: somaAlvo, valido: Math.abs(somaAlvo - 100) < 0.01,
+      atual: sAtual, alvo: sAlvo, rAtual: range95(sAtual.ret, sAtual.vol, 1), rAlvo: range95(sAlvo.ret, sAlvo.vol, 1), stress: stress,
+      desvioMax: Math.max.apply(null, out.map(function (r) { return Math.abs(r.desvio); }).concat([0])),
+      giro: sum(out.map(function (r) { return Math.abs(r.ordem); }))
+    };
+  }
+
+  /* ---------- PGBL e imposto de renda ---------- */
+  function irCompleta(i, pgbl) {
+    const renda = num(i.rendaAnual);
+    const dedPgbl = i.contribui ? Math.min(pgbl, renda * PGBL_LIMITE_PCT / 100) : 0;
+    const ded = num(i.inss) + Math.round(num(i.dependentes)) * IRPF_DEPENDENTE + num(i.saude) + num(i.educacao) + num(i.pensao) + dedPgbl;
+    return irpfDevido(renda, renda - ded);
+  }
+  function previdenciaLongoPrazo(aporteAnual, restituicaoPct, anos, retPct) {
+    let pgbl = 0, restit = 0, vgbl = 0, fundo = 0;
+    const r = retPct / 100;
+    const semestre = 1 + (Math.sqrt(1 + r) - 1) * (1 - COME_COTAS_PCT / 100);
+    for (let k = 0; k < anos; k++) {
+      const idade = anos - k, fv = aporteAnual * Math.pow(1 + r, idade), al = aliquotaRegressiva(idade) / 100;
+      pgbl += fv * (1 - al);
+      vgbl += fv - (fv - aporteAnual) * al;
+      fundo += aporteAnual * Math.pow(semestre, 2 * idade);
+      if (idade > 1) {
+        const c = aporteAnual * restituicaoPct / 100, fr = c * Math.pow(1 + r, idade - 1);
+        restit += fr - (fr - c) * aliquotaRegressiva(idade - 1) / 100;
+      } else restit += aporteAnual * restituicaoPct / 100;
+    }
+    return { pgbl: pgbl + restit, vgbl: vgbl, fundo: fundo, investido: aporteAnual * anos };
+  }
+  function computePgbl(i) {
+    const renda = Math.max(0, num(i.rendaAnual));
+    const limite = i.contribui ? renda * PGBL_LIMITE_PCT / 100 : 0;
+    const feito = Math.max(0, num(i.pgblFeito));
+    const espaco = Math.max(0, limite - feito);
+    const simplificada = irpfDevido(renda, renda - Math.min(renda * IRPF_SIMPLIFICADO_PCT / 100, IRPF_SIMPLIFICADO_TETO));
+    const completaHoje = irCompleta(i, feito);
+    const completaMax = irCompleta(i, limite);
+    const semAporte = Math.min(simplificada, completaHoje);
+    const economia = Math.max(0, semAporte - completaMax);
+    // menor aporte adicional que já captura toda a economia
+    let ideal = 0;
+    if (economia > 0.5) {
+      let lo = 0, hi = espaco;
+      for (let k = 0; k < 40; k++) {
+        const mid = (lo + hi) / 2;
+        if (irCompleta(i, feito + mid) <= completaMax + 0.005) hi = mid; else lo = mid;
+      }
+      ideal = espaco - hi < 1 ? espaco : Math.ceil(hi * 100) / 100;
+    }
+    const curvaX = [], curvaCompleta = [], curvaSimpl = [];
+    const maxX = Math.max(limite, feito, 1);
+    for (let k = 0; k <= 24; k++) {
+      const x = maxX * k / 24;
+      curvaX.push(x); curvaCompleta.push(irCompleta(i, x)); curvaSimpl.push(simplificada);
+    }
+    const anos = clamp(Math.round(num(i.anos)), 1, 60);
+    const retornoImediato = ideal > 0 ? economia / ideal * 100 : 0;
+    const base = ideal > 0 ? ideal : (limite > 0 ? limite : renda * PGBL_LIMITE_PCT / 100);
+    return {
+      limite: limite, espaco: espaco, simplificada: simplificada, completaHoje: completaHoje, completaMax: completaMax,
+      economia: economia, ideal: ideal, retornoImediato: retornoImediato, melhor: completaMax < simplificada ? 'completa' : 'simplificada',
+      vale: economia > 0.5, anos: anos, longo: previdenciaLongoPrazo(base, retornoImediato, anos, num(i.retorno)), aporteLongo: base,
+      curva: { x: curvaX, completa: curvaCompleta, simplificada: curvaSimpl }
+    };
+  }
+
+  /* ---------- Reserva e seguro de vida ---------- */
+  function computeProtecao(i) {
+    const meses = RESERVA_MESES[i.tipoRenda] || 6;
+    const alvo = num(i.despesas) * meses;
+    const rm = rateMonthly(num(i.taxaReal));
+    const anos = clamp(Math.round(num(i.anosCobertura)), 0, 80);
+    const renda = num(i.despesasFamilia) * annuityDueFactor(rm, anos * 12);
+    const necessidades = [
+      { l: 'Renda para a família', v: renda }, { l: 'Dívidas a quitar', v: num(i.dividas) },
+      { l: 'Educação dos filhos', v: num(i.educacao) }, { l: 'Custos de inventário', v: num(i.inventario) }
+    ];
+    const recursos = [{ l: 'Investimentos disponíveis', v: num(i.patrimonio) }, { l: 'Seguros já contratados', v: num(i.seguros) }];
+    const totalNec = sum(necessidades.map(function (x) { return x.v; })), totalRec = sum(recursos.map(function (x) { return x.v; }));
+    return {
+      meses: meses, reservaAlvo: alvo, reservaFalta: Math.max(0, alvo - num(i.reservaAtual)), reservaMeses: num(i.despesas) > 0 ? num(i.reservaAtual) / num(i.despesas) : 0,
+      necessidades: necessidades, recursos: recursos, totalNec: totalNec, totalRec: totalRec, seguro: Math.max(0, totalNec - totalRec)
+    };
+  }
+
+  /* ---------- Sucessão ---------- */
+  function computeSucessao(i) {
+    const bens = num(i.imoveis) + num(i.empresa) + num(i.investimentos) + num(i.outros);
+    const espolio = Math.max(0, bens - num(i.dividas));
+    const base = espolio * (1 - num(i.meacao) / 100);
+    const itcmd = base * num(i.aliquota) / 100;
+    const honor = base * num(i.honorarios) / 100, custas = base * num(i.custas) / 100;
+    const total = itcmd + honor + custas;
+    const liquidez = num(i.previdencia) + num(i.seguro);
+    const herdeiros = Math.max(1, Math.round(num(i.herdeiros)));
+    const itcmdTeto = base * ITCMD_TETO / 100;
+    return {
+      espolio: espolio, base: base, itcmd: itcmd, honorarios: honor, custas: custas, total: total, pct: base > 0 ? total / base * 100 : 0,
+      liquidez: liquidez, falta: Math.max(0, total - liquidez), sobra: Math.max(0, liquidez - total),
+      porHerdeiro: (base - total + liquidez) / herdeiros, itcmdTeto: itcmdTeto, aumentoTeto: Math.max(0, itcmdTeto - itcmd), herdeiros: herdeiros
+    };
+  }
+
+  /* ---------- Imóvel e financiamento ---------- */
+  function amortizationSchedule(pv, im, n, sistema, extra) {
+    let bal = pv, juros = 0, pago = 0, meses = 0, primeira = 0, ultima = 0;
+    const amortSac = pv / n;
+    const pmt = im === 0 ? pv / n : pv * im / (1 - Math.pow(1 + im, -n));
+    const saldo = [pv], parcelas = [];
+    while (bal > 0.005 && meses < n) {
+      const j = bal * im;
+      let amort = sistema === 'sac' ? amortSac : pmt - j;
+      amort = Math.min(bal, amort + (extra || 0));
+      const parcela = j + amort;
+      bal -= amort; juros += j; pago += parcela; meses++;
+      if (meses === 1) primeira = parcela;
+      ultima = parcela;
+      parcelas.push(parcela);
+      if (meses % 12 === 0) saldo.push(Math.max(0, bal));
+    }
+    return { juros: juros, pago: pago, meses: meses, primeira: primeira, ultima: ultima, saldo: saldo, parcelas: parcelas };
+  }
+  function computeImovel(i) {
+    const valor = Math.max(0, num(i.valorImovel));
+    const pv = Math.max(0, valor - num(i.entrada));
+    const n = clamp(Math.round(num(i.prazo)), 1, 600);
+    const im = rateMonthly(num(i.taxa));
+    const sac = amortizationSchedule(pv, im, n, 'sac', 0), price = amortizationSchedule(pv, im, n, 'price', 0);
+    const esc = i.sistema === 'price' ? price : sac;
+    const extra = Math.max(0, num(i.extra));
+    const comExtra = amortizationSchedule(pv, im, n, i.sistema === 'price' ? 'price' : 'sac', extra);
+    // comprar × alugar: quem gasta menos no mês investe a diferença
+    const H = clamp(Math.round(num(i.horizonte)), 1, 60);
+    const ri = rateMonthly(num(i.retInvest));
+    const inicial = num(i.entrada) + valor * num(i.custoCompra) / 100;
+    let invCompra = 0, invAluguel = inicial, aluguel = num(i.aluguel), imovel = valor, saldo = pv;
+    const amortSac = pv / n, pmt = im === 0 ? pv / n : pv * im / (1 - Math.pow(1 + im, -n));
+    const serieCompra = [valor - pv], serieAluguel = [inicial], labels = ['Hoje'];
+    for (let m = 1; m <= H * 12; m++) {
+      let parcela = 0;
+      if (saldo > 0.005 && m <= n) {
+        const j = saldo * im;
+        const am = Math.min(saldo, i.sistema === 'price' ? pmt - j : amortSac);
+        parcela = j + am; saldo -= am;
+      }
+      const gastoCompra = parcela + imovel * num(i.custosProp) / 100 / 12;
+      invCompra *= 1 + ri; invAluguel *= 1 + ri;
+      if (gastoCompra > aluguel) invAluguel += gastoCompra - aluguel; else invCompra += aluguel - gastoCompra;
+      imovel *= 1 + rateMonthly(num(i.valorizacao));
+      if (m % 12 === 0) {
+        aluguel *= 1 + num(i.reajuste) / 100;
+        labels.push(m / 12 + (m === 12 ? ' ano' : ' anos'));
+        serieCompra.push(imovel - Math.max(0, saldo) + invCompra); serieAluguel.push(invAluguel);
+      }
+    }
+    const patCompra = serieCompra[serieCompra.length - 1], patAluguel = serieAluguel[serieAluguel.length - 1];
+    return {
+      financiado: pv, sac: sac, price: price, escolhido: esc, comExtra: comExtra, extra: extra,
+      jurosPoupados: esc.juros - comExtra.juros, mesesPoupados: esc.meses - comExtra.meses,
+      horizonte: H, patCompra: patCompra, patAluguel: patAluguel, vantagem: patCompra - patAluguel,
+      series: { labels: labels, compra: serieCompra, aluguel: serieAluguel }
+    };
+  }
+
+  /* =====================================================================
+     3. FORMATAÇÃO E GRÁFICOS
+     ===================================================================== */
+  function esc(s) { return String(s === null || s === undefined ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function numf(v, dec) { return num(v).toLocaleString('pt-BR', { minimumFractionDigits: dec || 0, maximumFractionDigits: dec || 0 }); }
+  function brl(v) { v = num(v); return (v < 0 ? '−R$ ' : 'R$ ') + NF0.format(Math.abs(Math.round(v))); }
+  function brlK(v) {
+    v = num(v); const a = Math.abs(v), s = v < 0 ? '−' : '';
+    if (a >= 1e9) return s + 'R$ ' + numf(a / 1e9, 1) + ' bi';
+    if (a >= 1e6) return s + 'R$ ' + numf(a / 1e6, a >= 1e7 ? 0 : 1) + ' mi';
+    if (a >= 1e3) return s + 'R$ ' + numf(a / 1e3, 0) + ' mil';
+    return s + 'R$ ' + numf(a, 0);
+  }
+  function pct(v, dec) { return numf(v, dec === undefined ? 1 : dec).replace('-', '−') + '%'; }
+  function signedPct(v, dec) { return (v > 0 ? '+' : '') + pct(v, dec); }
+  function signedBrl(v) { return (v > 0 ? '+' : '') + brl(v); }
+  function tempo(meses) {
+    const a = Math.floor(meses / 12), m = meses % 12;
+    const pa = a ? a + (a === 1 ? ' ano' : ' anos') : '', pm = m ? m + (m === 1 ? ' mês' : ' meses') : '';
+    return pa && pm ? pa + ' e ' + pm : (pa || pm || 'agora');
+  }
+  function icon(name) { return '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true">' + (ICONS[name] || '') + '</svg>'; }
+
+  function niceStep(range, n) {
+    if (!(range > 0)) return 1;
+    const raw = range / n, mag = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / mag;
+    return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+  }
+  // Gráfico de linhas com faixa opcional. series: [{ name, values, c, area, dash }]
+  function lineChart(o) {
+    const id = 'ch' + (++chartSeq);
+    const W = o.w || CHART_W, H = o.h || 300, P = CHART_PAD;
+    const n = o.labels.length;
+    let max = -Infinity, min = 0;
+    o.series.forEach(function (s) { s.values.forEach(function (v) { if (v > max) max = v; if (v < min) min = v; }); });
+    if (o.band) { o.band.hi.forEach(function (v) { if (v > max) max = v; }); o.band.lo.forEach(function (v) { if (v < min) min = v; }); }
+    if (!(max > min)) max = min + 1;
+    const step = niceStep(max - min, 4);
+    const lo = Math.floor(min / step) * step, hi = Math.ceil(max / step) * step;
+    const X = function (k) { return P.l + (W - P.l - P.r) * (n > 1 ? k / (n - 1) : 0.5); };
+    const Y = function (v) { return P.t + (H - P.t - P.b) * (1 - (v - lo) / (hi - lo)); };
+    const fa = o.fmtAxis || brlK;
+    let g = '';
+    for (let v = lo; v <= hi + step / 2; v += step) {
+      g += '<line class="grid" x1="' + P.l + '" x2="' + (W - P.r) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/>';
+      g += '<text x="' + (P.l - 10) + '" y="' + (Y(v) + 4).toFixed(1) + '" text-anchor="end">' + esc(fa(v)) + '</text>';
+    }
+    const ticks = Math.min(n, W < 600 ? 5 : 7);
+    for (let t = 0; t < ticks; t++) {
+      const k = ticks > 1 ? Math.round(t * (n - 1) / (ticks - 1)) : 0;
+      g += '<text x="' + X(k).toFixed(1) + '" y="' + (H - 8) + '" text-anchor="' + (t === 0 ? 'start' : (t === ticks - 1 ? 'end' : 'middle')) + '">' + esc(o.labels[k]) + '</text>';
+    }
+    if (o.band) {
+      let d = '';
+      for (let k = 0; k < n; k++) d += (k ? 'L' : 'M') + X(k).toFixed(1) + ' ' + Y(o.band.hi[k]).toFixed(1);
+      for (let k = n - 1; k >= 0; k--) d += 'L' + X(k).toFixed(1) + ' ' + Y(o.band.lo[k]).toFixed(1);
+      g += '<path d="' + d + 'Z" fill="var(' + o.band.c + ')" opacity="0.16"/>';
+    }
+    o.series.forEach(function (s) {
+      let d = '';
+      for (let k = 0; k < n; k++) d += (k ? 'L' : 'M') + X(k).toFixed(1) + ' ' + Y(s.values[k]).toFixed(1);
+      if (s.area) g += '<path d="' + d + 'L' + X(n - 1).toFixed(1) + ' ' + Y(lo).toFixed(1) + 'L' + X(0).toFixed(1) + ' ' + Y(lo).toFixed(1) + 'Z" fill="var(' + s.c + ')" opacity="0.1"/>';
+      g += '<path d="' + d + '" fill="none" stroke="var(' + s.c + ')" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"' + (s.dash ? ' stroke-dasharray="5 5"' : '') + '/>';
+      g += '<circle cx="' + X(n - 1).toFixed(1) + '" cy="' + Y(s.values[n - 1]).toFixed(1) + '" r="4" fill="var(' + s.c + ')" stroke="var(--surface)" stroke-width="2"/>';
+    });
+    g += '<line class="xh" y1="' + P.t + '" y2="' + (H - P.b) + '"/>';
+    let legend = '';
+    if (o.series.length + (o.band ? 1 : 0) > 1) {
+      legend = '<div class="legend">' + o.series.map(function (s) { return '<span><i style="background:var(' + s.c + ')"></i>' + esc(s.name) + '</span>'; }).join('') +
+        (o.band ? '<span><i class="band" style="background:var(' + o.band.c + ')"></i>' + esc(o.band.name) + '</span>' : '') + '</div>';
+    }
+    chartReg[id] = { o: o, n: n, w: W };
+    return '<div class="chart" data-chart="' + id + '">' + legend + '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc(o.title || 'Gráfico') + '">' + g + '</svg></div>';
+  }
+  // Barras horizontais. rows: [{ l, sub, v, t, c, v2, mark }]
+  function barList(rows, o) {
+    o = o || {};
+    let max = o.max || 0;
+    if (!o.max) rows.forEach(function (r) { max = Math.max(max, Math.abs(num(r.v)), Math.abs(num(r.v2))); });
+    if (!(max > 0)) max = 1;
+    const w = function (v) { return clamp(Math.abs(num(v)) / max * 100, 0, 100).toFixed(2); };
+    return '<div class="bars' + (o.two ? ' two' : '') + '">' + rows.map(function (r) {
+      return '<div class="bar-row"><div class="bl">' + esc(r.l) + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + w(r.v) + '%' + (r.c ? ';background:var(' + r.c + ')' : '') + '"></div>' +
+        (o.two ? '<div class="bar-fill b2" style="width:' + w(r.v2) + '%"></div>' : '') +
+        (r.mark !== undefined ? '<div class="bar-mark" style="left:' + w(r.mark) + '%"></div>' : '') + '</div>' +
+        '<div class="bv">' + (r.t || '') + '</div></div>';
+    }).join('') + '</div>';
+  }
+  function card(title, sub, body) { return '<div class="card">' + (title ? '<h3 class="card-t">' + esc(title) + '</h3>' : '') + (sub ? '<p class="card-s">' + esc(sub) + '</p>' : '') + body + '</div>'; }
+  function legendTwo(a, b) { return '<div class="legend"><span><i style="background:var(--c1)"></i>' + esc(a) + '</span><span><i style="background:var(--c2)"></i>' + esc(b) + '</span></div>'; }
+  function table(head, rows, o) {
+    o = o || {};
+    return '<table class="t"><thead><tr>' + head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      rows.map(function (r, k) { return '<tr' + (o.best === k ? ' class="best"' : '') + '>' + r.map(function (c, j) { return '<td' + (o.best === k && j === 0 ? ' data-badge="' + esc(o.badge || 'melhor') + '"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody>' +
+      (o.foot ? '<tfoot><tr>' + o.foot.map(function (c) { return '<td>' + c + '</td>'; }).join('') + '</tr></tfoot>' : '') + '</table>';
+  }
+
+  /* =====================================================================
+     4. LEITURA DE CADA FERRAMENTA — devolve { kpis, insight, chart, blocks, warn }
+     ===================================================================== */
+  function viewRaioX(r) {
+    const forte = r.indicadores.slice().sort(function (a, b) { return b.score - a.score; })[0];
+    const fraco = r.indicadores.slice().sort(function (a, b) { return a.score - b.score; })[0];
+    const fmtVal = function (x) { return x.valor === null ? 'sem dependentes' : (x.un === '%' ? pct(x.valor, 0) : numf(x.valor, 1) + x.un); };
+    return {
+      kpis: [
+        { l: 'Saúde financeira', v: numf(r.nota, 0) + ' <span style="font-size:15px;color:var(--muted);font-weight:400">de 100</span>', s: r.faixa },
+        { l: 'Ponto mais forte', v: numf(forte.score, 0), s: forte.nome },
+        { l: 'Ponto mais fraco', v: numf(fraco.score, 0), s: fraco.nome }
+      ],
+      insight: 'Nota <b>' + numf(r.nota, 0) + ' de 100</b>. ' + (r.prioridades.length ? 'A prioridade agora é <b>' + esc(r.prioridades[0].nome.toLowerCase()) + '</b>' + (r.prioridades[1] ? ', seguida de ' + esc(r.prioridades[1].nome.toLowerCase()) : '') + '.' : 'Todos os indicadores estão no nível recomendado.'),
+      chart: card('Os sete indicadores', 'Nota de 0 a 100 em cada um', barList(r.indicadores.map(function (x) { return { l: x.nome, sub: 'meta: ' + x.meta, v: x.score, t: fmtVal(x) }; }), { max: 100 })),
+      blocks: r.prioridades.length ? [card('Plano de ação', '', table(['Prioridade', 'Nota'], r.prioridades.map(function (p, k) { return [(k + 1) + '. ' + esc(p.acao), numf(p.score, 0)]; })))] : []
+    };
+  }
+  function viewRisco(r, i) {
+    const linha = r.tabela[r.idx];
+    const tab = table(['Perfil', 'Retorno real a.a.', 'Oscilação a.a.', 'Semestre ruim', 'Semestre bom'], r.tabela.map(function (t) {
+      return [esc(t.nome), pct(t.ret), pct(t.vol), '<span class="neg">' + brl(t.loRs) + '</span>', '<span class="pos">' + signedBrl(t.hiRs) + '</span>'];
+    }), { best: r.completo ? r.idx : undefined, badge: 'indicado' });
+    if (!r.completo) {
+      return {
+        kpis: [{ l: 'Perguntas respondidas', v: r.respondidas + ' de ' + RISK_QUESTIONS.length, s: 'Complete o questionário' }],
+        insight: 'Responda às <b>' + RISK_QUESTIONS.length + ' perguntas</b> ao lado para ver o perfil indicado.',
+        chart: card('O risco em reais', 'O que pode acontecer com a carteira em seis meses, por perfil', tab), blocks: []
+      };
+    }
+    const mp = MODEL_PORTFOLIOS[r.perfil.id];
+    return {
+      kpis: [
+        { l: 'Perfil indicado', v: esc(r.perfil.name), s: 'O menor entre tolerância e capacidade' },
+        { l: 'Tolerância', v: esc(PROFILES[r.tolIdx].name), s: r.tol + ' de 12 pontos' },
+        { l: 'Capacidade', v: esc(PROFILES[r.capIdx].name), s: r.cap + ' de 12 pontos' },
+        { l: 'Semestre ruim', v: brl(linha.loRs), s: pct(linha.lo) + ' da carteira' }
+      ],
+      insight: 'Perfil <b>' + esc(r.perfil.name) + '</b>. Em um semestre ruim, uma carteira de ' + brl(i.patrimonio) + ' pode recuar cerca de <b>' + brl(Math.abs(linha.loRs)) + '</b>; em um bom, subir ' + brl(linha.hiRs) + '.' +
+        (r.divergente ? ' A ' + (r.tolIdx > r.capIdx ? 'tolerância é maior que a capacidade' : 'capacidade é maior que a tolerância') + ': prevalece o perfil mais prudente.' : ''),
+      chart: card('O risco em reais', 'O que pode acontecer com a carteira em seis meses, por perfil', tab),
+      blocks: [card('Carteira-modelo · ' + r.perfil.name, 'Ponto de partida para a alocação', barList(ASSET_CLASSES.filter(function (c) { return mp[c.id] > 0; }).map(function (c) { return { l: c.name, v: mp[c.id], t: pct(mp[c.id], 0) }; }), { max: 100 }))]
+    };
+  }
+  function viewCustos(r) {
+    const melhor = r.diferenca > 0;
+    return {
+      kpis: [
+        { l: 'Custo anual da carteira', v: brl(r.custoRs), s: pct(r.custoPct, 2) + ' do patrimônio' },
+        { l: 'Custo em ' + r.anos + ' anos', v: brlK(r.custoAcumulado), s: 'Patrimônio que deixa de existir' },
+        { l: 'Com a consultoria', v: brl(r.novoRs) + '<span style="font-size:14px;color:var(--muted);font-weight:400"> /ano</span>', s: pct(r.novoPct, 2) + ' · produtos + honorário' },
+        { l: 'Diferença em ' + r.anos + ' anos', v: signedBrl(r.diferenca), s: melhor ? 'A favor da proposta' : 'A favor da carteira atual' }
+      ],
+      insight: 'A carteira paga <b>' + brl(r.custoRs) + ' por ano</b> em taxas (' + pct(r.custoPct, 2) + '). ' + (melhor
+        ? 'Com produtos mais baratos e honorário transparente, o custo cai para ' + brl(r.novoRs) + ' — <b>' + brl(r.diferenca) + ' a mais</b> no patrimônio em ' + r.anos + ' anos.'
+        : 'A carteira atual já custa menos que a proposta: aqui o valor da consultoria está na estratégia, não na economia de taxas.'),
+      chart: card('Patrimônio projetado', 'Mesmo retorno bruto, custos diferentes', lineChart({ labels: r.series.labels, w: 500, h: 310, series: [{ name: 'Carteira proposta', values: r.series.novo, c: '--c1', area: true }, { name: 'Carteira atual', values: r.series.atual, c: '--c2' }] })),
+      side: true,
+      blocks: [card('Onde está o custo', 'Reais por ano, do mais caro ao mais barato', barList(r.rows.map(function (x) { return { l: x.nome, sub: pct(x.custoPct, 2) + ' a.a.', v: x.custoRs, t: brl(x.custoRs) }; })))]
+    };
+  }
+  function viewJuros(r) {
+    const rend = r.liquido - r.investido;
+    const m100 = r.marcos.filter(function (m) { return m.mes !== null && m.mes > 0; });
+    const blocks = [];
+    if (r.atraso) blocks.push(card('O custo de esperar', 'Mesma data final, começando ' + r.atraso.anos + (r.atraso.anos === 1 ? ' ano' : ' anos') + ' depois',
+      barList([{ l: 'Começando hoje', v: r.liquido, t: brl(r.liquido) }, { l: 'Adiando ' + r.atraso.anos + (r.atraso.anos === 1 ? ' ano' : ' anos'), v: r.atraso.liquido, t: brl(r.atraso.liquido), c: '--c2' }])));
+    if (m100.length) blocks.push(card('Marcos do caminho', '', table(['Patrimônio', 'Quando'], m100.map(function (m) { return [brlK(m.v), tempo(m.mes)]; }))));
+    return {
+      kpis: [
+        { l: 'Patrimônio em ' + r.anos + ' anos', v: brl(r.liquido), s: 'Líquido de IR' },
+        { l: 'Em valores de hoje', v: brl(r.liquidoReal), s: 'Descontada a inflação' },
+        { l: 'Total investido', v: brl(r.investido), s: 'Do próprio bolso' },
+        { l: 'Rendimento líquido', v: brl(rend), s: pct(r.liquido > 0 ? rend / r.liquido * 100 : 0, 0) + ' do total' }
+      ],
+      insight: 'De ' + brl(r.liquido) + ', <b>' + brl(rend) + ' vêm dos juros</b>.' +
+        (r.cruzamento ? ' A partir de ' + tempo(r.cruzamento) + ', os juros do mês já superam o aporte.' : '') +
+        (r.rendaPerpetua > 0 ? ' Esse patrimônio sustenta <b>' + brl(r.rendaPerpetua) + ' por mês</b> para sempre, em valores de hoje.' : '') +
+        (r.atraso ? ' Adiar ' + r.atraso.anos + (r.atraso.anos === 1 ? ' ano' : ' anos') + ' custaria ' + brl(r.atraso.custo) + '.' : ''),
+      chart: card('Evolução do patrimônio', '', lineChart({ labels: r.series.labels, series: [{ name: 'Patrimônio', values: r.series.saldo, c: '--c1', area: true }, { name: 'Em valores de hoje', values: r.series.real, c: '--c3' }, { name: 'Total investido', values: r.series.investido, c: '--c2' }] })),
+      blocks: blocks.length === 2 ? ['<div class="grid2">' + blocks.join('') + '</div>'] : blocks
+    };
+  }
+  function viewIndep(r, i) {
+    const fecha = r.gap >= 0;
+    const kpis = [
+      { l: 'Chance de dar certo', v: pct(r.prob, 0), s: 'Em 1.000 cenários de mercado' },
+      { l: 'Patrimônio aos ' + r.idadeApos, v: brlK(r.patApos), s: 'Necessário: ' + brlK(r.necessario) },
+      { l: 'Renda sustentável', v: brl(r.rendaSust), s: 'Desejada: ' + brl(i.rendaDesejada) + ' por mês' },
+      { l: 'Aporte necessário', v: r.aporteReq === null ? '—' : brl(r.aporteReq), s: 'Hoje: ' + brl(i.aporte) + ' por mês' }
+    ];
+    const blocks = [];
+    if (!fecha) {
+      blocks.push(card('Três formas de fechar a conta', 'Cada uma resolve sozinha; o plano pode combinar as três', table(['Ajuste', 'De', 'Para'], [
+        ['Aportar mais', brl(i.aporte) + ' /mês', r.aporteReq === null ? '—' : '<b>' + brl(r.aporteReq) + ' /mês</b>'],
+        ['Trabalhar mais tempo', r.idadeApos + ' anos', r.anosExtras === null ? 'não fecha só com isso' : '<b>' + (r.idadeApos + r.anosExtras) + ' anos</b>'],
+        ['Viver com menos', brl(i.rendaDesejada) + ' /mês', '<b>' + brl(r.rendaSust) + ' /mês</b>']
+      ])));
+    }
+    return {
+      kpis: kpis,
+      insight: fecha
+        ? 'O plano fecha. Aos ' + r.idadeApos + ' anos o patrimônio projetado é de <b>' + brl(r.patApos) + '</b>, ' + brl(r.gap) + ' acima do necessário para ' + brl(i.rendaDesejada) + ' por mês até os ' + r.expect + '.'
+        : 'Faltam <b>' + brl(-r.gap) + '</b> aos ' + r.idadeApos + ' anos. Mantido o plano atual, o dinheiro acaba aos <b>' + (r.idadeFim === null ? r.expect : r.idadeFim) + ' anos</b>.',
+      chart: card('Patrimônio ao longo da vida', 'Valores de hoje · idade no eixo horizontal', lineChart({
+        labels: r.series.labels, series: [{ name: 'Cenário central', values: r.series.p50, c: '--c1' }],
+        band: { lo: r.series.p10, hi: r.series.p90, c: '--c1', name: '8 em cada 10 cenários' }
+      })),
+      blocks: blocks
+    };
+  }
+  function viewRenda(r, i) {
+    return {
+      kpis: [
+        { l: 'Retirada inicial', v: brl(i.rendaMensal), s: pct(r.taxaInicial, 1) + ' ao ano · sustentável: ' + brl(r.sustentavel) },
+        { l: 'Dinheiro dura ' + r.anos + ' anos', v: pct(r.guard, 0), s: 'Sem a regra de ajuste: ' + pct(r.fixo, 0) },
+        { l: 'Chance de manter a renda', v: pct(r.firme, 0), s: 'Sem cair mais de 20%' },
+        { l: 'Renda em cenário ruim', v: brl(r.piorRenda), s: '1 em cada 10 cenários chega a isso' }
+      ],
+      insight: 'Comece retirando <b>' + brl(i.rendaMensal) + ' por mês</b>. Na revisão do ano que vem: com patrimônio abaixo de <b>' + brl(r.pisoPatrimonio) + '</b>, reduza para ' + brl(r.rendaCorte) + '; acima de <b>' + brl(r.tetoPatrimonio) + '</b>, aumente para ' + brl(r.rendaAumento) + '.' +
+        (r.acimaDoSustentavel ? ' A retirada está <b>acima do nível sustentável</b> de ' + brl(r.sustentavel) + ': cortes são prováveis.' : ''),
+      chart: card('Renda mensal ao longo do tempo', 'Valores de hoje, seguindo a regra de ajuste', lineChart({
+        labels: r.series.labels, series: [{ name: 'Cenário central', values: r.series.p50, c: '--c1' }],
+        band: { lo: r.series.p10, hi: r.series.p90, c: '--c1', name: '8 em cada 10 cenários' }, h: 260
+      })),
+      blocks: [card('A regra da próxima revisão', 'Há ao menos um corte em ' + pct(r.cortes, 0) + ' dos cenários', table(['Patrimônio daqui a um ano', 'O que fazer', 'Retirada mensal'], [
+        ['Acima de ' + brl(r.tetoPatrimonio), 'Aumentar', '<span class="pos">' + brl(r.rendaAumento) + '</span>'],
+        ['Entre os dois limites', 'Manter', brl(i.rendaMensal)],
+        ['Abaixo de ' + brl(r.pisoPatrimonio), 'Reduzir', '<span class="neg">' + brl(r.rendaCorte) + '</span>']
+      ]))]
+    };
+  }
+  function viewMetas(r) {
+    const n = r.metas.length;
+    const semCobertura = r.metas.filter(function (m) { return m.cobertura < 99.9; })[0];
+    const prio = { 1: 'alta', 2: 'média', 3: 'baixa' };
+    return {
+      kpis: [
+        { l: 'Necessário por mês', v: brl(r.necessario), s: 'Disponível: ' + brl(r.capacidade) },
+        { l: r.saldo >= 0 ? 'Sobra por mês' : 'Falta por mês', v: brl(Math.abs(r.saldo)), s: r.saldo >= 0 ? 'Livre para outros objetivos' : 'Para cobrir todas as metas' },
+        { l: 'Metas cobertas', v: r.cobertas + ' de ' + n, s: 'Pela ordem de prioridade' }
+      ],
+      insight: !n ? 'Adicione a primeira meta para ver quanto guardar por mês.' : (r.saldo >= 0
+        ? 'Os ' + brl(r.capacidade) + ' mensais <b>cobrem todas as metas</b>, com sobra de ' + brl(r.saldo) + '.'
+        : 'Faltam <b>' + brl(-r.saldo) + ' por mês</b> para cobrir tudo.' + (semCobertura ? ' Seguindo as prioridades, <b>' + esc(semCobertura.nome) + '</b> fica com ' + pct(semCobertura.cobertura, 0) + ' do necessário.' : '')),
+      chart: card('Quanto guardar para cada meta', 'Barra: parte coberta pelo valor disponível', barList(r.metas.map(function (m) {
+        return { l: m.nome, sub: tempo(Math.round(m.anos * 12)) + ' · prioridade ' + (prio[m.prio] || 'média'), v: m.cobertura, t: brl(m.pmt) + ' /mês' };
+      }), { max: 100 })),
+      side: n > 0,
+      blocks: n ? [card('Detalhe', '', table(['Meta', 'Valor', 'Já pronto', 'Por mês', 'Coberto'], r.metas.map(function (m) {
+        return [esc(m.nome), brl(m.valor), pct(m.pronto, 0), brl(m.pmt), pct(m.cobertura, 0)];
+      }), { foot: ['Total', '', '', brl(r.necessario), ''] }))] : []
+    };
+  }
+  function viewRendaFixa(r, i) {
+    if (!r.rows.length) return { kpis: [], insight: 'Adicione um título para comparar.', chart: '', blocks: [] };
+    const best = r.rows[0], worst = r.rows[r.rows.length - 1];
+    const isento = r.rows.filter(function (x) { return x.isento && x.tipo === 'cdi'; })[0];
+    return {
+      kpis: [
+        { l: 'Melhor opção', v: esc(best.nome), s: brl(best.liquido) + ' líquidos' },
+        { l: 'Rentabilidade líquida', v: pct(best.liqAa, 2), s: 'Ao ano · real: ' + pct(best.realAa, 2) },
+        { l: 'IR neste prazo', v: pct(r.aliq, 1), s: r.dias + ' dias' + (r.iof ? ' · IOF de ' + pct(r.iof, 0) : '') },
+        { l: 'Diferença para a última', v: brl(best.liquido - worst.liquido), s: esc(worst.nome) }
+      ],
+      insight: 'Em ' + r.dias + ' dias, <b>' + esc(best.nome) + '</b> entrega mais: ' + brl(best.liquido) + ' líquidos.' +
+        (isento ? ' ' + esc(isento.nome) + ' equivale a um <b>CDB de ' + pct(isento.equiv, 1) + ' do CDI</b>.' : ''),
+      chart: card('Comparação depois do imposto', 'Ordenado pelo valor líquido no vencimento', table(['Título', 'Bruto', 'Imposto', 'Líquido', 'Líquido a.a.', 'Real a.a.', 'CDB equivalente'], r.rows.map(function (x) {
+        return [esc(x.nome), brl(x.bruto), x.isento ? '<span class="tag">isento</span>' : brl(x.ir), '<b>' + brl(x.liquido) + '</b>', pct(x.liqAa, 2), pct(x.realAa, 2), pct(x.equiv, 1) + ' do CDI'];
+      }), { best: 0 })),
+      blocks: [card('Marcação a mercado', 'Título de ' + pct(i.mtmTaxa, 2) + ' a.a. com ' + numf(i.mtmAnos, 0) + ' anos até o vencimento: variação do preço se os juros mudarem',
+        barList(r.mtm.map(function (m) { return { l: 'Juros em ' + pct(m.nova, 2), sub: signedPct(m.delta, 1).replace('%', ' p.p.'), v: m.variacao, t: '<span class="' + (m.variacao < 0 ? 'neg' : 'pos') + '">' + signedPct(m.variacao, 1) + '</span>', c: m.variacao < 0 ? '--c5' : '--c1' }; })))]
+    };
+  }
+  function viewAlocacao(r, i) {
+    const maior = r.rows.slice().sort(function (a, b) { return Math.abs(b.desvio) - Math.abs(a.desvio); })[0];
+    const compras = r.rows.filter(function (x) { return x.ordem > 0.5; }).sort(function (a, b) { return b.ordem - a.ordem; });
+    const vendas = r.rows.filter(function (x) { return x.ordem < -0.5; }).sort(function (a, b) { return a.ordem - b.ordem; });
+    const lista = function (arr) { return arr.slice(0, 2).map(function (x) { return brl(Math.abs(x.ordem)) + ' em ' + esc(x.nome); }).join(' e '); };
+    return {
+      warn: r.valido ? '' : 'Os alvos somam ' + pct(r.somaAlvo, 1) + '. Ajuste para 100%.',
+      kpis: [
+        { l: 'Maior desvio', v: numf(Math.abs(maior ? maior.desvio : 0), 1) + ' p.p.', s: maior ? esc(maior.nome) + (maior.desvio > 0 ? ' · acima do alvo' : ' · abaixo do alvo') : '' },
+        { l: 'Retorno real esperado', v: pct(r.alvo.ret, 1), s: 'Hoje: ' + pct(r.atual.ret, 1) + ' a.a.' },
+        { l: 'Oscilação anual', v: pct(r.alvo.vol, 1), s: 'Hoje: ' + pct(r.atual.vol, 1) },
+        { l: 'Ano ruim', v: brl(r.final * r.rAlvo.lo / 100), s: 'Hoje: ' + brl(r.total * r.rAtual.lo / 100) }
+      ],
+      insight: (maior && Math.abs(maior.desvio) >= 0.5 ? 'A carteira está <b>' + numf(Math.abs(maior.desvio), 0) + ' p.p. ' + (maior.desvio > 0 ? 'acima' : 'abaixo') + ' do alvo em ' + esc(maior.nome) + '</b>. ' : 'A carteira está alinhada ao alvo. ') +
+        (compras.length ? 'Comprar ' + lista(compras) + '.' : '') + (vendas.length ? ' Vender ' + lista(vendas) + '.' : ''),
+      chart: card('Atual × alvo', '', legendTwo('Atual', 'Alvo') + barList(r.rows.map(function (x) {
+        return { l: x.nome, v: x.atualPct, v2: x.alvo, t: Math.abs(x.ordem) < 0.5 ? '<span class="mut">manter</span>' : (x.ordem > 0 ? '<span class="pos">comprar ' + brl(x.ordem) + '</span>' : '<span class="neg">vender ' + brl(-x.ordem) + '</span>') };
+      }), { two: true })),
+      blocks: ['<div class="grid2">' +
+        card('Ordens', i.modo === 'completo' ? 'Comprando e vendendo' : 'Usando só o dinheiro novo', table(['Classe', 'Atual', 'Alvo', 'Depois'], r.rows.map(function (x) { return [esc(x.nome), pct(x.atualPct, 1), pct(x.alvo, 1), pct(x.depoisPct, 1)]; }))) +
+        card('Teste de estresse', 'Como cada carteira teria reagido', table(['Cenário', 'Atual', 'Alvo'], r.stress.map(function (s) {
+          return [esc(s.nome), '<span class="' + (s.atual < 0 ? 'neg' : 'pos') + '">' + signedPct(s.atual, 1) + '</span>', '<span class="' + (s.alvo < 0 ? 'neg' : 'pos') + '">' + signedPct(s.alvo, 1) + '</span>'];
+        }))) + '</div>']
+    };
+  }
+  function viewPgbl(r, i) {
+    const semAporte = Math.min(r.simplificada, r.completaHoje);
+    let insight;
+    if (!i.contribui) insight = 'Sem contribuição para o INSS ou regime próprio, o PGBL <b>não é dedutível</b>. Para previdência, prefira o VGBL.';
+    else if (r.vale) insight = 'Aportando <b>' + brl(r.ideal) + ' em PGBL até o fim do ano</b>, o imposto cai de ' + brl(semAporte) + ' para ' + brl(r.completaMax) + ' — <b>' + brl(r.economia) + ' de economia</b>, na declaração completa.';
+    else if (r.espaco <= 0 && r.limite > 0) insight = 'O limite de 12% <b>já foi usado</b> este ano. Aportes adicionais em previdência devem ir para o VGBL.';
+    else insight = 'Neste caso o PGBL <b>não reduz o imposto</b>: a declaração simplificada continua melhor. Para previdência, prefira o VGBL.';
+    const lp = r.longo;
+    return {
+      kpis: [
+        { l: 'Aporte ideal até 31/12', v: brl(r.ideal), s: 'Limite de 12%: ' + brl(r.limite) },
+        { l: 'Economia de IR', v: brl(r.economia), s: r.vale ? 'Retorno imediato de ' + pct(r.retornoImediato, 1) : 'Sem ganho fiscal' },
+        { l: 'Melhor declaração', v: r.melhor === 'completa' ? 'Completa' : 'Simplificada', s: 'IR devido: ' + brl(Math.min(r.simplificada, r.completaMax)) },
+        { l: 'IR sem o aporte', v: brl(semAporte), s: r.simplificada <= r.completaHoje ? 'Na simplificada' : 'Na completa' }
+      ],
+      insight: insight,
+      chart: card('Imposto devido conforme o aporte em PGBL', 'Aporte total no ano, no eixo horizontal', lineChart({
+        labels: r.curva.x.map(function (x) { return brlK(x); }), h: 260,
+        series: [{ name: 'Declaração completa', values: r.curva.completa, c: '--c1' }, { name: 'Declaração simplificada', values: r.curva.simplificada, c: '--c2' }]
+      })),
+      blocks: [card('No longo prazo', brl(r.aporteLongo) + ' por ano durante ' + r.anos + ' anos · valor líquido no resgate', barList([
+        { l: 'PGBL', sub: 'restituição reinvestida', v: lp.pgbl, t: brl(lp.pgbl) },
+        { l: 'VGBL', sub: 'IR só sobre o ganho', v: lp.vgbl, t: brl(lp.vgbl), c: '--c2' },
+        { l: 'Fundo comum', sub: 'com come-cotas', v: lp.fundo, t: brl(lp.fundo), c: '--c3' }
+      ]))]
+    };
+  }
+  function viewProtecao(r) {
+    return {
+      kpis: [
+        { l: 'Seguro de vida a contratar', v: brl(r.seguro), s: r.seguro > 0 ? 'Capital adicional' : 'Já coberto' },
+        { l: 'Reserva ideal', v: brl(r.reservaAlvo), s: r.meses + ' meses de despesas' },
+        { l: 'Falta na reserva', v: brl(r.reservaFalta), s: 'Hoje: ' + numf(r.reservaMeses, 1) + ' meses' }
+      ],
+      insight: (r.seguro > 0
+        ? 'Se o provedor faltar, a família precisaria de <b>' + brl(r.totalNec) + '</b> e teria ' + brl(r.totalRec) + '. Um seguro de <b>' + brl(r.seguro) + '</b> fecha a diferença.'
+        : 'Os recursos atuais (' + brl(r.totalRec) + ') <b>já cobrem</b> as necessidades da família (' + brl(r.totalNec) + ').') +
+        (r.reservaFalta > 0 ? ' Na reserva de emergência, faltam ' + brl(r.reservaFalta) + '.' : ' A reserva de emergência está completa.'),
+      chart: '<div class="grid2">' + card('O que a família precisaria', 'Total: ' + brl(r.totalNec), barList(r.necessidades.map(function (x) { return { l: x.l, v: x.v, t: brl(x.v) }; }), { max: Math.max(r.totalNec, r.totalRec) })) +
+        card('O que já existe', 'Total: ' + brl(r.totalRec), barList(r.recursos.map(function (x) { return { l: x.l, v: x.v, t: brl(x.v), c: '--c2' }; }), { max: Math.max(r.totalNec, r.totalRec) })) + '</div>',
+      blocks: []
+    };
+  }
+  function viewSucessao(r, i) {
+    return {
+      kpis: [
+        { l: 'Custo do inventário', v: brl(r.total), s: pct(r.pct, 1) + ' da herança' },
+        { l: 'ITCMD', v: brl(r.itcmd), s: 'Alíquota de ' + pct(i.aliquota, 1) },
+        { l: 'Liquidez imediata', v: brl(r.liquidez), s: 'Previdência e seguro de vida' },
+        { l: r.falta > 0 ? 'Falta de liquidez' : 'Folga de liquidez', v: brl(r.falta > 0 ? r.falta : r.sobra), s: r.falta > 0 ? 'A cobrir com seguro ou previdência' : 'Depois de pagar o inventário' }
+      ],
+      insight: (r.falta > 0
+        ? 'Para concluir o inventário os herdeiros precisarão de <b>' + brl(r.total) + '</b>, mas só terão ' + brl(r.liquidez) + ' de imediato. <b>Faltam ' + brl(r.falta) + '</b> — o tamanho do seguro de vida a planejar.'
+        : 'O inventário custaria <b>' + brl(r.total) + '</b>. A liquidez fora do inventário (' + brl(r.liquidez) + ') cobre o custo.') +
+        (r.aumentoTeto > 0 ? ' Se a alíquota for ao teto de 8%, o imposto sobe ' + brl(r.aumentoTeto) + '.' : ''),
+      chart: card('Custo × liquidez', '', barList([
+        { l: 'ITCMD', v: r.itcmd, t: brl(r.itcmd) }, { l: 'Honorários advocatícios', v: r.honorarios, t: brl(r.honorarios) },
+        { l: 'Custas e cartório', v: r.custas, t: brl(r.custas) }, { l: 'Liquidez fora do inventário', v: r.liquidez, t: brl(r.liquidez), c: '--c2' }
+      ])),
+      blocks: [card('Do patrimônio à herança', '', table(['Etapa', 'Valor'], [
+        ['Bens menos dívidas', brl(r.espolio)], ['Parte do cônjuge (meação)', '<span class="mut">' + brl(r.base - r.espolio) + '</span>'], ['Herança a partilhar', brl(r.base)],
+        ['Custo do inventário', '<span class="neg">' + brl(-r.total) + '</span>'], ['Previdência e seguro de vida', '<span class="pos">' + signedBrl(r.liquidez) + '</span>']
+      ], { foot: ['Para cada um dos ' + r.herdeiros + ' herdeiros', brl(r.porHerdeiro)] }))]
+    };
+  }
+  function viewImovel(r, i) {
+    const e = r.escolhido, nome = i.sistema === 'price' ? 'Price' : 'SAC';
+    const comprar = r.vantagem >= 0;
+    return {
+      kpis: [
+        { l: '1ª parcela · ' + nome, v: brl(e.primeira), s: 'Última: ' + brl(e.ultima) },
+        { l: 'Juros totais', v: brlK(e.juros), s: 'SAC: ' + brlK(r.sac.juros) + ' · Price: ' + brlK(r.price.juros) },
+        { l: 'Amortizando ' + brl(r.extra) + ' /mês', v: r.mesesPoupados > 0 ? '−' + tempo(r.mesesPoupados) : '—', s: r.mesesPoupados > 0 ? brl(r.jurosPoupados) + ' de juros a menos' : 'Informe um valor extra' },
+        { l: 'Em ' + r.horizonte + ' anos, vence', v: comprar ? 'Comprar' : 'Alugar', s: brl(Math.abs(r.vantagem)) + ' de vantagem' }
+      ],
+      insight: 'O SAC paga <b>' + brl(r.price.juros - r.sac.juros) + ' a menos de juros</b> que o Price, mas começa com parcela ' + brl(r.sac.primeira - r.price.primeira) + ' maior. ' +
+        'Em ' + r.horizonte + ' anos, <b>' + (comprar ? 'comprar' : 'alugar e investir a diferença') + '</b> deixa o patrimônio ' + brl(Math.abs(r.vantagem)) + ' maior.',
+      chart: card('Comprar ou alugar', 'Patrimônio acumulado em cada caminho', lineChart({ labels: r.series.labels, h: 270, series: [{ name: 'Comprando', values: r.series.compra, c: '--c1' }, { name: 'Alugando e investindo', values: r.series.aluguel, c: '--c2' }] })),
+      blocks: [card('SAC × Price', brl(r.financiado) + ' financiados', table(['', '1ª parcela', 'Última parcela', 'Juros totais', 'Total pago'], [
+        ['SAC', brl(r.sac.primeira), brl(r.sac.ultima), brl(r.sac.juros), brl(r.sac.pago)],
+        ['Price', brl(r.price.primeira), brl(r.price.ultima), brl(r.price.juros), brl(r.price.pago)]
+      ], { best: r.sac.juros <= r.price.juros ? 0 : 1, badge: 'menos juros' }))]
+    };
+  }
+
+  /* =====================================================================
+     5. ARMAZENAMENTO — IndexedDB com wrapper em Promise e estado versionado
+     ===================================================================== */
+  function openDb() {
+    return new Promise(function (resolve, reject) {
+      let req;
+      try { req = window.indexedDB.open(DB_NAME, DB_VERSION); } catch (e) { reject(e); return; }
+      req.onupgradeneeded = function () { if (!req.result.objectStoreNames.contains(DB_STORE)) req.result.createObjectStore(DB_STORE); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { reject(req.error); };
+      req.onblocked = function () { reject(new Error('Banco de dados bloqueado')); };
+    });
+  }
+  function idbRequest(mode, fn) {
+    return new Promise(function (resolve, reject) {
+      const tx = dbHandle.transaction(DB_STORE, mode);
+      const req = fn(tx.objectStore(DB_STORE));
+      tx.oncomplete = function () { resolve(req.result); };
+      tx.onerror = function () { reject(tx.error); };
+      tx.onabort = function () { reject(tx.error); };
+    });
+  }
+  function idbGet(key) { return idbRequest('readonly', function (s) { return s.get(key); }); }
+  function idbPut(key, value) { return idbRequest('readwrite', function (s) { return s.put(value, key); }); }
+
+  function defaultState() {
+    return {
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      settings: { empresa: BRAND_DEFAULT, tagline: TAGLINE_DEFAULT, consultor: '', registro: '', contato: '', premissas: Object.assign({}, DEFAULT_PREMISSAS) },
+      clients: [], activeClientId: null, sandbox: { tools: {} }, reportSkip: {}
+    };
+  }
+  function migrateState(s) {
+    let v = num(s.schemaVersion, 1);
+    while (v < CURRENT_SCHEMA_VERSION) {
+      if (MIGRATIONS[v]) s = MIGRATIONS[v](s);
+      v++;
+    }
+    s.schemaVersion = CURRENT_SCHEMA_VERSION;
+    return s;
+  }
+  function normalizeState(s) {
+    const d = defaultState();
+    if (!s || typeof s !== 'object') return d;
+    s = migrateState(s);
+    s.settings = Object.assign({}, d.settings, s.settings || {});
+    s.settings.premissas = Object.assign({}, DEFAULT_PREMISSAS, s.settings.premissas || {});
+    s.clients = Array.isArray(s.clients) ? s.clients.filter(function (c) { return c && c.id; }) : [];
+    s.clients.forEach(function (c) { if (!c.tools || typeof c.tools !== 'object') c.tools = {}; });
+    if (!s.sandbox || typeof s.sandbox.tools !== 'object') s.sandbox = { tools: {} };
+    if (!s.reportSkip || typeof s.reportSkip !== 'object') s.reportSkip = {};
+    if (!s.clients.some(function (c) { return c.id === s.activeClientId; })) s.activeClientId = null;
+    return s;
+  }
+  function loadState() {
+    return openDb().then(function (db) { dbHandle = db; return idbGet(STATE_KEY); }).then(function (saved) {
+      state = normalizeState(saved);
+    }).catch(function () {
+      memoryOnly = true;
+      state = defaultState();
+    });
+  }
+  function persistNow() {
+    saveQueued = false;
+    if (memoryOnly || !dbHandle) return;
+    idbPut(STATE_KEY, JSON.parse(JSON.stringify(state))).catch(function () { toast('Não foi possível salvar os dados.', true); });
+  }
+  // Várias alterações na mesma rodada viram uma única gravação (microtask, sem setTimeout)
+  function scheduleSave() {
+    if (saveQueued) return;
+    saveQueued = true;
+    Promise.resolve().then(persistNow);
+  }
+
+  /* =====================================================================
+     6. ESTADO DA SESSÃO
+     ===================================================================== */
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function activeClient() { return state.clients.filter(function (c) { return c.id === state.activeClientId; })[0] || null; }
+  function toolStore() { const c = activeClient(); return c ? c.tools : state.sandbox.tools; }
+  function getEnv() { return { premissas: state.settings.premissas, facts: activeClient() || {} }; }
+  function toolDef(id) { return TOOL_DEFS.filter(function (t) { return t.id === id; })[0] || null; }
+  function clone(v) { return JSON.parse(JSON.stringify(v === undefined ? null : v)); }
+  function buildDefaults(def, env) {
+    const o = {};
+    def.fields.forEach(function (f) { if (f.k) o[f.k] = typeof f.d === 'function' ? f.d(env) : clone(f.d); });
+    return o;
+  }
+  function getInputs(id) {
+    const def = toolDef(id), base = buildDefaults(def, getEnv()), saved = toolStore()[id];
+    if (!saved) return base;
+    const merged = Object.assign({}, base, clone(saved));
+    def.fields.forEach(function (f) {
+      if (f.t === 'table' && (!Array.isArray(merged[f.k]) || (f.fixed && merged[f.k].length !== base[f.k].length))) merged[f.k] = base[f.k];
+    });
+    return merged;
+  }
+  function runTool(id, inputs) {
+    const impl = TOOL_IMPL[id], r = impl.compute(inputs, getEnv());
+    return { r: r, v: impl.view(r, inputs, getEnv()) };
+  }
+  function parseNum(s, t) {
+    if (typeof s === 'number') return s;
+    s = String(s === null || s === undefined ? '' : s).replace(/[^\d,.\-]/g, '');
+    if (!s) return 0;
+    if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.');
+    else if ((t === 'money' || t === 'int') && /^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+    const v = parseFloat(s);
+    if (!isFinite(v)) return 0;
+    return t === 'int' ? Math.round(v) : v;
+  }
+  function fmtInput(v, t) {
+    if (v === null || v === undefined || v === '') return '';
+    if (t === 'text') return String(v);
+    return num(v).toLocaleString('pt-BR', { maximumFractionDigits: t === 'money' ? 2 : (t === 'int' ? 0 : 4) });
+  }
+
+  /* =====================================================================
+     7. INTERFACE
+     ===================================================================== */
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function toast(msg, isError) {
+    const el = document.createElement('div');
+    el.className = 'toast' + (isError ? ' err' : '');
+    el.textContent = msg;
+    $('#toasts').appendChild(el);
+    window.setTimeout(function () { el.remove(); }, 3200);
+  }
+  function closeModal() {
+    if (modalClose) { document.removeEventListener('keydown', modalClose.onKey); modalClose = null; }
+    $('#modalRoot').innerHTML = '';
+  }
+  // o: { title, text, body, confirm, danger, onConfirm(modalEl) -> false mantém aberto }
+  function openModal(o) {
+    closeModal();
+    const root = $('#modalRoot');
+    root.innerHTML = '<div class="overlay"><div class="modal" role="dialog" aria-modal="true"><h2>' + esc(o.title) + '</h2>' + (o.text ? '<p>' + esc(o.text) + '</p>' : '') + (o.body || '') +
+      '<div class="modal-foot"><button type="button" class="btn" data-m="cancel">Cancelar</button><button type="button" class="btn ' + (o.danger ? 'danger' : 'primary') + '" data-m="ok">' + esc(o.confirm || 'Salvar') + '</button></div></div></div>';
+    const overlay = $('.overlay', root), modal = $('.modal', root);
+    const confirm = function () { if (o.onConfirm(modal) !== false) closeModal(); };
+    $('[data-m="cancel"]', modal).addEventListener('click', closeModal);
+    $('[data-m="ok"]', modal).addEventListener('click', confirm);
+    overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) closeModal(); });
+    modalClose = { onKey: function (e) { if (e.key === 'Escape') closeModal(); else if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); confirm(); } } };
+    document.addEventListener('keydown', modalClose.onKey);
+    const first = $('input, select, textarea', modal);
+    if (first) first.focus();
+  }
+
+  function tipIcon(text) { return text ? '<i class="q" data-tip="' + esc(text) + '">?</i>' : ''; }
+  function numberBox(attrs, value, t, unit) {
+    const u = unit !== undefined ? unit : UNITS[t];
+    return '<span class="fi">' + (t === 'money' ? '<em>R$</em>' : '') + '<input ' + attrs + ' data-t="' + t + '" inputmode="decimal" autocomplete="off" value="' + esc(fmtInput(value, t)) + '">' + (t !== 'money' && u ? '<em>' + esc(u) + '</em>' : '') + '</span>';
+  }
+  function selectBox(attrs, value, opts) {
+    const numeric = opts.every(function (o) { return typeof o[0] === 'number'; });
+    return '<select ' + attrs + (numeric ? ' data-num="1"' : '') + '>' + opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(value) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>';
+  }
+  function tableField(f, rows) {
+    const cols = 'grid-template-columns:' + f.cols.map(function (c) { return 'minmax(0,' + (c.w || 1) + 'fr)'; }).join(' ') + (f.fixed ? '' : ' 30px');
+    let h = '<div class="tbl"><div class="tr head" style="' + cols + '">' + f.cols.map(function (c) { return '<span>' + esc(c.l) + tipIcon(c.tip) + '</span>'; }).join('') + (f.fixed ? '' : '<span></span>') + '</div>';
+    rows.forEach(function (row, ri) {
+      h += '<div class="tr" style="' + cols + '">' + f.cols.map(function (c) {
+        const a = 'data-k="' + f.k + '" data-row="' + ri + '" data-col="' + c.k + '" aria-label="' + esc(c.l) + '"';
+        if (c.t === 'label') return '<span class="lbl">' + esc(row[c.k]) + '</span>';
+        if (c.t === 'text') return '<span class="fi"><input class="txt" ' + a + ' data-t="text" autocomplete="off" value="' + esc(row[c.k]) + '"></span>';
+        if (c.t === 'select') return selectBox(a, row[c.k], c.o);
+        if (c.t === 'check') return '<label class="sw"><input type="checkbox" ' + a + (row[c.k] ? ' checked' : '') + '></label>';
+        return numberBox(a, row[c.k], c.t);
+      }).join('') + (f.fixed ? '' : '<button type="button" class="del" data-act="delrow" data-k="' + f.k + '" data-row="' + ri + '" aria-label="Remover linha">×</button>') + '</div>';
+    });
+    if (!f.fixed) h += '<button type="button" class="btn sm add" data-act="addrow" data-k="' + f.k + '">+ ' + esc(f.add || 'Adicionar') + '</button>';
+    return h + '</div>';
+  }
+  function fieldHtml(f, inputs) {
+    if (f.sec) return '<div class="sec">' + esc(f.sec) + '</div>';
+    const a = 'data-k="' + f.k + '"';
+    if (f.t === 'table') return tableField(f, inputs[f.k] || []);
+    if (f.t === 'choice') {
+      const q = RISK_QUESTIONS.filter(function (x) { return x.k === f.k; })[0], n = RISK_QUESTIONS.indexOf(q) + 1;
+      return '<div class="choice"><div class="choice-q"><span>' + n + '.</span>' + esc(q.q) + '</div><div class="choice-o">' + q.o.map(function (o, k) {
+        return '<button type="button" data-act="choice" data-k="' + f.k + '" data-v="' + k + '"' + (inputs[f.k] === k ? ' class="on"' : '') + '>' + esc(o) + '</button>';
+      }).join('') + '</div></div>';
+    }
+    if (f.t === 'check') return '<label class="sw"><input type="checkbox" ' + a + (inputs[f.k] ? ' checked' : '') + '><span>' + esc(f.l) + '</span>' + tipIcon(f.tip) + '</label>';
+    const label = '<span class="fl">' + esc(f.l) + tipIcon(f.tip) + '</span>';
+    if (f.t === 'select') return '<label class="f">' + label + selectBox(a, inputs[f.k], f.o) + '</label>';
+    if (f.t === 'text') return '<label class="f">' + label + '<input class="plain" ' + a + ' data-t="text" autocomplete="off" value="' + esc(inputs[f.k]) + '"></label>';
+    if (f.t === 'textarea') return '<label class="f full">' + label + '<textarea ' + a + ' data-t="text">' + esc(inputs[f.k]) + '</textarea></label>';
+    return '<label class="f">' + label + numberBox(a, inputs[f.k], f.t, f.u) + '</label>';
+  }
+  function formHtml(def, inputs) {
+    let h = def.fields.map(function (f) { return fieldHtml(f, inputs); }).join('');
+    if (def.actions) h = '<div class="presets"><span>' + esc(def.actionsLabel) + '</span>' + def.actions.map(function (a) { return '<button type="button" class="btn sm" data-act="preset" data-v="' + a[0] + '">' + esc(a[1]) + '</button>'; }).join('') + '</div>' + h;
+    return h;
+  }
+  function kpisHtml(kpis) {
+    return '<div class="kpis' + (kpis.length === 4 ? ' k4' : '') + '">' + kpis.map(function (k, n) { return '<div class="kpi' + (n === 0 ? ' hero' : '') + (String(k.v).replace(/<[^>]*>/g, '').length > 13 ? ' long' : '') + '"><div class="kpi-l">' + esc(k.l) + '</div><div class="kpi-v">' + k.v + '</div>' + (k.s ? '<div class="kpi-s">' + k.s + '</div>' : '') + '</div>'; }).join('') + '</div>';
+  }
+  function resultsHtml(id, v) {
+    return (v.warn ? '<div class="warn-box">' + esc(v.warn) + '</div>' : '') + (v.kpis.length ? kpisHtml(v.kpis) : '') + '<div class="insight">' + v.insight + '</div>' + (v.side ? '<div class="grid2">' + (v.chart || '') + (v.blocks || []).join('') + '</div>' : (v.chart || '') + (v.blocks || []).join('')) +
+      '<details class="more"><summary>Como é calculado</summary><div class="inner method">' + esc(METHODS[id]) + '</div></details>';
+  }
+
+  function renderSide() {
+    const s = state.settings, parts = String(s.empresa || BRAND_DEFAULT).trim().split(/\s+/);
+    $('#brandBox').innerHTML = '<div class="brand-mark">' + esc(parts[0].charAt(0).toUpperCase()) + '</div><div class="brand-name"><b>' + esc(parts[0]) + '</b> ' + esc(parts.slice(1).join(' ')) + '<small>' + esc(s.tagline) + '</small></div>';
+    document.title = (s.empresa || BRAND_DEFAULT) + ' · Ferramentas do consultor';
+    $('#clientSelect').innerHTML = '<option value="">Sem cliente · rascunho</option>' + state.clients.map(function (c) { return '<option value="' + esc(c.id) + '"' + (c.id === state.activeClientId ? ' selected' : '') + '>' + esc(c.nome || 'Sem nome') + '</option>'; }).join('');
+    const store = toolStore(), r = current.route, t = current.toolId;
+    const link = function (hash, ic, label, on, tick) { return '<a href="#/' + hash + '"' + (on ? ' class="on"' : '') + '>' + icon(ic) + '<span>' + esc(label) + '</span>' + (tick ? '<i class="tick" title="Preenchida"></i>' : '') + '</a>'; };
+    let h = link('painel', 'home', 'Painel', r === 'painel') + link('clientes', 'users', 'Clientes', r === 'clientes');
+    TOOL_GROUPS.forEach(function (g) {
+      h += '<div class="nav-group">' + esc(g.name) + '</div>';
+      TOOL_DEFS.filter(function (d) { return d.group === g.id; }).forEach(function (d) { h += link('t/' + d.id, d.icon, d.name, r === 'tool' && t === d.id, !!store[d.id]); });
+    });
+    h += '<div class="nav-group">Entrega</div>' + link('relatorio', 'doc', 'Relatório do cliente', r === 'relatorio') + link('config', 'gear', 'Configurações', r === 'config');
+    $('#nav').innerHTML = h;
+    $('#sideFoot').textContent = 'v' + APP_VERSION + ' · dados salvos só neste computador' + (memoryOnly ? ' (sem gravação nesta sessão)' : '');
+  }
+  function header(eyebrow, title, desc, actions) {
+    return '<header class="th"><div>' + (eyebrow ? '<div class="eyebrow">' + esc(eyebrow) + '</div>' : '') + '<h1>' + esc(title) + '</h1>' + (desc ? '<p>' + esc(desc) + '</p>' : '') + '</div>' + (actions ? '<div class="th-actions">' + actions + '</div>' : '') + '</header>';
+  }
+  function renderPainel() {
+    const c = activeClient(), now = new Date(), m = now.getMonth(), p = state.settings.premissas, store = toolStore();
+    let h = header(now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }), c ? c.nome : 'Painel', c ? 'Ferramentas preenchidas ficam salvas neste cliente.' : 'Modo rascunho. Selecione um cliente para salvar as simulações no cadastro dele.',
+      '<a class="btn" href="#/clientes">' + (c ? 'Trocar cliente' : 'Novo cliente') + '</a>');
+    h += '<div class="strip"><div class="card agenda"><h3 class="card-t">Agenda de ' + MONTHS[m].toLowerCase() + '</h3><p class="card-s">O que revisar com os clientes neste mês</p><ul>' + SERVICE_CALENDAR[m].map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' +
+      '<ul class="next">' + SERVICE_CALENDAR[(m + 1) % 12].map(function (x) { return '<li>' + esc(MONTHS[(m + 1) % 12]) + ': ' + esc(x) + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="card"><h3 class="card-t">Premissas de mercado</h3><p class="card-s">Usadas como ponto de partida nas ferramentas</p><div class="prem"><div>Selic<b>' + pct(p.selic, 2) + '</b></div><div>CDI<b>' + pct(p.cdi, 2) + '</b></div><div>IPCA 12 m<b>' + pct(p.ipca, 2) + '</b></div></div><div style="margin-top:18px"><a class="btn sm" href="#/config">Atualizar</a></div></div></div>';
+    TOOL_GROUPS.forEach(function (g, k) {
+      h += '<div class="group-t"><b>' + (k + 1) + '</b>' + esc(g.name) + '</div><div class="cards">' + TOOL_DEFS.filter(function (d) { return d.group === g.id; }).map(function (d) {
+        return '<a class="tcard" href="#/t/' + d.id + '">' + icon(d.icon) + (store[d.id] ? '<span class="done">preenchida</span>' : '') + '<h3>' + esc(d.name) + '</h3><p>' + esc(d.desc) + '</p></a>';
+      }).join('') + '</div>';
+    });
+    h += '<div class="group-t"><b>5</b>Entrega</div><div class="cards"><a class="tcard" href="#/relatorio">' + icon('doc') + '<h3>Relatório do cliente</h3><p>Reúne as ferramentas preenchidas em um documento com a sua marca, pronto para PDF.</p></a></div>';
+    $('#main').innerHTML = h;
+  }
+  function renderClientes() {
+    let h = header('Cadastro', 'Clientes', 'Cada cliente guarda as próprias simulações.', '<button type="button" class="btn primary" data-act="client-new">Novo cliente</button>');
+    if (!state.clients.length) h += '<div class="empty"><b>Nenhum cliente ainda</b>Cadastre o primeiro para salvar as simulações por pessoa.<br><button type="button" class="btn primary" data-act="client-new">Novo cliente</button></div>';
+    else {
+      h += '<div class="clist">' + state.clients.map(function (c) {
+        const n = Object.keys(c.tools || {}).length, on = c.id === state.activeClientId;
+        return '<div class="crow' + (on ? ' on' : '') + '"><div><h3>' + esc(c.nome || 'Sem nome') + '</h3><p>' + [c.idade ? c.idade + ' anos' : '', c.profissao, n + (n === 1 ? ' ferramenta preenchida' : ' ferramentas preenchidas')].filter(Boolean).map(esc).join(' · ') + '</p></div>' +
+          '<div class="acts">' + (on ? '<span class="btn sm on">Selecionado</span>' : '<button type="button" class="btn sm" data-act="client-pick" data-id="' + esc(c.id) + '">Selecionar</button>') +
+          '<button type="button" class="btn sm" data-act="client-edit" data-id="' + esc(c.id) + '">Editar</button><button type="button" class="btn sm danger" data-act="client-del" data-id="' + esc(c.id) + '">Excluir</button></div></div>';
+      }).join('') + '</div>';
+    }
+    $('#main').innerHTML = h;
+  }
+  function clientModal(id) {
+    const c = id ? state.clients.filter(function (x) { return x.id === id; })[0] : null, v = c || {};
+    const body = '<div class="form">' + CLIENT_FIELDS.map(function (f) { return fieldHtml(Object.assign({}, f, { k: 'c_' + f.k }), (function () { const o = {}; o['c_' + f.k] = v[f.k] === undefined ? '' : v[f.k]; return o; })()); }).join('') + '</div>';
+    openModal({
+      title: c ? 'Editar cliente' : 'Novo cliente', body: body, confirm: 'Salvar',
+      onConfirm: function (modal) {
+        const data = {};
+        CLIENT_FIELDS.forEach(function (f) { const el = $('[data-k="c_' + f.k + '"]', modal); data[f.k] = f.t === 'text' || f.t === 'textarea' ? el.value.trim() : parseNum(el.value, f.t); });
+        if (!data.nome) { toast('Informe o nome do cliente.', true); return false; }
+        if (c) Object.assign(c, data);
+        else { const novo = Object.assign({ id: uid(), tools: {}, criadoEm: new Date().toISOString() }, data); state.clients.push(novo); state.activeClientId = novo.id; }
+        scheduleSave(); renderApp(); toast(c ? 'Cliente atualizado.' : 'Cliente criado e selecionado.');
+      }
+    });
+  }
+  function renderTool(id) {
+    const def = toolDef(id), g = TOOL_GROUPS.filter(function (x) { return x.id === def.group; })[0];
+    current.inputs = getInputs(id);
+    $('#main').innerHTML = header(g.name, def.name, def.desc, '<button type="button" class="btn sm ghost" data-act="reset">Restaurar exemplo</button>') +
+      '<div class="tool' + (def.wide ? ' wide' : '') + '"><form class="panel form" id="toolForm" novalidate>' + formHtml(def, current.inputs) + '</form><section class="results" id="toolResults"></section></div>';
+    $('#toolForm').addEventListener('submit', function (e) { e.preventDefault(); });
+    renderResults();
+  }
+  function renderForm() {
+    const def = toolDef(current.toolId);
+    $('#toolForm').innerHTML = formHtml(def, current.inputs);
+  }
+  function renderResults() {
+    resultsQueued = false;
+    const box = $('#toolResults');
+    if (!box || current.route !== 'tool') return;
+    chartReg = {};
+    try { box.innerHTML = resultsHtml(current.toolId, runTool(current.toolId, current.inputs).v); }
+    catch (e) { box.innerHTML = '<div class="warn-box">Não foi possível calcular com esses valores. Revise os campos.</div>'; }
+  }
+  function scheduleResults() {
+    if (resultsQueued) return;
+    resultsQueued = true;
+    window.requestAnimationFrame(renderResults);
+  }
+  function commitInputs() {
+    const jaTinha = !!toolStore()[current.toolId];
+    toolStore()[current.toolId] = clone(current.inputs);
+    scheduleSave();
+    if (!jaTinha) renderSide();
+    scheduleResults();
+  }
+  function renderRelatorio() {
+    const c = activeClient(), s = state.settings, store = toolStore();
+    const feitas = TOOL_DEFS.filter(function (d) { return !!store[d.id]; });
+    let h = header('Entrega', 'Relatório do cliente', 'Reúne as ferramentas preenchidas. Imprima ou salve em PDF.', feitas.length ? '<button type="button" class="btn primary" data-act="print">Imprimir ou salvar PDF</button>' : '');
+    if (!feitas.length) { $('#main').innerHTML = h + '<div class="empty"><b>Nada para mostrar ainda</b>Preencha ao menos uma ferramenta' + (c ? ' para ' + esc(c.nome) : '') + ' e ela aparece aqui.</div>'; return; }
+    h += '<div class="checks">' + feitas.map(function (d) { return '<button type="button" class="btn sm' + (state.reportSkip[d.id] ? '' : ' on') + '" data-act="rep-toggle" data-id="' + d.id + '">' + esc(d.name) + '</button>'; }).join('') + '</div>';
+    const parts = String(s.empresa || BRAND_DEFAULT).trim().split(/\s+/);
+    chartReg = {};
+    h += '<article class="report"><div class="rep-head"><div class="brand"><div class="brand-mark">' + esc(parts[0].charAt(0).toUpperCase()) + '</div><div class="brand-name"><b>' + esc(parts[0]) + '</b> ' + esc(parts.slice(1).join(' ')) + '<small>' + esc(s.tagline) + '</small></div></div>' +
+      '<div class="rep-meta"><b>' + esc(c ? c.nome : 'Planejamento financeiro') + '</b>' + esc(new Date().toLocaleDateString('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' })) + (s.consultor ? '<br>' + esc(s.consultor) + (s.registro ? ' · ' + esc(s.registro) : '') : '') + '</div></div>';
+    feitas.filter(function (d) { return !state.reportSkip[d.id]; }).forEach(function (d) {
+      let v;
+      try { v = runTool(d.id, getInputs(d.id)).v; } catch (e) { return; }
+      h += '<section class="rep-sec"><h2>' + icon(d.icon) + esc(d.name) + '</h2>' + (v.kpis.length ? kpisHtml(v.kpis.slice(0, 4)) : '') + '<div class="insight">' + v.insight + '</div>' + (v.chart || '') + '</section>';
+    });
+    h += '<div class="rep-foot">' + esc(DISCLAIMER) + (s.contato ? '<br>' + esc(s.empresa) + ' · ' + esc(s.contato) : '') + '</div></article>';
+    $('#main').innerHTML = h;
+  }
+  function renderConfig() {
+    const s = state.settings, p = s.premissas;
+    const f = function (path, label, value, t, tip) {
+      const a = 'data-cfg="' + path + '"';
+      return '<label class="f"><span class="fl">' + esc(label) + tipIcon(tip) + '</span>' + (t === 'text' ? '<input class="plain" ' + a + ' data-t="text" autocomplete="off" value="' + esc(value) + '">' : numberBox(a, value, t)) + '</label>';
+    };
+    $('#main').innerHTML = header('Ajustes', 'Configurações', 'Marca do relatório, premissas de mercado e cópia de segurança.') + '<div class="cfg">' +
+      '<div class="panel form"><h3 class="card-t">Marca e consultor</h3>' + f('empresa', 'Nome da consultoria', s.empresa, 'text') + f('tagline', 'Assinatura', s.tagline, 'text') + f('consultor', 'Consultor responsável', s.consultor, 'text') +
+      f('registro', 'Registro', s.registro, 'text', 'Ex.: Consultor CVM, CFP, CEA.') + f('contato', 'Contato no rodapé do relatório', s.contato, 'text') + '</div>' +
+      '<div style="display:grid;gap:18px"><div class="panel form"><h3 class="card-t">Premissas de mercado</h3>' + f('premissas.selic', 'Selic a.a.', p.selic, 'pct') + f('premissas.cdi', 'CDI a.a.', p.cdi, 'pct') +
+      f('premissas.ipca', 'IPCA em 12 meses', p.ipca, 'pct') + f('premissas.tr', 'TR a.a.', p.tr, 'pct', 'Usada no rendimento da poupança.') + '</div>' +
+      '<div class="panel form"><h3 class="card-t">Cópia de segurança</h3><p class="card-s" style="margin:0">Os dados ficam apenas neste navegador. Exporte um arquivo de tempos em tempos.</p><div class="row-btns"><button type="button" class="btn" data-act="export">Exportar</button><button type="button" class="btn" data-act="import">Importar</button><button type="button" class="btn danger" data-act="wipe">Apagar tudo</button></div><input type="file" id="importFile" accept="application/json,.json" hidden></div></div></div>';
+    $('#importFile').addEventListener('change', onImportFile);
+  }
+  function parseRoute() {
+    const h = (window.location.hash || '').replace(/^#\/?/, '');
+    if (h.indexOf('t/') === 0 && toolDef(h.slice(2))) return { route: 'tool', toolId: h.slice(2) };
+    return { route: ROUTES_FIXED.indexOf(h) >= 0 ? h : 'painel', toolId: null };
+  }
+  function renderMain() {
+    chartReg = {};
+    if (current.route === 'tool') renderTool(current.toolId);
+    else if (current.route === 'clientes') renderClientes();
+    else if (current.route === 'relatorio') renderRelatorio();
+    else if (current.route === 'config') renderConfig();
+    else renderPainel();
+  }
+  function renderApp() {
+    const r = parseRoute();
+    current.route = r.route; current.toolId = r.toolId; current.inputs = null;
+    renderSide(); renderMain();
+  }
+
+  /* =====================================================================
+     8. EVENTOS — todos registrados uma única vez, por delegação
+     ===================================================================== */
+  function readField(el) {
+    if (el.type === 'checkbox') return el.checked;
+    if (el.tagName === 'SELECT') return el.dataset.num ? Number(el.value) : el.value;
+    if (el.dataset.t === 'text') return el.value;
+    return parseNum(el.value, el.dataset.t);
+  }
+  function applyToolField(el) {
+    const k = el.dataset.k, v = readField(el);
+    if (el.dataset.row !== undefined) current.inputs[k][Number(el.dataset.row)][el.dataset.col] = v;
+    else current.inputs[k] = v;
+    if (current.toolId === 'sucessao' && k === 'uf') {
+      const u = ITCMD_UF.filter(function (x) { return x.uf === v; })[0];
+      if (u) { current.inputs.aliquota = u.ref; renderForm(); }
+    }
+    commitInputs();
+  }
+  function applyConfigField(el) {
+    const path = el.dataset.cfg.split('.'), v = readField(el);
+    if (path.length === 2) state.settings[path[0]][path[1]] = v; else state.settings[path[0]] = v;
+    scheduleSave();
+    if (path[0] === 'empresa' || path[0] === 'tagline') renderSide();
+  }
+  function onMainInput(e) {
+    const el = e.target;
+    if (el.type === 'checkbox' || el.tagName === 'SELECT') return;
+    if (el.dataset.cfg) applyConfigField(el);
+    else if (el.dataset.k && current.route === 'tool' && current.inputs) applyToolField(el);
+  }
+  function onMainChange(e) {
+    const el = e.target;
+    if (el.type === 'checkbox' || el.tagName === 'SELECT') {
+      if (el.dataset.cfg) applyConfigField(el);
+      else if (el.dataset.k && current.route === 'tool' && current.inputs) applyToolField(el);
+      return;
+    }
+    if (el.dataset.t && el.dataset.t !== 'text' && el.tagName === 'INPUT') el.value = fmtInput(parseNum(el.value, el.dataset.t), el.dataset.t);
+  }
+  function onMainFocus(e) {
+    const el = e.target;
+    if (el.tagName === 'INPUT' && el.dataset.t && el.dataset.t !== 'text' && el.select) el.select();
+  }
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify({ app: DB_NAME, exportadoEm: new Date().toISOString(), state: state }, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'garcia-wealth-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    window.setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    toast('Cópia de segurança exportada.');
+  }
+  function onImportFile(e) {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function () {
+      let data;
+      try { data = JSON.parse(String(reader.result)); } catch (err) { toast('Arquivo inválido.', true); return; }
+      if (!data || !data.state || data.app !== DB_NAME) { toast('Este arquivo não é uma cópia de segurança desta ferramenta.', true); return; }
+      openModal({
+        title: 'Importar cópia de segurança', text: 'Os dados atuais serão substituídos pelos do arquivo. Esta ação não pode ser desfeita.', confirm: 'Substituir dados', danger: true,
+        onConfirm: function () { state = normalizeState(data.state); scheduleSave(); renderApp(); toast('Dados importados.'); }
+      });
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  }
+  function onMainClick(e) {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const act = b.dataset.act, def = current.toolId ? toolDef(current.toolId) : null;
+    if (act === 'choice') { current.inputs[b.dataset.k] = Number(b.dataset.v); renderForm(); commitInputs(); }
+    else if (act === 'addrow' || act === 'delrow') {
+      const f = def.fields.filter(function (x) { return x.k === b.dataset.k; })[0], rows = current.inputs[f.k];
+      if (act === 'delrow') rows.splice(Number(b.dataset.row), 1);
+      else { const novo = {}; f.cols.forEach(function (c) { novo[c.k] = c.t === 'text' ? '' : (c.t === 'select' ? c.o[0][0] : (c.t === 'check' ? false : 0)); }); rows.push(novo); }
+      renderForm(); commitInputs();
+      if (act === 'addrow') { const inp = $('#toolForm [data-row="' + (rows.length - 1) + '"]'); if (inp) inp.focus(); }
+    }
+    else if (act === 'preset') {
+      const mp = MODEL_PORTFOLIOS[b.dataset.v];
+      current.inputs.rows.forEach(function (r) { r.alvo = mp[r.id] || 0; });
+      renderForm(); commitInputs();
+    }
+    else if (act === 'reset') { delete toolStore()[current.toolId]; scheduleSave(); renderApp(); toast('Exemplo restaurado.'); }
+    else if (act === 'client-new') clientModal(null);
+    else if (act === 'client-edit') clientModal(b.dataset.id);
+    else if (act === 'client-pick') { state.activeClientId = b.dataset.id; scheduleSave(); renderApp(); }
+    else if (act === 'client-del') {
+      const c = state.clients.filter(function (x) { return x.id === b.dataset.id; })[0];
+      openModal({
+        title: 'Excluir cliente', text: 'As simulações de ' + (c ? c.nome : 'este cliente') + ' serão apagadas. Esta ação não pode ser desfeita.', confirm: 'Excluir', danger: true,
+        onConfirm: function () { state.clients = state.clients.filter(function (x) { return x.id !== b.dataset.id; }); if (state.activeClientId === b.dataset.id) state.activeClientId = null; scheduleSave(); renderApp(); toast('Cliente excluído.'); }
+      });
+    }
+    else if (act === 'rep-toggle') { if (state.reportSkip[b.dataset.id]) delete state.reportSkip[b.dataset.id]; else state.reportSkip[b.dataset.id] = true; scheduleSave(); renderRelatorio(); }
+    else if (act === 'print') window.print();
+    else if (act === 'export') exportBackup();
+    else if (act === 'import') $('#importFile').click();
+    else if (act === 'wipe') {
+      openModal({
+        title: 'Apagar todos os dados', text: 'Clientes, simulações e configurações serão apagados deste navegador. Esta ação não pode ser desfeita.', confirm: 'Apagar tudo', danger: true,
+        onConfirm: function () { state = defaultState(); scheduleSave(); renderApp(); toast('Dados apagados.'); }
+      });
+    }
+  }
+  function placeTip(x, y) {
+    const tip = $('#tip'), w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(window.innerWidth - w - 8, x + 14)) + 'px';
+    tip.style.top = Math.max(8, Math.min(window.innerHeight - h - 8, y + 14)) + 'px';
+  }
+  function hideTip() { $('#tip').style.display = 'none'; }
+  function onPointerMove(e) {
+    const tip = $('#tip');
+    const q = e.target.closest ? e.target.closest('[data-tip]') : null;
+    if (q) { tip.textContent = q.dataset.tip; tip.style.display = 'block'; placeTip(e.clientX, e.clientY); return; }
+    const ch = e.target.closest ? e.target.closest('.chart[data-chart]') : null;
+    const reg = ch ? chartReg[ch.dataset.chart] : null;
+    document.querySelectorAll('.chart .xh').forEach(function (l) { l.style.display = 'none'; });
+    if (!reg) { hideTip(); return; }
+    const svg = $('svg', ch), box = svg.getBoundingClientRect(), o = reg.o, P = CHART_PAD, W = reg.w;
+    const vx = (e.clientX - box.left) / box.width * W;
+    if (vx < P.l - 12 || vx > W - P.r + 12 || e.clientY < box.top || e.clientY > box.bottom) { hideTip(); return; }
+    const k = clamp(Math.round((vx - P.l) / (W - P.l - P.r) * (reg.n - 1)), 0, reg.n - 1);
+    const x = P.l + (W - P.l - P.r) * (reg.n > 1 ? k / (reg.n - 1) : 0.5);
+    const line = $('.xh', svg);
+    line.setAttribute('x1', x); line.setAttribute('x2', x); line.style.display = 'block';
+    const fmt = o.fmtTip || brl;
+    let h = '<div class="tt">' + esc(o.labels[k]) + '</div>' + o.series.map(function (s) { return '<div class="tr2"><span><i style="background:var(' + s.c + ')"></i>' + esc(s.name) + '</span><b>' + esc(fmt(s.values[k])) + '</b></div>'; }).join('');
+    if (o.band) h += '<div class="tr2"><span>Cenário bom</span><b>' + esc(fmt(o.band.hi[k])) + '</b></div><div class="tr2"><span>Cenário ruim</span><b>' + esc(fmt(o.band.lo[k])) + '</b></div>';
+    tip.innerHTML = h; tip.style.display = 'block'; placeTip(e.clientX, e.clientY);
+  }
+  function bindEvents() {
+    const main = $('#main');
+    main.addEventListener('input', onMainInput);
+    main.addEventListener('change', onMainChange);
+    main.addEventListener('click', onMainClick);
+    main.addEventListener('focusin', onMainFocus);
+    document.addEventListener('mousemove', onPointerMove);
+    document.addEventListener('scroll', hideTip, true);
+    window.addEventListener('hashchange', renderApp);
+    $('#clientSelect').addEventListener('change', function (e) { state.activeClientId = e.target.value || null; scheduleSave(); renderApp(); });
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden' && saveQueued) persistNow(); });
+  }
+  function init() {
+    loadState().then(function () {
+      bindEvents();
+      renderApp();
+      if (memoryOnly) toast('Este navegador bloqueou o armazenamento local: os dados não serão salvos nesta sessão.', true);
+    });
+  }
+
+  /* Biblioteca de cálculo exposta apenas para testes automatizados (Node) */
+  const CALC = {
+    rateMonthly: rateMonthly, annuityFactor: annuityFactor, annuityDueFactor: annuityDueFactor, fvFactor: fvFactor,
+    irRendaFixa: irRendaFixa, iofPct: iofPct, aliquotaRegressiva: aliquotaRegressiva, irpfTabela: irpfTabela, irpfDevido: irpfDevido,
+    gaussianMatrix: gaussianMatrix, percentile: percentile, lognormalReturn: lognormalReturn, portfolioStats: portfolioStats,
+    range95: range95, stressImpact: stressImpact, simulateGrowth: simulateGrowth, necessarioAposentadoria: necessarioAposentadoria,
+    simulateWithdrawals: simulateWithdrawals, saqueSustentavel: saqueSustentavel, poupancaMensal: poupancaMensal, fatorBruto: fatorBruto, previdenciaLongoPrazo: previdenciaLongoPrazo,
+    amortizationSchedule: amortizationSchedule, benchAposentadoria: benchAposentadoria, irCompleta: irCompleta,
+    computeJuros: computeJuros, computeIndep: computeIndep, computeRenda: computeRenda, computeMetas: computeMetas, computeRaioX: computeRaioX,
+    computeRisco: computeRisco, computeCustos: computeCustos, computeRendaFixa: computeRendaFixa, computeAlocacao: computeAlocacao,
+    computePgbl: computePgbl, computeProtecao: computeProtecao, computeSucessao: computeSucessao, computeImovel: computeImovel,
+    TOOL_DEFS: TOOL_DEFS, ASSET_CLASSES: ASSET_CLASSES, ASSET_CORR: ASSET_CORR, MODEL_PORTFOLIOS: MODEL_PORTFOLIOS,
+    STRESS_SCENARIOS: STRESS_SCENARIOS, DEFAULT_PREMISSAS: DEFAULT_PREMISSAS, RISK_QUESTIONS: RISK_QUESTIONS
+  };
+
+  /* =====================================================================
+     9. INICIALIZAÇÃO — único ponto de entrada
+     ===================================================================== */
+  if (typeof document === 'undefined') {
+    if (typeof module !== 'undefined' && module.exports) module.exports = CALC;
+    return;
+  }
+  document.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+</body>
+</html>

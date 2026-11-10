@@ -159,3 +159,46 @@ Fora de escopo por decisão de arquitetura (arquivo único 100% local): contas/s
 ## Comandos úteis
 
 Não há passo de build. Para testar: abrir o `.html` diretamente no navegador. Para validar antes de entregar uma versão: extrair o `<script>` para `.js` e rodar `node --check`.
+
+---
+
+# GARCIA WEALTH — Ferramentas do consultor (`consultor.html`)
+
+Segundo app do repositório, independente do GoalQuest: a estação de trabalho do usuário como consultor de investimentos (marca provisória **GARCIA WEALTH**, editável em Configurações). Mesmas decisões técnicas e as mesmas 7 regras de estrutura do GoalQuest (arquivo único, JS vanilla numa IIFE, sem `onclick` inline, constantes no topo, um único `init` em `DOMContentLoaded`, IndexedDB com estado versionado).
+
+## Direção de produto (pedido explícito do usuário)
+
+- Visual **minimalista, preto com verde-musgo** (`--accent: #97aa63`). Nada de poluição: pouco texto à mostra, cada ferramenta autoexplicativa.
+- Cada ferramenta mostra, nesta ordem: 3–4 números-chave, **uma frase de leitura para o cliente** (`.insight`), um gráfico/tabela e o detalhe. A metodologia fica recolhida em "Como é calculado" (`METHODS`).
+- "Sério" = contas conferidas. Toda fórmula nova precisa de teste com valor esperado calculado de forma independente.
+
+## Ferramentas (v1.0.0, schema v1)
+
+Diagnóstico: Raio-X financeiro (nota 0–100), Perfil de risco (tolerância × capacidade, risco em reais), Raio-X de custos.
+Planejamento: Juros compostos, Independência financeira (Monte Carlo), Renda com guardrails, Metas.
+Investimentos: Renda fixa (líquido de IR, equivalência LCI/LCA × CDB, marcação a mercado), Alocação e rebalanceamento (carteiras-modelo, estresse).
+Impostos e proteção: PGBL e IR, Reserva e seguro de vida, Sucessão (ITCMD/inventário), Imóvel e financiamento.
+Entrega: Relatório do cliente (impressão/PDF em tema claro), Clientes, Configurações (marca, premissas, backup JSON).
+
+## Arquitetura
+
+- `TOOL_DEFS` (campos de cada ferramenta) + `TOOL_IMPL` (`compute` puro → `view` que devolve `{ kpis, insight, chart, blocks, warn, side }`). Formulário e resultados são gerados a partir disso; para criar uma ferramenta, adicione nos dois e em `METHODS`.
+- Funções de cálculo são **puras** (sem DOM). O objeto `CALC` no fim do arquivo é exportado só quando o script roda no Node (testes); no navegador nada vaza.
+- Dados por cliente em `client.tools[toolId]`; sem cliente selecionado, em `state.sandbox.tools`. Campos com `d: function (env)` puxam o padrão da ficha do cliente (`env.facts`) ou das premissas (`env.premissas`).
+- Monte Carlo com semente fixa (`MC_SEED`): os números não "tremem" ao digitar.
+- Gráficos SVG próprios (`lineChart`, `barList`) com tooltip; paleta `--c1…--c5` validada para daltonismo no fundo escuro e trocada no `@media print`.
+
+## Regras de negócio que não podem regredir
+
+- Constantes fiscais e de mercado ficam no topo (`IR_RENDA_FIXA`, `IRPF_ANUAL`, `IRPF_REDUTOR`, `PREV_REGRESSIVA`, `ITCMD_UF`, `DEFAULT_PREMISSAS`). Referência: nov/2026 (Selic 13,75%; LCI/LCA seguem isentas; redutor da Lei 15.270/2025; LC 227/2026 no ITCMD). Rever a cada mudança de lei.
+- Renda com guardrails: a regra compara a retirada com a **sustentável para o prazo restante** (+3 anos de margem) e ancora em `min(relação inicial, 1)`. Não voltar à regra "taxa de retirada × taxa inicial": ela produz "100% de sucesso" cortando a renda sem limite. O indicador honesto é "chance de manter a renda" (dinheiro dura **e** renda não cai mais de 20%).
+- Perfil de risco: vale o **menor** entre tolerância e capacidade. É apoio à conversa, não substitui o suitability formal.
+- O relatório sempre leva o `DISCLAIMER`.
+
+## Validação antes de entregar
+
+```
+node tests/consultor-calc.test.js   # fórmula por fórmula (extrai o <script> do HTML)
+node tests/consultor-e2e.js         # Playwright via file://
+```
+Além do `node --check` no script extraído (regra 7).
