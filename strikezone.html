@@ -581,7 +581,10 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
 .pipn { font-family: var(--display); font-weight: 800; font-size: 16px; color: var(--text); letter-spacing: 0.04em; }
 .plate.sq { color: #9be37a; }
 .board-team-head { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 4px; font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; letter-spacing: 0.04em; }
-.board-team table { width: 100%; border-collapse: collapse; color: var(--text); font-variant-numeric: tabular-nums; }
+.board-team table { width: 100%; border-collapse: collapse; color: var(--text); font-variant-numeric: tabular-nums; table-layout: fixed; }
+/* larguras fixas: as colunas dos dois times ficam alinhadas (com largura automática a coluna de dinheiro vazia do inimigo encolhia e deslocava as outras) */
+.board-team th:first-child { width: 32%; }
+.board-team td:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .board-team th { font-family: var(--display); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 600; text-align: right; padding: 4px 8px; }
 .board-team th:first-child, .board-team td:first-child { text-align: left; }
 .board-team td { padding: 5px 8px; text-align: right; border-top: 1px solid rgba(255, 255, 255, 0.06); }
@@ -26214,8 +26217,9 @@ function updateMarkers(l, subj) {
     const key = cls + '|' + text + '|' + sub;
     if (e.key !== key) { e.key = key; e.el.className = 'mk ' + cls; e.el.innerHTML = escapeHtml(text) + (sub ? '<small>' + escapeHtml(sub) + '</small>' : ''); }
     if (!e.shown) { e.shown = true; e.el.hidden = false; }
-    // posição na tela; o desenho espera o desembaraço (marcadores um em cima do outro sobem)
-    list.push({ e, px: (sx * 0.5 + 0.5) * W, py: (0.5 - sy * 0.5) * H, w: 30 + (sub ? Math.min(220, sub.length * 6.4) : 0), h: sub ? 42 : 28, rot: cls.indexOf('enemy') >= 0, prio: prio || 0 });
+    // posição na tela; o desenho espera o desembaraço (marcadores um em cima do outro sobem). Só o quadradinho do inimigo marcado
+    // gira (vira losango): a marcação 'ping p-enemy' também casava com "enemy" e saía com o ícone e o texto na diagonal
+    list.push({ e, px: (sx * 0.5 + 0.5) * W, py: (0.5 - sy * 0.5) * H, w: 30 + (sub ? Math.min(220, sub.length * 6.4) : 0), h: sub ? 42 : 28, rot: cls === 'enemy', prio: prio || 0 });
     used++;
   };
   if (subj && game.state === 'playing') {
