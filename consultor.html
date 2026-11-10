@@ -70,7 +70,7 @@ main { padding: 38px 46px 80px; min-width: 0; max-width: 1320px; width: 100%; }
 .tool.wide { grid-template-columns: 1fr; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
 .form { display: grid; gap: 14px; }
-.tool:not(.wide) .form { position: sticky; top: 24px; }
+.tool:not(.wide) .form { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; }
 .tool.wide .form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .tool.wide .form .sec, .tool.wide .form .tbl, .tool.wide .form .presets { grid-column: 1 / -1; }
 .sec { font-size: 10.5px; letter-spacing: .13em; text-transform: uppercase; color: var(--muted); padding-top: 12px; margin-top: 4px; border-top: 1px solid var(--line); }
@@ -126,6 +126,7 @@ select option { background: var(--surface); }
 .kpi-l { font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
 .kpi-v { font-size: 25px; font-weight: 600; letter-spacing: -.02em; margin-top: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi.hero .kpi-v { font-size: 31px; }
+.tool:not(.wide) .kpis:not(.k4) .kpi.mid .kpi-v { font-size: 23px; margin-top: 12px; }
 .kpi.long .kpi-v { font-size: 19px; line-height: 1.3; white-space: normal; margin-top: 10px; }
 .kpi-s { font-size: 12.5px; color: var(--text2); margin-top: 3px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 7px; vertical-align: 1px; }
@@ -254,7 +255,7 @@ table.t tfoot td { border-top: 1px solid var(--line2); border-bottom: 0; font-we
   .side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
   main { padding: 26px 20px 60px; }
   .tool, .grid2, .strip, .cfg { grid-template-columns: 1fr; }
-  .tool:not(.wide) .form { position: static; }
+  .tool:not(.wide) .form { position: static; max-height: none; }
   .tool.wide .form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -1732,8 +1733,8 @@ table.t tfoot td { border-top: 1px solid var(--line2); border-bottom: 0; font-we
         ? 'Se o provedor faltar, a família precisaria de <b>' + brl(r.totalNec) + '</b> e teria ' + brl(r.totalRec) + '. Um seguro de <b>' + brl(r.seguro) + '</b> fecha a diferença.'
         : 'Os recursos atuais (' + brl(r.totalRec) + ') <b>já cobrem</b> as necessidades da família (' + brl(r.totalNec) + ').') +
         (r.reservaFalta > 0 ? ' Na reserva de emergência, faltam ' + brl(r.reservaFalta) + '.' : ' A reserva de emergência está completa.'),
-      chart: '<div class="grid2">' + card('O que a família precisaria', 'Total: ' + brl(r.totalNec), barList(r.necessidades.map(function (x) { return { l: x.l, v: x.v, t: brl(x.v) }; }), { max: Math.max(r.totalNec, r.totalRec) })) +
-        card('O que já existe', 'Total: ' + brl(r.totalRec), barList(r.recursos.map(function (x) { return { l: x.l, v: x.v, t: brl(x.v), c: '--c2' }; }), { max: Math.max(r.totalNec, r.totalRec) })) + '</div>',
+      chart: card('Necessidades × recursos', 'Precisaria de ' + brl(r.totalNec) + ' · já existem ' + brl(r.totalRec), legendTwo('O que a família precisaria', 'O que já existe') +
+        barList(r.necessidades.map(function (x) { return { l: x.l, v: x.v, t: brl(x.v) }; }).concat(r.recursos.map(function (x) { return { l: x.l, v: x.v, t: brl(x.v), c: '--c2' }; })))),
       blocks: []
     };
   }
@@ -1976,7 +1977,7 @@ table.t tfoot td { border-top: 1px solid var(--line2); border-bottom: 0; font-we
     return h;
   }
   function kpisHtml(kpis) {
-    return '<div class="kpis' + (kpis.length === 4 ? ' k4' : '') + '">' + kpis.map(function (k, n) { return '<div class="kpi' + (n === 0 ? ' hero' : '') + (String(k.v).replace(/<[^>]*>/g, '').length > 13 ? ' long' : '') + '"><div class="kpi-l">' + esc(k.l) + '</div><div class="kpi-v">' + k.v + '</div>' + (k.s ? '<div class="kpi-s">' + k.s + '</div>' : '') + '</div>'; }).join('') + '</div>';
+    return '<div class="kpis' + (kpis.length === 4 ? ' k4' : '') + '">' + kpis.map(function (k, n) { return '<div class="kpi' + (n === 0 ? ' hero' : '') + (String(k.v).replace(/<[^>]*>/g, '').length > 13 ? ' long' : (String(k.v).replace(/<[^>]*>/g, '').length > 10 ? ' mid' : '')) + '"><div class="kpi-l">' + esc(k.l) + '</div><div class="kpi-v">' + k.v + '</div>' + (k.s ? '<div class="kpi-s">' + k.s + '</div>' : '') + '</div>'; }).join('') + '</div>';
   }
   function resultsHtml(id, v) {
     return (v.warn ? '<div class="warn-box">' + esc(v.warn) + '</div>' : '') + (v.kpis.length ? kpisHtml(v.kpis) : '') + '<div class="insight">' + v.insight + '</div>' + (v.side ? '<div class="grid2">' + (v.chart || '') + (v.blocks || []).join('') + '</div>' : (v.chart || '') + (v.blocks || []).join('')) +
