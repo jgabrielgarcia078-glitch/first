@@ -15039,6 +15039,11 @@ function findPath(sx, sz, tx, tz, sy, ty) {
   nav.heapSize = 0;
   const W = world.w, D = world.d, N = world.n, two = nav.U > 0;
   const gc = navCellOf(g), gx = gc % W, gz = Math.floor(gc / W);
+  // veículo parado: as células embaixo dele não entram no caminho (só o custo não bastava: com a heurística forte dos mapas
+  // grandes o A* passava reto por dentro do jipe e o bot ficava empurrando). Valem as vizinhas da largada (para sair de perto
+  // dele) e, quando o objetivo é o próprio veículo (embarcar), só o custo. Se assim não há caminho, tenta de novo só com o custo.
+  const vehHard = !nav.vehSoft && !nav.veh[gc], sc0 = navCellOf(s), sx0 = sc0 % W, sz0 = Math.floor(sc0 / W);
+  let vehSkipped = false;
   nav.stamp[s] = S; nav.g[s] = 0; nav.parent[s] = -1;
   heapPush(s, hw * navHeuristic(navCellOf(s), gx, gz));
   let found = false, iter = 0;
@@ -15057,6 +15062,7 @@ function findPath(sx, sz, tx, tz, sy, ty) {
       const nx = cx + nb[0], nz = cz + nb[1];
       if (nx < 0 || nz < 0 || nx >= W || nz >= D) continue;
       const ni = nz * W + nx;
+      if (vehHard && nav.veh[ni] && (Math.abs(nx - sx0) > 1 || Math.abs(nz - sz0) > 1)) { vehSkipped = true; continue; }
       for (let n = ni, u = two ? nav.upOf[ni] : 0; n >= 0; n = u ? N + u - 1 : -1, u = u ? nav.upNext[u - 1] : 0) {
         if (!nav.walk[n] || nav.closed[n] === S) continue;
         let step;
@@ -15078,6 +15084,7 @@ function findPath(sx, sz, tx, tz, sy, ty) {
     }
   }
   nav.calls = (nav.calls || 0) + 1; nav.iters = (nav.iters || 0) + iter;
+  if (!found && vehSkipped) { nav.vehSoft = true; try { return findPath(sx, sz, tx, tz, sy, ty); } finally { nav.vehSoft = false; } }
   if (!found) { nav.fails = (nav.fails || 0) + 1; nav.lastFail = [sx, sz, tx, tz]; if (nav.failMemo) { if (nav.failMemo.size > 512) nav.failMemo.clear(); nav.failMemo.set(memoKey, game.time); } return null; }
   const pts = [], lad = [];
   let c = end, guard = 0;
@@ -18643,8 +18650,8 @@ function movePlayer(p, dt) {
   if (p.stamina > 0) p.stamina = bhopDrill() && p === game.local ? 0 : Math.max(0, p.stamina - STAMINA_RECOVERY * dt);
   if (p.onGround && inp.jump && p.jumpReady) {
     // pulo seguido logo após cair sai mais baixo (stamina)
-    p.vel[1] = JUMP_SPEED * (p.stamina > 0 ? (STAMINA_MAX - p.stamina) / STAMINA_MAX : 1); p.onGround = false; p.jumpReady = false; p.jumped = true;
-    p.stamina = Math.max(p.stamina || 0, STAMINA_JUMP_COST * JUMP_SPEED / U);
+    p.vel[1] = JUMP_SPEED * (p.stamina > 0 ? Math.max(0, STAMINA_MAX - p.stamina) / STAMINA_MAX : 1); p.onGround = false; p.jumpReady = false; p.jumped = true;
+    p.stamina = Math.min(STAMINA_MAX, Math.max(p.stamina || 0, STAMINA_JUMP_COST * JUMP_SPEED / U));
     p.duckLift = false;
     if (!p.input.walk) addNoise(p.pos[0], p.pos[1], p.pos[2], 14, p.team, 'step');
   }
@@ -18655,7 +18662,7 @@ function movePlayer(p, dt) {
   } else if (p.onGround) {
     applyFriction(p, dt);
     // stamina: no chão a velocidade cai na proporção (referência de 70 quadros/s, como no CS:GO)
-    if (p.stamina > 0) { const r = Math.pow((STAMINA_MAX - p.stamina) / STAMINA_MAX, dt * 70); p.vel[0] *= r; p.vel[2] *= r; }
+    if (p.stamina > 0) { const r = Math.pow(Math.max(0, STAMINA_MAX - p.stamina) / STAMINA_MAX, dt * 70); p.vel[0] *= r; p.vel[2] *= r; }
     if (wish > 0) accelerate(p, wx, wz, wish, GROUND_ACCEL, dt, wish);
   } else if (wish > 0) {
     const aa = AIR_ACCEL * (p.legend === 'orbita' && game.arena && arenasMode() ? 2.4 : 1);
@@ -18740,7 +18747,9 @@ function depenetrate(p) {
 }
 // pousou: stamina do pouso (CS:GO) e imprecisão de pouso na arma
 function landed(p, fall) {
-  p.stamina = Math.max(p.stamina || 0, STAMINA_LAND_COST * fall / U);
+  // nunca passa do máximo: numa queda muito rápida (salto da nave, plataforma de salto) passava, e o freio do chão
+  // (potência de base negativa) virava NaN — o corpo sumia do mapa
+  p.stamina = Math.min(STAMINA_MAX, Math.max(p.stamina || 0, STAMINA_LAND_COST * fall / U));
   const def = currentDef(p), c = def && !def.apex ? CS_ACC[def.id] : null;
   if (c && fall > 3) p.ws.fireInacc += c[17] * c[4] * 0.001 * clamp(fall / JUMP_SPEED, 0, 1.5);
   p.duckLift = false;
@@ -24760,7 +24769,7 @@ function botNavigate(p, dt) {
   if (p.onGround && !p.climb && !p.veh && !b.detour && now >= (b.offNavAt || 0)) {
     b.offNavAt = now + OFFNAV_EVERY;
     b.offNavN = botOffNav(p) ? (b.offNavN || 0) + 1 : 0;
-    if (b.offNavN >= 2) { const ex = offNavExit(p); b.offNavN = 0; if (ex) { b.detour = ex; b.detourUntil = now + 4; b.path = null; b.repathAt = 0; } }
+    if (b.offNavN >= 2) { const ex = offNavExit(p); b.offNavN = 0; if (ex) { b.detour = ex; b.detourUntil = now + 4; b.path = null; b.repathAt = 0; if (debugMode) game.debugLog.push({ t: now, type: 'offnav', who: p.name, x: p.pos[0], y: p.pos[1], z: p.pos[2], to: ex }); } }
   }
   // subindo/descendo a escada de mão: o movimento é da escada; nada de detector de travada (contava a escada como travada)
   if (p.climb) { b.progPos[0] = p.pos[0]; b.progPos[1] = p.pos[2]; b.progT = now; b.stuck = 0; return; }
