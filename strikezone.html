@@ -1143,7 +1143,7 @@ table.recent tr.win td:nth-child(4) { color: var(--money); } table.recent tr.los
 // =====================================================================
 // 1. CONSTANTES (todas declaradas antes de qualquer função que as use)
 // =====================================================================
-const GAME_VERSION = '1.20.0';
+const GAME_VERSION = '1.21.0';
 const SETTINGS_KEY = 'strikezone.settings.v2';
 const LEGACY_SETTINGS_KEY = 'strikezone.settings.v1';
 const U = 0.0254;
@@ -24167,10 +24167,11 @@ const tmpSteer = [0, 0];
 // calculado é o do andar de baixo, então o bot andava contra a parede para sempre. Devolve a beirada mais perto de onde
 // dá para descer até um ponto da malha (ou null).
 function botOffNav(p) {
-  const x = p.pos[0], y = p.pos[1], z = p.pos[2], ci = cellIdx(Math.floor(x), Math.floor(z));
-  if (ci < 0 || world.wall[ci]) return true;
-  const ni = navNodeAt(x, z, y);
-  return ni < 0 || Math.abs(y - nav.h[ni]) > OFFNAV_GAP;
+  const x = p.pos[0], y = p.pos[1], z = p.pos[2], ci = cellIdx(Math.floor(x), Math.floor(z)), ni = navNodeAt(x, z, y);
+  if (ni < 0) return true;
+  if (Math.abs(y - nav.h[ni]) <= OFFNAV_GAP) return false;
+  // no chão da própria célula (mesmo que ela não esteja na malha) não conta; em cima de um muro alto conta
+  return ci < 0 || !!world.wall[ci] || Math.abs(y - floorAt(x, z)) > OFFNAV_GAP;
 }
 function offNavExit(p) {
   const x = p.pos[0], y = p.pos[1], z = p.pos[2];
